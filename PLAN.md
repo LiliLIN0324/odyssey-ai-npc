@@ -46,6 +46,7 @@
 | **Skill 对应** | 引擎：`godot-*` 全套；先用 `godot-nodes-scenes` + `godot-gdscript`。 |
 
 **决策点（P0 结束时定）**：3D 第三人称（Godot）vs 俯视 2.5D（更便宜、更聚焦"活世界"）。P0 的灰盒会直接告诉你哪个先做。
+**→ 已定（11-07）**：先做 2.5D 网页灰盒（已落地），3D 线走 **Three.js 浏览器垂直切片**（不走 Godot），见 `odyssey-witch/3d/HANDOFF.md`。
 
 ---
 
@@ -54,13 +55,14 @@
 ### P0 — 一周定生死（spike，可抛弃，1 周）
 问题只有一个："**意图→动作→引擎结算** 这条链跑通后，有没有'哇'的感觉？"
 
-- [ ] 开通天翼 AI 平台 API，跑通 XingIntent SDK quickstart（`Intent(name, desc, args=[Arg(...)]) → client.predict()`）
-- [ ] 定义 **15~25 个游戏意图表**（move_to / buy_item / send_message / repair / gather / craft / attack / talk_to / give_item / ask_info…），每个意图字段**扁平、含义唯一**——文章第一大坑："功能表没写清楚"导致修水管被填成修自行车
-- [ ] 自建 **64 条中文指令评测集**：含改口、否定、半句话、多轮补全（照文章的方法）；目标：意图 ≥90%，意图+参数全对 ≥80%（文章实测是 89% / 66%，你的意图集更小应该更好）
-- [ ] 灰盒：一块地图、3 个 NPC、一个调试 HUD（显示每个 NPC 当前 intent + args）；玩家打字 → NPC 执行
-- [ ] **KEEP 判据**：链路端到端 <1s，未解释操作的情况下陌生人能指挥 NPC 办成一件事；**KILL 判据**：填空错误率高到需要玩家反复重说（那就要改 schema 而不是改模型）
+- [x] 开通天翼 AI 平台 API，跑通 XingIntent SDK quickstart（`Intent(name, desc, args=[Arg(...)]) → client.predict()`）✅ 11-06 实跑，`result-teleai.json`
+- [x] 定义 **15~25 个游戏意图表**（move_to / buy_item / send_message / repair / gather / craft / attack / talk_to / give_item / ask_info…），每个意图字段**扁平、含义唯一**——文章第一大坑："功能表没写清楚"导致修水管被填成修自行车 ✅ 超额：30 类 `schema.json`
+- [x] 自建 **64 条中文指令评测集**：含改口、否定、半句话、多轮补全（照文章的方法）；目标：意图 ≥90%，意图+参数全对 ≥80%（文章实测是 89% / 66%，你的意图集更小应该更好）✅ 超额：213 条 / 11 分组 `cases.jsonl`
+- [x] 灰盒：一块地图、3 个 NPC、一个调试 HUD（显示每个 NPC 当前 intent + args）；玩家打字 → NPC 执行 ✅ `odyssey-witch/`（2.5D 网页灰盒：喀耳刻 + 30 类 handler 真实结算）
+- [ ] **KEEP 判据**：链路端到端 <1s，未解释操作的情况下陌生人能指挥 NPC 办成一件事；**KILL 判据**：填空错误率高到需要玩家反复重说（那就要改 schema 而不是改模型）⚠️ 未达：Intent P50 857ms、完全正确 63.9%（HANDOFF §一.2）——结论"改 schema 不换模型"成立
 
 ### P1 — 垂直切片（2~4 周，"一座活的小镇"）
+> **⚠️ 11-07 决策变更**：引擎不走 Godot，改做 **Three.js 浏览器 3D 垂直切片**（埃阿亚岛一岛），分期账本在 `odyssey-witch/3d/HANDOFF.md`（P0/PD/P1 ✅）。本节 Godot 方案仅作存档；对话/存档/成本三原则已被 2D 版与 3D 账本继承。
 - [ ] Godot 项目骨架：`ActionBus`（意图入口，schema 校验、非法意图拒绝并记录）+ `Executor`（把意图翻译成寻路/动画/结算）
 - [ ] NPC 大脑 v1：记忆流 + 需求（Utility AI）+ 日程（BT 结构：Selector[Sequence[紧急? 处理], 日常]）+ T3 大模型规划（每游戏日 1~2 次）
 - [ ] 对话系统：自定义 JSON runner（dialogue-systems：节点图 + 变量存储 + line ID 本地化，从第一天就别硬编码字符串）；大模型生成台词，Intent 解析玩家回复
