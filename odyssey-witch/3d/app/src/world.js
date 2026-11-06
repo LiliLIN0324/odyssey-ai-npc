@@ -129,6 +129,8 @@ function buildWater() {
       uShore: { value: new THREE.Color(PALETTE.oceanShore) },
       uMid: { value: new THREE.Color(PALETTE.oceanMid) },
       uDeep: { value: new THREE.Color(PALETTE.oceanDeep) },
+      uGold: { value: new THREE.Color(PALETTE.duskGold) },
+      uSunH: { value: LIGHT2D.clone() }, // 太阳水平方向,用于海面金色光路
     },
   ]);
 
@@ -159,6 +161,8 @@ function buildWater() {
       uniform vec3 uShore;
       uniform vec3 uMid;
       uniform vec3 uDeep;
+      uniform vec3 uGold;
+      uniform vec2 uSunH;
 
       float hash21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
       float vnoise(vec2 p) {
@@ -175,6 +179,9 @@ function buildWater() {
         // 近岸浅 -> 中海 -> 外海深("近岸浅→外海深"沿用 2D 版规则)
         vec3 col = mix(uShore, uMid, smoothstep(uRadius * 0.7, uRadius * 1.15, d));
         col = mix(col, uDeep, smoothstep(uRadius * 1.35, uRadius * 2.8, d));
+        // 朝太阳方向的金色光路:把天际的暖金"接"到海面上
+        float toSun = max(dot(normalize(vWorld.xz), normalize(uSunH)), 0.0);
+        col += uGold * pow(toSun, 8.0) * 0.22 * smoothstep(uRadius * 1.05, uRadius * 2.2, d);
         // 贴岸一圈碎沫
         float band = smoothstep(uRadius * 0.86, uRadius * 0.93, d)
                    * (1.0 - smoothstep(uRadius * 0.96, uRadius * 1.05, d));
@@ -187,6 +194,7 @@ function buildWater() {
         float alpha = mix(0.8, 0.94, smoothstep(uRadius * 0.75, uRadius * 1.05, d));
         gl_FragColor = vec4(col, alpha);
         #include <fog_fragment>
+        #include <colorspace_fragment>
       }
     `,
   });
@@ -198,9 +206,10 @@ function buildWater() {
 
 // ---------- 天穹 ----------
 function buildSky() {
+  // 地平线接近雾色(藏住水面与天际的接缝),暖金只集中在太阳方向
   const uniforms = {
-    uHorizon: { value: new THREE.Color(PALETTE.duskGold).lerp(new THREE.Color(0xffffff), 0.15) },
-    uZenith: { value: new THREE.Color(PALETTE.oceanMid).lerp(new THREE.Color(PALETTE.nightBase), 0.35) },
+    uHorizon: { value: new THREE.Color(PALETTE.oceanMid).lerp(new THREE.Color(PALETTE.duskGold), 0.5) },
+    uZenith: { value: new THREE.Color(PALETTE.oceanMid).lerp(new THREE.Color(PALETTE.nightBase), 0.45) },
     uSunColor: { value: new THREE.Color(PALETTE.duskGold) },
     uSunDir: { value: SUN_DIRECTION.clone().normalize() },
   };
@@ -225,11 +234,12 @@ function buildSky() {
       uniform vec3 uSunDir;
       void main() {
         vec3 d = normalize(vDir);
-        vec3 col = mix(uHorizon, uZenith, smoothstep(0.02, 0.55, d.y));
+        vec3 col = mix(uHorizon, uZenith, smoothstep(0.0, 0.4, d.y));
         float sunDot = max(dot(d, normalize(uSunDir)), 0.0);
-        // 太阳方向暖光加权:一圈窄光晕 + 大范围暖色过渡
-        col += uSunColor * (pow(sunDot, 30.0) * 0.5 + pow(sunDot, 5.0) * 0.16);
+        // 太阳方向暖光加权:窄光晕为主,大范围暖色收敛,避免整片天泛橙
+        col += uSunColor * (pow(sunDot, 40.0) * 0.65 + pow(sunDot, 6.0) * 0.12);
         gl_FragColor = vec4(col, 1.0);
+        #include <colorspace_fragment>
       }
     `,
   });
@@ -239,12 +249,12 @@ function buildSky() {
 
 // ---------- 草卡 ----------
 function buildGrass() {
-  // 交叉双三角:两个正交四边形,底部为轴
+  // 交叉双三角:两个正交四边形,底部为轴。
+  // 无光照材质 + 顶点明暗渐变:竖直卡片若用光照材质,背面法线会被翻转为朝下而发黑。
   const w = 0.55;
   const h = 0.75;
   const positions = [];
-  const normals = [];
-  const uvs = [];
+  const colors = [];   // 底暗顶亮,模拟草叶根部阴影
   const indices = [];
   const quads = [
     [[-w / 2, 0, 0], [w / 2, 0, 0], [w / 2, h, 0], [-w / 2, h, 0]],
@@ -252,18 +262,19 @@ function buildGrass() {
   ];
   quads.forEach((q, qi) => {
     const base = qi * 4;
-    for (const p of q) positions.push(...p);
-    for (let k = 0; k < 4; k++) normals.push(0, 1, 0);
-    uvs.push(0, 0, 1, 0, 1, 1, 0, 1);
+    for (const p of q) {
+      positions.push(...p);
+      const shade = p[1] === 0 ? 0.62 : 1.0; // 底部暗
+      colors.push(shade, shade, shade);
+    }
     indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
   });
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geo.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
-  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
   geo.setIndex(indices);
 
-  const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide, roughness: 1 });
+  const mat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide });
   const mesh = new THREE.InstancedMesh(geo, mat, GRASS_COUNT);
 
   const rand = mulberry32(ISLAND_SEED ^ 0x9e3779b9);
@@ -285,11 +296,12 @@ function buildGrass() {
     if (Math.hypot(gx, gz) > 0.55) continue;                           // 陡坡不长
     dummy.position.set(x, y, z);
     dummy.rotation.y = rand() * Math.PI;
-    const s = 0.7 + rand() * 0.8;
+    const s = 0.55 + rand() * 0.55;
     dummy.scale.set(s, s * (0.85 + rand() * 0.4), s);
     dummy.updateMatrix();
     mesh.setMatrixAt(placed, dummy.matrix);
-    c.copy(C.grassMain).lerp(C.grassDeep, rand());
+    // 压暗一档并向深绿偏,避免无光照卡比受光地形亮出一截
+    c.copy(C.grassMain).lerp(C.grassDeep, rand() * 0.75).multiplyScalar(0.82);
     mesh.setColorAt(placed, c);
     placed++;
   }
@@ -314,9 +326,9 @@ function buildFire() {
   geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   const mat = new THREE.PointsMaterial({
     color: PALETTE.fireOrange,
-    size: 0.42,
+    size: 0.4,
     transparent: true,
-    opacity: 0.85,
+    opacity: 0.78,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
     sizeAttenuation: true,
@@ -354,10 +366,14 @@ export function buildWorld(scene) {
   scene.background = new THREE.Color(PALETTE.oceanMid);
   scene.fog = new THREE.FogExp2(PALETTE.oceanMid, 0.008);
 
-  const hemi = new THREE.HemisphereLight(PALETTE.oceanShore, PALETTE.cliffLight, 0.5);
+  const hemi = new THREE.HemisphereLight(PALETTE.oceanShore, PALETTE.cliffLight, 0.65);
   scene.add(hemi);
 
-  const sun = new THREE.DirectionalLight(PALETTE.duskGold, 1.25);
+  // 主光偏白一档的金(duskGold 直接照绿草会把草地染成土黄),逆光氛围交给天穹光晕
+  const sun = new THREE.DirectionalLight(
+    new THREE.Color(PALETTE.duskGold).lerp(new THREE.Color(0xffffff), 0.4),
+    1.2,
+  );
   sun.position.copy(SUN_DIRECTION).multiplyScalar(80);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);

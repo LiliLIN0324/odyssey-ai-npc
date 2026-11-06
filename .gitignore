@@ -14,3 +14,6 @@ __pycache__/
 /-p/
 *.log
 .zcode/
+
+# 审查截图归档（3d/HANDOFF.md §2.5 约定不进版本库）
+odyssey-witch/3d/tools/shots/

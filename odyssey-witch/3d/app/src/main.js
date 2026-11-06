@@ -21,7 +21,8 @@ const scene = new THREE.Scene();
 
 // --- 相机与轨道控制(P4 将替换为第三人称跟随) ---
 const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1200);
-camera.position.set(38, 24, 46);
+// 初始机位放在受光面(太阳在 -x/+z 象限),逆光剪影留给叙事镜头
+camera.position.set(-46, 30, 52);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0, 4, 0);
@@ -33,6 +34,9 @@ controls.maxPolarAngle = Math.PI * 0.49; // 不许钻到海面以下
 
 // --- 世界(P1:岛/海/天/光/草/火) ---
 const world = buildWorld(scene);
+
+// 调试/测试钩子(P7 性能终审与自动化截图用)
+window.__AEAEA__ = { renderer, scene, camera, controls };
 
 // --- 自适应 ---
 window.addEventListener('resize', () => {
