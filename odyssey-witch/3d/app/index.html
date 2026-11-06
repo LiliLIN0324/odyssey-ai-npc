@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>埃阿亚岛 · 女巫的领地</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #123c58; }
+    canvas { display: block; }
+
+    /* 加载页:海洋深蓝 -> 暮色金(odyssey-visual.md 第六章建议的入场氛围) */
+    #loading {
+      position: fixed; inset: 0; z-index: 10;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 28px;
+      background: linear-gradient(180deg, #0c1622 0%, #123c58 42%, #2f6590 68%, #e8a84a 118%);
+      color: #f2e8d5;
+      font-family: "Source Han Serif SC", "Noto Serif SC", serif;
+      transition: opacity 0.8s ease;
+    }
+    #loading.hidden { opacity: 0; pointer-events: none; }
+    #loading h1 { font-size: 34px; letter-spacing: 0.18em; font-weight: 600; text-shadow: 0 2px 18px rgba(0,0,0,.45); }
+    #loading .sub { font-size: 14px; letter-spacing: 0.32em; opacity: .78; }
+    #loading .quote { font-size: 13px; opacity: .55; font-style: italic; max-width: 30em; text-align: center; line-height: 1.9; }
+    #start-btn {
+      margin-top: 10px; padding: 12px 46px;
+      font: inherit; font-size: 16px; letter-spacing: 0.4em; text-indent: 0.4em;
+      color: #f2e8d5; background: rgba(18, 60, 88, 0.35);
+      border: 1px solid rgba(242, 232, 213, 0.55); border-radius: 2px;
+      cursor: pointer; transition: background .25s, border-color .25s;
+    }
+    #start-btn:hover { background: rgba(232, 168, 74, 0.28); border-color: #e8a84a; }
+    #loading .hint { font-size: 12px; opacity: .5; letter-spacing: 0.12em; }
+
+    /* 调试 HUD(P1 起显示 tris/calls,当前只报 fps) */
+    #hud {
+      position: fixed; top: 10px; left: 10px; z-index: 5;
+      font: 12px/1.6 Consolas, monospace; color: rgba(242,232,213,.85);
+      text-shadow: 0 1px 3px rgba(0,0,0,.6); pointer-events: none; white-space: pre;
+    }
+  </style>
+</head>
+<body>
+  <div id="loading">
+    <div class="sub">传 说 之 海 · 第 一 站</div>
+    <h1>埃阿亚岛 · 女巫的领地</h1>
+    <p class="quote">海风里有药草的苦味,和一根很淡的猪哼声。——《奥德赛 · 序幕》</p>
+    <button id="start-btn">开 始 探 索</button>
+    <div class="hint">拖拽旋转 · 滚轮缩放</div>
+  </div>
+  <div id="hud"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

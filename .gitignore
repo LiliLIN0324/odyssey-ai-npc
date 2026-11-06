@@ -1,0 +1,16 @@
+# 真实 API Key 文件绝不能进版本库
+key.txt
+*.key
+secret*.txt
+!key.example.txt
+
+# 评测结果（体积大，按需保留）
+result-*.json
+__pycache__/
+*.pyc
+
+# 会话产物 / 临时目录（正式脚本已收进 tools/）
+.temp/
+/-p/
+*.log
+.zcode/

@@ -1,0 +1,3 @@
+# 这是一个用于验证 Key 文件解析逻辑的占位文件。
+# 真实使用时把下面一行替换成你的天翼 API Key，或直接删除本文件。
+sk-fake-key-for-parsing-test

@@ -1,0 +1,213 @@
+{"id": "clear_trade_01", "group": "clear", "text": "我要买两壶淡水", "expect": [{"category": "购买物品", "args": {"物品": "淡水", "数量": "2"}}]}
+{"id": "clear_trade_02", "group": "clear", "text": "来一块面包", "expect": [{"category": "购买物品", "args": {"物品": "面包"}}]}
+{"id": "clear_trade_03", "group": "clear", "text": "这船桨多少钱", "expect": [{"category": "查询价格", "args": {"物品": "船桨"}}]}
+{"id": "clear_trade_04", "group": "clear", "text": "你这儿还有蜂蜜吗", "expect": [{"category": "查询库存", "args": {"物品": "蜂蜜"}}]}
+{"id": "clear_trade_05", "group": "clear", "text": "把这筐橄榄油卖了", "expect": [{"category": "卖出物品", "args": {"物品": "橄榄油"}}]}
+{"id": "clear_trade_06", "group": "clear", "text": "玛草怎么卖", "expect": [{"category": "查询价格", "args": {"物品": "玛草"}}]}
+{"id": "clear_trade_07", "group": "clear", "text": "给我来三卷干粮", "expect": [{"category": "购买物品", "args": {"物品": "干粮", "数量": "3"}}]}
+{"id": "clear_trade_08", "group": "clear", "text": "你们这都卖什么", "expect": [{"category": "查询库存", "args": {}}]}
+{"id": "clear_trade_09", "group": "clear", "text": "火把还有没有", "expect": [{"category": "查询库存", "args": {"物品": "火把"}}]}
+{"id": "clear_trade_10", "group": "clear", "text": "我想用德拉克马买把铜矛", "expect": [{"category": "购买物品", "args": {"物品": "铜矛", "货币": "德拉克马"}}]}
+{"id": "clear_equip_01", "group": "clear", "text": "把铜矛装备上", "expect": [{"category": "装备物品", "args": {"物品": "铜矛"}}]}
+{"id": "clear_equip_02", "group": "clear", "text": "帮我换上那件皮甲", "expect": [{"category": "装备物品", "args": {"物品": "皮甲"}}]}
+{"id": "clear_equip_03", "group": "clear", "text": "把弓卸下来", "expect": [{"category": "卸下装备", "args": {"物品": "弓"}}]}
+{"id": "clear_equip_04", "group": "clear", "text": "喝药", "expect": [{"category": "使用消耗品", "args": {}}]}
+{"id": "clear_equip_05", "group": "clear", "text": "吃块蜂蜜", "expect": [{"category": "使用消耗品", "args": {"物品": "蜂蜜"}}]}
+{"id": "clear_equip_06", "group": "clear", "text": "把这瓶药扔了", "expect": [{"category": "丢弃物品", "args": {"物品": "治疗草药"}}]}
+{"id": "clear_equip_07", "group": "clear", "text": "我背包里还有几壶淡水", "expect": [{"category": "查询背包", "args": {"物品": "淡水"}}]}
+{"id": "clear_equip_08", "group": "clear", "text": "把玛草给我用上", "expect": [{"category": "使用消耗品", "args": {"物品": "玛草"}}]}
+{"id": "clear_quest_01", "group": "clear", "text": "有没有什么活可以接", "expect": [{"category": "查询任务线索", "args": {}}]}
+{"id": "clear_quest_02", "group": "clear", "text": "送信那个任务我接了", "expect": [{"category": "接取任务", "args": {"任务名称": "送信"}}]}
+{"id": "clear_quest_03", "group": "clear", "text": "那个采集任务要采什么", "expect": [{"category": "查询任务线索", "args": {"任务名称": "采集", "询问内容": "目标"}}]}
+{"id": "clear_quest_04", "group": "clear", "text": "我那个任务做得怎么样了", "expect": [{"category": "查询任务进度", "args": {}}]}
+{"id": "clear_quest_05", "group": "clear", "text": "我来交任务", "expect": [{"category": "提交任务", "args": {}}]}
+{"id": "clear_quest_06", "group": "clear", "text": "这个我不接了", "expect": [{"category": "放弃任务", "args": {}}]}
+{"id": "clear_quest_07", "group": "clear", "text": "这活儿给多少报酬", "expect": [{"category": "查询任务线索", "args": {"询问内容": "奖励"}}]}
+{"id": "clear_nav_01", "group": "clear", "text": "我要去伊萨卡", "expect": [{"category": "导航到地点", "args": {"目的地": "伊萨卡"}}]}
+{"id": "clear_nav_02", "group": "clear", "text": "带我去冥界", "expect": [{"category": "导航到地点", "args": {"目的地": "冥界"}}]}
+{"id": "clear_nav_03", "group": "clear", "text": "埃俄罗斯岛是什么样的地方", "expect": [{"category": "查询地点信息", "args": {"地点": "埃俄罗斯岛"}}]}
+{"id": "clear_nav_04", "group": "clear", "text": "这附近有淡水吗", "expect": [{"category": "查询附近目标", "args": {"目标类型": "淡水源"}}]}
+{"id": "clear_nav_05", "group": "clear", "text": "附近能看到船吗", "expect": [{"category": "查询附近目标", "args": {"目标类型": "船只"}}]}
+{"id": "clear_env_01", "group": "clear", "text": "今天风往哪边吹", "expect": [{"category": "查询环境状况", "args": {"要素": "风向"}}]}
+{"id": "clear_env_02", "group": "clear", "text": "浪大不大", "expect": [{"category": "查询环境状况", "args": {"要素": "浪高"}}]}
+{"id": "clear_env_03", "group": "clear", "text": "斯库拉海峡那边天气怎么样", "expect": [{"category": "查询环境状况", "args": {"要素": "天气", "地点": "斯库拉海峡"}}]}
+{"id": "clear_env_04", "group": "clear", "text": "现在天黑了吗", "expect": [{"category": "查询环境状况", "args": {"要素": "昼夜"}}]}
+{"id": "clear_bio_01", "group": "clear", "text": "塞壬的歌声有什么效力", "expect": [{"category": "查询生物情报", "args": {"生物": "塞壬", "询问内容": "价值"}}]}
+{"id": "clear_bio_02", "group": "clear", "text": "这附近有什么鱼", "expect": [{"category": "查询生物情报", "args": {"生物": "海鱼"}}]}
+{"id": "clear_bio_03", "group": "clear", "text": "独眼巨人怕什么", "expect": [{"category": "查询生物情报", "args": {"生物": "波吕斐摩斯", "询问内容": "弱点"}}]}
+{"id": "clear_bio_04", "group": "clear", "text": "海蛇什么时候出来", "expect": [{"category": "查询生物情报", "args": {"生物": "海蛇", "询问内容": "出现时间"}}]}
+{"id": "clear_bio_05", "group": "clear", "text": "螃蟹能吃吗", "expect": [{"category": "查询生物情报", "args": {"生物": "螃蟹", "询问内容": "食用性"}}]}
+{"id": "clear_oracle_01", "group": "clear", "text": "雅典娜对我预示了什么", "expect": [{"category": "查询神谕", "args": {"神谕来源": "雅典娜"}}]}
+{"id": "clear_oracle_02", "group": "clear", "text": "那个预示是什么意思", "expect": [{"category": "查询神谕", "args": {}}]}
+{"id": "clear_oracle_03", "group": "clear", "text": "提瑞西阿斯怎么说", "expect": [{"category": "查询神谕", "args": {"神谕来源": "提瑞西阿斯"}}]}
+{"id": "clear_oracle_04", "group": "clear", "text": "梦里那个预示讲的是回家吗", "expect": [{"category": "查询神谕", "args": {"神谕来源": "梦里", "预言内容": "回家"}}]}
+{"id": "clear_ship_01", "group": "clear", "text": "我要开船走", "expect": [{"category": "船只操作", "args": {"动作": "出航"}}]}
+{"id": "clear_ship_02", "group": "clear", "text": "把船靠岸", "expect": [{"category": "船只操作", "args": {"动作": "靠岸"}}]}
+{"id": "clear_ship_03", "group": "clear", "text": "船漏水了修一下", "expect": [{"category": "船只操作", "args": {"动作": "修补船体"}}]}
+{"id": "clear_ship_04", "group": "clear", "text": "给船装淡水", "expect": [{"category": "船只操作", "args": {"动作": "补充淡水"}}]}
+{"id": "clear_ship_05", "group": "clear", "text": "升帆", "expect": [{"category": "船只操作", "args": {"动作": "升帆"}}]}
+{"id": "clear_ship_06", "group": "clear", "text": "抛锚吧", "expect": [{"category": "船只操作", "args": {"动作": "抛锚"}}]}
+{"id": "clear_gather_01", "group": "clear", "text": "去捡些贝壳", "expect": [{"category": "获取物资", "args": {"动作": "采集", "物品": "贝壳"}}]}
+{"id": "clear_gather_02", "group": "clear", "text": "我想去钓鱼", "expect": [{"category": "获取物资", "args": {"动作": "垂钓"}}]}
+{"id": "clear_gather_03", "group": "clear", "text": "弄点淡水回来", "expect": [{"category": "获取物资", "args": {"动作": "取水", "物品": "淡水"}}]}
+{"id": "clear_gather_04", "group": "clear", "text": "砍点柴薪", "expect": [{"category": "获取物资", "args": {"动作": "伐木", "物品": "柴薪"}}]}
+{"id": "clear_camp_01", "group": "clear", "text": "生个火", "expect": [{"category": "营地准备", "args": {"动作": "生火"}}]}
+{"id": "clear_camp_02", "group": "clear", "text": "搭个帐篷", "expect": [{"category": "营地准备", "args": {"动作": "搭帐篷"}}]}
+{"id": "clear_camp_03", "group": "clear", "text": "做把船桨", "expect": [{"category": "营地准备", "args": {"动作": "制作工具", "物品": "船桨"}}]}
+{"id": "clear_camp_04", "group": "clear", "text": "升个信号火", "expect": [{"category": "营地准备", "args": {"动作": "升信号火"}}]}
+{"id": "clear_give_01", "group": "clear", "text": "把这根橄榄枝给你", "expect": [{"category": "给予物品", "args": {"物品": "橄榄枝"}}]}
+{"id": "clear_give_02", "group": "clear", "text": "拿着这袋风", "expect": [{"category": "给予物品", "args": {"物品": "风袋"}}]}
+{"id": "clear_help_01", "group": "clear", "text": "我该怎么办", "expect": [{"category": "请求帮助", "args": {}}]}
+{"id": "clear_help_02", "group": "clear", "text": "帮帮我对付那条海蛇", "expect": [{"category": "请求帮助", "args": {"求助内容": "对付那条海蛇"}}]}
+{"id": "clear_chat_01", "group": "clear", "text": "你好", "expect": [{"category": "闲聊", "args": {}}]}
+{"id": "clear_chat_02", "group": "clear", "text": "这海真漂亮", "expect": [{"category": "闲聊", "args": {"话题": "海"}}]}
+{"id": "clear_chat_03", "group": "clear", "text": "我先走了", "expect": [{"category": "告别", "args": {}}]}
+{"id": "confuse_01", "group": "confuse", "text": "塞壬在哪", "expect": [{"category": "查询生物情报", "args": {"生物": "塞壬"}}]}
+{"id": "confuse_02", "group": "confuse", "text": "斯库拉是什么", "expect": [{"category": "查询生物情报", "args": {"生物": "斯库拉"}}]}
+{"id": "confuse_03", "group": "confuse", "text": "卡律布狄斯在哪片海", "expect": [{"category": "查询生物情报", "args": {"生物": "卡律布狄斯"}}]}
+{"id": "confuse_04", "group": "confuse", "text": "雅典娜在哪", "expect": [{"category": "查询附近目标", "args": {}}]}
+{"id": "confuse_05", "group": "confuse", "text": "赫尔墨斯在哪", "expect": [{"category": "查询附近目标", "args": {}}]}
+{"id": "confuse_06", "group": "confuse", "text": "波塞冬在哪", "expect": [{"category": "查询附近目标", "args": {}}]}
+{"id": "confuse_07", "group": "confuse", "text": "提瑞西阿斯在哪", "expect": [{"category": "查询附近目标", "args": {}}]}
+{"id": "confuse_08", "group": "confuse", "text": "冥界里有什么", "expect": [{"category": "查询地点信息", "args": {"地点": "冥界"}}]}
+{"id": "confuse_09", "group": "confuse", "text": "冥界在哪", "expect": [{"category": "导航到地点", "args": {"目的地": "冥界"}}]}
+{"id": "confuse_10", "group": "confuse", "text": "埃俄罗斯岛在哪", "expect": [{"category": "导航到地点", "args": {"目的地": "埃俄罗斯岛"}}]}
+{"id": "confuse_11", "group": "confuse", "text": "埃俄罗斯是谁", "expect": [{"category": "闲聊", "args": {"话题": "埃俄罗斯"}}]}
+{"id": "confuse_12", "group": "confuse", "text": "塞壬的歌声会害死人吗", "expect": [{"category": "查询生物情报", "args": {"生物": "塞壬", "询问内容": "危险性"}}]}
+{"id": "confuse_13", "group": "confuse", "text": "斯库拉长了几只脚", "expect": [{"category": "查询生物情报", "args": {"生物": "斯库拉"}}]}
+{"id": "confuse_14", "group": "confuse", "text": "卡律布狄斯是漩涡还是怪兽", "expect": [{"category": "查询生物情报", "args": {"生物": "卡律布狄斯"}}]}
+{"id": "confuse_15", "group": "confuse", "text": "雅典娜给过我预示吗", "expect": [{"category": "查询神谕", "args": {"神谕来源": "雅典娜"}}]}
+{"id": "confuse_16", "group": "confuse", "text": "塞壬唱的是什么歌", "expect": [{"category": "查询生物情报", "args": {"生物": "塞壬"}}]}
+{"id": "confuse_17", "group": "confuse", "text": "提瑞西阿斯说的预言是什么意思", "expect": [{"category": "查询神谕", "args": {"神谕来源": "提瑞西阿斯"}}]}
+{"id": "confuse_18", "group": "confuse", "text": "独眼巨人算神话生物吗", "expect": [{"category": "闲聊", "args": {"话题": "独眼巨人"}}]}
+{"id": "confuse_19", "group": "confuse", "text": "喀耳卡狄斯住哪座岛", "expect": [{"category": "查询地点信息", "args": {"地点": "喀耳卡狄斯"}}]}
+{"id": "confuse_20", "group": "confuse", "text": "我要去喀耳卡狄斯那里", "expect": [{"category": "导航到地点", "args": {"目的地": "喀耳卡狄斯"}}]}
+{"id": "confuse_21", "group": "confuse", "text": "风袋是谁给我的", "expect": [{"category": "闲聊", "args": {"话题": "风袋"}}]}
+{"id": "confuse_22", "group": "confuse", "text": "奥德修斯回伊萨卡了吗", "expect": [{"category": "闲聊", "args": {"话题": "奥德修斯"}}]}
+{"id": "confuse_23", "group": "confuse", "text": "我要找奥德修斯", "expect": [{"category": "查询附近目标", "args": {}}]}
+{"id": "confuse_24", "group": "confuse", "text": "冥王哈迪斯在哪", "expect": [{"category": "查询附近目标", "args": {}}]}
+{"id": "state_set_01", "group": "state_set", "text": "我还有多少淡水", "expect": [{"category": "查询背包", "args": {"物品": "淡水"}}]}
+{"id": "state_set_02", "group": "state_set", "text": "把淡水装满", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "state_set_03", "group": "state_set", "text": "我渴不渴", "expect": [{"category": "查询自身状态", "args": {"状态项": "口渴"}}]}
+{"id": "state_set_04", "group": "state_set", "text": "帮我把体力补满", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "state_set_05", "group": "state_set", "text": "我身上有伤吗", "expect": [{"category": "查询自身状态", "args": {"状态项": "伤势"}}]}
+{"id": "state_set_06", "group": "state_set", "text": "把士气提一提", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "state_set_07", "group": "state_set", "text": "现在几点了", "expect": [{"category": "查询环境状况", "args": {"要素": "昼夜"}}]}
+{"id": "state_set_08", "group": "state_set", "text": "现在浪多高", "expect": [{"category": "查询环境状况", "args": {"要素": "浪高"}}]}
+{"id": "state_set_09", "group": "state_set", "text": "把风停了", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "state_set_10", "group": "state_set", "text": "我饿了", "expect": [{"category": "查询自身状态", "args": {"状态项": "饥饿"}}]}
+{"id": "state_set_11", "group": "state_set", "text": "我要吃点东西", "expect": [{"category": "获取物资", "args": {}}]}
+{"id": "state_set_12", "group": "state_set", "text": "船上的淡水还够几天", "expect": [{"category": "查询背包", "args": {"物品": "淡水"}}]}
+{"id": "boundary_01", "group": "boundary", "text": "给我来一块面包", "expect": [{"category": "购买物品", "args": {"物品": "面包"}}]}
+{"id": "boundary_02", "group": "boundary", "text": "面包多少钱", "expect": [{"category": "查询价格", "args": {"物品": "面包"}}]}
+{"id": "boundary_03", "group": "boundary", "text": "我要把面包卖掉", "expect": [{"category": "卖出物品", "args": {"物品": "面包"}}]}
+{"id": "boundary_04", "group": "boundary", "text": "面包还有吗", "expect": [{"category": "查询库存", "args": {"物品": "面包"}}]}
+{"id": "boundary_05", "group": "boundary", "text": "我要去提洛", "expect": [{"category": "导航到地点", "args": {"目的地": "提洛"}}]}
+{"id": "boundary_06", "group": "boundary", "text": "提洛上有什么人", "expect": [{"category": "查询地点信息", "args": {"地点": "提洛"}}]}
+{"id": "boundary_07", "group": "boundary", "text": "提洛在哪", "expect": [{"category": "查询附近目标", "args": {}}]}
+{"id": "boundary_08", "group": "boundary", "text": "接任务", "expect": [{"category": "接取任务", "args": {}}]}
+{"id": "boundary_09", "group": "boundary", "text": "任务", "expect": [{"category": "查询任务线索", "args": {}}]}
+{"id": "boundary_10", "group": "boundary", "text": "交任务", "expect": [{"category": "提交任务", "args": {}}]}
+{"id": "boundary_11", "group": "boundary", "text": "任务进度", "expect": [{"category": "查询任务进度", "args": {}}]}
+{"id": "boundary_12", "group": "boundary", "text": "我的任务完成了没", "expect": [{"category": "查询任务进度", "args": {}}]}
+{"id": "boundary_13", "group": "boundary", "text": "神谕", "expect": [{"category": "查询神谕", "args": {}}]}
+{"id": "boundary_14", "group": "boundary", "text": "预示", "expect": [{"category": "查询神谕", "args": {}}]}
+{"id": "boundary_15", "group": "boundary", "text": "装备铜矛", "expect": [{"category": "装备物品", "args": {"物品": "铜矛"}}]}
+{"id": "boundary_16", "group": "boundary", "text": "铜矛", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "boundary_17", "group": "boundary", "text": "多少钱", "expect": [{"category": "查询价格", "args": {}}]}
+{"id": "boundary_18", "group": "boundary", "text": "喝", "expect": [{"category": "使用消耗品", "args": {}}]}
+{"id": "boundary_19", "group": "boundary", "text": "买", "expect": [{"category": "购买物品", "args": {}}]}
+{"id": "boundary_20", "group": "boundary", "text": "开船", "expect": [{"category": "船只操作", "args": {"动作": "出航"}}]}
+{"id": "boundary_21", "group": "boundary", "text": "捕鱼", "expect": [{"category": "获取物资", "args": {"动作": "垂钓"}}]}
+{"id": "boundary_22", "group": "boundary", "text": "生火", "expect": [{"category": "营地准备", "args": {"动作": "生火"}}]}
+{"id": "chitchat_01", "group": "chitchat", "text": "这趟航程真是漫长", "expect": [{"category": "闲聊", "args": {"话题": "航程"}}]}
+{"id": "chitchat_02", "group": "chitchat", "text": "你叫什么名字", "expect": [{"category": "闲聊", "args": {"话题": "名字"}}]}
+{"id": "chitchat_03", "group": "chitchat", "text": "讲个故事吧", "expect": [{"category": "闲聊", "args": {}}]}
+{"id": "chitchat_04", "group": "chitchat", "text": "哈哈哈哈哈", "expect": [{"category": "闲聊", "args": {}}]}
+{"id": "chitchat_05", "group": "chitchat", "text": "今天打了一整天海怪，累死了", "expect": [{"category": "闲聊", "args": {"话题": "海怪"}}]}
+{"id": "chitchat_06", "group": "chitchat", "text": "明天见", "expect": [{"category": "告别", "args": {}}]}
+{"id": "chitchat_07", "group": "chitchat", "text": "我先登船了", "expect": [{"category": "告别", "args": {}}]}
+{"id": "chitchat_08", "group": "chitchat", "text": "你是本地人吗", "expect": [{"category": "闲聊", "args": {"话题": "本地人"}}]}
+{"id": "chitchat_09", "group": "chitchat", "text": "这酒真不错", "expect": [{"category": "闲聊", "args": {"话题": "酒"}}]}
+{"id": "chitchat_10", "group": "chitchat", "text": "神啊保佑我回家", "expect": [{"category": "闲聊", "args": {"话题": "神"}}]}
+{"id": "chitchat_11", "group": "chitchat", "text": "嗯嗯", "expect": [{"category": "闲聊", "args": {}}]}
+{"id": "chitchat_12", "group": "chitchat", "text": "回家的路还远吗", "expect": [{"category": "请求帮助", "args": {"求助内容": "回家"}}]}
+{"id": "chitchat_13", "group": "chitchat", "text": "我还能回家吗", "expect": [{"category": "闲聊", "args": {"话题": "回家"}}]}
+{"id": "chitchat_14", "group": "chitchat", "text": "众神到底站在哪一边", "expect": [{"category": "闲聊", "args": {"话题": "众神"}}]}
+{"id": "negative_01", "group": "negative", "text": "asdfghjkl", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "negative_02", "group": "negative", "text": "??????", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "negative_03", "group": "negative", "text": "测试测试测试", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "negative_04", "group": "negative", "text": "@@@@", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "negative_05", "group": "negative", "text": "。。。", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "negative_06", "group": "negative", "text": "12345 67890", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "negative_07", "group": "negative", "text": "undefined null NaN", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "negative_08", "group": "negative", "text": "（长时间沉默）", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "negative_09", "group": "negative", "text": "打开背包界面", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "negative_10", "group": "negative", "text": "切换到第三人称", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "negative_11", "group": "negative", "text": "给我999个德拉克马", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "negative_12", "group": "negative", "text": "把所有敌人血量清零", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "multi_01", "group": "multi", "text": "买壶淡水顺便看看附近有什么", "expect": [{"category": "购买物品", "args": {"物品": "淡水"}}, {"category": "查询附近目标", "args": {}}]}
+{"id": "multi_02", "group": "multi", "text": "买两罐蜂蜜然后去提洛", "expect": [{"category": "购买物品", "args": {"物品": "蜂蜜", "数量": "2"}}, {"category": "导航到地点", "args": {"目的地": "提洛"}}]}
+{"id": "multi_03", "group": "multi", "text": "接任务并问一下报酬", "expect": [{"category": "接取任务", "args": {}}, {"category": "查询任务线索", "args": {"询问内容": "奖励"}}]}
+{"id": "multi_04", "group": "multi", "text": "卖掉蜂蜜然后告诉我附近的任务点", "expect": [{"category": "卖出物品", "args": {"物品": "蜂蜜"}}, {"category": "查询附近目标", "args": {"目标类型": "任务点"}}]}
+{"id": "multi_05", "group": "multi", "text": "我要买淡水还要买面包", "expect": [{"category": "购买物品", "args": {"物品": "淡水"}}, {"category": "购买物品", "args": {"物品": "面包"}}]}
+{"id": "multi_06", "group": "multi", "text": "装备铜矛然后喝药", "expect": [{"category": "装备物品", "args": {"物品": "铜矛"}}, {"category": "使用消耗品", "args": {}}]}
+{"id": "multi_07", "group": "multi", "text": "离开并且把任务交了", "expect": [{"category": "告别", "args": {}}, {"category": "提交任务", "args": {}}]}
+{"id": "multi_08", "group": "multi", "text": "去塞壬岩并问他附近有敌人吗", "expect": [{"category": "导航到地点", "args": {"目的地": "塞壬岩"}}, {"category": "查询附近目标", "args": {"目标类型": "敌对生物"}}]}
+{"id": "multi_09", "group": "multi", "text": "修船并且把淡水装上", "expect": [{"category": "船只操作", "args": {"动作": "修补船体"}}, {"category": "船只操作", "args": {"动作": "补充淡水"}}]}
+{"id": "multi_10", "group": "multi", "text": "把橄榄枝给我再给我一块面包", "expect": [{"category": "给予物品", "args": {"物品": "橄榄枝"}}, {"category": "购买物品", "args": {"物品": "面包"}}]}
+{"id": "multi_11", "group": "multi", "text": "我要接任务并且装备铜矛", "expect": [{"category": "接取任务", "args": {}}, {"category": "装备物品", "args": {"物品": "铜矛"}}]}
+{"id": "multi_12", "group": "multi", "text": "问神谕顺便问问附近有神庙吗", "expect": [{"category": "查询神谕", "args": {}}, {"category": "查询附近目标", "args": {"目标类型": "神庙"}}]}
+{"id": "multi_13", "group": "multi", "text": "钓鱼然后生火烤鱼", "expect": [{"category": "获取物资", "args": {"动作": "垂钓"}}, {"category": "营地准备", "args": {"动作": "生火"}}]}
+{"id": "slot_missing_01", "group": "slot_missing", "text": "我想买", "expect": [{"category": "购买物品", "args": {}}]}
+{"id": "slot_missing_02", "group": "slot_missing", "text": "这个多少钱", "expect": [{"category": "查询价格", "args": {}}]}
+{"id": "slot_missing_03", "group": "slot_missing", "text": "我要卖", "expect": [{"category": "卖出物品", "args": {}}]}
+{"id": "slot_missing_04", "group": "slot_missing", "text": "这个能装备吗", "expect": [{"category": "装备物品", "args": {}}]}
+{"id": "slot_missing_05", "group": "slot_missing", "text": "我要去", "expect": [{"category": "导航到地点", "args": {}}]}
+{"id": "slot_missing_06", "group": "slot_missing", "text": "有货吗", "expect": [{"category": "查询库存", "args": {}}]}
+{"id": "slot_missing_07", "group": "slot_missing", "text": "我要做", "expect": [{"category": "接取任务", "args": {}}]}
+{"id": "slot_missing_08", "group": "slot_missing", "text": "帮我扔一个", "expect": [{"category": "丢弃物品", "args": {}}]}
+{"id": "slot_missing_09", "group": "slot_missing", "text": "哪里", "expect": [{"category": "查询附近目标", "args": {}}]}
+{"id": "slot_missing_10", "group": "slot_missing", "text": "我背包里还有什么", "expect": [{"category": "查询背包", "args": {}}]}
+{"id": "slot_missing_11", "group": "slot_missing", "text": "这个任务如何", "expect": [{"category": "查询任务线索", "args": {}}]}
+{"id": "slot_missing_12", "group": "slot_missing", "text": "给", "expect": [{"category": "给予物品", "args": {}}]}
+{"id": "slot_missing_13", "group": "slot_missing", "text": "喝一口", "expect": [{"category": "使用消耗品", "args": {}}]}
+{"id": "slot_missing_14", "group": "slot_missing", "text": "脱", "expect": [{"category": "卸下装备", "args": {}}]}
+{"id": "slot_missing_15", "group": "slot_missing", "text": "任务完成了吗", "expect": [{"category": "查询任务进度", "args": {}}]}
+{"id": "slot_missing_16", "group": "slot_missing", "text": "船呢", "expect": [{"category": "查询附近目标", "args": {}}]}
+{"id": "slot_missing_17", "group": "slot_missing", "text": "海里有什么", "expect": [{"category": "查询生物情报", "args": {}}]}
+{"id": "slot_missing_18", "group": "slot_missing", "text": "风向呢", "expect": [{"category": "查询环境状况", "args": {"要素": "风向"}}]}
+{"id": "hostile_01", "group": "hostile", "text": "你找死", "expect": [{"category": "威胁或攻击", "args": {}}]}
+{"id": "hostile_02", "group": "hostile", "text": "有种拔剑", "expect": [{"category": "威胁或攻击", "args": {}}]}
+{"id": "hostile_03", "group": "hostile", "text": "老子抢的就是你", "expect": [{"category": "威胁或攻击", "args": {}}]}
+{"id": "hostile_04", "group": "hostile", "text": "单挑，敢不敢", "expect": [{"category": "威胁或攻击", "args": {}}]}
+{"id": "hostile_05", "group": "hostile", "text": "我要血洗这条船", "expect": [{"category": "威胁或攻击", "args": {}}]}
+{"id": "hostile_06", "group": "hostile", "text": "把钱交出来不然一刀砍了你", "expect": [{"category": "威胁或攻击", "args": {}}]}
+{"id": "hostile_07", "group": "hostile", "text": "废物", "expect": [{"category": "威胁或攻击", "args": {}}]}
+{"id": "hostile_08", "group": "hostile", "text": "信不信我把你扔进海里喂鱼", "expect": [{"category": "威胁或攻击", "args": {}}]}
+{"id": "mt_01", "group": "multiturn", "text": "三罐", "history": [{"role": "user", "content": "买淡水"}, {"role": "assistant", "content": "要几罐？"}], "expect": [{"category": "购买物品", "args": {"物品": "淡水", "数量": "3"}}]}
+{"id": "mt_02", "group": "multiturn", "text": "对，就这个", "history": [{"role": "user", "content": "附近有神庙吗"}, {"role": "assistant", "content": "东北边有一座"}], "expect": [{"category": "闲聊", "args": {}}]}
+{"id": "mt_03", "group": "multiturn", "text": "冥界", "history": [{"role": "user", "content": "我要去某个地方"}, {"role": "assistant", "content": "去哪儿？"}], "expect": [{"category": "导航到地点", "args": {"目的地": "冥界"}}]}
+{"id": "mt_04", "group": "multiturn", "text": "送货", "history": [{"role": "user", "content": "我想做点什么"}, {"role": "assistant", "content": "北边有个送货的活儿"}], "expect": [{"category": "接取任务", "args": {"任务名称": "送货"}}]}
+{"id": "mt_05", "group": "multiturn", "text": "面包", "history": [{"role": "user", "content": "有什么吃的"}, {"role": "assistant", "content": "面包和干粮"}], "expect": [{"category": "购买物品", "args": {"物品": "面包"}}]}
+{"id": "mt_06", "group": "multiturn", "text": "嗯", "history": [{"role": "user", "content": "铜矛多少钱"}, {"role": "assistant", "content": "八十德拉克马"}], "expect": [{"category": "闲聊", "args": {}}]}
+{"id": "mt_07", "group": "multiturn", "text": "提洛", "history": [{"role": "user", "content": "我要找一座岛"}, {"role": "assistant", "content": "往东南是提洛"}], "expect": [{"category": "导航到地点", "args": {"目的地": "提洛"}}]}
+{"id": "mt_08", "group": "multiturn", "text": "矛", "history": [{"role": "user", "content": "把装备卸了"}, {"role": "assistant", "content": "要卸哪件？"}], "expect": [{"category": "卸下装备", "args": {"物品": "铜矛"}}]}
+{"id": "mt_09", "group": "multiturn", "text": "对", "history": [{"role": "user", "content": "我要接任务"}, {"role": "assistant", "content": "想接哪个？"}], "expect": [{"category": "闲聊", "args": {}}]}
+{"id": "mt_10", "group": "multiturn", "text": "扔了", "history": [{"role": "user", "content": "背包里那把破桨没用了"}, {"role": "assistant", "content": "要扔掉吗"}], "expect": [{"category": "丢弃物品", "args": {"物品": "船桨"}}]}
+{"id": "mt_11", "group": "multiturn", "text": "塞壬", "history": [{"role": "user", "content": "有会唱歌的东西吗"}, {"role": "assistant", "content": "听说塞壬会唱歌"}], "expect": [{"category": "查询生物情报", "args": {"生物": "塞壬"}}]}
+{"id": "mt_12", "group": "multiturn", "text": "雅典娜", "history": [{"role": "user", "content": "谁给过我预示"}, {"role": "assistant", "content": "雅典娜"}], "expect": [{"category": "查询神谕", "args": {"神谕来源": "雅典娜"}}]}
+{"id": "oov_01", "group": "oov", "text": "我要去阿刻戎河渡口", "expect": [{"category": "导航到地点", "args": {"目的地": "阿刻戎河渡口"}}]}
+{"id": "oov_02", "group": "oov", "text": "买一把赫拉克勒斯之剑", "expect": [{"category": "购买物品", "args": {"物品": "赫拉克勒斯之剑"}}]}
+{"id": "oov_03", "group": "oov", "text": "普洛特斯和涅柔斯在哪", "expect": [{"category": "查询附近目标", "args": {}}]}
+{"id": "oov_04", "group": "oov", "text": "接取悬赏：阿特柔斯的遗骸", "expect": [{"category": "接取任务", "args": {"任务名称": "悬赏：阿特柔斯的遗骸"}}]}
+{"id": "oov_05", "group": "oov", "text": "兑换冥河摆渡人的硬币", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "oov_06", "group": "oov", "text": "我要触发主线剧情第三章", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "oov_07", "group": "oov", "text": "把任务状态标记成已完成", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "oov_08", "group": "oov", "text": "召唤我那条船", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "oov_09", "group": "oov", "text": "切换到第一人称视角", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "oov_10", "group": "oov", "text": "我要买两捆德鲁伊木", "expect": [{"category": "购买物品", "args": {"物品": "德鲁伊木", "数量": "2"}}]}
+{"id": "oov_11", "group": "oov", "text": "去厄瑞玻斯的岛屿找老渔夫", "expect": [{"category": "导航到地点", "args": {"目的地": "厄瑞玻斯的岛屿找老渔夫"}}]}
+{"id": "oov_12", "group": "oov", "text": "用喀耳卡狄斯的魔药解除诅咒", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "oov_13", "group": "oov", "text": "我要打听塞壬的歌声在风里说了什么", "expect": [{"category": "查询生物情报", "args": {"生物": "塞壬"}}]}
+{"id": "oov_14", "group": "oov", "text": "问阿伽门农的亡魂我该往哪走", "expect": [{"category": "请求帮助", "args": {"求助内容": "往哪走"}}]}
