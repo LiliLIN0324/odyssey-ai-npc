@@ -10,6 +10,7 @@
 | 阶段 | 名称 | 状态 | 产出位置 |
 |---|---|---|---|
 | P0 | 应用骨架 | ✅ 已完成 | `3d/app/`（可 `npm run dev`） |
+| PD | Cloudflare Pages 部署（提前执行，不等 P7） | ✅ 已完成 | **https://aeaea-3d.pages.dev** · `app/wrangler.toml` |
 | P1 | 程序化世界（岛/海/天/光） | ✅ 已完成 | `app/src/world.js`、`noise.js`，截图 `tools/shots/p1-persp.png` |
 | P2 | 资产生产（参考图/Tripo/清理） | ⬜ 未开始 | `app/public/assets/` + `assets.manifest.json` |
 | P3 | 场景组装与盲评 | ⬜ 未开始 | `app/src/scene-setup.js` + `tools/shots/` |
@@ -306,3 +307,159 @@ Day7  P7(打磨发布)     │
 - EN/日本語 文案化（对话数据已按 §3 契约与渲染分离）
 - 移动端适配、手柄、存档（对齐根 PLAN P1/P2）
 - itch.io 发布（根 PLAN P4 有 itch-publish skill 可用）
+
+---
+
+## §8 部署与运维规划（Cloudflare Pages，PD 阶段）
+
+**原则：早部署、常部署。** 部署从 P7 提前到 PD——链接稳定不变，每完成一个阶段可顺手重发一次，验收和分享都用线上地址，不做"最后一刻部署"。
+
+### 8.1 两种模式
+
+| 模式 | 时机 | 做法 |
+|---|---|---|
+| **直传**（当前采用） | 现在，仓库未上远端 | `npm run deploy`（= `vite build && wrangler pages deploy`），本地构建直传 |
+| **Git 集成** | 仓库推上 GitHub 后 | Pages 项目设置里绑定仓库：build command `npm run build`，output `dist/`；此后 push 自动构建 |
+
+### 8.2 配置文件（已落盘）
+
+- `app/wrangler.toml`：`name = "aeaea-3d"` + `pages_build_output_dir = "dist"`，站点即 `https://aeaea-3d.pages.dev`
+- `app/public/_headers`：`/assets/*`（Vite 哈希文件名）`Cache-Control: immutable` 一年；根 HTML 不缓存——发新版立即可见
+- `app/package.json` 新增 `"deploy"` 脚本
+
+### 8.3 认证与发布流程
+
+1. `npx wrangler whoami` 检查登录态；未登录则 `npx wrangler login`（浏览器 OAuth，一次即可，凭据存在本机 wrangler 配置里）
+2. 首次 `wrangler pages deploy` 会自动创建 `aeaea-3d` Pages 项目
+3. 部署后自检：URL 可达 → 加载页出现 → 点开始 → 场景渲染无白屏 → HUD 三项在预算内
+4. **回滚**：Pages 控制台 Deployments 里每次直传都是一个版本，一键 rollback；无需本地操作
+
+### 8.4 运维约定
+
+- 每阶段完成后的重部署是**可选动作**，但 P4（可玩）、P5（交互完整）、P7（终版）三次必发
+- 预览分支：`wrangler pages deploy --branch=dev` 得到 `*.aeaea-3d.pages.dev` 预览 URL，不影响生产
+- 成本：静态托管在 Cloudflare 免费额度内（demo 流量远够）；不启用任何付费项
+- 公开红线：部署内容必须全为原创资产（odyssey-visual.md 红线沿用）——当前 dist 只含代码与 CSS 渐变加载页，干净
+- **实测记录（2026-11-07）**：项目创建 + 首次部署成功；生产 URL **https://aeaea-3d.pages.dev**（curl 200）；浏览器实测线上版：加载页 → 点开始 → 场景渲染与本地一致（截图 `tools/shots/pd-live.png`）。发布命令：`cd 3d/app && npm run deploy`。备注：wrangler v4 提示新项目可用 Workers 静态资产路线，本项目沿用 Pages（更简单），后续如迁移再评估。
+
+---
+
+## §9 深化设计 · P4 角色与控制（实现时照此执行）
+
+### 9.1 模块接口（character.js 唯一出口）
+
+```js
+createCharacter({ scene, camera, canvas }) → {
+  player:  { group, update(dt), position: Vector3, heading: number, state: 'idle'|'walk' },
+  cameraRig: { update(dt), lock(bool), reset() },
+}
+```
+
+`input.js` 统一管理键盘（WASD + 方向键 + Shift 走/跑可延后），暴露 `axes()` 与 `justPressed('KeyE')`——2D 版的按键心智原样继承。
+
+### 9.2 手感参数（起点值，P4 内微调后冻结）
+
+| 参数 | 值 | 说明 |
+|---|---|---|
+| 最大步速 | 3.4 m/s | 与 2D 版速度感对齐 |
+| 加速度 / 阻尼 | 14 m/s² / 8 s⁻¹ | 起步 ~0.25s、停步 ~0.15s，防"漂" |
+| 转向平滑 | 指数 12 s⁻¹ | 移动方向平滑转身 |
+| 贴地 | `islandHeight(x,z)`（world.js 导出） | 坡度梯度 > 0.55 拒绝移动（崖爬不上去） |
+| 相机 | 球坐标环绕，距离 4~9m（滚轮），pitch −15°~−38°（拖拽） | lerp 0.08；对话时 `lock(true)` |
+
+### 9.3 动画
+
+- 主路线：Mixamo `idle/walk` → Blender 重定向 → glb（manifest 记 `animations`）；AnimationMixer 状态机，过渡 crossFade 0.2s
+- **无骨骼退路**（Tripo 角色未就绪时）：胶囊体 + 轻微浮动（0.05m·sin）+ 移动倾角，保证 P5 不被阻塞；绑定退为 P4.5
+
+---
+
+## §10 深化设计 · P5 交互与叙事（全对话脚本，文本可直接实现）
+
+状态量：`drachma=5`（沿用 2D 版"钱袋 5 德拉克马"）、`herbs=0..3`、旗标 `metCirce / questGather / delivered / tabletRead / heardHook`。
+交互点：喀耳刻（坩埚旁，r=3m）、玛草丛 ×3（r=2m）、石碑（r=2.5m）。所有文本出自 odyssey-story.md 第一章的演绎，语气对齐氛围词（克制、辽阔、暗藏危险）。
+
+```js
+// dialogue.js 数据段（渲染层只认这份契约）
+export const DIALOGUE = {
+  circe_root: {
+    text: "又一个被海冲来的。……说吧,外乡人:买药、问路、听预言、讨活儿——你在哪一样上,值得我花时间?",
+    choices: [
+      { label: "买药(2 德拉克马)", next: "circe_buy" },
+      { label: "问路", next: "circe_ask" },
+      { label: "听预言", next: "circe_prophecy" },
+      { label: herbs >= 3 ? "交付玛草" : "讨活儿", next: herbs >= 3 ? "circe_deliver" : "circe_job" },
+    ],
+  },
+  circe_buy: {
+    text: "药膏两枚。别问治什么——它治的是'变成什么'。",
+    choices: [
+      { label: "付钱", next: "circe_buy_ok", action: "buy_item", args: { price: 2 }, require: "drachma>=2" },
+      { label: "太贵了", next: "circe_buy_no" },
+      { label: "告辞", next: null },
+    ],
+  },
+  circe_buy_ok:  { text: "拿好。夜里擦在脚踝上,猪就认不出你的气味。", set: { salve: 1 } },
+  circe_buy_no:  { text: "那就留好你的钱——也留好你现在这副样子。" },
+  circe_ask: {
+    text: "这里每条路都往西。你要问的不是一个地方,是一个名字。说。",
+    choices: [
+      { label: "回家的路", next: "circe_ask_home" },
+      { label: "奥德修斯", next: "circe_ask_ody" },
+    ],
+  },
+  circe_ask_home: { text: "连家在哪都不知道的人,问什么路。……去问风吧。风记得所有出发的地方。" },
+  circe_ask_ody:  { text: "这个名字在这座岛上一文不值。……他往西走了,没走完。剩下的路,和你的,难说谁更长。" },
+  circe_prophecy: { text: "预言我父亲的水牛看得比神谕准。只提醒你一句:被贪念打开过的风袋,不会再为你鼓。" },
+  circe_job:      { text: "活儿有一件。坡上长着三丛玛草,要干净的——没被贪念碰过的。带回来,我给你一句真话。", set: { questGather: true } },
+  circe_deliver: {
+    text: "……手是干净的。好。你知道人变成猪之后,什么不变吗?眼神。变的只是胃口。",
+    set: { delivered: true, tabletHint: true },
+    next: "circe_truth",
+  },
+  circe_truth: {
+    text: "真话就是:这座岛不是我的牢,是我的债。我咒过一位急着回海的神女——石碑上刻着。你自己去看。",
+  },
+  tablet_read: {
+    text: "石碑铭文:'我把一个急着回海的神女,咒成了六头海怪。愿海替我记着这笔账。'",
+    set: { tabletRead: true },
+  },
+  circe_hook: { // delivered 之后回到 circe_root 时追加的选项
+    text: "……有回家的法子吗?",
+    choices: [{ label: "等她回答", next: "circe_hook_ans" }],
+  },
+  circe_hook_ans: {
+    text: "先学会听懂风向。至于回头是——去冥界,问那位看不见的老人。",
+    set: { heardHook: true }, // 引出第二章,金色逆光事件在此触发
+  },
+};
+```
+
+规则：`require` 不满足 → 该选项置灰；`next: null` 关闭对话；`set` 在关闭时落账。P6 的输入框接在同一状态机上。
+
+---
+
+## §11 深化设计 · P6 意图接入（线协议）
+
+| 项 | 约定 |
+|---|---|
+| 代理 | `app/server/intent-proxy.py`：复用根目录 `eval.py` 的请求构造与 `--backend mock/teleai/local` 三模式；监听 `:8731`，端点 `POST /intent` |
+| 请求 | `{ input, allowed: ["talk_to","gather","buy_item","other"], schema_version: "1" }` |
+| 响应 | `{ category, args, confidence }`；字段扁平、专有名词保留原话（对齐根 README schema 五原则） |
+| 首批意图 | `talk_to`（转向并打开对话）、`gather`（args.count/item，高亮并自动采集最近玛草丛）、`buy_item`（args.item/price → 走 circe_buy 分支）、`other`（反问，不猜） |
+| 兜底 | 代理不可用时前端关键词匹配：采/草→gather、买→buy_item、路/预言/冥界→talk_to，其余→other |
+| 校验 | 动作落地前过本地状态（德拉克马/背包/旗标）——对齐根 README"参数落地前必须服务端校验" |
+| 体验 | >300ms 显示"喀耳刻正在思索…"；低置信反问："说清楚些,外乡人。" |
+| 配置 | URL 参数 `?intent=mock|teleai|local` > localStorage > 默认 mock；vite dev 代理 `/intent` → 8731 |
+
+---
+
+## §12 路线图（P7 之后的版本切分）
+
+| 版本 | 内容 | 对应 |
+|---|---|---|
+| **V1.0 = P7** | 可玩切片：世界+角色+三交互+意图 | 本文档 P0–P7 |
+| V1.1 | 氛围包：音频三件套、胶片颗粒、草卡 alpha 贴图、天水缝消除 | P7 遗留打磨项 |
+| V1.2 | 第二章入口：小船交互 → 黑屏过场"渡冥河" → 冥界灰盒；喀耳刻日程（绕坩埚踱步） | odyssey-story 第二章 + PLAN.md |
+| V1.3 | 岛屿管线化：每岛 = PIPELINE.md A1 + HANDOFF 副本（斯库拉海峡 / 太阳岛 / 奥吉吉亚）；Xing 记忆流接给喀耳刻（她记得你上一轮的言行） | 根 PLAN.md P1/P2 |
+| 远期 | itch.io（itch-publish skill）、EN/日化、存档 | 根 PLAN.md P4 |

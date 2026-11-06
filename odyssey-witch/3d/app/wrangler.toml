@@ -1,0 +1,6 @@
+# Cloudflare Pages 配置(HANDOFF.md §8)
+# 站点: https://aeaea-3d.pages.dev
+# 发布: npm run deploy  (= vite build && wrangler pages deploy)
+name = "aeaea-3d"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-11-01"
