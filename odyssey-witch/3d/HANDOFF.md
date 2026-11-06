@@ -10,7 +10,7 @@
 | 阶段 | 名称 | 状态 | 产出位置 |
 |---|---|---|---|
 | P0 | 应用骨架 | ✅ 已完成 | `3d/app/`（可 `npm run dev`） |
-| P1 | 程序化世界（岛/海/天/光） | ⬜ 未开始 | `app/src/world.js` 等 |
+| P1 | 程序化世界（岛/海/天/光） | ✅ 已完成 | `app/src/world.js`、`noise.js`，截图 `tools/shots/p1-persp.png` |
 | P2 | 资产生产（参考图/Tripo/清理） | ⬜ 未开始 | `app/public/assets/` + `assets.manifest.json` |
 | P3 | 场景组装与盲评 | ⬜ 未开始 | `app/src/scene-setup.js` + `tools/shots/` |
 | P4 | 角色与控制 | ⬜ 未开始 | `app/src/character.js` |
@@ -198,6 +198,9 @@ odyssey-witch/3d/
 **验收命令**：`npm run build` 通过；dev 打开后 HUD 显示 tris ≤ 60k（此时无资产）、fps ≥ 60（集成显卡）；截图 `tools/shots/p1-persp.png` 目检：光源左上、金逆光、近岸浅外海深、草地非纯色。
 **风险**：shader 首次写容易裁剪穿帮 → 海面与岛体相交处用"岛缘下沉裙边"（岛体边缘向下延伸 -2m）兜住。
 **本阶段无 👤 用户动作。**
+- 实测记录（2026-11-07）：构建 ✓（505.97 KB / gzip 129 KB）；浏览器实测 @1280×720：**fps 108 | tris 44.0k | calls 5**，全部在预算内；验收截图 `tools/shots/p1-persp.png`（天际暖金、近岸浅→外海深、泡沫带、两档绿草卡均成立）。
+- **踩坑记录（重要，后续阶段写 shader 前必读）**：three.js 自定义 ShaderMaterial 手写 `gl_FragColor` **不会**自动做线性→sRGB 输出转换，颜色会按线性原样显示（暖灰变暗红、整体发暗）。必须在 fragment 末尾手动 `#include <colorspace_fragment>`（fog 混合之后）。world.js 的水/天两个 shader 已带此 include，照抄。
+- 遗留打磨（记入 P7，不阻塞后续）：① 草卡近看有"芯片感"，P7 可换 alpha 贴图或降低尺寸；② 天水交界缝已软化但仍可见；③ 火堆粒子加色后偏白，可调 opacity/size。
 
 ### P2 · 资产生产（与 P1 并行；唯一需要用户参与的阶段）
 

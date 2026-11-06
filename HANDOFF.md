@@ -1,6 +1,6 @@
 # HANDOFF — xing4-npc-eval 跨会话交接
 
-> **更新**: 2026-11-07（上传 GitHub 时修订） ｜ **用法**: 新会话第一句说"先读HANDOFF.md" ｜ 总计划看 `PLAN.md`，评测细节看 `README.md`，剧情看 `odyssey-witch/odyssey-story.md`
+> **更新**: 2026-11-07（上传 GitHub 时修订） ｜ **用法**: 新会话第一句说"先读HANDOFF.md" ｜ 总计划看 `PLAN.md`，**产品定位/路线图/成本账看 `PRODUCT.md`**，评测细节看 `README.md`，剧情看 `odyssey-witch/odyssey-story.md`
 > **仓库**: https://github.com/LiliLIN0324/odyssey-ai-npc （public）｜ 3D 线总控账本：`odyssey-witch/3d/HANDOFF.md`
 
 **项目一句话**：为《奥德赛》主题开放世界 AI NPC 游戏打地基——先用 213 条用例量化 Xing4.0-29B-Intent 的意图/填参/误触发能力，再用它 + 通用大模型搭出双层大脑的灰盒原型（女巫喀耳刻）。架构 = 大模型负责"想"，XingIntent 把"想"变成引擎能执行的 `{category, args}` JSON。
@@ -93,6 +93,7 @@ Top 混淆对：**查询附近目标→查询地点信息(6次)**、闲聊→其
 
 ```
 PLAN.md                  总计划：四层决策栈 T0-T3、P0-P4 阶段、风险清单
+PRODUCT.md               产品计划：北极星/画像/竞品/版本路线图（带判据）/成本 token 账/GTM/合规/风险登记册/待拍板决策点
 README.md                评测套件文档（指标定义、分组、调优顺序）
 schema.json / cases.jsonl / eval.py / fake_server.py
 schema-island-generic.json   通用岛基线（未实跑）
