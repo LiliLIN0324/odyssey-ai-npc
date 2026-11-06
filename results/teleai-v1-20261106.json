@@ -1,0 +1,153 @@
+{
+ "_meta": {
+  "note": "v1 schema 首轮实跑（调优前基线）",
+  "schema": "schema v1（备份 .temp/schema-v1-backup.json）",
+  "date": "2026-11-06"
+ },
+ "summary": {
+  "total": 213,
+  "category_accuracy": 0.77,
+  "args_f1": 0.8711,
+  "fully_correct_rate": 0.6385,
+  "false_trigger_rate": 0.3913,
+  "fallback_case_count": 23,
+  "latency_ms": {
+   "p50": 857.4,
+   "p90": 1064.2,
+   "p99": 1346.0,
+   "mean": 862.5,
+   "max": 1365.1
+  },
+  "by_group": {
+   "boundary": {
+    "n": 22,
+    "category_acc": 0.9091,
+    "args_f1": 0.9697,
+    "fully_correct": 0.8182
+   },
+   "chitchat": {
+    "n": 14,
+    "category_acc": 0.5714,
+    "args_f1": 0.7857,
+    "fully_correct": 0.5714
+   },
+   "clear": {
+    "n": 64,
+    "category_acc": 1.0,
+    "args_f1": 0.9266,
+    "fully_correct": 0.7969
+   },
+   "confuse": {
+    "n": 24,
+    "category_acc": 0.5,
+    "args_f1": 0.6111,
+    "fully_correct": 0.2083
+   },
+   "hostile": {
+    "n": 8,
+    "category_acc": 0.875,
+    "args_f1": 1.0,
+    "fully_correct": 0.875
+   },
+   "multi": {
+    "n": 13,
+    "category_acc": 0.5385,
+    "args_f1": 0.6731,
+    "fully_correct": 0.3846
+   },
+   "multiturn": {
+    "n": 12,
+    "category_acc": 0.6667,
+    "args_f1": 0.8611,
+    "fully_correct": 0.5
+   },
+   "negative": {
+    "n": 12,
+    "category_acc": 0.8333,
+    "args_f1": 1.0,
+    "fully_correct": 0.8333
+   },
+   "oov": {
+    "n": 14,
+    "category_acc": 0.7857,
+    "args_f1": 0.869,
+    "fully_correct": 0.6429
+   },
+   "slot_missing": {
+    "n": 18,
+    "category_acc": 0.6667,
+    "args_f1": 1.0,
+    "fully_correct": 0.6667
+   },
+   "state_set": {
+    "n": 12,
+    "category_acc": 0.4167,
+    "args_f1": 0.8333,
+    "fully_correct": 0.4167
+   }
+  },
+  "top_confusions": [
+   [
+    "查询附近目标 -> 查询地点信息",
+    6
+   ],
+   [
+    "闲聊 -> 其他意图",
+    3
+   ],
+   [
+    "其他意图 -> 使用消耗品",
+    3
+   ],
+   [
+    "导航到地点 -> 查询地点信息",
+    2
+   ],
+   [
+    "闲聊 -> 查询地点信息",
+    2
+   ],
+   [
+    "其他意图 -> 船只操作",
+    2
+   ],
+   [
+    "查询背包 -> 查询库存",
+    2
+   ],
+   [
+    "其他意图 -> 装备物品",
+    1
+   ],
+   [
+    "告别 -> 闲聊",
+    1
+   ],
+   [
+    "告别 -> 船只操作",
+    1
+   ],
+   [
+    "闲聊 -> 查询神谕",
+    1
+   ],
+   [
+    "请求帮助 -> 导航到地点",
+    1
+   ],
+   [
+    "闲聊 -> 查询任务线索",
+    1
+   ],
+   [
+    "查询生物情报 -> 查询地点信息",
+    1
+   ],
+   [
+    "闲聊 -> 查询生物情报",
+    1
+   ]
+  ],
+  "wall_seconds": 43.89
+ }
+}

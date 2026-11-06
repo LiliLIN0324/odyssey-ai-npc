@@ -1,0 +1,153 @@
+{
+ "_meta": {
+  "note": "schema v2 补丁后复测（.temp/schema_v2_patch.py）",
+  "schema": "schema v2",
+  "date": "2026-11-07"
+ },
+ "summary": {
+  "total": 213,
+  "category_accuracy": 0.9249,
+  "args_f1": 0.8977,
+  "fully_correct_rate": 0.77,
+  "false_trigger_rate": 0.1304,
+  "fallback_case_count": 23,
+  "latency_ms": {
+   "p50": 1164.4,
+   "p90": 2400.9,
+   "p99": 5178.9,
+   "mean": 1444.8,
+   "max": 8925.0
+  },
+  "by_group": {
+   "boundary": {
+    "n": 22,
+    "category_acc": 1.0,
+    "args_f1": 0.9242,
+    "fully_correct": 0.8636
+   },
+   "chitchat": {
+    "n": 14,
+    "category_acc": 1.0,
+    "args_f1": 0.5714,
+    "fully_correct": 0.5714
+   },
+   "clear": {
+    "n": 64,
+    "category_acc": 1.0,
+    "args_f1": 0.937,
+    "fully_correct": 0.8281
+   },
+   "confuse": {
+    "n": 24,
+    "category_acc": 0.9583,
+    "args_f1": 0.8056,
+    "fully_correct": 0.5833
+   },
+   "hostile": {
+    "n": 8,
+    "category_acc": 1.0,
+    "args_f1": 1.0,
+    "fully_correct": 1.0
+   },
+   "multi": {
+    "n": 13,
+    "category_acc": 0.6154,
+    "args_f1": 0.7885,
+    "fully_correct": 0.4615
+   },
+   "multiturn": {
+    "n": 12,
+    "category_acc": 0.75,
+    "args_f1": 0.8056,
+    "fully_correct": 0.6667
+   },
+   "negative": {
+    "n": 12,
+    "category_acc": 0.9167,
+    "args_f1": 1.0,
+    "fully_correct": 0.9167
+   },
+   "oov": {
+    "n": 14,
+    "category_acc": 0.8571,
+    "args_f1": 0.9762,
+    "fully_correct": 0.7857
+   },
+   "slot_missing": {
+    "n": 18,
+    "category_acc": 0.7778,
+    "args_f1": 1.0,
+    "fully_correct": 0.7778
+   },
+   "state_set": {
+    "n": 12,
+    "category_acc": 1.0,
+    "args_f1": 1.0,
+    "fully_correct": 1.0
+   }
+  },
+  "top_confusions": [
+   [
+    "导航到地点 -> 查询地点信息",
+    1
+   ],
+   [
+    "闲聊 -> 查询附近目标",
+    1
+   ],
+   [
+    "购买物品 -> 闲聊",
+    1
+   ],
+   [
+    "导航到地点 -> 查询附近目标",
+    1
+   ],
+   [
+    "查询附近目标/购买物品 -> 购买物品",
+    1
+   ],
+   [
+    "导航到地点/购买物品 -> 购买物品",
+    1
+   ],
+   [
+    "接取任务/查询任务线索 -> 接取任务",
+    1
+   ],
+   [
+    "告别/提交任务 -> 告别",
+    1
+   ],
+   [
+    "导航到地点/查询附近目标 -> 导航到地点",
+    1
+   ],
+   [
+    "其他意图 -> 闲聊",
+    1
+   ],
+   [
+    "其他意图 -> ",
+    1
+   ],
+   [
+    "其他意图 -> 使用消耗品",
+    1
+   ],
+   [
+    "装备物品 -> 其他意图",
+    1
+   ],
+   [
+    "丢弃物品 -> 其他意图",
+    1
+   ],
+   [
+    "给予物品 -> 其他意图",
+    1
+   ]
+  ],
+  "wall_seconds": 78.68
+ }
+}

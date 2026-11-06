@@ -1,0 +1,149 @@
+{
+ "_meta": {
+  "note": "schema v2.1 补丁后复测（.temp/schema_v21_patch.py）；该 schema 即当前已提交的 schema.json",
+  "schema": "schema v2.1（当前）",
+  "date": "2026-11-07"
+ },
+ "summary": {
+  "total": 213,
+  "category_accuracy": 0.9296,
+  "args_f1": 0.92,
+  "fully_correct_rate": 0.7981,
+  "false_trigger_rate": 0.0435,
+  "fallback_case_count": 23,
+  "latency_ms": {
+   "p50": 1168.6,
+   "p90": 1755.6,
+   "p99": 2836.1,
+   "mean": 1334.2,
+   "max": 11988.1
+  },
+  "by_group": {
+   "boundary": {
+    "n": 22,
+    "category_acc": 0.9545,
+    "args_f1": 0.9697,
+    "fully_correct": 0.8636
+   },
+   "chitchat": {
+    "n": 14,
+    "category_acc": 1.0,
+    "args_f1": 0.7857,
+    "fully_correct": 0.7857
+   },
+   "clear": {
+    "n": 64,
+    "category_acc": 1.0,
+    "args_f1": 0.9526,
+    "fully_correct": 0.8594
+   },
+   "confuse": {
+    "n": 24,
+    "category_acc": 0.9167,
+    "args_f1": 0.75,
+    "fully_correct": 0.5
+   },
+   "hostile": {
+    "n": 8,
+    "category_acc": 1.0,
+    "args_f1": 1.0,
+    "fully_correct": 1.0
+   },
+   "multi": {
+    "n": 13,
+    "category_acc": 0.5385,
+    "args_f1": 0.7949,
+    "fully_correct": 0.3846
+   },
+   "multiturn": {
+    "n": 12,
+    "category_acc": 0.75,
+    "args_f1": 0.8889,
+    "fully_correct": 0.6667
+   },
+   "negative": {
+    "n": 12,
+    "category_acc": 1.0,
+    "args_f1": 1.0,
+    "fully_correct": 1.0
+   },
+   "oov": {
+    "n": 14,
+    "category_acc": 0.9286,
+    "args_f1": 0.9762,
+    "fully_correct": 0.8571
+   },
+   "slot_missing": {
+    "n": 18,
+    "category_acc": 0.8889,
+    "args_f1": 1.0,
+    "fully_correct": 0.8889
+   },
+   "state_set": {
+    "n": 12,
+    "category_acc": 1.0,
+    "args_f1": 1.0,
+    "fully_correct": 1.0
+   }
+  },
+  "top_confusions": [
+   [
+    "导航到地点 -> 查询地点信息",
+    2
+   ],
+   [
+    "查询附近目标 -> 查询地点信息",
+    1
+   ],
+   [
+    "闲聊 -> 查询附近目标",
+    1
+   ],
+   [
+    "购买物品 -> 闲聊",
+    1
+   ],
+   [
+    "闲聊 -> 其他意图",
+    1
+   ],
+   [
+    "查询附近目标/购买物品 -> 购买物品",
+    1
+   ],
+   [
+    "导航到地点/购买物品 -> 购买物品",
+    1
+   ],
+   [
+    "接取任务/查询任务线索 -> 接取任务",
+    1
+   ],
+   [
+    "告别/提交任务 -> 告别",
+    1
+   ],
+   [
+    "导航到地点/查询附近目标 -> 导航到地点",
+    1
+   ],
+   [
+    "获取物资/营地准备 -> 使用消耗品/营地准备",
+    1
+   ],
+   [
+    "其他意图 -> 使用消耗品",
+    1
+   ],
+   [
+    "接取任务 -> 其他意图",
+    1
+   ],
+   [
+    "给予物品 -> 其他意图",
+    1
+   ]
+  ],
+  "wall_seconds": 73.59
+ }
+}
