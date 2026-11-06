@@ -1,0 +1,161 @@
+{
+ "_meta": {
+  "note": "schema v2.2 补丁（.temp/schema_v22_patch.py，8 处描述补强）后全量复测，429 已补跑。hades_oov 50%→85.7%，仍低于基线-5pp 判据线（87.9%）2.2pp，v0.2.0 不打 tag。延迟 P50 866ms 与同日 v2.1 复测 879ms 持平（加长代价可忽略；较前日 1169ms 的下降为时段波动）",
+  "schema": "schema v2.2（当前 schema.json）",
+  "date": "2026-11-07",
+  "cases_total": 227,
+  "gate": "冥界 OOV 判据 RED：85.7% < 87.9%（oov 基线 92.9% - 5pp）"
+ },
+ "summary": {
+  "total": 227,
+  "category_accuracy": 0.9207,
+  "args_f1": 0.9158,
+  "fully_correct_rate": 0.7974,
+  "false_trigger_rate": 0.0385,
+  "fallback_case_count": 26,
+  "latency_ms": {
+   "p50": 866.1,
+   "p90": 1079.8,
+   "p99": 1373.6,
+   "mean": 862.8,
+   "max": 1468.4
+  },
+  "by_group": {
+   "boundary": {
+    "n": 22,
+    "category_acc": 0.9091,
+    "args_f1": 0.9697,
+    "fully_correct": 0.8182
+   },
+   "chitchat": {
+    "n": 14,
+    "category_acc": 1.0,
+    "args_f1": 0.7857,
+    "fully_correct": 0.7857
+   },
+   "clear": {
+    "n": 64,
+    "category_acc": 1.0,
+    "args_f1": 0.9448,
+    "fully_correct": 0.8438
+   },
+   "confuse": {
+    "n": 24,
+    "category_acc": 0.9167,
+    "args_f1": 0.7778,
+    "fully_correct": 0.5833
+   },
+   "hades_oov": {
+    "n": 14,
+    "category_acc": 0.8571,
+    "args_f1": 0.9286,
+    "fully_correct": 0.8571
+   },
+   "hostile": {
+    "n": 8,
+    "category_acc": 1.0,
+    "args_f1": 1.0,
+    "fully_correct": 1.0
+   },
+   "multi": {
+    "n": 13,
+    "category_acc": 0.5385,
+    "args_f1": 0.6987,
+    "fully_correct": 0.3077
+   },
+   "multiturn": {
+    "n": 12,
+    "category_acc": 0.75,
+    "args_f1": 0.8889,
+    "fully_correct": 0.6667
+   },
+   "negative": {
+    "n": 12,
+    "category_acc": 1.0,
+    "args_f1": 1.0,
+    "fully_correct": 1.0
+   },
+   "oov": {
+    "n": 14,
+    "category_acc": 0.9286,
+    "args_f1": 0.9762,
+    "fully_correct": 0.8571
+   },
+   "slot_missing": {
+    "n": 18,
+    "category_acc": 0.8889,
+    "args_f1": 1.0,
+    "fully_correct": 0.8889
+   },
+   "state_set": {
+    "n": 12,
+    "category_acc": 1.0,
+    "args_f1": 1.0,
+    "fully_correct": 1.0
+   }
+  },
+  "top_confusions": [
+   [
+    "查询附近目标 -> 查询地点信息",
+    2
+   ],
+   [
+    "使用消耗品 -> 其他意图",
+    1
+   ],
+   [
+    "导航到地点 -> 查询地点信息",
+    1
+   ],
+   [
+    "查询地点信息 -> 查询生物情报",
+    1
+   ],
+   [
+    "请求帮助 -> 导航到地点",
+    1
+   ],
+   [
+    "闲聊 -> 查询附近目标",
+    1
+   ],
+   [
+    "购买物品 -> 闲聊",
+    1
+   ],
+   [
+    "闲聊 -> 其他意图",
+    1
+   ],
+   [
+    "导航到地点/购买物品 -> 购买物品",
+    1
+   ],
+   [
+    "接取任务/查询任务线索 -> 接取任务",
+    1
+   ],
+   [
+    "卖出物品/查询附近目标 -> 卖出物品",
+    1
+   ],
+   [
+    "告别/提交任务 -> 告别",
+    1
+   ],
+   [
+    "导航到地点/查询附近目标 -> 导航到地点",
+    1
+   ],
+   [
+    "获取物资/营地准备 -> 使用消耗品/营地准备",
+    1
+   ],
+   [
+    "其他意图 -> 使用消耗品",
+    1
+   ]
+  ],
+  "wall_seconds": 65.16
+ }
+}

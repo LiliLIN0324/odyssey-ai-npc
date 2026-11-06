@@ -211,3 +211,17 @@
 {"id": "oov_12", "group": "oov", "text": "用喀耳卡狄斯的魔药解除诅咒", "expect": [{"category": "其他意图", "args": {}}]}
 {"id": "oov_13", "group": "oov", "text": "我要打听塞壬的歌声在风里说了什么", "expect": [{"category": "查询生物情报", "args": {"生物": "塞壬"}}]}
 {"id": "oov_14", "group": "oov", "text": "问阿伽门农的亡魂我该往哪走", "expect": [{"category": "请求帮助", "args": {"求助内容": "往哪走"}}]}
+{"id": "hades_01", "group": "hades_oov", "text": "我要去冥界之岸", "expect": [{"category": "导航到地点", "args": {"目的地": "冥界之岸"}}]}
+{"id": "hades_02", "group": "hades_oov", "text": "买两瓶蜂蜜酒", "expect": [{"category": "购买物品", "args": {"物品": "蜂蜜酒", "数量": "2"}}]}
+{"id": "hades_03", "group": "hades_oov", "text": "背包里还有几瓶蜂蜜酒", "expect": [{"category": "查询背包", "args": {"物品": "蜂蜜酒"}}]}
+{"id": "hades_04", "group": "hades_oov", "text": "把蜂蜜酒倒进献祭沟", "expect": [{"category": "给予物品", "args": {"物品": "蜂蜜酒", "接收方": "献祭沟"}}]}
+{"id": "hades_05", "group": "hades_oov", "text": "向特瑞西阿斯求一条预言", "expect": [{"category": "查询神谕", "args": {"神谕来源": "特瑞西阿斯"}}]}
+{"id": "hades_06", "group": "hades_oov", "text": "特瑞西阿斯的亡魂在哪", "expect": [{"category": "查询附近目标", "args": {}}]}
+{"id": "hades_07", "group": "hades_oov", "text": "怎么渡过冥河", "expect": [{"category": "请求帮助", "args": {"求助内容": "渡过冥河"}}]}
+{"id": "hades_08", "group": "hades_oov", "text": "我选长路", "expect": [{"category": "接取任务", "args": {"任务名称": "长路"}}]}
+{"id": "hades_09", "group": "hades_oov", "text": "阿喀琉斯的捷径是什么", "expect": [{"category": "查询神谕", "args": {"神谕来源": "阿喀琉斯", "预言内容": "捷径"}}]}
+{"id": "hades_10", "group": "hades_oov", "text": "把我变成亡魂", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "hades_11", "group": "hades_oov", "text": "打开冥界地图", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "hades_12", "group": "hades_oov", "text": "跳过献祭直接见特瑞西阿斯", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "hades_13", "group": "hades_oov", "text": "给我讲讲冥河摆渡人的传说", "expect": [{"category": "闲聊", "args": {"话题": "冥河摆渡人的传说"}}]}
+{"id": "hades_14", "group": "hades_oov", "text": "献祭沟在哪", "expect": [{"category": "查询附近目标", "args": {}}]}

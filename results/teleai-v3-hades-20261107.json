@@ -1,0 +1,161 @@
+{
+ "_meta": {
+  "note": "第二章冥界词表 OOV 回归首跑：cases.jsonl 扩到 227 条（新增 hades_oov 组 14 条，其中 hades_14 期望值在跑后修正并留痕），schema 未动（v2.1）。429 失败已单并发补跑修复。hades_oov 类别 50%，触发 schema v2.2 补丁",
+  "schema": "schema v2.1（未改）",
+  "date": "2026-11-07",
+  "cases_total": 227,
+  "new_group": "hades_oov n=14"
+ },
+ "summary": {
+  "total": 227,
+  "category_accuracy": 0.9075,
+  "args_f1": 0.9004,
+  "fully_correct_rate": 0.7753,
+  "false_trigger_rate": 0.0769,
+  "fallback_case_count": 26,
+  "latency_ms": {
+   "p50": 879.3,
+   "p90": 1133.5,
+   "p99": 1483.2,
+   "mean": 896.2,
+   "max": 1529.9
+  },
+  "by_group": {
+   "boundary": {
+    "n": 22,
+    "category_acc": 0.9545,
+    "args_f1": 0.9697,
+    "fully_correct": 0.8636
+   },
+   "chitchat": {
+    "n": 14,
+    "category_acc": 1.0,
+    "args_f1": 0.7857,
+    "fully_correct": 0.7857
+   },
+   "clear": {
+    "n": 64,
+    "category_acc": 1.0,
+    "args_f1": 0.9526,
+    "fully_correct": 0.8594
+   },
+   "confuse": {
+    "n": 24,
+    "category_acc": 0.9167,
+    "args_f1": 0.75,
+    "fully_correct": 0.5
+   },
+   "hades_oov": {
+    "n": 14,
+    "category_acc": 0.5,
+    "args_f1": 0.6429,
+    "fully_correct": 0.5
+   },
+   "hostile": {
+    "n": 8,
+    "category_acc": 1.0,
+    "args_f1": 1.0,
+    "fully_correct": 1.0
+   },
+   "multi": {
+    "n": 13,
+    "category_acc": 0.6154,
+    "args_f1": 0.75,
+    "fully_correct": 0.3077
+   },
+   "multiturn": {
+    "n": 12,
+    "category_acc": 0.75,
+    "args_f1": 0.8889,
+    "fully_correct": 0.6667
+   },
+   "negative": {
+    "n": 12,
+    "category_acc": 1.0,
+    "args_f1": 1.0,
+    "fully_correct": 1.0
+   },
+   "oov": {
+    "n": 14,
+    "category_acc": 0.9286,
+    "args_f1": 0.9762,
+    "fully_correct": 0.8571
+   },
+   "slot_missing": {
+    "n": 18,
+    "category_acc": 0.8889,
+    "args_f1": 1.0,
+    "fully_correct": 0.8889
+   },
+   "state_set": {
+    "n": 12,
+    "category_acc": 1.0,
+    "args_f1": 1.0,
+    "fully_correct": 1.0
+   }
+  },
+  "top_confusions": [
+   [
+    "导航到地点 -> 查询地点信息",
+    2
+   ],
+   [
+    "给予物品 -> 其他意图",
+    2
+   ],
+   [
+    "接取任务 -> 其他意图",
+    2
+   ],
+   [
+    "查询附近目标 -> 查询地点信息",
+    1
+   ],
+   [
+    "查询附近目标 -> 查询生物情报",
+    1
+   ],
+   [
+    "查询神谕 -> 查询地点信息",
+    1
+   ],
+   [
+    "其他意图 -> 查询神谕",
+    1
+   ],
+   [
+    "闲聊 -> 查询地点信息",
+    1
+   ],
+   [
+    "导航到地点 -> 查询生物情报",
+    1
+   ],
+   [
+    "闲聊 -> 查询附近目标",
+    1
+   ],
+   [
+    "购买物品 -> 闲聊",
+    1
+   ],
+   [
+    "闲聊 -> 其他意图",
+    1
+   ],
+   [
+    "查询附近目标/购买物品 -> 购买物品",
+    1
+   ],
+   [
+    "导航到地点/购买物品 -> 购买物品",
+    1
+   ],
+   [
+    "接取任务/查询任务线索 -> 接取任务",
+    1
+   ]
+  ],
+  "wall_seconds": 49.46
+ }
+}

@@ -1,0 +1,160 @@
+{
+ "_meta": {
+  "note": "schema-island-generic.json 基线对照：同 227 条用例换通用岛 schema（29 类、无查询神谕、通用词表），分差归因 OOV。注意：神谕类用例在通用岛 schema 下无可匹配类别，天然计错，分差含此结构性成分",
+  "schema": "schema-island-generic（对照）",
+  "date": "2026-11-07",
+  "cases_total": 227
+ },
+ "summary": {
+  "total": 227,
+  "category_accuracy": 0.6872,
+  "args_f1": 0.8218,
+  "fully_correct_rate": 0.6211,
+  "false_trigger_rate": 0.3077,
+  "fallback_case_count": 26,
+  "latency_ms": {
+   "p50": 707.4,
+   "p90": 950.9,
+   "p99": 1263.9,
+   "mean": 731.0,
+   "max": 1304.0
+  },
+  "by_group": {
+   "boundary": {
+    "n": 22,
+    "category_acc": 0.8636,
+    "args_f1": 0.9545,
+    "fully_correct": 0.7273
+   },
+   "chitchat": {
+    "n": 14,
+    "category_acc": 0.4286,
+    "args_f1": 0.6429,
+    "fully_correct": 0.4286
+   },
+   "clear": {
+    "n": 64,
+    "category_acc": 0.9219,
+    "args_f1": 0.9057,
+    "fully_correct": 0.8281
+   },
+   "confuse": {
+    "n": 24,
+    "category_acc": 0.4167,
+    "args_f1": 0.4792,
+    "fully_correct": 0.375
+   },
+   "hades_oov": {
+    "n": 14,
+    "category_acc": 0.5,
+    "args_f1": 0.6429,
+    "fully_correct": 0.5
+   },
+   "hostile": {
+    "n": 8,
+    "category_acc": 0.75,
+    "args_f1": 1.0,
+    "fully_correct": 0.75
+   },
+   "multi": {
+    "n": 13,
+    "category_acc": 0.4615,
+    "args_f1": 0.6859,
+    "fully_correct": 0.2308
+   },
+   "multiturn": {
+    "n": 12,
+    "category_acc": 0.5833,
+    "args_f1": 0.8056,
+    "fully_correct": 0.5
+   },
+   "negative": {
+    "n": 12,
+    "category_acc": 0.8333,
+    "args_f1": 1.0,
+    "fully_correct": 0.8333
+   },
+   "oov": {
+    "n": 14,
+    "category_acc": 0.5714,
+    "args_f1": 0.8214,
+    "fully_correct": 0.5
+   },
+   "slot_missing": {
+    "n": 18,
+    "category_acc": 0.6667,
+    "args_f1": 1.0,
+    "fully_correct": 0.6667
+   },
+   "state_set": {
+    "n": 12,
+    "category_acc": 0.5,
+    "args_f1": 0.8333,
+    "fully_correct": 0.5
+   }
+  },
+  "top_confusions": [
+   [
+    "查询附近目标 -> 查询地点信息",
+    5
+   ],
+   [
+    "闲聊 -> 其他意图",
+    5
+   ],
+   [
+    "查询神谕 -> 其他意图",
+    3
+   ],
+   [
+    "查询神谕 -> 闲聊",
+    3
+   ],
+   [
+    "其他意图 -> 使用消耗品",
+    3
+   ],
+   [
+    "闲聊 -> 查询自身状态",
+    2
+   ],
+   [
+    "请求帮助 -> 导航到地点",
+    2
+   ],
+   [
+    "给予物品 -> 其他意图",
+    2
+   ],
+   [
+    "查询神谕 -> 查询任务线索",
+    2
+   ],
+   [
+    "查询生物情报 -> 查询附近目标",
+    2
+   ],
+   [
+    "查询生物情报 -> 查询环境状况",
+    2
+   ],
+   [
+    "导航到地点 -> 查询地点信息",
+    2
+   ],
+   [
+    "查询神谕 -> 查询地点信息",
+    2
+   ],
+   [
+    "接取任务 -> 其他意图",
+    2
+   ],
+   [
+    "其他意图 -> 船只操作",
+    2
+   ]
+  ],
+  "wall_seconds": 54.53
+ }
+}
