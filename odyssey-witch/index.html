@@ -1004,7 +1004,7 @@ const HSPOTS = [
 function hTile(cx,cy){ return (cx<0||cy<0||cx>=ACOLS||cy>=AROWS)?"~":HADES[cy][cx]; }
 
 /* ==================== 状态 ==================== */
-const SHOP = {"治疗草药":15,"玛草":8,"蜂蜜酒":12,"蜂蜜":6,"橄榄油":10,"铁剑":25};
+const SHOP = {"治疗草药":15,"玛草":8,"蜂蜜酒":12,"蜂蜜":6,"橄榄油":10,"铁剑":25,"金露":30};
 /* 武器攻击力修正层（rpg：装备走 modifier，基础属性才是真值） */
 const WEAPONS = {"铜矛":{atk:4},"铁剑":{atk:7}};
 let state = {
@@ -1106,6 +1106,7 @@ function ensureState(){
   if (state.xp===undefined) state.xp=0;
   if (state.level===undefined) state.level=1;
   if (state.affinity===undefined) state.affinity=10;
+  if (!Array.isArray(state.affUnlocked)) state.affUnlocked=[];
   if (state.clock===undefined) state.clock=9*60;
   if (!Array.isArray(state.memory)) state.memory=[];
   if (!state.quests) state.quests={};
@@ -1516,9 +1517,42 @@ function recallMemories(k, who){
     .sort((a,b)=>a.t-b.t).map(m=>m.text);
 }
 
-/* ==================== 好感度（dialogue-systems：关系变量影响台词分支） ==================== */
+/* ==================== 好感度（dialogue-systems：关系变量影响台词分支 + 里程碑解锁玩法） ==================== */
 function affinityTier(){ return state.affinity<30?"冷淡":state.affinity<60?"熟络":state.affinity<85?"信任":"托付"; }
-function addAffinity(n){ state.affinity = Math.max(0, Math.min(100, state.affinity + n)); }
+/* 好感里程碑 → 解锁专属奖励（rpg 关系玩法：刷好感有明确目标与回报，跨档公告+记忆） */
+const AFF_UNLOCKS = [
+  { at:60, name:"熟络",  reward:"解锁「蜂蜜酒」半价 + 她会多给你装一份", item:"蜂蜜酒",  memo:"喀耳刻对旅人熟络了——解锁了蜂蜜酒专属价与多装一份的心意" },
+  { at:85, name:"托付",  reward:"解锁「回家的路」托付情报 + 八折全货架", item:"金露",   memo:"喀耳刻对旅人托付了——愿意把回家的路、连同她压箱底的药，都交给旅人" },
+];
+function addAffinity(n){
+  const before = state.affinity;
+  state.affinity = Math.max(0, Math.min(100, state.affinity + n));
+  const now = state.affinity;
+  if (now > before) for (const u of AFF_UNLOCKS){
+    if (before < u.at && now >= u.at && !(state.affUnlocked||[]).includes(u.at)){
+      state.affUnlocked = [...(state.affUnlocked||[]), u.at];
+      sfx("bless"); feedback("medium");
+      toast(`💛 她对你的态度升到「${u.name}」：${u.reward}！`);
+      addMemory(u.memo, 4);
+      renderHUD(); save();
+    }
+  }
+}
+/* 好感库存展示：专属解锁项并入货架列表（只在已解锁时显示） */
+function affInventory(){
+  const items=[];
+  if (state.affinity>=60) items.push("蜂蜜酒");
+  if (state.affinity>=85) items.push("金露");
+  return items;
+}
+/* 好感进度：当前档 + 距下一里程碑还差多少（玩家刷好感的"目标感"） */
+function affinityProgress(){
+  const a=state.affinity;
+  const next = AFF_UNLOCKS.find(u=>a<u.at && !(state.affUnlocked||[]).includes(u.at));
+  const unlocked = (state.affUnlocked||[]).length;
+  if (!next) return affinityTier()+" · 已解锁全部专属（"+unlocked+"/"+AFF_UNLOCKS.length+"）";
+  return affinityTier()+" · 距「"+next.name+"」还差 "+Math.max(0,Math.ceil(next.at-a))+" 好感 · 已解锁 "+unlocked+"/"+AFF_UNLOCKS.length;
+}
 
 /* ==================== NPC 主动性（game-ai/utility：本地打分，零模型调用）
    玩家靠近且未对话时，NPC 按 时间/好感/任务/记忆 门控主动开口——权重优先 + 每句 90s 冷却防复读。
@@ -4663,6 +4697,7 @@ function handle(category, args){
   switch(category){
   case "购买物品":{
     const item=g("物品"); if(!item) return {text:PH[category]};
+    if (item==="金露" && state.affinity<85) return {text:"（她把手拢进袖口，没动）……金露是我压箱底的药，只给托付过的人。你的心意还没到那份上。"};
     if(!SHOP[item]) return {text:`（她扫了一眼货架）「${item}」我可不出售。货架上就那几样。`};
     const q=Math.max(1,toNum(g("数量"))), cost=shopPrice(item)*q;
     if(state.coins<cost) return {text:`（她瞥了瞥你的钱袋）${item} ${q} 份要 ${cost} 枚德拉克马——你还差 ${cost-state.coins} 枚。`};
@@ -4688,7 +4723,8 @@ function handle(category, args){
   case "查询库存":{
     const item=g("物品");
     if(item) return SHOP[item]?{text:`${item}有货，一枚 ${shopPrice(item)} 德拉克马。`}:{text:`${item}？没听过，不卖。`};
-    return {text:"（她朝货架抬了抬下巴）"+Object.keys(SHOP).map(k=>`${k} ${shopPrice(k)}枚`).join("、")+"。"};
+    const extra = affInventory().length ? "（另有 " + affInventory().map(k=>`${k} ${shopPrice(k)}枚`).join("、") + " 只对"+affinityTier()+"的人开。）" : "";
+    return {text:"（她朝货架抬了抬下巴）"+Object.keys(SHOP).filter(k=>k!=="金露"||state.affinity>=85).map(k=>`${k} ${shopPrice(k)}枚`).join("、")+extra+"。"};
   }
   case "查询背包":{
     const item=g("物品");
@@ -4730,6 +4766,7 @@ function handle(category, args){
     if(item==="治疗草药"){state.status["伤势"]="无";fx="（药力渗进伤口，刺痛褪去——伤势痊愈了。）";}
     else if(item==="烤野猪肉"){state.status["伤势"]="无"; state.hp=Math.min(derived().maxHp,state.hp+40); fx="（油脂混着炭火气，伤势痊愈、血量 +40；肚子里也踏实了。）";}
     else if(item==="玛草"){state.status["士气"]="振奋";fx="（苦得舌根发麻，精神却一振。她憋着笑。）";}
+    else if(item==="金露"){state.hp=derived().maxHp; state.status["伤势"]="无"; state.hunger=Math.min(100,state.hunger+25); state.thirst=Math.min(100,state.thirst+25); fx="（一滴金露落在舌尖——暖流瞬间淌遍四肢百骸，伤势全消，浑身是劲。只有她托付的人，才有这份。）";}
     else if(f||dr){fx=f?"（下肚，肚子里踏实了。）":"（溪水般的凉意，口渴全消。）";}
     else {fx=`（${item}下肚，说不上好吃，但踏实了些。）`;}
     if (f){ state.hunger=Math.min(100,state.hunger+(f.h||0)); state.thirst=Math.min(100,state.thirst+(f.t||0)); }
@@ -5716,7 +5753,7 @@ function openDlg(npc){
   document.getElementById("dlgPortrait").style.backgroundImage = N.portrait ? `url('${N.portrait}')` : "";
   document.getElementById("dlgPortrait").classList.toggle("aeolusPortrait", !N.portrait);
   /* 重渲染历史消息与示例按钮（各 NPC 历史独立；历史回放用 instant 免打字机） */
-  document.getElementById("dlgSub").textContent = N.sub + (currentNPC==="witch" ? " · 关系："+affinityTier() : "");
+  document.getElementById("dlgSub").textContent = N.sub + (currentNPC==="witch" ? " · 关系："+affinityProgress() : "");
   const memCount = state.memory.filter(m=>m.who===currentNPC||m.who==="any").length;
   if (memCount) document.getElementById("dlgSub").textContent += ` · 记得你的 ${Math.min(memCount,40)} 件事`;
   document.getElementById("msgs").innerHTML = "";
