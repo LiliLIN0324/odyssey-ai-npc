@@ -1039,6 +1039,7 @@ let state = {
   sunDebt: null,         /* 借牛记录 {pledge}（以名字作保，判词留白） */
   slaughterWarn: false,  /* 宰牛二段确认（E 两次，防误触） */
   memGreeted: [],        /* 已用作开场问候的记忆 t 列表（memoryGreeting 去重） */
+  circeLeft: false,      /* 喀耳刻好感托付线：她留你过冬（原著留宿一年·生忒勒戈斯的前奏） */
   /* —— 第五章·奥吉吉亚（ogggia）—— */
   calypsoStage: 0,       /* 0 初见 1 第一天 2 第二天 3 问正题 4 已选择 */
   calypsoChoice: null,   /* "stay" 滞留 / "raft" 造筏 */
@@ -1127,6 +1128,7 @@ function ensureState(){
   if (state.sunDebt===undefined) state.sunDebt=null;
   if (state.slaughterWarn===undefined) state.slaughterWarn=false;
   if (!Array.isArray(state.memGreeted)) state.memGreeted=[];
+  if (state.circeLeft===undefined) state.circeLeft=false;
   /* 航程闭环字段：旧档补默认值 */
   if (state.prophecy===undefined) state.prophecy=null;
   if (state.sunStage===undefined) state.sunStage=null;
@@ -2189,6 +2191,7 @@ function showFinale(mode, way, name){
     if (way==="old") paras.push("相认的那一刻，你答了旧名——那个亡者替你记住的名字。它领你进门，像替别人开门。");
     else if (way==="sun" && name) paras.push(`相认时你说：「${name}。」——太阳记过的名字，王后也认。`);
     else if (way==="calypso" && name) paras.push(`相认时你说：「${name}。」——那是连永生都没能换走的名字。`);
+    else if (way==="circe") paras.push("相认时你说出了炉火旁的名字——埃阿亚岛留灯那夜的呼唤。它暖过你一整年，也留了一道血脉在极西的海岸上：岛上的孩子会问，父亲的海在哪边。");
     else if (way==="input" && name) paras.push(`相认时你说：「${name}。」——这名字不在任何族谱上。是你自己挣来的。`);
     else if (way==="none") paras.push("相认时你沉默了。无名者进了无名门——王后却认得这份沉默：她等的就是不靠名字的人。");
   }
@@ -2227,6 +2230,7 @@ function showNameCard(){
   if (state.prophecy) frags.push({way:"old", label:"那个亡者替你记住的旧名", tip:"答旧名——被亡者认领的名字"});
   if (state.sunName) frags.push({way:"sun", label:`「${state.sunName}」`, tip:"太阳记过的名字"});
   if (state.calypsoName) frags.push({way:"calypso", label:`「${state.calypsoName}」`, tip:"你在永生面前报过的名字"});
+  if (state.circeLeft) frags.push({way:"circe", label:"炉火旁的名字", tip:"你在埃阿亚岛留过冬——那夜她唤你的名，会一直暖到终章"});
   document.getElementById("ncFrags").innerHTML =
     frags.map((f,i)=>`<button class="ncFrag" data-i="${i}" title="${f.tip}">${f.label}</button>`).join("")+
     (frags.length?`<button class="ncFrag none">继续做无名旅人</button>`:`<button class="ncFrag none">继续做无名旅人</button>`);
@@ -2801,6 +2805,12 @@ function interact(){
     renderHUD(); save(); return;
   }
   if (s.type==="dock"){
+    /* 好感度门槛剧情（原著骨：喀耳刻留宿一年、生忒勒戈斯——好感≥85 托付时触发留宿线；不刷满也可直接走） */
+    if (state.affinity>=85 && !state.circeLeft){
+      state.circeLeft = true; renderHUD(); save();
+      showChapter("concept-art/02-女巫小屋.jpg","第 一 章 · 结 局","埃 阿 亚 岛 · 留 灯","她留你过冬","炉火一夜没熄。她按着你的手背，声音比平时软：「……留下。岛上的日子不算日子，我试过，不走冬夏。」\n你犹豫了一瞬——那个叫归乡的东西，在远处轻轻响了一下。\n（好感托付线达成：这段留宿，会记进你终章认名的答案里。）");
+      return;
+    }
     scene = "world";
     boat.x = 17*WTS+WTS/2+34; boat.y = 5*WTS+WTS+34;
     toast("你扬帆离开埃亚岛，回到地中海");
