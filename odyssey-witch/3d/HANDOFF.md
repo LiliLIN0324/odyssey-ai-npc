@@ -11,7 +11,7 @@
 |---|---|---|---|
 | P0 | 应用骨架 | ✅ 已完成 | `3d/app/`（可 `npm run dev`） |
 | PD | Cloudflare Pages 部署（提前执行，不等 P7） | ✅ 已完成 | **https://aeaea-3d.pages.dev** · `app/wrangler.toml` |
-| P1 | 程序化世界（岛/海/天/光） | ✅ 已完成 | `app/src/world.js`、`noise.js`，截图 `tools/shots/p1-persp.png` |
+| P1 | 程序化世界（岛/海/天/光） | ✅ 已完成 | `app/src/world.js`、`noise.js`（验收截图已佚，见 §4-P1 勘误；三项遗留打磨已清，见下方补账注） |
 | P2 | 资产生产（参考图/Tripo/清理） | ⬜ 未开始 | `app/public/assets/` + `assets.manifest.json` |
 | P3 | 场景组装与盲评 | ⬜ 未开始 | `app/src/scene-setup.js` + `tools/shots/` |
 | P4 | 角色与控制 | ⬜ 未开始 | `app/src/character.js` |
@@ -20,6 +20,8 @@
 | P7 | 打磨与发布 | ⬜ 未开始 | 后处理、音频、`app/dist/` |
 
 状态取值：⬜ 未开始 / 🔶 进行中（写明卡点）/ ✅ 完成（附验证输出摘要）/ ⏸ 阻塞（写明等谁）。
+
+> **P1 polish 补账（2026-11-07 晚）**：§4-P1 三项遗留打磨（草卡"芯片感"/天水交界缝/火粒堆白）已由独立 polish 批次全部修复，`app/public/ui/` 新增 favicon ×2；阶段状态不变（仍 ✅），代码证据与截图位置见 §4-P1。
 
 **交接三步**：① 读 §0 找阶段 → ② 读 §2 全局规约 + 该阶段详情 → ③ 完成后跑该阶段「验收命令」，全绿才允许勾选并更新本表。
 
@@ -201,7 +203,9 @@ odyssey-witch/3d/
 **本阶段无 👤 用户动作。**
 - 实测记录（2026-11-07）：构建 ✓（505.97 KB / gzip 129 KB）；浏览器实测 @1280×720：**fps 108 | tris 44.0k | calls 5**，全部在预算内；验收截图 `tools/shots/p1-persp.png`（天际暖金、近岸浅→外海深、泡沫带、两档绿草卡均成立）。
 - **踩坑记录（重要，后续阶段写 shader 前必读）**：three.js 自定义 ShaderMaterial 手写 `gl_FragColor` **不会**自动做线性→sRGB 输出转换，颜色会按线性原样显示（暖灰变暗红、整体发暗）。必须在 fragment 末尾手动 `#include <colorspace_fragment>`（fog 混合之后）。world.js 的水/天两个 shader 已带此 include，照抄。
-- 遗留打磨（记入 P7，不阻塞后续）：① 草卡近看有"芯片感"，P7 可换 alpha 贴图或降低尺寸；② 天水交界缝已软化但仍可见；③ 火堆粒子加色后偏白，可调 opacity/size。
+- 遗留打磨 → **已清（2026-11-07 傍晚 polish 批次，同日晚补账）**：① 草卡"芯片感"→收尖叶片（world.js:253）；② 天水交界缝→地平线基色取雾色本尊 `oceanMid`（world.js:212 `uHorizon` 与 :381 `FogExp2` 同源，:240 注释留痕）；③ 火粒 additive 堆白→顶点色渐变（world.js:330-333）。§12 V1.1 氛围包清单中的"天水缝消除"就此提前完成。
+- 另：`app/public/ui/` 新增 `favicon.png` + `favicon-32.png`（奥德赛徽章圆形裁切，程序生成）。polish 后截图在**仓库根 `shots/3d-polish.png`、`shots/3d-scene-polish.png`**（未按 §2.4 约定进 `tools/shots/`，先如实记录，后续会话归位或沿用）。
+- **账目勘误（2026-11-07 晚补账发现）**：本节验收截图 `tools/shots/p1-persp.png` 当前不在场（`tools/shots/` 仅存 pd-live.png，仓库根 shots/ 亦无）——P1 验收以上方实测记录（fps 108 | tris 44.0k | calls 5）为准，截图文件视为已佚；后续阶段截图请按 §2.4 前缀纪律归档。
 
 ### P2 · 资产生产（与 P1 并行；唯一需要用户参与的阶段）
 
@@ -463,3 +467,5 @@ export const DIALOGUE = {
 | V1.2 | 第二章入口：小船交互 → 黑屏过场"渡冥河" → 冥界灰盒；喀耳刻日程（绕坩埚踱步） | odyssey-story 第二章 + PLAN.md |
 | V1.3 | 岛屿管线化：每岛 = PIPELINE.md A1 + HANDOFF 副本（斯库拉海峡 / 太阳岛 / 奥吉吉亚）；Xing 记忆流接给喀耳刻（她记得你上一轮的言行） | 根 PLAN.md P1/P2 |
 | 远期 | itch.io（itch-publish skill）、EN/日化、存档 | 根 PLAN.md P4 |
+
+> AI生成

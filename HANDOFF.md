@@ -77,7 +77,7 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 - **PD ✅**：Cloudflare Pages 已上线 **https://aeaea-3d.pages.dev**（`npm run deploy` 直传；`wrangler.toml`/`_headers` 已配；回滚见 3d/HANDOFF §8.3）
 - **P1 ✅**：程序化世界全量落地——noise.js 种子噪声、岛体 fbm 顶点色、三档海色 + 金色光路 shader、天空穹顶暖光、黄昏金平行光、双档绿草卡、火堆粒子、debug HUD。实测 @1280×720：**fps 108 ｜ tris 44.0k ｜ calls 5**（预算内）；验收截图 `3d/tools/shots/p1-persp.png`。ShaderMaterial sRGB 踩坑见 §四-10
 - 待办：**P2 资产生产**（唯一需要用户动手的阶段：A1/A2 参考表 prompt 在 `PIPELINE.md` §2，生成后 Tripo 提交）；P3 组装前置 P2，但 P4 角色控制可用占位胶囊先行；`tools/clean_asset.py`、`tools/review_shots.py`（Blender 4.x）已就绪
-- **（11-07 傍晚未记账改动，待 3D 会话补账）**：3d/app/src/world.js 有 P1 遗留项 polish（①草叶"芯片感"→收尖叶片；②天水交界缝→地平线取雾色本尊；火粒 additive 堆白→顶点色渐变）+ favicon 进 3d app（`public/ui/`）+ 截图 `shots/3d-polish.png`/`3d-scene-polish.png`——**3d/HANDOFF.md 尚未更新**，阶段状态无变化（仍 P0/PD/P1 ✅），仅 polish 事实待其 ledger 记录
+- **（11-07 傍晚 polish，11-07 晚已补账）**：3d/app/src/world.js 有 P1 遗留项 polish（①草叶"芯片感"→收尖叶片；②天水交界缝→地平线取雾色本尊；火粒 additive 堆白→顶点色渐变）+ favicon 进 3d app（`public/ui/`）+ 截图 `shots/3d-polish.png`/`3d-scene-polish.png`——**3d/HANDOFF.md 已补账**（§0 补账注 + §4-P1 打磨清账与 p1-persp.png 佚失勘误），阶段状态无变化（仍 P0/PD/P1 ✅）
 
 ### 5. 第二章冥界（2D）实装 + 剧情圣经全章补全（11-07）
 - **第二章·冥界已实装**（并行会话完成，实机截图 `shots/hades-final.png`）：冥界之岸（俄刻阿诺斯之岸）+ 献祭沟（蜂蜜酒+面包+淡水，跨岛采买）+ 特瑞西阿斯二选一预言（`state.prophecy` flag，「查询神谕」意图）
@@ -193,6 +193,14 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 - **验收（8766 隔离源）**：W3D ready ✓ / 28 draw calls · 38.5k tris（预算内）/ 真实按键驾船（W 900ms 位移 -67px + face 转向）✓ / E 登陆埃亚岛 2D 场景+章节卡 ✓ / 女巫对话 ✓ / 出岛回 3D ✓ / M 海图 ✓ / 门控 toast ✓ / 控制台 0 error。视觉走查（视觉模型 3 轮）：帆船清晰可见、金光路可见、黑方块伪影已根治。截图 `shots/2d-world3d-final.png`。
 - **坑（新）**：①module 脚本 + server 精确路径匹配要剥查询串（`?v=N` 版本号 404）；②JS 缓存 max-age 过长会让"改完重载"看到旧版——**world3d 迭代期用 `?v=N` 击穿 + CDP clearBrowserCache**；③浮岛水下裙边会以方形暗面悬空露出——浮岛裙边改岩色并让云盘接住裙底；④半透明海水会让方形网格海底透出"黑方块"——海面改不透明。
 - index.html 现 **4237 行**；world3d.js 迭代版本号当前 `?v=7`。
+
+### 14. 独立增量批次：3D 账本补账 + 圣牛立绘 + 只读体检（11-07 晚，并行避让会话；零 index.html/server.py 改动）
+
+- **接手背景**：用户再提"按本地游戏 skills 补全视觉/玩法/agent"。核实 §一.10~12 特性在场（AMBIENT/QUEST_DEFS/GATES/showEnding/auditHandlers/memStrip/SAVE_VERSION 等命中 46 处）；同时段检测到 §一.13 批次在写（index.html mtime 18:59），按用户拍板"先做独立增量"避让，不碰 index.html/server.py。期间 §一.13 两笔提交落库（552a825/8daac79），工作区重归干净。
+- **3D 账本补账**：3d/HANDOFF.md §0 补 P1 polish 注 + §4-P1 三项遗留打磨清账（world.js:253/212+240/330 代码证据）+ `tools/shots/p1-persp.png` 佚失勘误（P1 验收以实测数字为准）；§一.4 括注同步闭账。
+- **圣牛立绘（视觉线）**：`concept-art/characters/10-圣牛.jpg`（1600×2400，赫利俄斯圣牛：乳白毛皮+金角+额间日轮印+青铜铃信物，黄昏逆光配方与既有 9 张一致）；ImageGen 生成 → 视觉模型 5 项验证通过 → 归档；odyssey-visual.md §八 已登记，标注 **index.html 接线待做**（PERSONA_CATTLE portrait 现为空，留给下一会话顺手接）。
+- **只读体检**：world3d 批次接线期快照（index.html 内联脚本 + world3d.js ESM）node --check 双绿（Node v24.18.0）；§一.13 终版另有其自带 8766 隔离源全链验收，不重复。另：8daac79（观感修复轮）暂未见 §一 记录，若该批次已收尾请其会话补账。
+- **未做**：本批次不 commit index.html/server.py（零改动）；v0.2.0 打 tag 留给按 §六 流程的专门会话。
 
 ---
 
