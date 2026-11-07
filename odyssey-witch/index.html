@@ -1485,6 +1485,17 @@ function addAffinity(n){ state.affinity = Math.max(0, Math.min(100, state.affini
    与 witchUtilityTick（行为层）互补：那里管"做什么"，这里管"说什么"。 ==================== */
 const AMBIENT = {
   witch: [
+    /* 玩家状态关怀层（dialogue-systems 关系变量驱动：NPC 感知你的饥饿/伤势/穷困/夜间，主动搭话） */
+    {id:"care_hunger",  w:1.1, cond:()=>state.hunger<=30,
+                   line:()=>`你脸色不对——${state.hunger<=15?"饿得站不直了":"胃里空空的"}。灶边有吃的，去取。`},
+    {id:"care_thirst",  w:1.1, cond:()=>state.thirst<=22,
+                   line:()=>`嘴唇都起皮了。后院井水甘甜——${state.thirst<=12?"别撑到天黑":"先去解渴"}。`},
+    {id:"care_hurt",    w:1.0, cond:()=>state.hp<=30&&state.hp>0,
+                   line:()=>"（她皱眉看你）伤成这样还乱跑？药草在架子上——自己拿，别客气。"},
+    {id:"care_broke",   w:0.6, cond:()=>state.coins<=2&&state.affinity>=50,
+                   line:()=>"（她往你手心塞了一枚银币）……先花着。饿着肚子上路，不算旅人。"},
+    {id:"care_night",   w:0.5, cond:()=>isNight()&&state.hp>40&&state.hunger>40&&state.thirst>40,
+                   line:()=>"（她扒拉着炉火）夜里野猪最凶。要躺就在屋里躺。"},
     {id:"ready",  w:1.0, cond:()=>{const q=getQuest("witch_grass"); return !!(q&&!q.done&&q.have>=q.need);},
                   line:()=>"（她朝你伸手）玛草齐了？拿来。"},
     {id:"quest",  w:0.9, cond:()=>{const q=getQuest("witch_grass"); return !!(q&&!q.done&&q.have<q.need);},
@@ -1498,9 +1509,13 @@ const AMBIENT = {
     {id:"sunlit", w:0.8, cond:()=>state.sunlit, line:()=>"晨光不错。今天的药比哪天都香。"},
     {id:"idle",   w:0.15, cond:()=>true, line:()=>"来了就进来，别杄在风口。"},
   ],
-  seer: [
+seer: [
+    {id:"care_hurt",  w:1.0, cond:()=>state.hp<=30&&state.hp>0,
+                   line:()=>"（他浑浊的眼转向你）你身上有血味。亡者的桥，不带伤走。"},
+    {id:"care_weak",  w:0.6, cond:()=>state.hunger<=25||state.thirst<=20,
+                   line:()=>"（他的杖在地上画了个圈）饿着、渴着的人，听得见两种声音。先喂饱自己。"},
     {id:"offer",  w:1.0, cond:()=>!state.offered,
-                  line:()=>"蜂蜜酒、面包、淡水——沟里的黑暗等着它的祭品。"},
+                   line:()=>"蜂蜜酒、面包、淡水——沟里的黑暗等着它的祭品。"},
     {id:"ask",    w:1.0, cond:()=>!!state.offered&&!state.prophecy,
                   line:()=>"（杖尖转向你）祭血入沟了。问吧——问你要走的路。"},
     {id:"long",   w:0.6, cond:()=>state.prophecy==="long",
@@ -1508,9 +1523,13 @@ const AMBIENT = {
     {id:"short",  w:0.6, cond:()=>state.prophecy==="short",
                   line:()=>"……选了捷径的人，影子先一步到了浪头。"},
   ],
-  aeolus: [
+aeolus: [
+    {id:"care_hurt",  w:0.9, cond:()=>state.hp<=35&&state.hp>0,
+                   line:()=>"（风掀起你衣角的血渍）伤口的盐，风最懂。找处净水洗洗。"},
+    {id:"care_cold",  w:0.5, cond:()=>isNight(),
+                   line:()=>"（他把手掌摊开，一股暖风）夜里风凉，我借你一阵——别拿它赶路。"},
     {id:"invite", w:1.0, cond:()=>!getQuest("aeolia_winds"),
-                  line:()=>"（风把他的话送到你耳边）四座石牢，四阵贪玩的风——想借顺风？"},
+                   line:()=>"（风把他的话送到你耳边）四座石牢，四阵贪玩的风——想借顺风？"},
     {id:"prog",   w:0.9, cond:()=>{const q=getQuest("aeolia_winds"); return !!(q&&!q.done&&q.have<q.need);},
                   line:()=>`还锁着 ${4-getQuest("aeolia_winds").have} 阵风呢——岛的四角。`},
     {id:"ready",  w:1.0, cond:()=>{const q=getQuest("aeolia_winds"); return !!(q&&!q.done&&q.have>=q.need);},
@@ -1519,6 +1538,8 @@ const AMBIENT = {
                   line:()=>"一次放一阵——贪念会把它们一次放光。"},
   ],
   siren: [
+    {id:"care_hurt",  w:0.9, cond:()=>state.hp<=35&&state.hp>0&&state.straitStage<2,
+                   line:()=>"（歌声顿了顿）你带着伤过海……这里的雾，会往伤口里钻。"},
     {id:"choose", w:1.0, cond:()=>state.straitStage===0,
                   line:()=>"（歌声漫过船舷）蜡罐，或栈杆——小水手，选一样。"},
     {id:"listened", w:0.8, cond:()=>state.mastTied&&state.straitStage<2,
@@ -1529,8 +1550,12 @@ const AMBIENT = {
                   line:()=>"（雾里，三声叹息）去吧……可你会想起这段旋律。"},
   ],
   calypso: [
+    {id:"care_tired", w:0.8, cond:()=>state.hunger<=28||state.thirst<=22,
+                   line:()=>"（她放下织梭）你一路没好好吃过。果子挂在枝头，自己摘——这岛上不施舍，只分享。"},
+    {id:"care_hurt",  w:0.6, cond:()=>state.hp<=35&&state.hp>0&&state.calypsoStage<3,
+                   line:()=>"（她指尖掠过你肩头的伤）……疼吗？岛上没有药，但有安静。先坐一会儿。"},
     {id:"welcome", w:1.0, cond:()=>state.ogygiaDay===0,
-                  line:()=>"（织机声不停）果子熟了——离手就熟。这岛上的日子，够你慢慢来。"},
+                   line:()=>"（织机声不停）果子熟了——离手就熟。这岛上的日子，够你慢慢来。"},
     {id:"loom",   w:0.8, cond:()=>state.ogygiaDay>=1&&state.calypsoStage<3,
                   line:()=>"（她拆掉白日织开的布）白天织，夜里拆。你问为什么？——岛上总得有点事做。"},
     {id:"ask",    w:1.0, cond:()=>state.ogygiaDay>=2&&state.calypsoStage<3,
@@ -1541,8 +1566,10 @@ const AMBIENT = {
                   line:()=>"（她把门开着）夜里的海声，就当是摇篮曲。想走的时候，筏台没拆。"},
   ],
   nausicaa: [
+    {id:"care_hungry", w:0.9, cond:()=>state.hunger<=30,
+                   line:()=>"（她递来一块烙饼）宫里有的是。饿着肚子讲故事，故事会短一截。"},
     {id:"washed", w:1.0, cond:()=>state.scheriaStage===0,
-                  line:()=>"你醒的时候，海把你的船推上了我们的滩——别怕，费埃克斯人不问来历。"},
+line:()=>"你醒的时候，海把你的船推上了我们的滩——别怕，费埃克斯人不问来历。"},
     {id:"tale",   w:0.9, cond:()=>state.scheriaStage<2,
                   line:()=>"篝火在等你的故事。德摩多科斯的琴，也等着。"},
     {id:"song",   w:0.6, cond:()=>state.scheriaStage>=2,

@@ -237,6 +237,20 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 - **并行会话**：会话列表多个"游戏技能补全"会话（其一手 running）；本次 index.html 改后并行会话仍完好在场（8 处编辑全命中未破坏）；新落 `results/teleai-v6-1/v8-merge` 评测快照 + schema.json 归评测侧，未碰。
 - **未做**：Agent 主动关怀层（AMBIENT 已完善，评估强加有过度风险，留给用户确认）；NPC 踱步只覆盖 4 位主要 NPC（siren/cattle/序章 3 NPC 静态——其为点位交互，踱步空间有限，未动）。
 
+### 17b. Agent 关怀层补全：NPC 感知玩家状态（11-08 凌晨，本会话续；用户"继续"）
+
+- **背景**：§一.17 完成后用户再让继续。Agent 能力第三层增量——对照 dialogue-systems 方法论"关系变量驱动行为"，AMBIENT 原只有任务/时间/好感门控，**缺玩家自身状态感知**（饥饿/口渴/伤势/穷困/寒夜）。纯规则零模型调用。
+- **落地**：AMBIENT 各 NPC 追加 `care_*` 条目（玩家状态门控，非任务门控）：
+  - `witch` 5 条：care_hunger(饿≤30)/care_thirst(渴≤22)/care_hurt(血≤30)/care_broke(金币≤2 且好感≥50)/care_night(夜+状态尚可)——"你脸色不对……灶边有吃的""她往你手心塞了一枚银币""夜里野猪最凶"
+  - `seer` 2 条：care_hurt(血≤30)/care_weak(饿≤25或渴≤20)——"你身上有血味""先喂饱自己"
+  - `aeolus` 2 条：care_hide(血≤30)/care_cold(夜)——"风管懂盐""借你一口暖风"
+  - `siren` 1 条：care_hurt(血≤35 且未出峡)——"这里的雾会往伤口里钻"
+  - `calypso` 2 条：care_tired(饿≤28或渴≤22)/care_hurt(血≤35 且未选)——"这岛上不施舍，只分享"
+  - `nausicaa` 1 条：care_hungry(饿≤30)——"饿着肚子讲故事，故事会短一截"
+- **坑（复现 HANDOFF §一.16 坑①）**：multiedit 部分生效——本次 3 处 edit 只落了第一处(siren)，后两处(calypso/nausicaa)因键名笔误失败且**残断数组头**（welcome/washed 行开头被吞、washed 缺 `},` 闭合）→ node --check 报 Unexpected token → 逐行重读修复。**教训再确认：含反引号/多段模板的编辑分批做，每批后必跑 node --check，multiedit 后必须 grep 验证所有段在场**。
+- **验收（8766 隔离源 Playwright）**：node --check exit=0 ✅；页面 0 error ✅；AMBIENT 关怀条目 5+2+2+1+2+1=13 条全注册 ✅；cond 门控逐条正确（默认饥饿 false→设饿 true；血 ≤30 触发）✅；**npcAmbientTick 实机决策**：模拟玩家饥饿靠近女巫且冷却过（页面加载 90s 冷却 gate，设 cooldown=now-100s）→ `ambActive="care_hunger"` 说话 5.2s ✅；跨 NPC：冥界重伤 → 先知 `care_hurt` 开口 ✅。控制台 0 error。
+- **说明**：页面加载 90s 内所有 AMBIENT 均不开口是既有"冷却 gate"设计（now>90000），非本次引入——实机验到 cands 空后定位，勿误判。index.html 现 5871 行。
+
 ---
 
 ## 二、卡住的问题
