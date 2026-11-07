@@ -294,8 +294,14 @@
   .ecBtns .go{background:#ffd66b; color:#16324e;}
   .ecBtns .re{background:transparent; border:1px solid rgba(255,255,255,.3); color:#cfdcea;}
   .ecBtns button:hover{transform:translateY(-1px);}
+  /* ---- 待机灵机（animate 方法论：静态画面的唯一"呼吸"；降级见 reduced-motion） ---- */
+  @keyframes pbrBreath{0%,100%{background-position:center 13%;}50%{background-position:center 16%;}}
+  #dlgPortrait{animation:pbrBreath 7s ease-in-out infinite;}
+  @keyframes ccPan{from{background-position:center 12%;}to{background-position:center 42%;}}
+  #chapterCard.show{animation:ccPan 8s ease-out both;}
   @media (prefers-reduced-motion: reduce){
     #dlg.open, #dlg .bubble{animation:none;}
+    #dlgPortrait, #chapterCard.show{animation:none;}
     *{transition-duration:.01ms !important;}
   }
 </style>
@@ -732,7 +738,7 @@ function tryMoveIthaca(nx,ny){
 
 /* ==================== 序章组 · 奥德修斯的航迹（2026-11-07） ====================
    #1 伊斯玛洛斯 / #3 食莲岛 / #4 独眼巨人之岛 / #6 忒勒皮洛斯（#2 马里阿角为海域事件，无地图）
-   定位：遗址回声——玩家不是重演者，是后来者。每站一个主题：贪 / 忘忧 / 名 / 毁灭。
+   定位：旧路重访——你就是奥德修斯本人，这些岛是你自己走过的路（2026-11-08 拍板）。每站一个主题：贪 / 忘忧 / 名 / 毁灭。
    红线：不重演戳瞎事件；波吕斐摩斯不可被攻击；波塞冬只作环境级显形（odyssey-story.md 序章组）。 */
 const PROLOGUE_SITES = {
   ismaros: {
@@ -1109,8 +1115,8 @@ function prologueSpot(s){
   case "wreck":
     if (state.ropeTaken) return toast("船骸的影子在水里晃。绳结的打法，你已经记下了。");
     state.ropeTaken=true; addItem("幸存者的绳结"); gainXp(20);
-    addMemory("旅人在忒勒皮洛斯拾了幸存者的绳结——十一个人里只有他记得打这个结", 3, "telepylos");
-    toast("碎船骸间有一根系船的旧绳。你照着残结比划——十一个人里只有他记得打这个结。（获得 幸存者的绳结 · 历练 +20 · 航序 #6）");
+    addMemory("旅人在忒勒皮洛斯拾了幸存者的绳结——碎船骸间沉着他船队的大半，活着记住这个结的只剩他", 3, "telepylos");
+    toast("碎船骸间有一根系船的旧绳——这片碎木里，沉着你自己的船队。你照着残结比划：活着记住这个结的人，只剩你。（获得 幸存者的绳结 · 历练 +20 · 航序 #6）");
     renderHUD(); save(); return;
   case "fleetguard": startFleetDefense(); return;
   /* —— 特洛伊（#0 木马之夜：献策→造马→入马→夜袭混战→屠城抉择→船队出海）—— */
@@ -1419,7 +1425,7 @@ let state = {
   finaleDone: false,     /* 终章判词已看过（showEnding） */
   chosenName: null,      /* 认名结果 */
   nameWay: null,         /* 认名方式：old/sun/calypso/input/none */
-  /* —— 序章组·奥德修斯的航迹（#1/#2/#3/#4/#6 遗址回声）—— */
+  /* —— 序章组·奥德修斯的航迹（#1/#2/#3/#4/#6 旧路重访）—— */
   legs: {},                /* 航序点亮 {sceneKey|malea|seen_x:1}（海图「奥德修斯航迹」计数） */
   maleaDone: false,        /* 马里阿角：听风试炼完成 */
   ismarosSpared: false,    /* 伊斯玛洛斯：给伤者上过药 */
@@ -3029,15 +3035,19 @@ function interact(){
     const name = nm.trim();
     if (!name){ toast("（风把没说出口的名字吹散了。）"); return; }
     if (/奥德修斯/.test(name)){
-      addMemory("旅人对太阳神报了「奥德修斯」的名字——被一眼听穿", 4, "any");
-      toast("（金光微微一暗）「……你不是他。你眼里没有那年的海风。」——冒名者得不到光。");
+      /* P0.1（17g 原著对齐）：你就是奥德修斯——赫利俄斯全知且认得你，报真名＝认亲，得光照旧 */
+      state.sunBlessed = true; state.sunName = "奥德修斯";
+      addItem("走得过黑暗的光");
+      gainXp(40); sfx("bless"); feedback("large");
+      addMemory("旅人对太阳神报出了真名——赫利俄斯认出了他：十年前的海风，和船员欠下的七群牛", 4, "any");
+      showChapter("concept-art/05-太阳岛.jpg","第 四 章","光","你守住了 · 他认得你","「奥德修斯。」——「我认得这个名字，也认得你。你船员欠下的七群牛，我记着账。但你守住了誓言。带一缕光走吧——它走得过黑暗。」");
       renderHUD(); save(); return;
     }
     state.sunBlessed = true; state.sunName = name;
     addItem("走得过黑暗的光");
     gainXp(40); sfx("bless"); feedback("large");
     addMemory(`旅人守住了太阳岛——他把名字报给了赫利俄斯：「${name}」，得到一缕「走得过黑暗的光」`, 4, "any");
-    showChapter("concept-art/05-太阳岛.jpg","第 四 章","光","你守住了 · 他认得你",`「${name}。……好名字。带一缕光走吧——它走得过黑暗。」`);
+    showChapter("concept-art/05-太阳岛.jpg","第 四 章","光","你守住了 · 他认得你",`「${name}。」……（金光里有一声很轻的笑——他听得出这不是你生来的名字，但他收下了你的守誓。）「带一缕光走吧——它走得过黑暗。」`);
     renderHUD(); save(); return;
   }
   if (s.type==="sunDock"){
@@ -3223,7 +3233,7 @@ function interact(){
     if (!a){ toast("你把沉默嚼碎了咽下去。他们丢了块骨头过来，哄笑着走了。"); return; }
     if (/奥德修斯/.test(a)){
       hurtPlayer(15, "冒名");
-      addMemory("旅人险些对求婚者报出「奥德修斯」——被酒杯砸中了肩膀", 4);
+      addMemory("旅人险些对求婚者报出「奥德修斯」——被酒杯砸中了肩膀（他们不知道，他们砸的是真的）", 4);
       toast("满厅突然安静——然后炸成哄笑。一只酒杯砸在你肩上：「你也配姓这个名字！」（伤势 -15 · 再想一个名字）");
       renderHUD(); save(); return;
     }
@@ -5759,7 +5769,7 @@ function handleRebuilder(category, args){
   case "查询地点信息":
     return {text:"（他朝半座焦城抬了抬下巴）东边木靶，练手用；北边战利品堆，没人要了；酒瓶堆里兴许还有整瓶的——刻了字的，别当好话。"};
   case "查询生物情报":
-    return {text:"野猪早跑了。人比兽难防——那年我们就是被『人』烧了城。（他继续砌墙）"};
+    return {text:"野猪早跑了。人比兽难防——那年我们就是被『你们』烧了城。（他盯着你，又低头砌墙）你忘了？我们没忘。"};
   case "接取任务": case "请求帮助":
     return {text:"活儿就是砌墙，你的手干不了这个。（他想了想）……去木靶练几矛吧。下回再有人来抢，这城想有人还得了手。"};
   case "给予物品": {
@@ -5822,7 +5832,7 @@ function handlePolyphemus(category, args){
     if (item && /酒/.test(item) && state.backpack["喀科恩酒"]){
       delItem("喀科恩酒",1); gainXp(10); save(); renderHUD();
       addMemory("旅人把喀科恩酒敬给了盲眼的巨人", 3, "polyphemus");
-      return {text:"（他嗅了嗅，接过，一饮而尽）……和那晚一个味。小东西，你不是他——他敬酒是为了骗我睡。（他把空瓶还你）瓶子留下。刻字归你。"};
+      return {text:"（他嗅了嗅，接过，一饮而尽）……和那晚一个味。那个喊『无人』的小东西，敬的酒也是这个味。（他把空瓶还你）瓶子留下。刻字归你。"};
     }
     return {text:"（他摆摆手）留着自己用。出海的东西，件件都要命。"};
   }
@@ -5856,9 +5866,21 @@ function polyNameExam(raw){
   if (!m) return null;
   const name=m[1];
   state.polNameGiven=name; state.namesHeard=true;
+  if (/无人/.test(name)){
+    /* P0.3（17g 原著对齐）canon：重认原著骗术 */
+    addMemory("旅人向盲眼的巨人又报了一次「无人」——他笑着听完了这个假名", 4, "polyphemus");
+    save();
+    return {text:"（他愣了愣，随即笑得石屑簌簌直落）『无人』！哈——好名字，小东西，你倒会挑。记住那个人的教训：他用假名赢了夜，却用真名输了十年。海替所有人记账——这一回，替你把账翻过去吧。（「无人」这个名字，从此也在你心里有了分量）"};
+  }
+  if (/奥德修斯/.test(name)){
+    /* P0.3（17g 原著对齐）canon 诅咒条款：真名喊给海听 */
+    addMemory("旅人向盲眼的巨人报出了真名「奥德修斯」——波塞冬在浪底下听见了", 5, "polyphemus");
+    save();
+    return {text:"（他猛地转向你，瞎眼的脸正对着你的声音）是你。十一年了……你的味道，和那年灌醉我的酒一样。你把名字喊给海听了——海替所有人记账，我爹也在听。（海神记下了这笔账）"};
+  }
   addMemory(`旅人向盲眼的牧羊巨人自报了名字：「${name}」——海替所有人记账`, 4, "polyphemus");
   save();
-  return {text:`（他侧耳听完，沉默了很久）「${name}」。好——你说出口了，它就不只属于你了。记住那个人的教训：他用假名赢了夜，用真名输了十年。把名字喊给海听之前，想清楚。海替所有人记账。（「无人」这个名字，从此也在你心里有了分量）`};
+  return {text:`（他侧耳听完，鼻翼动了动）……你的味道，和那年灌醉我的酒有点像。十一年了。「${name}」。好——你说出口了，它就不只属于你了。把名字喊给海听之前，想清楚。海替所有人记账。（「无人」这个名字，从此也在你心里有了分量）`};
 }
 
 /* ==================== 对话（模型链路） ==================== */
@@ -5938,7 +5960,7 @@ const NPCS = {
     sub: "意图：Xing4.0-29B-Intent · 台词：TeleChat3",
     portrait: "concept-art/characters/02-喀耳刻.jpg",
     persona: PERSONA_WITCH,
-    intro: "（你推门进去。炉火无风自动，屋里的女人头也不回）……来了。买药、问路、听预言，还是——讨活儿干？",
+    intro: "（你推门进去。炉火无风自动，屋里的女人头也不回）……十年。锅换过三个，你没回来看过一次。说吧——买药、问路、听预言，还是这回，肯把旧账讲清？",
     samples: ["我想买一瓶治疗草药","有什么活儿？","你预言过什么？","这岛上有什么","再见"],
   },
   seer: {
@@ -5993,8 +6015,8 @@ const NPCS = {
     name: "伊斯玛洛斯 · 重建者",
     sub: "序章组 #1 · 喀科恩人的城 · 意图：Xing4.0 · 台词：TeleChat3",
     portrait: null,
-    persona: `你是《奥德赛》世界里伊斯玛洛斯的喀科恩重建者，中年、疲惫、话少。城曾被奥德修斯的船队劫掠焚毁，你们夜里反扑折断了他们的骄傲。如今你带着族人重建半座烧焦的城。语气克制、带旧伤，不恨来访者，只提醒代价。每次回复不超过55字，可用括号加动作，绝不提自己是AI。`,
-    intro: "（他放下锤子，看了眼你身后的海）……又一条船。放心，我们不劫船了——只修城。看看吧，这就是贪心留下的样子。",
+    persona: `你是《奥德赛》世界里伊斯玛洛斯的喀科恩重建者，中年、疲惫、话少。烧你们城的船队头领就站在你面前——你认得他的酒气，十年了还是那么冲。你们夜里反扑，折断了他们的骄傲。如今你带着族人重建半座烧焦的城。语气克制、带旧伤，有对峙感但不施暴，只提醒代价。每次回复不超过55字，可用括号加动作，绝不提自己是AI。`,
+    intro: "（他放下锤子，看了看你的手，又看了看身后的焦城）……你的酒气，和十年前烧城那晚一个味。放心，我们不劫船了——只修城。看看吧，这就是贪心留下的样子。",
     samples: ["这里发生了什么","有什么活儿","讲讲那伙强盗","你们恨他们吗","再见"],
   },
   lotusman: {
@@ -6030,7 +6052,7 @@ const NPC_JOB_MAPS = {
   seer: {
     "闲聊": "以谶语式短句回应，别把话说满",
     "请求帮助": "给一条亡者视角的建议，冷而慈悲",
-    "查询神谕": "这是预言时刻：先点明他不是那个国王、却走着同一条河；再给出两条路——阿喀琉斯的捷径（荣耀与速亡）或奥德修斯的长路（困顿与归乡）；最后警告太阳岛的牛一头都不可动",
+    "查询神谕": "这是预言时刻：十年了，他终于来问路——先认出他：「你的血气我认得，上次它带着一身特洛伊的烟来。」再给出两条路——阿喀琉斯的捷径（荣耀与速亡）或奥德修斯的长路（困顿与归乡）；最后警告太阳岛的牛一头都不可动",
     "查询生物情报": "讲讲冥界亡魂的规矩，苍老口吻",
     "查询地点信息": "讲讲亡者国度的样子，30字内",
     "查询背包": "谶语式报出他行囊里的东西，把它们说成命运的行装",
@@ -6363,7 +6385,7 @@ function witchIntro(){
   if (state.affinity>=85) return "（她头也不抬，嘴角却弯了）……我当你还会来的。坐，锅里是新的。";
   if (state.affinity>=60) return "（她从坩埚后抬起眼，难得没有皱眉）门没闩就进来吧。今天要什么？";
   if (state.affinity>=30) return "（她从坩埚后抬眼认出了你）又是你。买药、问路、听预言——挑一样。";
-  return "（你推门进去。炉火无风自动，屋里的女人头也不回）……来了。买药、问路、听预言，还是——讨活儿干？";
+  return "（你推门进去。炉火无风自动，屋里的女人头也不回）……十年。锅换过三个，你没回来看过一次。说吧——买药、问路、听预言，还是这回，肯把旧账讲清？";
 }
 
 /* 世界状态摘要：注入台词模型，让 T3 台词知情（不再睁眼瞎） */
