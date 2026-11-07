@@ -210,7 +210,9 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 - **index.html 注入（24 处接线，语法 node --check exit=0）**：`PROLOGUE_SITES` 四站通用引擎（瓦片/运动/spot/渲染 drawPrologue）+ `ISLANDS` 加 3 岛+西西里开放+全站 leg 航序字段+海图 #N 徽标+「奥德修斯航迹 x/14」计数（buildMapMarks）+ 马里阿角海域事件 maleaTick（船近伯罗南端触发听风试炼）+ 3 个 NPC（重建者/幸存者/波吕斐摩斯：persona+handle+NPCS+history+NPC_JOB_MAPS+HANDLED+分流注册）+ 名字考试 polyNameExam（window.lastPlayerText 提取「我叫XX」→ polNameGiven/namesHeard）+ 离线兜底词表扩充；顺手的 load() 场景恢复链补 oggggia/scheria/ithaca/prologue 4 站（并行会话漏项）。
 - **评测线**：`schema.json` → v2.5（九处标准名称/例句增补：获取物资+剪取/羊毛/绳结、使用消耗品+莲子/莲子干、查询价格+喀科恩酒、环境+马里奥角、导航+西西里/伊斯玛洛斯、地点+食莲岛/忒勒皮洛斯、生物+巨羊/莱斯特律戈尼、给予+伤者）；`cases.jsonl` 257→**271 条/15 组**（+`prologue_oov` 组 14 条）。两文件备份在 `.temp/schema-v241-backup.json` / `cases-backup-before-prologue.jsonl`。
 - **旧档迁移兜底**：序章组 14 字段入 `ensureState()`（防旧档缺 `legs` 的 markLeg 崩，实机抓到并修）；`markLeg` 加 `!state.legs` 防御。
-- **实机验收（待续）**：海图航序全绿（13 站徽标+航迹 1/14+新岛解锁）；伊斯玛洛斯全链结算对（练手×3 +xp/喀科恩酒入手/伤者上药消耗+flag）；后段（食莲/独眼/忒勒皮斯/马里亚）**Playwright 通道中断，下一会话续验**；本轮未 commit（与并行会话同工作区，按 §六 收尾提交）。
+- **实机验收（Playwright，全部通过，控制台 0 error）**：海图航序全绿（13 站徽标+航迹 1/14+新岛解锁）；伊斯玛洛斯（练手×3 +xp/喀科恩酒入手/伤者上药消耗+flag）；食莲岛（莲子+40饥饿+士气昂扬/断桨/幸存者对话）；西西里主章（听「无人」故事 polHeard+namesHeard/名字考试 polyNameExam「我叫阿耳戈」认名/剪羊毛得披风/敬喀科恩酒）；忒勒皮洛斯（崖下险道警告+落石 -15/绳结）；马里阿角海域事件（maleaDone/leg 点亮）；主线回归（埃亚岛女巫对话正常）。修复：NPCS 序章三项被 multiedit 错位插到对象外（已 Python 手术归位）、旧档缺 legs 的 ensureState 兜底、load() 场景恢复链补 4 站。
+- **评测（schema v2.5/v2.5.1，全量复测）**：首跑 `results/teleai-v6-prologue-20261107.json`（**313 条/18 组**，含并行会话已加 ch5/ch6/ithaca_oov 三组 42 条）**prologue_oov 12/14=85.7%（RED）** → 归因：prologue_02「伊斯玛斯在哪」（"X在哪"三向边界既有弱点，不调，留专项）、prologue_12「去船骸搜个绳结」（"去X搜Y"短边界）→ **v2.5.1 补获取物资描述一句边界例句** → 复测 `teleai-v6-1-prologue-20261107.json` **prologue_oov 13/14=92.9%（GREEN ≥87.9%）**、**类别 92.6%（红线 90% 保持）**、v2.5.1 error 0；8 条差异为 multi/state_set 既有采样方差（净 +3 -2）。`results/README.md` 已补 v6/v6.1 两行与结论。
+- **提交**：`0aacc0b`（序章组全量 + 并行批次五六终章/圣牛接线/终章判词快照）已 push；评测 v6.1 + README/HANDOFF 回填待本收尾提交。
 
 ### 16. 圣经收官：第五/六章 + 终章伊萨卡（11-07 晚，本会话；用户拍板"全套收官"）
 
@@ -224,6 +226,16 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 - **验收（8766 隔离源 Playwright）**：全链 E2E 全绿（门控/日历冻结/三天仪式/问正题/造筏/出湾/不谎船/回顾章/告白/送行/化名/考场/十二斧/认名/判词/自由漂流/最后章节卡标题=名）+ 三变体判词 + W3D 十岛 + auditHandlers 0 + 控制台 0 error；截图 `shots/2d-ogggia-frozen-dusk-v2.png` 等 8 张。
 - **坑（新）**：①multiedit 部分生效（报"已变更"实已写入部分，PERSONA 三份重复 node 才暴露）→含反引号多段模板用脚本按行号操作+必跑 node --check；②同工作区并行写（并行在写序章组 prologue 目录+14 条），edit 保护触发过——改前查 mtime/重读/提交前再查；③并行会话也用 v2.5 编号（它的在 args 层、我的在 category 层），**核验共存要查 args+category 两层**（只查 category 误报丢失）；④两岛间距小易误登录（测试放船点避开）。
 - **未做**：v0.2.0 打 tag（判据 GREEN，留给专门会话）；序章组后段续验为并行工作面；3D 线 P2 需用户生成参考图。
+
+### 17. 打击反馈补满 + NPC 空间化踱步（11-08 凌晨，本会话；用户"继续"，聚焦 index.html 游戏侧增量）
+
+- **接手背景**：用户再提"按本地 skills 补全视觉/玩法/agent"。核实 §一.10~16 大量已落地（trauma 屏震/hitStop/flashHit/浮字/ShakeHp、女巫 Utility AI、AMBIENT、记忆流、auditHandlers 等），**对照 game-feel 方法论仍缺三通道**：粒子爆发 / 受击压缩拉伸(squash&stretch) / 击退(knockback) —— 命中反馈此前只有"屏震+文字+音效"。
+- **打击反馈补满（game-feel "一次命中叠 5-8 个反馈通道"）**：新增纯 canvas 零依赖粒子系统（`parts[]` + `burst(x,y,col,n,sp,sz)` + `drawParts()`，重力下坠+alpha 渐隐+上限 220）；野猪普攻命中 → 粒子 8-14 + **受击压缩**（`hitK` 施加 `scale(1+0.16, 1-0.22)` 瞬间压扁回弹）+ **击退**（沿玩家反向 `tryMoveBoar` 24px）；弱点(暴击)粒子 14 更大更慢；击杀双爆（18 棕 + 10 红）；玩家受击 `hurtPlayer` 加 10 红血星。
+- **NPC 空间化踱步（game-ai 空间感，用户偏好"角色走动点位互动"）**：`WALKERS[]`（seer/aeolus/calypso/nausicaa 四静态 NPC）+ `npcWalkTick(et)` 正弦小椭轨道（幅 ≤28px）。关键**零风险设计**：交互点（spots 数组）初始化时是坐标快照、半径 85 覆盖踱步幅度，只改对象坐标 → 绘制跟随走动、交互/对话/记忆定位不变，不破坏既有交互逻辑。女巫已有 Utility AI 不重复。
+- **接线**：loop() 末尾 `scene∈{hades,aeolia,ogggia,scheria} → npcWalkTick(dt)`；`drawParts()` 插在 `drawFloatTexts()` 后。index.html 5760 行。
+- **验收（8766 隔离源 Playwright）**：node --check 内联脚本 exit=0 ✅；页面加载 0 error ✅；函数全局注册（burst/drawParts/npcWalkTick/WALKERS 均 function/object）✅；`burst()` 触发粒子数组 0→8 ✅；npcWalkTick 驱动 seer 坐标 380→386→391 平滑踱步 ✅；**真实 interact() 战斗**：玩家贴野猪 → hp 30→12 扣血 + 粒子 0→14 ✅；击杀 → boarAlive:false + 粒子 42 + 野猪肉入库 ✅；0 console error ✅。后台服务器 8766 已停止清理。
+- **并行会话**：会话列表多个"游戏技能补全"会话（其一手 running）；本次 index.html 改后并行会话仍完好在场（8 处编辑全命中未破坏）；新落 `results/teleai-v6-1/v8-merge` 评测快照 + schema.json 归评测侧，未碰。
+- **未做**：Agent 主动关怀层（AMBIENT 已完善，评估强加有过度风险，留给用户确认）；NPC 踱步只覆盖 4 位主要 NPC（siren/cattle/序章 3 NPC 静态——其为点位交互，踱步空间有限，未动）。
 
 ---
 
