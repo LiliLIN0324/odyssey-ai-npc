@@ -375,10 +375,21 @@ function init() {
 
   const cv = renderer.domElement;
   cv.id = "cv3d";
-  cv.style.cssText = "position:absolute; inset:0; width:1000px; height:600px; border-radius:14px;";
+  /* 跟 #cv 同款铺满响应式舞台：固定 1000×600 会在大窗口露出底下 2D 画布（两个空间堆叠 bug） */
+  cv.style.cssText = "position:absolute; inset:0; width:100%; height:100%; border-radius:14px;";
   const stage = document.getElementById("stage");
   const cv2 = document.getElementById("cv");
   stage.insertBefore(cv, cv2);   /* 垫在 2D 画布下面：日光/夜色/浮字仍由 2D 层合成 */
+
+  /* 渲染分辨率跟随舞台实际尺寸（含窗口缩放），CSS 尺寸交给样式表 */
+  function fit() {
+    const w = Math.max(320, stage.clientWidth), h = Math.max(200, stage.clientHeight);
+    renderer.setSize(w, h, false);
+    camera3.aspect = w / h;
+    camera3.updateProjectionMatrix();
+  }
+  fit();
+  window.addEventListener("resize", fit);
 
   ready = true;
 }
