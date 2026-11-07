@@ -1,0 +1,7209 @@
+{
+  "summary": {
+    "total": 241,
+    "category_accuracy": 0.9212,
+    "args_f1": 0.9186,
+    "fully_correct_rate": 0.7967,
+    "false_trigger_rate": 0.037,
+    "fallback_case_count": 27,
+    "latency_ms": {
+      "p50": 779.1,
+      "p90": 1109.3,
+      "p99": 3393.6,
+      "mean": 871.2,
+      "max": 4992.8
+    },
+    "by_group": {
+      "boundary": {
+        "n": 22,
+        "category_acc": 0.9091,
+        "args_f1": 0.9697,
+        "fully_correct": 0.8182
+      },
+      "chitchat": {
+        "n": 14,
+        "category_acc": 1.0,
+        "args_f1": 0.7857,
+        "fully_correct": 0.7857
+      },
+      "clear": {
+        "n": 64,
+        "category_acc": 1.0,
+        "args_f1": 0.9448,
+        "fully_correct": 0.8438
+      },
+      "confuse": {
+        "n": 24,
+        "category_acc": 0.875,
+        "args_f1": 0.7778,
+        "fully_correct": 0.5417
+      },
+      "hades_oov": {
+        "n": 14,
+        "category_acc": 0.8571,
+        "args_f1": 0.9286,
+        "fully_correct": 0.8571
+      },
+      "hostile": {
+        "n": 8,
+        "category_acc": 1.0,
+        "args_f1": 1.0,
+        "fully_correct": 1.0
+      },
+      "multi": {
+        "n": 13,
+        "category_acc": 0.5385,
+        "args_f1": 0.75,
+        "fully_correct": 0.3846
+      },
+      "multiturn": {
+        "n": 12,
+        "category_acc": 0.75,
+        "args_f1": 0.8889,
+        "fully_correct": 0.6667
+      },
+      "negative": {
+        "n": 12,
+        "category_acc": 1.0,
+        "args_f1": 1.0,
+        "fully_correct": 1.0
+      },
+      "oov": {
+        "n": 14,
+        "category_acc": 0.9286,
+        "args_f1": 0.9762,
+        "fully_correct": 0.8571
+      },
+      "slot_missing": {
+        "n": 18,
+        "category_acc": 0.8889,
+        "args_f1": 1.0,
+        "fully_correct": 0.8889
+      },
+      "state_set": {
+        "n": 12,
+        "category_acc": 1.0,
+        "args_f1": 1.0,
+        "fully_correct": 1.0
+      },
+      "wind_oov": {
+        "n": 14,
+        "category_acc": 1.0,
+        "args_f1": 0.9167,
+        "fully_correct": 0.7857
+      }
+    },
+    "top_confusions": [
+      [
+        "查询附近目标 -> 查询地点信息",
+        2
+      ],
+      [
+        "使用消耗品 -> 其他意图",
+        1
+      ],
+      [
+        "查询附近目标 -> 查询生物情报",
+        1
+      ],
+      [
+        "导航到地点 -> 查询地点信息",
+        1
+      ],
+      [
+        "查询地点信息 -> 查询生物情报",
+        1
+      ],
+      [
+        "请求帮助 -> 导航到地点",
+        1
+      ],
+      [
+        "闲聊 -> 查询附近目标",
+        1
+      ],
+      [
+        "购买物品 -> 闲聊",
+        1
+      ],
+      [
+        "闲聊 -> 其他意图",
+        1
+      ],
+      [
+        "查询附近目标/购买物品 -> 购买物品",
+        1
+      ],
+      [
+        "导航到地点/购买物品 -> 购买物品",
+        1
+      ],
+      [
+        "接取任务/查询任务线索 -> 接取任务",
+        1
+      ],
+      [
+        "告别/提交任务 -> 告别",
+        1
+      ],
+      [
+        "导航到地点/查询附近目标 -> 导航到地点",
+        1
+      ],
+      [
+        "获取物资/营地准备 -> 使用消耗品/营地准备",
+        1
+      ]
+    ],
+    "wall_seconds": 105.18
+  },
+  "results": [
+    {
+      "category_correct": true,
+      "args_f1": 0.6666666666666666,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "购买物品"
+      ],
+      "predicted": [
+        "购买物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "购买物品": 0.6667
+      },
+      "id": "boundary_01",
+      "group": "boundary",
+      "text": "给我来一块面包",
+      "latency_ms": 819.3,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6829,
+        "completion_tokens": 27,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询价格"
+      ],
+      "predicted": [
+        "查询价格"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询价格": 1.0
+      },
+      "id": "boundary_02",
+      "group": "boundary",
+      "text": "面包多少钱",
+      "latency_ms": 779.8,
+      "usage": {
+        "prompt_tokens": 6800,
+        "total_tokens": 6821,
+        "completion_tokens": 21,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "卖出物品"
+      ],
+      "predicted": [
+        "卖出物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "卖出物品": 1.0
+      },
+      "id": "boundary_03",
+      "group": "boundary",
+      "text": "我要把面包卖掉",
+      "latency_ms": 712.9,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6823,
+        "completion_tokens": 21,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询库存"
+      ],
+      "predicted": [
+        "查询库存"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询库存": 1.0
+      },
+      "id": "boundary_04",
+      "group": "boundary",
+      "text": "面包还有吗",
+      "latency_ms": 748.1,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6822,
+        "completion_tokens": 21,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "导航到地点"
+      ],
+      "predicted": [
+        "导航到地点"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "导航到地点": 1.0
+      },
+      "id": "boundary_05",
+      "group": "boundary",
+      "text": "我要去提洛",
+      "latency_ms": 782.0,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6824,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.6666666666666666,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "查询地点信息"
+      ],
+      "predicted": [
+        "查询地点信息"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询地点信息": 0.6667
+      },
+      "id": "boundary_06",
+      "group": "boundary",
+      "text": "提洛上有什么人",
+      "latency_ms": 985.5,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6833,
+        "completion_tokens": 30,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": false,
+      "args_f1": 1.0,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "查询附近目标"
+      ],
+      "predicted": [
+        "查询地点信息"
+      ],
+      "extra_categories": [
+        "查询地点信息"
+      ],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询附近目标": 1.0
+      },
+      "id": "boundary_07",
+      "group": "boundary",
+      "text": "提洛在哪",
+      "latency_ms": 808.1,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6824,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "接取任务"
+      ],
+      "predicted": [
+        "接取任务"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "接取任务": 1.0
+      },
+      "id": "boundary_08",
+      "group": "boundary",
+      "text": "接任务",
+      "latency_ms": 604.2,
+      "usage": {
+        "prompt_tokens": 6800,
+        "total_tokens": 6815,
+        "completion_tokens": 15,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询任务线索"
+      ],
+      "predicted": [
+        "查询任务线索"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询任务线索": 1.0
+      },
+      "id": "boundary_09",
+      "group": "boundary",
+      "text": "任务",
+      "latency_ms": 783.5,
+      "usage": {
+        "prompt_tokens": 6799,
+        "total_tokens": 6822,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "提交任务"
+      ],
+      "predicted": [
+        "提交任务"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "提交任务": 1.0
+      },
+      "id": "boundary_10",
+      "group": "boundary",
+      "text": "交任务",
+      "latency_ms": 641.8,
+      "usage": {
+        "prompt_tokens": 6800,
+        "total_tokens": 6814,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询任务进度"
+      ],
+      "predicted": [
+        "查询任务进度"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询任务进度": 1.0
+      },
+      "id": "boundary_11",
+      "group": "boundary",
+      "text": "任务进度",
+      "latency_ms": 616.7,
+      "usage": {
+        "prompt_tokens": 6800,
+        "total_tokens": 6815,
+        "completion_tokens": 15,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询任务进度"
+      ],
+      "predicted": [
+        "查询任务进度"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询任务进度": 1.0
+      },
+      "id": "boundary_12",
+      "group": "boundary",
+      "text": "我的任务完成了没",
+      "latency_ms": 623.4,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6817,
+        "completion_tokens": 15,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询神谕"
+      ],
+      "predicted": [
+        "查询神谕"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询神谕": 1.0
+      },
+      "id": "boundary_13",
+      "group": "boundary",
+      "text": "神谕",
+      "latency_ms": 624.1,
+      "usage": {
+        "prompt_tokens": 6800,
+        "total_tokens": 6815,
+        "completion_tokens": 15,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询神谕"
+      ],
+      "predicted": [
+        "查询神谕"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询神谕": 1.0
+      },
+      "id": "boundary_14",
+      "group": "boundary",
+      "text": "预示",
+      "latency_ms": 626.1,
+      "usage": {
+        "prompt_tokens": 6799,
+        "total_tokens": 6814,
+        "completion_tokens": 15,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "装备物品"
+      ],
+      "predicted": [
+        "装备物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "装备物品": 1.0
+      },
+      "id": "boundary_15",
+      "group": "boundary",
+      "text": "装备铜矛",
+      "latency_ms": 789.0,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6823,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "其他意图"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "其他意图": 1.0
+      },
+      "id": "boundary_16",
+      "group": "boundary",
+      "text": "铜矛",
+      "latency_ms": 639.0,
+      "usage": {
+        "prompt_tokens": 6800,
+        "total_tokens": 6814,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询价格"
+      ],
+      "predicted": [
+        "查询价格"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询价格": 1.0
+      },
+      "id": "boundary_17",
+      "group": "boundary",
+      "text": "多少钱",
+      "latency_ms": 567.6,
+      "usage": {
+        "prompt_tokens": 6799,
+        "total_tokens": 6813,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": false,
+      "args_f1": 1.0,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "使用消耗品"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [
+        "其他意图"
+      ],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "使用消耗品": 1.0
+      },
+      "id": "boundary_18",
+      "group": "boundary",
+      "text": "喝",
+      "latency_ms": 610.4,
+      "usage": {
+        "prompt_tokens": 6799,
+        "total_tokens": 6813,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "购买物品"
+      ],
+      "predicted": [
+        "购买物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "购买物品": 1.0
+      },
+      "id": "boundary_19",
+      "group": "boundary",
+      "text": "买",
+      "latency_ms": 575.9,
+      "usage": {
+        "prompt_tokens": 6799,
+        "total_tokens": 6813,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "船只操作"
+      ],
+      "predicted": [
+        "船只操作"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "船只操作": 1.0
+      },
+      "id": "boundary_20",
+      "group": "boundary",
+      "text": "开船",
+      "latency_ms": 822.5,
+      "usage": {
+        "prompt_tokens": 6800,
+        "total_tokens": 6822,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "获取物资"
+      ],
+      "predicted": [
+        "获取物资"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "获取物资": 1.0
+      },
+      "id": "boundary_21",
+      "group": "boundary",
+      "text": "捕鱼",
+      "latency_ms": 754.2,
+      "usage": {
+        "prompt_tokens": 6799,
+        "total_tokens": 6820,
+        "completion_tokens": 21,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "营地准备"
+      ],
+      "predicted": [
+        "营地准备"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "营地准备": 1.0
+      },
+      "id": "boundary_22",
+      "group": "boundary",
+      "text": "生火",
+      "latency_ms": 775.2,
+      "usage": {
+        "prompt_tokens": 6800,
+        "total_tokens": 6822,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "闲聊"
+      ],
+      "predicted": [
+        "闲聊"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "闲聊": 1.0
+      },
+      "id": "chitchat_01",
+      "group": "chitchat",
+      "text": "这趟航程真是漫长",
+      "latency_ms": 780.8,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6823,
+        "completion_tokens": 20,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "闲聊"
+      ],
+      "predicted": [
+        "闲聊"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "闲聊": 1.0
+      },
+      "id": "chitchat_02",
+      "group": "chitchat",
+      "text": "你叫什么名字",
+      "latency_ms": 740.0,
+      "usage": {
+        "prompt_tokens": 6800,
+        "total_tokens": 6820,
+        "completion_tokens": 20,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "闲聊"
+      ],
+      "predicted": [
+        "闲聊"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "闲聊": 1.0
+      },
+      "id": "chitchat_03",
+      "group": "chitchat",
+      "text": "讲个故事吧",
+      "latency_ms": 633.2,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6815,
+        "completion_tokens": 13,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "闲聊"
+      ],
+      "predicted": [
+        "闲聊"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "闲聊": 1.0
+      },
+      "id": "chitchat_04",
+      "group": "chitchat",
+      "text": "哈哈哈哈哈",
+      "latency_ms": 507.1,
+      "usage": {
+        "prompt_tokens": 6800,
+        "total_tokens": 6813,
+        "completion_tokens": 13,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "闲聊"
+      ],
+      "predicted": [
+        "闲聊"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "闲聊": 1.0
+      },
+      "id": "chitchat_05",
+      "group": "chitchat",
+      "text": "今天打了一整天海怪，累死了",
+      "latency_ms": 748.1,
+      "usage": {
+        "prompt_tokens": 6807,
+        "total_tokens": 6828,
+        "completion_tokens": 21,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "告别"
+      ],
+      "predicted": [
+        "告别"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "告别": 1.0
+      },
+      "id": "chitchat_06",
+      "group": "chitchat",
+      "text": "明天见",
+      "latency_ms": 606.8,
+      "usage": {
+        "prompt_tokens": 6800,
+        "total_tokens": 6813,
+        "completion_tokens": 13,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "告别"
+      ],
+      "predicted": [
+        "告别"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "告别": 1.0
+      },
+      "id": "chitchat_07",
+      "group": "chitchat",
+      "text": "我先登船了",
+      "latency_ms": 520.5,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6815,
+        "completion_tokens": 13,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "闲聊"
+      ],
+      "predicted": [
+        "闲聊"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "闲聊": 1.0
+      },
+      "id": "chitchat_08",
+      "group": "chitchat",
+      "text": "你是本地人吗",
+      "latency_ms": 716.2,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6821,
+        "completion_tokens": 20,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.0,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "闲聊"
+      ],
+      "predicted": [
+        "闲聊"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "闲聊": 0.0
+      },
+      "id": "chitchat_09",
+      "group": "chitchat",
+      "text": "这酒真不错",
+      "latency_ms": 557.9,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6815,
+        "completion_tokens": 13,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.0,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "闲聊"
+      ],
+      "predicted": [
+        "闲聊"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "闲聊": 0.0
+      },
+      "id": "chitchat_10",
+      "group": "chitchat",
+      "text": "神啊保佑我回家",
+      "latency_ms": 536.8,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6816,
+        "completion_tokens": 13,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "闲聊"
+      ],
+      "predicted": [
+        "闲聊"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "闲聊": 1.0
+      },
+      "id": "chitchat_11",
+      "group": "chitchat",
+      "text": "嗯嗯",
+      "latency_ms": 569.6,
+      "usage": {
+        "prompt_tokens": 6800,
+        "total_tokens": 6813,
+        "completion_tokens": 13,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "请求帮助"
+      ],
+      "predicted": [
+        "请求帮助"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "请求帮助": 1.0
+      },
+      "id": "chitchat_12",
+      "group": "chitchat",
+      "text": "回家的路还远吗",
+      "latency_ms": 715.4,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6825,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.0,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "闲聊"
+      ],
+      "predicted": [
+        "闲聊"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "闲聊": 0.0
+      },
+      "id": "chitchat_13",
+      "group": "chitchat",
+      "text": "我还能回家吗",
+      "latency_ms": 617.5,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6814,
+        "completion_tokens": 13,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "闲聊"
+      ],
+      "predicted": [
+        "闲聊"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "闲聊": 1.0
+      },
+      "id": "chitchat_14",
+      "group": "chitchat",
+      "text": "众神到底站在哪一边",
+      "latency_ms": 685.9,
+      "usage": {
+        "prompt_tokens": 6804,
+        "total_tokens": 6825,
+        "completion_tokens": 21,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询生物情报"
+      ],
+      "predicted": [
+        "查询生物情报"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询生物情报": 1.0
+      },
+      "id": "clear_bio_01",
+      "group": "clear",
+      "text": "塞壬的歌声有什么效力",
+      "latency_ms": 1093.0,
+      "usage": {
+        "prompt_tokens": 6804,
+        "total_tokens": 6834,
+        "completion_tokens": 30,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询生物情报"
+      ],
+      "predicted": [
+        "查询生物情报"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询生物情报": 1.0
+      },
+      "id": "clear_bio_02",
+      "group": "clear",
+      "text": "这附近有什么鱼",
+      "latency_ms": 765.4,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6825,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询生物情报"
+      ],
+      "predicted": [
+        "查询生物情报"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询生物情报": 1.0
+      },
+      "id": "clear_bio_03",
+      "group": "clear",
+      "text": "独眼巨人怕什么",
+      "latency_ms": 2416.4,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6835,
+        "completion_tokens": 32,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询生物情报"
+      ],
+      "predicted": [
+        "查询生物情报"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询生物情报": 1.0
+      },
+      "id": "clear_bio_04",
+      "group": "clear",
+      "text": "海蛇什么时候出来",
+      "latency_ms": 903.5,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6833,
+        "completion_tokens": 31,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询生物情报"
+      ],
+      "predicted": [
+        "查询生物情报"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询生物情报": 1.0
+      },
+      "id": "clear_bio_05",
+      "group": "clear",
+      "text": "螃蟹能吃吗",
+      "latency_ms": 4045.0,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6831,
+        "completion_tokens": 30,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "营地准备"
+      ],
+      "predicted": [
+        "营地准备"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "营地准备": 1.0
+      },
+      "id": "clear_camp_01",
+      "group": "clear",
+      "text": "生个火",
+      "latency_ms": 726.4,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6823,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "营地准备"
+      ],
+      "predicted": [
+        "营地准备"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "营地准备": 1.0
+      },
+      "id": "clear_camp_02",
+      "group": "clear",
+      "text": "搭个帐篷",
+      "latency_ms": 837.4,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6823,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "营地准备"
+      ],
+      "predicted": [
+        "营地准备"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "营地准备": 1.0
+      },
+      "id": "clear_camp_03",
+      "group": "clear",
+      "text": "做把船桨",
+      "latency_ms": 922.3,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6831,
+        "completion_tokens": 29,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "营地准备"
+      ],
+      "predicted": [
+        "营地准备"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "营地准备": 1.0
+      },
+      "id": "clear_camp_04",
+      "group": "clear",
+      "text": "升个信号火",
+      "latency_ms": 805.8,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6825,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "闲聊"
+      ],
+      "predicted": [
+        "闲聊"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "闲聊": 1.0
+      },
+      "id": "clear_chat_01",
+      "group": "clear",
+      "text": "你好",
+      "latency_ms": 558.1,
+      "usage": {
+        "prompt_tokens": 6799,
+        "total_tokens": 6812,
+        "completion_tokens": 13,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "闲聊"
+      ],
+      "predicted": [
+        "闲聊"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "闲聊": 1.0
+      },
+      "id": "clear_chat_02",
+      "group": "clear",
+      "text": "这海真漂亮",
+      "latency_ms": 705.9,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6822,
+        "completion_tokens": 20,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "告别"
+      ],
+      "predicted": [
+        "告别"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "告别": 1.0
+      },
+      "id": "clear_chat_03",
+      "group": "clear",
+      "text": "我先走了",
+      "latency_ms": 625.9,
+      "usage": {
+        "prompt_tokens": 6800,
+        "total_tokens": 6813,
+        "completion_tokens": 13,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询环境状况"
+      ],
+      "predicted": [
+        "查询环境状况"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询环境状况": 1.0
+      },
+      "id": "clear_env_01",
+      "group": "clear",
+      "text": "今天风往哪边吹",
+      "latency_ms": 4331.8,
+      "usage": {
+        "prompt_tokens": 6804,
+        "total_tokens": 6826,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询环境状况"
+      ],
+      "predicted": [
+        "查询环境状况"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询环境状况": 1.0
+      },
+      "id": "clear_env_02",
+      "group": "clear",
+      "text": "浪大不大",
+      "latency_ms": 1109.3,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6824,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询环境状况"
+      ],
+      "predicted": [
+        "查询环境状况"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询环境状况": 1.0
+      },
+      "id": "clear_env_03",
+      "group": "clear",
+      "text": "斯库拉海峡那边天气怎么样",
+      "latency_ms": 901.0,
+      "usage": {
+        "prompt_tokens": 6805,
+        "total_tokens": 6836,
+        "completion_tokens": 31,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询环境状况"
+      ],
+      "predicted": [
+        "查询环境状况"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询环境状况": 1.0
+      },
+      "id": "clear_env_04",
+      "group": "clear",
+      "text": "现在天黑了吗",
+      "latency_ms": 765.6,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6823,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "装备物品"
+      ],
+      "predicted": [
+        "装备物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "装备物品": 1.0
+      },
+      "id": "clear_equip_01",
+      "group": "clear",
+      "text": "把铜矛装备上",
+      "latency_ms": 922.2,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6825,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.6666666666666666,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "装备物品"
+      ],
+      "predicted": [
+        "装备物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "装备物品": 0.6667
+      },
+      "id": "clear_equip_02",
+      "group": "clear",
+      "text": "帮我换上那件皮甲",
+      "latency_ms": 2366.3,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6832,
+        "completion_tokens": 29,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "卸下装备"
+      ],
+      "predicted": [
+        "卸下装备"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "卸下装备": 1.0
+      },
+      "id": "clear_equip_03",
+      "group": "clear",
+      "text": "把弓卸下来",
+      "latency_ms": 764.9,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6824,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "使用消耗品"
+      ],
+      "predicted": [
+        "使用消耗品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "使用消耗品": 1.0
+      },
+      "id": "clear_equip_04",
+      "group": "clear",
+      "text": "喝药",
+      "latency_ms": 1376.1,
+      "usage": {
+        "prompt_tokens": 6800,
+        "total_tokens": 6822,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "使用消耗品"
+      ],
+      "predicted": [
+        "使用消耗品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "使用消耗品": 1.0
+      },
+      "id": "clear_equip_05",
+      "group": "clear",
+      "text": "吃块蜂蜜",
+      "latency_ms": 1894.0,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6823,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "丢弃物品"
+      ],
+      "predicted": [
+        "丢弃物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "丢弃物品": 1.0
+      },
+      "id": "clear_equip_06",
+      "group": "clear",
+      "text": "把这瓶药扔了",
+      "latency_ms": 987.8,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6823,
+        "completion_tokens": 21,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询背包"
+      ],
+      "predicted": [
+        "查询背包"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询背包": 1.0
+      },
+      "id": "clear_equip_07",
+      "group": "clear",
+      "text": "我背包里还有几壶淡水",
+      "latency_ms": 895.2,
+      "usage": {
+        "prompt_tokens": 6805,
+        "total_tokens": 6826,
+        "completion_tokens": 21,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.6666666666666666,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "使用消耗品"
+      ],
+      "predicted": [
+        "使用消耗品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "使用消耗品": 0.6667
+      },
+      "id": "clear_equip_08",
+      "group": "clear",
+      "text": "把玛草给我用上",
+      "latency_ms": 1240.6,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6832,
+        "completion_tokens": 29,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "获取物资"
+      ],
+      "predicted": [
+        "获取物资"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "获取物资": 1.0
+      },
+      "id": "clear_gather_01",
+      "group": "clear",
+      "text": "去捡些贝壳",
+      "latency_ms": 828.6,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6829,
+        "completion_tokens": 27,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "获取物资"
+      ],
+      "predicted": [
+        "获取物资"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "获取物资": 1.0
+      },
+      "id": "clear_gather_02",
+      "group": "clear",
+      "text": "我想去钓鱼",
+      "latency_ms": 764.5,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6822,
+        "completion_tokens": 21,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "获取物资"
+      ],
+      "predicted": [
+        "获取物资"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "获取物资": 1.0
+      },
+      "id": "clear_gather_03",
+      "group": "clear",
+      "text": "弄点淡水回来",
+      "latency_ms": 788.4,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6830,
+        "completion_tokens": 28,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.5,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "获取物资"
+      ],
+      "predicted": [
+        "获取物资"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "获取物资": 0.5
+      },
+      "id": "clear_gather_04",
+      "group": "clear",
+      "text": "砍点柴薪",
+      "latency_ms": 1912.8,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6830,
+        "completion_tokens": 28,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.6666666666666666,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "给予物品"
+      ],
+      "predicted": [
+        "给予物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "给予物品": 0.6667
+      },
+      "id": "clear_give_01",
+      "group": "clear",
+      "text": "把这根橄榄枝给你",
+      "latency_ms": 854.9,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6832,
+        "completion_tokens": 29,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "给予物品"
+      ],
+      "predicted": [
+        "给予物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "给予物品": 1.0
+      },
+      "id": "clear_give_02",
+      "group": "clear",
+      "text": "拿着这袋风",
+      "latency_ms": 831.2,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6824,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "请求帮助"
+      ],
+      "predicted": [
+        "请求帮助"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "请求帮助": 1.0
+      },
+      "id": "clear_help_01",
+      "group": "clear",
+      "text": "我该怎么办",
+      "latency_ms": 735.3,
+      "usage": {
+        "prompt_tokens": 6799,
+        "total_tokens": 6821,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "请求帮助"
+      ],
+      "predicted": [
+        "请求帮助"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "请求帮助": 1.0
+      },
+      "id": "clear_help_02",
+      "group": "clear",
+      "text": "帮帮我对付那条海蛇",
+      "latency_ms": 832.3,
+      "usage": {
+        "prompt_tokens": 6805,
+        "total_tokens": 6830,
+        "completion_tokens": 25,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "导航到地点"
+      ],
+      "predicted": [
+        "导航到地点"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "导航到地点": 1.0
+      },
+      "id": "clear_nav_01",
+      "group": "clear",
+      "text": "我要去伊萨卡",
+      "latency_ms": 1086.2,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6826,
+        "completion_tokens": 24,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "导航到地点"
+      ],
+      "predicted": [
+        "导航到地点"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "导航到地点": 1.0
+      },
+      "id": "clear_nav_02",
+      "group": "clear",
+      "text": "带我去冥界",
+      "latency_ms": 1109.3,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6824,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.6666666666666666,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "查询地点信息"
+      ],
+      "predicted": [
+        "查询地点信息"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询地点信息": 0.6667
+      },
+      "id": "clear_nav_03",
+      "group": "clear",
+      "text": "埃俄罗斯岛是什么样的地方",
+      "latency_ms": 1171.9,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6835,
+        "completion_tokens": 32,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询附近目标"
+      ],
+      "predicted": [
+        "查询附近目标"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询附近目标": 1.0
+      },
+      "id": "clear_nav_04",
+      "group": "clear",
+      "text": "这附近有淡水吗",
+      "latency_ms": 936.8,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6827,
+        "completion_tokens": 24,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询附近目标"
+      ],
+      "predicted": [
+        "查询附近目标"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询附近目标": 1.0
+      },
+      "id": "clear_nav_05",
+      "group": "clear",
+      "text": "附近能看到船吗",
+      "latency_ms": 1084.8,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6825,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询神谕"
+      ],
+      "predicted": [
+        "查询神谕"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询神谕": 1.0
+      },
+      "id": "clear_oracle_01",
+      "group": "clear",
+      "text": "雅典娜对我预示了什么",
+      "latency_ms": 765.6,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6828,
+        "completion_tokens": 25,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询神谕"
+      ],
+      "predicted": [
+        "查询神谕"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询神谕": 1.0
+      },
+      "id": "clear_oracle_02",
+      "group": "clear",
+      "text": "那个预示是什么意思",
+      "latency_ms": 757.7,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6816,
+        "completion_tokens": 15,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询神谕"
+      ],
+      "predicted": [
+        "查询神谕"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询神谕": 1.0
+      },
+      "id": "clear_oracle_03",
+      "group": "clear",
+      "text": "提瑞西阿斯怎么说",
+      "latency_ms": 1898.0,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6830,
+        "completion_tokens": 27,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.6666666666666666,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "查询神谕"
+      ],
+      "predicted": [
+        "查询神谕"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询神谕": 0.6667
+      },
+      "id": "clear_oracle_04",
+      "group": "clear",
+      "text": "梦里那个预示讲的是回家吗",
+      "latency_ms": 791.8,
+      "usage": {
+        "prompt_tokens": 6804,
+        "total_tokens": 6827,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询任务线索"
+      ],
+      "predicted": [
+        "查询任务线索"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询任务线索": 1.0
+      },
+      "id": "clear_quest_01",
+      "group": "clear",
+      "text": "有没有什么活可以接",
+      "latency_ms": 775.7,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6825,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.6666666666666666,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "接取任务"
+      ],
+      "predicted": [
+        "接取任务"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "接取任务": 0.6667
+      },
+      "id": "clear_quest_02",
+      "group": "clear",
+      "text": "送信那个任务我接了",
+      "latency_ms": 1363.3,
+      "usage": {
+        "prompt_tokens": 6804,
+        "total_tokens": 6835,
+        "completion_tokens": 31,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.5,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "查询任务线索"
+      ],
+      "predicted": [
+        "查询任务线索"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询任务线索": 0.5
+      },
+      "id": "clear_quest_03",
+      "group": "clear",
+      "text": "那个采集任务要采什么",
+      "latency_ms": 1032.3,
+      "usage": {
+        "prompt_tokens": 6804,
+        "total_tokens": 6835,
+        "completion_tokens": 31,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询任务进度"
+      ],
+      "predicted": [
+        "查询任务进度"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询任务进度": 1.0
+      },
+      "id": "clear_quest_04",
+      "group": "clear",
+      "text": "我那个任务做得怎么样了",
+      "latency_ms": 631.0,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6818,
+        "completion_tokens": 15,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "提交任务"
+      ],
+      "predicted": [
+        "提交任务"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "提交任务": 1.0
+      },
+      "id": "clear_quest_05",
+      "group": "clear",
+      "text": "我来交任务",
+      "latency_ms": 697.2,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6815,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "放弃任务"
+      ],
+      "predicted": [
+        "放弃任务"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "放弃任务": 1.0
+      },
+      "id": "clear_quest_06",
+      "group": "clear",
+      "text": "这个我不接了",
+      "latency_ms": 1349.8,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6815,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询任务线索"
+      ],
+      "predicted": [
+        "查询任务线索"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询任务线索": 1.0
+      },
+      "id": "clear_quest_07",
+      "group": "clear",
+      "text": "这活儿给多少报酬",
+      "latency_ms": 1202.0,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6826,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "船只操作"
+      ],
+      "predicted": [
+        "船只操作"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "船只操作": 1.0
+      },
+      "id": "clear_ship_01",
+      "group": "clear",
+      "text": "我要开船走",
+      "latency_ms": 748.1,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6824,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "船只操作"
+      ],
+      "predicted": [
+        "船只操作"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "船只操作": 1.0
+      },
+      "id": "clear_ship_02",
+      "group": "clear",
+      "text": "把船靠岸",
+      "latency_ms": 750.0,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6824,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "船只操作"
+      ],
+      "predicted": [
+        "船只操作"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "船只操作": 1.0
+      },
+      "id": "clear_ship_03",
+      "group": "clear",
+      "text": "船漏水了修一下",
+      "latency_ms": 745.0,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6826,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "船只操作"
+      ],
+      "predicted": [
+        "船只操作"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "船只操作": 1.0
+      },
+      "id": "clear_ship_04",
+      "group": "clear",
+      "text": "给船装淡水",
+      "latency_ms": 786.2,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6824,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "船只操作"
+      ],
+      "predicted": [
+        "船只操作"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "船只操作": 1.0
+      },
+      "id": "clear_ship_05",
+      "group": "clear",
+      "text": "升帆",
+      "latency_ms": 807.0,
+      "usage": {
+        "prompt_tokens": 6800,
+        "total_tokens": 6822,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "船只操作"
+      ],
+      "predicted": [
+        "船只操作"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "船只操作": 1.0
+      },
+      "id": "clear_ship_06",
+      "group": "clear",
+      "text": "抛锚吧",
+      "latency_ms": 761.1,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6823,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "购买物品"
+      ],
+      "predicted": [
+        "购买物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "购买物品": 1.0
+      },
+      "id": "clear_trade_01",
+      "group": "clear",
+      "text": "我要买两壶淡水",
+      "latency_ms": 2010.3,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6830,
+        "completion_tokens": 27,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "购买物品"
+      ],
+      "predicted": [
+        "购买物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "购买物品": 1.0
+      },
+      "id": "clear_trade_02",
+      "group": "clear",
+      "text": "来一块面包",
+      "latency_ms": 1304.6,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6822,
+        "completion_tokens": 21,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询价格"
+      ],
+      "predicted": [
+        "查询价格"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询价格": 1.0
+      },
+      "id": "clear_trade_03",
+      "group": "clear",
+      "text": "这船桨多少钱",
+      "latency_ms": 885.8,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6824,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询库存"
+      ],
+      "predicted": [
+        "查询库存"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询库存": 1.0
+      },
+      "id": "clear_trade_04",
+      "group": "clear",
+      "text": "你这儿还有蜂蜜吗",
+      "latency_ms": 4992.8,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6824,
+        "completion_tokens": 21,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.6666666666666666,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "卖出物品"
+      ],
+      "predicted": [
+        "卖出物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "卖出物品": 0.6667
+      },
+      "id": "clear_trade_05",
+      "group": "clear",
+      "text": "把这筐橄榄油卖了",
+      "latency_ms": 2168.2,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6829,
+        "completion_tokens": 27,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询价格"
+      ],
+      "predicted": [
+        "查询价格"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询价格": 1.0
+      },
+      "id": "clear_trade_06",
+      "group": "clear",
+      "text": "玛草怎么卖",
+      "latency_ms": 1314.8,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6824,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.8,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "购买物品"
+      ],
+      "predicted": [
+        "购买物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "购买物品": 0.8
+      },
+      "id": "clear_trade_07",
+      "group": "clear",
+      "text": "给我来三卷干粮",
+      "latency_ms": 963.6,
+      "usage": {
+        "prompt_tokens": 6804,
+        "total_tokens": 6838,
+        "completion_tokens": 34,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询库存"
+      ],
+      "predicted": [
+        "查询库存"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询库存": 1.0
+      },
+      "id": "clear_trade_08",
+      "group": "clear",
+      "text": "你们这都卖什么",
+      "latency_ms": 684.0,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6816,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询库存"
+      ],
+      "predicted": [
+        "查询库存"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询库存": 1.0
+      },
+      "id": "clear_trade_09",
+      "group": "clear",
+      "text": "火把还有没有",
+      "latency_ms": 722.2,
+      "usage": {
+        "prompt_tokens": 6800,
+        "total_tokens": 6821,
+        "completion_tokens": 21,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "购买物品"
+      ],
+      "predicted": [
+        "购买物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "购买物品": 1.0
+      },
+      "id": "clear_trade_10",
+      "group": "clear",
+      "text": "我想用德拉克马买把铜矛",
+      "latency_ms": 1328.4,
+      "usage": {
+        "prompt_tokens": 6807,
+        "total_tokens": 6837,
+        "completion_tokens": 30,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.6666666666666666,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "查询生物情报"
+      ],
+      "predicted": [
+        "查询生物情报"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询生物情报": 0.6667
+      },
+      "id": "confuse_01",
+      "group": "confuse",
+      "text": "塞壬在哪",
+      "latency_ms": 924.6,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6832,
+        "completion_tokens": 31,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询生物情报"
+      ],
+      "predicted": [
+        "查询生物情报"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询生物情报": 1.0
+      },
+      "id": "confuse_02",
+      "group": "confuse",
+      "text": "斯库拉是什么",
+      "latency_ms": 842.9,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6826,
+        "completion_tokens": 24,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.6666666666666666,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "查询生物情报"
+      ],
+      "predicted": [
+        "查询生物情报"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询生物情报": 0.6667
+      },
+      "id": "confuse_03",
+      "group": "confuse",
+      "text": "卡律布狄斯在哪片海",
+      "latency_ms": 944.0,
+      "usage": {
+        "prompt_tokens": 6806,
+        "total_tokens": 6840,
+        "completion_tokens": 34,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询附近目标"
+      ],
+      "predicted": [
+        "查询附近目标"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询附近目标": 1.0
+      },
+      "id": "confuse_04",
+      "group": "confuse",
+      "text": "雅典娜在哪",
+      "latency_ms": 841.0,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6824,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询附近目标"
+      ],
+      "predicted": [
+        "查询附近目标"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询附近目标": 1.0
+      },
+      "id": "confuse_05",
+      "group": "confuse",
+      "text": "赫尔墨斯在哪",
+      "latency_ms": 743.4,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6825,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": false,
+      "args_f1": 1.0,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "查询附近目标"
+      ],
+      "predicted": [
+        "查询生物情报"
+      ],
+      "extra_categories": [
+        "查询生物情报"
+      ],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询附近目标": 1.0
+      },
+      "id": "confuse_06",
+      "group": "confuse",
+      "text": "波塞冬在哪",
+      "latency_ms": 844.7,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6826,
+        "completion_tokens": 24,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询附近目标"
+      ],
+      "predicted": [
+        "查询附近目标"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询附近目标": 1.0
+      },
+      "id": "confuse_07",
+      "group": "confuse",
+      "text": "提瑞西阿斯在哪",
+      "latency_ms": 809.0,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6826,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.6666666666666666,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "查询地点信息"
+      ],
+      "predicted": [
+        "查询地点信息"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询地点信息": 0.6667
+      },
+      "id": "confuse_08",
+      "group": "confuse",
+      "text": "冥界里有什么",
+      "latency_ms": 952.5,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6832,
+        "completion_tokens": 30,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "导航到地点"
+      ],
+      "predicted": [
+        "导航到地点"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "导航到地点": 1.0
+      },
+      "id": "confuse_09",
+      "group": "confuse",
+      "text": "冥界在哪",
+      "latency_ms": 781.1,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6824,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": false,
+      "args_f1": 0.0,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "导航到地点"
+      ],
+      "predicted": [
+        "查询地点信息"
+      ],
+      "extra_categories": [
+        "查询地点信息"
+      ],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "导航到地点": 0.0
+      },
+      "id": "confuse_10",
+      "group": "confuse",
+      "text": "埃俄罗斯岛在哪",
+      "latency_ms": 823.1,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6826,
+        "completion_tokens": 24,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "闲聊"
+      ],
+      "predicted": [
+        "闲聊"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "闲聊": 1.0
+      },
+      "id": "confuse_11",
+      "group": "confuse",
+      "text": "埃俄罗斯是谁",
+      "latency_ms": 726.1,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6822,
+        "completion_tokens": 21,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询生物情报"
+      ],
+      "predicted": [
+        "查询生物情报"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询生物情报": 1.0
+      },
+      "id": "confuse_12",
+      "group": "confuse",
+      "text": "塞壬的歌声会害死人吗",
+      "latency_ms": 992.5,
+      "usage": {
+        "prompt_tokens": 6806,
+        "total_tokens": 6836,
+        "completion_tokens": 30,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.6666666666666666,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "查询生物情报"
+      ],
+      "predicted": [
+        "查询生物情报"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询生物情报": 0.6667
+      },
+      "id": "confuse_13",
+      "group": "confuse",
+      "text": "斯库拉长了几只脚",
+      "latency_ms": 953.5,
+      "usage": {
+        "prompt_tokens": 6804,
+        "total_tokens": 6836,
+        "completion_tokens": 32,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.6666666666666666,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "查询生物情报"
+      ],
+      "predicted": [
+        "查询生物情报"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询生物情报": 0.6667
+      },
+      "id": "confuse_14",
+      "group": "confuse",
+      "text": "卡律布狄斯是漩涡还是怪兽",
+      "latency_ms": 998.7,
+      "usage": {
+        "prompt_tokens": 6807,
+        "total_tokens": 6840,
+        "completion_tokens": 33,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询神谕"
+      ],
+      "predicted": [
+        "查询神谕"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询神谕": 1.0
+      },
+      "id": "confuse_15",
+      "group": "confuse",
+      "text": "雅典娜给过我预示吗",
+      "latency_ms": 822.1,
+      "usage": {
+        "prompt_tokens": 6804,
+        "total_tokens": 6829,
+        "completion_tokens": 25,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.6666666666666666,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "查询生物情报"
+      ],
+      "predicted": [
+        "查询生物情报"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询生物情报": 0.6667
+      },
+      "id": "confuse_16",
+      "group": "confuse",
+      "text": "塞壬唱的是什么歌",
+      "latency_ms": 947.5,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6833,
+        "completion_tokens": 30,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询神谕"
+      ],
+      "predicted": [
+        "查询神谕"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询神谕": 1.0
+      },
+      "id": "confuse_17",
+      "group": "confuse",
+      "text": "提瑞西阿斯说的预言是什么意思",
+      "latency_ms": 881.1,
+      "usage": {
+        "prompt_tokens": 6805,
+        "total_tokens": 6832,
+        "completion_tokens": 27,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.0,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "闲聊"
+      ],
+      "predicted": [
+        "闲聊"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "闲聊": 0.0
+      },
+      "id": "confuse_18",
+      "group": "confuse",
+      "text": "独眼巨人算神话生物吗",
+      "latency_ms": 516.6,
+      "usage": {
+        "prompt_tokens": 6805,
+        "total_tokens": 6818,
+        "completion_tokens": 13,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": false,
+      "args_f1": 0.0,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "查询地点信息"
+      ],
+      "predicted": [
+        "查询生物情报"
+      ],
+      "extra_categories": [
+        "查询生物情报"
+      ],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询地点信息": 0.0
+      },
+      "id": "confuse_19",
+      "group": "confuse",
+      "text": "喀耳卡狄斯住哪座岛",
+      "latency_ms": 1059.4,
+      "usage": {
+        "prompt_tokens": 6807,
+        "total_tokens": 6843,
+        "completion_tokens": 36,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.6666666666666666,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "导航到地点"
+      ],
+      "predicted": [
+        "导航到地点"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "导航到地点": 0.6667
+      },
+      "id": "confuse_20",
+      "group": "confuse",
+      "text": "我要去喀耳卡狄斯那里",
+      "latency_ms": 990.5,
+      "usage": {
+        "prompt_tokens": 6805,
+        "total_tokens": 6838,
+        "completion_tokens": 33,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "闲聊"
+      ],
+      "predicted": [
+        "闲聊"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "闲聊": 1.0
+      },
+      "id": "confuse_21",
+      "group": "confuse",
+      "text": "风袋是谁给我的",
+      "latency_ms": 748.6,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6823,
+        "completion_tokens": 21,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "闲聊"
+      ],
+      "predicted": [
+        "闲聊"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "闲聊": 1.0
+      },
+      "id": "confuse_22",
+      "group": "confuse",
+      "text": "奥德修斯回伊萨卡了吗",
+      "latency_ms": 746.6,
+      "usage": {
+        "prompt_tokens": 6806,
+        "total_tokens": 6828,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询附近目标"
+      ],
+      "predicted": [
+        "查询附近目标"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询附近目标": 1.0
+      },
+      "id": "confuse_23",
+      "group": "confuse",
+      "text": "我要找奥德修斯",
+      "latency_ms": 739.4,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6826,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询附近目标"
+      ],
+      "predicted": [
+        "查询附近目标"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询附近目标": 1.0
+      },
+      "id": "confuse_24",
+      "group": "confuse",
+      "text": "冥王哈迪斯在哪",
+      "latency_ms": 779.1,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6826,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "导航到地点"
+      ],
+      "predicted": [
+        "导航到地点"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "导航到地点": 1.0
+      },
+      "id": "hades_01",
+      "group": "hades_oov",
+      "text": "我要去冥界之岸",
+      "latency_ms": 802.1,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6828,
+        "completion_tokens": 25,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "购买物品"
+      ],
+      "predicted": [
+        "购买物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "购买物品": 1.0
+      },
+      "id": "hades_02",
+      "group": "hades_oov",
+      "text": "买两瓶蜂蜜酒",
+      "latency_ms": 909.4,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6831,
+        "completion_tokens": 28,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询背包"
+      ],
+      "predicted": [
+        "查询背包"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询背包": 1.0
+      },
+      "id": "hades_03",
+      "group": "hades_oov",
+      "text": "背包里还有几瓶蜂蜜酒",
+      "latency_ms": 799.7,
+      "usage": {
+        "prompt_tokens": 6805,
+        "total_tokens": 6827,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "给予物品"
+      ],
+      "predicted": [
+        "给予物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "给予物品": 1.0
+      },
+      "id": "hades_04",
+      "group": "hades_oov",
+      "text": "把蜂蜜酒倒进献祭沟",
+      "latency_ms": 865.2,
+      "usage": {
+        "prompt_tokens": 6806,
+        "total_tokens": 6837,
+        "completion_tokens": 31,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询神谕"
+      ],
+      "predicted": [
+        "查询神谕"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询神谕": 1.0
+      },
+      "id": "hades_05",
+      "group": "hades_oov",
+      "text": "向特瑞西阿斯求一条预言",
+      "latency_ms": 876.2,
+      "usage": {
+        "prompt_tokens": 6806,
+        "total_tokens": 6833,
+        "completion_tokens": 27,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询附近目标"
+      ],
+      "predicted": [
+        "查询附近目标"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询附近目标": 1.0
+      },
+      "id": "hades_06",
+      "group": "hades_oov",
+      "text": "特瑞西阿斯的亡魂在哪",
+      "latency_ms": 725.4,
+      "usage": {
+        "prompt_tokens": 6806,
+        "total_tokens": 6829,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": false,
+      "args_f1": 0.0,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "请求帮助"
+      ],
+      "predicted": [
+        "导航到地点"
+      ],
+      "extra_categories": [
+        "导航到地点"
+      ],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "请求帮助": 0.0
+      },
+      "id": "hades_07",
+      "group": "hades_oov",
+      "text": "怎么渡过冥河",
+      "latency_ms": 789.0,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6825,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "接取任务"
+      ],
+      "predicted": [
+        "接取任务"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "接取任务": 1.0
+      },
+      "id": "hades_08",
+      "group": "hades_oov",
+      "text": "我选长路",
+      "latency_ms": 791.0,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6826,
+        "completion_tokens": 24,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询神谕"
+      ],
+      "predicted": [
+        "查询神谕"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询神谕": 1.0
+      },
+      "id": "hades_09",
+      "group": "hades_oov",
+      "text": "阿喀琉斯的捷径是什么",
+      "latency_ms": 1003.2,
+      "usage": {
+        "prompt_tokens": 6804,
+        "total_tokens": 6838,
+        "completion_tokens": 34,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "其他意图"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "其他意图": 1.0
+      },
+      "id": "hades_10",
+      "group": "hades_oov",
+      "text": "把我变成亡魂",
+      "latency_ms": 606.3,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6816,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "其他意图"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "其他意图": 1.0
+      },
+      "id": "hades_11",
+      "group": "hades_oov",
+      "text": "打开冥界地图",
+      "latency_ms": 595.1,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6816,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "其他意图"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "其他意图": 1.0
+      },
+      "id": "hades_12",
+      "group": "hades_oov",
+      "text": "跳过献祭直接见特瑞西阿斯",
+      "latency_ms": 637.3,
+      "usage": {
+        "prompt_tokens": 6807,
+        "total_tokens": 6821,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "闲聊"
+      ],
+      "predicted": [
+        "闲聊"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "闲聊": 1.0
+      },
+      "id": "hades_13",
+      "group": "hades_oov",
+      "text": "给我讲讲冥河摆渡人的传说",
+      "latency_ms": 777.0,
+      "usage": {
+        "prompt_tokens": 6806,
+        "total_tokens": 6830,
+        "completion_tokens": 24,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": false,
+      "args_f1": 1.0,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "查询附近目标"
+      ],
+      "predicted": [
+        "查询地点信息"
+      ],
+      "extra_categories": [
+        "查询地点信息"
+      ],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询附近目标": 1.0
+      },
+      "id": "hades_14",
+      "group": "hades_oov",
+      "text": "献祭沟在哪",
+      "latency_ms": 806.2,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6826,
+        "completion_tokens": 24,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "威胁或攻击"
+      ],
+      "predicted": [
+        "威胁或攻击"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "威胁或攻击": 1.0
+      },
+      "id": "hostile_01",
+      "group": "hostile",
+      "text": "你找死",
+      "latency_ms": 642.9,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6816,
+        "completion_tokens": 15,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "威胁或攻击"
+      ],
+      "predicted": [
+        "威胁或攻击"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "威胁或攻击": 1.0
+      },
+      "id": "hostile_02",
+      "group": "hostile",
+      "text": "有种拔剑",
+      "latency_ms": 557.0,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6816,
+        "completion_tokens": 15,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "威胁或攻击"
+      ],
+      "predicted": [
+        "威胁或攻击"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "威胁或攻击": 1.0
+      },
+      "id": "hostile_03",
+      "group": "hostile",
+      "text": "老子抢的就是你",
+      "latency_ms": 665.1,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6817,
+        "completion_tokens": 15,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "威胁或攻击"
+      ],
+      "predicted": [
+        "威胁或攻击"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "威胁或攻击": 1.0
+      },
+      "id": "hostile_04",
+      "group": "hostile",
+      "text": "单挑，敢不敢",
+      "latency_ms": 570.0,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6817,
+        "completion_tokens": 15,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "威胁或攻击"
+      ],
+      "predicted": [
+        "威胁或攻击"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "威胁或攻击": 1.0
+      },
+      "id": "hostile_05",
+      "group": "hostile",
+      "text": "我要血洗这条船",
+      "latency_ms": 622.7,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6818,
+        "completion_tokens": 15,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "威胁或攻击"
+      ],
+      "predicted": [
+        "威胁或攻击"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "威胁或攻击": 1.0
+      },
+      "id": "hostile_06",
+      "group": "hostile",
+      "text": "把钱交出来不然一刀砍了你",
+      "latency_ms": 594.7,
+      "usage": {
+        "prompt_tokens": 6805,
+        "total_tokens": 6820,
+        "completion_tokens": 15,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "威胁或攻击"
+      ],
+      "predicted": [
+        "威胁或攻击"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "威胁或攻击": 1.0
+      },
+      "id": "hostile_07",
+      "group": "hostile",
+      "text": "废物",
+      "latency_ms": 626.5,
+      "usage": {
+        "prompt_tokens": 6799,
+        "total_tokens": 6814,
+        "completion_tokens": 15,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "威胁或攻击"
+      ],
+      "predicted": [
+        "威胁或攻击"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "威胁或攻击": 1.0
+      },
+      "id": "hostile_08",
+      "group": "hostile",
+      "text": "信不信我把你扔进海里喂鱼",
+      "latency_ms": 585.5,
+      "usage": {
+        "prompt_tokens": 6807,
+        "total_tokens": 6822,
+        "completion_tokens": 15,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "购买物品"
+      ],
+      "predicted": [
+        "购买物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "购买物品": 1.0
+      },
+      "id": "mt_01",
+      "group": "multiturn",
+      "text": "三罐",
+      "latency_ms": 838.7,
+      "usage": {
+        "prompt_tokens": 6814,
+        "total_tokens": 6841,
+        "completion_tokens": 27,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": false,
+      "args_f1": 1.0,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "闲聊"
+      ],
+      "predicted": [
+        "查询附近目标"
+      ],
+      "extra_categories": [
+        "查询附近目标"
+      ],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "闲聊": 1.0
+      },
+      "id": "mt_02",
+      "group": "multiturn",
+      "text": "对，就这个",
+      "latency_ms": 801.6,
+      "usage": {
+        "prompt_tokens": 6818,
+        "total_tokens": 6841,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "导航到地点"
+      ],
+      "predicted": [
+        "导航到地点"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "导航到地点": 1.0
+      },
+      "id": "mt_03",
+      "group": "multiturn",
+      "text": "冥界",
+      "latency_ms": 777.0,
+      "usage": {
+        "prompt_tokens": 6816,
+        "total_tokens": 6839,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.6666666666666666,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "接取任务"
+      ],
+      "predicted": [
+        "接取任务"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "接取任务": 0.6667
+      },
+      "id": "mt_04",
+      "group": "multiturn",
+      "text": "送货",
+      "latency_ms": 933.9,
+      "usage": {
+        "prompt_tokens": 6817,
+        "total_tokens": 6847,
+        "completion_tokens": 30,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": false,
+      "args_f1": 0.0,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "购买物品"
+      ],
+      "predicted": [
+        "闲聊"
+      ],
+      "extra_categories": [
+        "闲聊"
+      ],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "购买物品": 0.0
+      },
+      "id": "mt_05",
+      "group": "multiturn",
+      "text": "面包",
+      "latency_ms": 588.1,
+      "usage": {
+        "prompt_tokens": 6815,
+        "total_tokens": 6828,
+        "completion_tokens": 13,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "闲聊"
+      ],
+      "predicted": [
+        "闲聊"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "闲聊": 1.0
+      },
+      "id": "mt_06",
+      "group": "multiturn",
+      "text": "嗯",
+      "latency_ms": 538.2,
+      "usage": {
+        "prompt_tokens": 6815,
+        "total_tokens": 6828,
+        "completion_tokens": 13,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "导航到地点"
+      ],
+      "predicted": [
+        "导航到地点"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "导航到地点": 1.0
+      },
+      "id": "mt_07",
+      "group": "multiturn",
+      "text": "提洛",
+      "latency_ms": 788.3,
+      "usage": {
+        "prompt_tokens": 6817,
+        "total_tokens": 6840,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "卸下装备"
+      ],
+      "predicted": [
+        "卸下装备"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "卸下装备": 1.0
+      },
+      "id": "mt_08",
+      "group": "multiturn",
+      "text": "矛",
+      "latency_ms": 799.7,
+      "usage": {
+        "prompt_tokens": 6817,
+        "total_tokens": 6839,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": false,
+      "args_f1": 1.0,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "闲聊"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [
+        "其他意图"
+      ],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "闲聊": 1.0
+      },
+      "id": "mt_09",
+      "group": "multiturn",
+      "text": "对",
+      "latency_ms": 581.2,
+      "usage": {
+        "prompt_tokens": 6814,
+        "total_tokens": 6828,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "丢弃物品"
+      ],
+      "predicted": [
+        "丢弃物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "丢弃物品": 1.0
+      },
+      "id": "mt_10",
+      "group": "multiturn",
+      "text": "扔了",
+      "latency_ms": 751.4,
+      "usage": {
+        "prompt_tokens": 6819,
+        "total_tokens": 6841,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询生物情报"
+      ],
+      "predicted": [
+        "查询生物情报"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询生物情报": 1.0
+      },
+      "id": "mt_11",
+      "group": "multiturn",
+      "text": "塞壬",
+      "latency_ms": 782.2,
+      "usage": {
+        "prompt_tokens": 6818,
+        "total_tokens": 6841,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询神谕"
+      ],
+      "predicted": [
+        "查询神谕"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询神谕": 1.0
+      },
+      "id": "mt_12",
+      "group": "multiturn",
+      "text": "雅典娜",
+      "latency_ms": 780.7,
+      "usage": {
+        "prompt_tokens": 6816,
+        "total_tokens": 6841,
+        "completion_tokens": 25,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": false,
+      "args_f1": 1.0,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "购买物品",
+        "查询附近目标"
+      ],
+      "predicted": [
+        "购买物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询附近目标": 1.0,
+        "购买物品": 1.0
+      },
+      "id": "multi_01",
+      "group": "multi",
+      "text": "买壶淡水顺便看看附近有什么",
+      "latency_ms": 800.6,
+      "usage": {
+        "prompt_tokens": 6805,
+        "total_tokens": 6826,
+        "completion_tokens": 21,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": false,
+      "args_f1": 0.5,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "购买物品",
+        "导航到地点"
+      ],
+      "predicted": [
+        "购买物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "导航到地点": 0.0,
+        "购买物品": 1.0
+      },
+      "id": "multi_02",
+      "group": "multi",
+      "text": "买两罐蜂蜜然后去提洛",
+      "latency_ms": 918.3,
+      "usage": {
+        "prompt_tokens": 6805,
+        "total_tokens": 6832,
+        "completion_tokens": 27,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": false,
+      "args_f1": 0.5,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "接取任务",
+        "查询任务线索"
+      ],
+      "predicted": [
+        "接取任务"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "接取任务": 1.0,
+        "查询任务线索": 0.0
+      },
+      "id": "multi_03",
+      "group": "multi",
+      "text": "接任务并问一下报酬",
+      "latency_ms": 608.0,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6818,
+        "completion_tokens": 15,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "卖出物品",
+        "查询附近目标"
+      ],
+      "predicted": [
+        "卖出物品",
+        "查询附近目标"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "卖出物品": 1.0,
+        "查询附近目标": 1.0
+      },
+      "id": "multi_04",
+      "group": "multi",
+      "text": "卖掉蜂蜜然后告诉我附近的任务点",
+      "latency_ms": 1174.4,
+      "usage": {
+        "prompt_tokens": 6805,
+        "total_tokens": 6848,
+        "completion_tokens": 43,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.25,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "购买物品",
+        "购买物品"
+      ],
+      "predicted": [
+        "购买物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "购买物品": 0.25
+      },
+      "id": "multi_05",
+      "group": "multi",
+      "text": "我要买淡水还要买面包",
+      "latency_ms": 1028.3,
+      "usage": {
+        "prompt_tokens": 6804,
+        "total_tokens": 6837,
+        "completion_tokens": 33,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "装备物品",
+        "使用消耗品"
+      ],
+      "predicted": [
+        "装备物品",
+        "使用消耗品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "使用消耗品": 1.0,
+        "装备物品": 1.0
+      },
+      "id": "multi_06",
+      "group": "multi",
+      "text": "装备铜矛然后喝药",
+      "latency_ms": 992.3,
+      "usage": {
+        "prompt_tokens": 6804,
+        "total_tokens": 6839,
+        "completion_tokens": 35,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": false,
+      "args_f1": 1.0,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "告别",
+        "提交任务"
+      ],
+      "predicted": [
+        "告别"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "告别": 1.0,
+        "提交任务": 1.0
+      },
+      "id": "multi_07",
+      "group": "multi",
+      "text": "离开并且把任务交了",
+      "latency_ms": 622.9,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6816,
+        "completion_tokens": 13,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": false,
+      "args_f1": 0.5,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "导航到地点",
+        "查询附近目标"
+      ],
+      "predicted": [
+        "导航到地点"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "导航到地点": 1.0,
+        "查询附近目标": 0.0
+      },
+      "id": "multi_08",
+      "group": "multi",
+      "text": "去塞壬岩并问他附近有敌人吗",
+      "latency_ms": 839.9,
+      "usage": {
+        "prompt_tokens": 6808,
+        "total_tokens": 6832,
+        "completion_tokens": 24,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.5,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "船只操作",
+        "船只操作"
+      ],
+      "predicted": [
+        "船只操作"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "船只操作": 0.5
+      },
+      "id": "multi_09",
+      "group": "multi",
+      "text": "修船并且把淡水装上",
+      "latency_ms": 793.8,
+      "usage": {
+        "prompt_tokens": 6804,
+        "total_tokens": 6827,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "给予物品",
+        "购买物品"
+      ],
+      "predicted": [
+        "给予物品",
+        "购买物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "给予物品": 1.0,
+        "购买物品": 1.0
+      },
+      "id": "multi_10",
+      "group": "multi",
+      "text": "把橄榄枝给我再给我一块面包",
+      "latency_ms": 1164.5,
+      "usage": {
+        "prompt_tokens": 6806,
+        "total_tokens": 6847,
+        "completion_tokens": 41,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "接取任务",
+        "装备物品"
+      ],
+      "predicted": [
+        "接取任务",
+        "装备物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "接取任务": 1.0,
+        "装备物品": 1.0
+      },
+      "id": "multi_11",
+      "group": "multi",
+      "text": "我要接任务并且装备铜矛",
+      "latency_ms": 1062.0,
+      "usage": {
+        "prompt_tokens": 6805,
+        "total_tokens": 6840,
+        "completion_tokens": 35,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询神谕",
+        "查询附近目标"
+      ],
+      "predicted": [
+        "查询神谕",
+        "查询附近目标"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询神谕": 1.0,
+        "查询附近目标": 1.0
+      },
+      "id": "multi_12",
+      "group": "multi",
+      "text": "问神谕顺便问问附近有神庙吗",
+      "latency_ms": 1038.8,
+      "usage": {
+        "prompt_tokens": 6807,
+        "total_tokens": 6843,
+        "completion_tokens": 36,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": false,
+      "args_f1": 0.5,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "获取物资",
+        "营地准备"
+      ],
+      "predicted": [
+        "使用消耗品",
+        "营地准备"
+      ],
+      "extra_categories": [
+        "使用消耗品"
+      ],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "获取物资": 0.0,
+        "营地准备": 1.0
+      },
+      "id": "multi_13",
+      "group": "multi",
+      "text": "钓鱼然后生火烤鱼",
+      "latency_ms": 1202.7,
+      "usage": {
+        "prompt_tokens": 6804,
+        "total_tokens": 6846,
+        "completion_tokens": 42,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "其他意图"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "其他意图": 1.0
+      },
+      "id": "negative_01",
+      "group": "negative",
+      "text": "asdfghjkl",
+      "latency_ms": 676.6,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6817,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "其他意图"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "其他意图": 1.0
+      },
+      "id": "negative_02",
+      "group": "negative",
+      "text": "??????",
+      "latency_ms": 589.3,
+      "usage": {
+        "prompt_tokens": 6800,
+        "total_tokens": 6814,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "其他意图"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "其他意图": 1.0
+      },
+      "id": "negative_03",
+      "group": "negative",
+      "text": "测试测试测试",
+      "latency_ms": 638.1,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6815,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "其他意图"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "其他意图": 1.0
+      },
+      "id": "negative_04",
+      "group": "negative",
+      "text": "@@@@",
+      "latency_ms": 573.8,
+      "usage": {
+        "prompt_tokens": 6800,
+        "total_tokens": 6814,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "其他意图"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "其他意图": 1.0
+      },
+      "id": "negative_05",
+      "group": "negative",
+      "text": "。。。",
+      "latency_ms": 598.3,
+      "usage": {
+        "prompt_tokens": 6799,
+        "total_tokens": 6813,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "其他意图"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "其他意图": 1.0
+      },
+      "id": "negative_06",
+      "group": "negative",
+      "text": "12345 67890",
+      "latency_ms": 621.6,
+      "usage": {
+        "prompt_tokens": 6809,
+        "total_tokens": 6823,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "其他意图"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "其他意图": 1.0
+      },
+      "id": "negative_07",
+      "group": "negative",
+      "text": "undefined null NaN",
+      "latency_ms": 582.2,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6815,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "其他意图"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "其他意图": 1.0
+      },
+      "id": "negative_08",
+      "group": "negative",
+      "text": "（长时间沉默）",
+      "latency_ms": 578.5,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6816,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "其他意图"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "其他意图": 1.0
+      },
+      "id": "negative_09",
+      "group": "negative",
+      "text": "打开背包界面",
+      "latency_ms": 620.8,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6815,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "其他意图"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "其他意图": 1.0
+      },
+      "id": "negative_10",
+      "group": "negative",
+      "text": "切换到第三人称",
+      "latency_ms": 602.2,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6816,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "其他意图"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "其他意图": 1.0
+      },
+      "id": "negative_11",
+      "group": "negative",
+      "text": "给我999个德拉克马",
+      "latency_ms": 631.4,
+      "usage": {
+        "prompt_tokens": 6806,
+        "total_tokens": 6820,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "其他意图"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "其他意图": 1.0
+      },
+      "id": "negative_12",
+      "group": "negative",
+      "text": "把所有敌人血量清零",
+      "latency_ms": 597.0,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6816,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "导航到地点"
+      ],
+      "predicted": [
+        "导航到地点"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "导航到地点": 1.0
+      },
+      "id": "oov_01",
+      "group": "oov",
+      "text": "我要去阿刻戎河渡口",
+      "latency_ms": 912.8,
+      "usage": {
+        "prompt_tokens": 6804,
+        "total_tokens": 6830,
+        "completion_tokens": 26,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "购买物品"
+      ],
+      "predicted": [
+        "购买物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "购买物品": 1.0
+      },
+      "id": "oov_02",
+      "group": "oov",
+      "text": "买一把赫拉克勒斯之剑",
+      "latency_ms": 821.8,
+      "usage": {
+        "prompt_tokens": 6804,
+        "total_tokens": 6828,
+        "completion_tokens": 24,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询附近目标"
+      ],
+      "predicted": [
+        "查询附近目标"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询附近目标": 1.0
+      },
+      "id": "oov_03",
+      "group": "oov",
+      "text": "普洛特斯和涅柔斯在哪",
+      "latency_ms": 816.0,
+      "usage": {
+        "prompt_tokens": 6806,
+        "total_tokens": 6829,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "接取任务"
+      ],
+      "predicted": [
+        "接取任务"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "接取任务": 1.0
+      },
+      "id": "oov_04",
+      "group": "oov",
+      "text": "接取悬赏：阿特柔斯的遗骸",
+      "latency_ms": 1086.1,
+      "usage": {
+        "prompt_tokens": 6808,
+        "total_tokens": 6843,
+        "completion_tokens": 35,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "其他意图"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "其他意图": 1.0
+      },
+      "id": "oov_05",
+      "group": "oov",
+      "text": "兑换冥河摆渡人的硬币",
+      "latency_ms": 630.2,
+      "usage": {
+        "prompt_tokens": 6805,
+        "total_tokens": 6819,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "其他意图"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "其他意图": 1.0
+      },
+      "id": "oov_06",
+      "group": "oov",
+      "text": "我要触发主线剧情第三章",
+      "latency_ms": 566.9,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6817,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "其他意图"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "其他意图": 1.0
+      },
+      "id": "oov_07",
+      "group": "oov",
+      "text": "把任务状态标记成已完成",
+      "latency_ms": 634.1,
+      "usage": {
+        "prompt_tokens": 6804,
+        "total_tokens": 6818,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "其他意图"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "其他意图": 1.0
+      },
+      "id": "oov_08",
+      "group": "oov",
+      "text": "召唤我那条船",
+      "latency_ms": 597.2,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6816,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "其他意图"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "其他意图": 1.0
+      },
+      "id": "oov_09",
+      "group": "oov",
+      "text": "切换到第一人称视角",
+      "latency_ms": 623.0,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6817,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "购买物品"
+      ],
+      "predicted": [
+        "购买物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "购买物品": 1.0
+      },
+      "id": "oov_10",
+      "group": "oov",
+      "text": "我要买两捆德鲁伊木",
+      "latency_ms": 881.4,
+      "usage": {
+        "prompt_tokens": 6805,
+        "total_tokens": 6834,
+        "completion_tokens": 29,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "导航到地点"
+      ],
+      "predicted": [
+        "导航到地点"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "导航到地点": 1.0
+      },
+      "id": "oov_11",
+      "group": "oov",
+      "text": "去厄瑞玻斯的岛屿找老渔夫",
+      "latency_ms": 1152.1,
+      "usage": {
+        "prompt_tokens": 6807,
+        "total_tokens": 6847,
+        "completion_tokens": 40,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": false,
+      "args_f1": 1.0,
+      "fully_correct": false,
+      "false_trigger": true,
+      "expected": [
+        "其他意图"
+      ],
+      "predicted": [
+        "使用消耗品"
+      ],
+      "extra_categories": [
+        "使用消耗品"
+      ],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "其他意图": 1.0
+      },
+      "id": "oov_12",
+      "group": "oov",
+      "text": "用喀耳卡狄斯的魔药解除诅咒",
+      "latency_ms": 990.2,
+      "usage": {
+        "prompt_tokens": 6808,
+        "total_tokens": 6837,
+        "completion_tokens": 29,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.6666666666666666,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "查询生物情报"
+      ],
+      "predicted": [
+        "查询生物情报"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询生物情报": 0.6667
+      },
+      "id": "oov_13",
+      "group": "oov",
+      "text": "我要打听塞壬的歌声在风里说了什么",
+      "latency_ms": 905.9,
+      "usage": {
+        "prompt_tokens": 6809,
+        "total_tokens": 6839,
+        "completion_tokens": 30,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "请求帮助"
+      ],
+      "predicted": [
+        "请求帮助"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "请求帮助": 1.0
+      },
+      "id": "oov_14",
+      "group": "oov",
+      "text": "问阿伽门农的亡魂我该往哪走",
+      "latency_ms": 844.4,
+      "usage": {
+        "prompt_tokens": 6810,
+        "total_tokens": 6834,
+        "completion_tokens": 24,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "购买物品"
+      ],
+      "predicted": [
+        "购买物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "购买物品": 1.0
+      },
+      "id": "slot_missing_01",
+      "group": "slot_missing",
+      "text": "我想买",
+      "latency_ms": 595.1,
+      "usage": {
+        "prompt_tokens": 6800,
+        "total_tokens": 6814,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询价格"
+      ],
+      "predicted": [
+        "查询价格"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询价格": 1.0
+      },
+      "id": "slot_missing_02",
+      "group": "slot_missing",
+      "text": "这个多少钱",
+      "latency_ms": 577.4,
+      "usage": {
+        "prompt_tokens": 6800,
+        "total_tokens": 6814,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "卖出物品"
+      ],
+      "predicted": [
+        "卖出物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "卖出物品": 1.0
+      },
+      "id": "slot_missing_03",
+      "group": "slot_missing",
+      "text": "我要卖",
+      "latency_ms": 625.1,
+      "usage": {
+        "prompt_tokens": 6800,
+        "total_tokens": 6814,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "装备物品"
+      ],
+      "predicted": [
+        "装备物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "装备物品": 1.0
+      },
+      "id": "slot_missing_04",
+      "group": "slot_missing",
+      "text": "这个能装备吗",
+      "latency_ms": 586.9,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6816,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "导航到地点"
+      ],
+      "predicted": [
+        "导航到地点"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "导航到地点": 1.0
+      },
+      "id": "slot_missing_05",
+      "group": "slot_missing",
+      "text": "我要去",
+      "latency_ms": 623.4,
+      "usage": {
+        "prompt_tokens": 6799,
+        "total_tokens": 6814,
+        "completion_tokens": 15,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询库存"
+      ],
+      "predicted": [
+        "查询库存"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询库存": 1.0
+      },
+      "id": "slot_missing_06",
+      "group": "slot_missing",
+      "text": "有货吗",
+      "latency_ms": 625.3,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6815,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": false,
+      "args_f1": 1.0,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "接取任务"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [
+        "其他意图"
+      ],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "接取任务": 1.0
+      },
+      "id": "slot_missing_07",
+      "group": "slot_missing",
+      "text": "我要做",
+      "latency_ms": 614.2,
+      "usage": {
+        "prompt_tokens": 6800,
+        "total_tokens": 6814,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "丢弃物品"
+      ],
+      "predicted": [
+        "丢弃物品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "丢弃物品": 1.0
+      },
+      "id": "slot_missing_08",
+      "group": "slot_missing",
+      "text": "帮我扔一个",
+      "latency_ms": 651.9,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6815,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询附近目标"
+      ],
+      "predicted": [
+        "查询附近目标"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询附近目标": 1.0
+      },
+      "id": "slot_missing_09",
+      "group": "slot_missing",
+      "text": "哪里",
+      "latency_ms": 620.6,
+      "usage": {
+        "prompt_tokens": 6799,
+        "total_tokens": 6814,
+        "completion_tokens": 15,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询背包"
+      ],
+      "predicted": [
+        "查询背包"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询背包": 1.0
+      },
+      "id": "slot_missing_10",
+      "group": "slot_missing",
+      "text": "我背包里还有什么",
+      "latency_ms": 617.5,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6816,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询任务线索"
+      ],
+      "predicted": [
+        "查询任务线索"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询任务线索": 1.0
+      },
+      "id": "slot_missing_11",
+      "group": "slot_missing",
+      "text": "这个任务如何",
+      "latency_ms": 828.8,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6824,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": false,
+      "args_f1": 1.0,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "给予物品"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [
+        "其他意图"
+      ],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "给予物品": 1.0
+      },
+      "id": "slot_missing_12",
+      "group": "slot_missing",
+      "text": "给",
+      "latency_ms": 645.7,
+      "usage": {
+        "prompt_tokens": 6799,
+        "total_tokens": 6813,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "使用消耗品"
+      ],
+      "predicted": [
+        "使用消耗品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "使用消耗品": 1.0
+      },
+      "id": "slot_missing_13",
+      "group": "slot_missing",
+      "text": "喝一口",
+      "latency_ms": 566.9,
+      "usage": {
+        "prompt_tokens": 6800,
+        "total_tokens": 6815,
+        "completion_tokens": 15,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "卸下装备"
+      ],
+      "predicted": [
+        "卸下装备"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "卸下装备": 1.0
+      },
+      "id": "slot_missing_14",
+      "group": "slot_missing",
+      "text": "脱",
+      "latency_ms": 676.2,
+      "usage": {
+        "prompt_tokens": 6799,
+        "total_tokens": 6814,
+        "completion_tokens": 15,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询任务进度"
+      ],
+      "predicted": [
+        "查询任务进度"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询任务进度": 1.0
+      },
+      "id": "slot_missing_15",
+      "group": "slot_missing",
+      "text": "任务完成了吗",
+      "latency_ms": 574.6,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6816,
+        "completion_tokens": 15,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询附近目标"
+      ],
+      "predicted": [
+        "查询附近目标"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询附近目标": 1.0
+      },
+      "id": "slot_missing_16",
+      "group": "slot_missing",
+      "text": "船呢",
+      "latency_ms": 792.0,
+      "usage": {
+        "prompt_tokens": 6800,
+        "total_tokens": 6823,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询生物情报"
+      ],
+      "predicted": [
+        "查询生物情报"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询生物情报": 1.0
+      },
+      "id": "slot_missing_17",
+      "group": "slot_missing",
+      "text": "海里有什么",
+      "latency_ms": 794.2,
+      "usage": {
+        "prompt_tokens": 6800,
+        "total_tokens": 6822,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询环境状况"
+      ],
+      "predicted": [
+        "查询环境状况"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询环境状况": 1.0
+      },
+      "id": "slot_missing_18",
+      "group": "slot_missing",
+      "text": "风向呢",
+      "latency_ms": 824.2,
+      "usage": {
+        "prompt_tokens": 6800,
+        "total_tokens": 6822,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询背包"
+      ],
+      "predicted": [
+        "查询背包"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询背包": 1.0
+      },
+      "id": "state_set_01",
+      "group": "state_set",
+      "text": "我还有多少淡水",
+      "latency_ms": 766.6,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6822,
+        "completion_tokens": 21,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "其他意图"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "其他意图": 1.0
+      },
+      "id": "state_set_02",
+      "group": "state_set",
+      "text": "把淡水装满",
+      "latency_ms": 649.7,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6815,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询自身状态"
+      ],
+      "predicted": [
+        "查询自身状态"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询自身状态": 1.0
+      },
+      "id": "state_set_03",
+      "group": "state_set",
+      "text": "我渴不渴",
+      "latency_ms": 773.9,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6825,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "其他意图"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "其他意图": 1.0
+      },
+      "id": "state_set_04",
+      "group": "state_set",
+      "text": "帮我把体力补满",
+      "latency_ms": 702.7,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6817,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询自身状态"
+      ],
+      "predicted": [
+        "查询自身状态"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询自身状态": 1.0
+      },
+      "id": "state_set_05",
+      "group": "state_set",
+      "text": "我身上有伤吗",
+      "latency_ms": 773.5,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6825,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "其他意图"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "其他意图": 1.0
+      },
+      "id": "state_set_06",
+      "group": "state_set",
+      "text": "把士气提一提",
+      "latency_ms": 657.3,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6816,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询环境状况"
+      ],
+      "predicted": [
+        "查询环境状况"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询环境状况": 1.0
+      },
+      "id": "state_set_07",
+      "group": "state_set",
+      "text": "现在几点了",
+      "latency_ms": 763.5,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6823,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询环境状况"
+      ],
+      "predicted": [
+        "查询环境状况"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询环境状况": 1.0
+      },
+      "id": "state_set_08",
+      "group": "state_set",
+      "text": "现在浪多高",
+      "latency_ms": 833.2,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6824,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "其他意图"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "其他意图": 1.0
+      },
+      "id": "state_set_09",
+      "group": "state_set",
+      "text": "把风停了",
+      "latency_ms": 612.2,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6815,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询自身状态"
+      ],
+      "predicted": [
+        "查询自身状态"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询自身状态": 1.0
+      },
+      "id": "state_set_10",
+      "group": "state_set",
+      "text": "我饿了",
+      "latency_ms": 763.9,
+      "usage": {
+        "prompt_tokens": 6800,
+        "total_tokens": 6823,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "获取物资"
+      ],
+      "predicted": [
+        "获取物资"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "获取物资": 1.0
+      },
+      "id": "state_set_11",
+      "group": "state_set",
+      "text": "我要吃点东西",
+      "latency_ms": 617.5,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6815,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询背包"
+      ],
+      "predicted": [
+        "查询背包"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询背包": 1.0
+      },
+      "id": "state_set_12",
+      "group": "state_set",
+      "text": "船上的淡水还够几天",
+      "latency_ms": 755.0,
+      "usage": {
+        "prompt_tokens": 6804,
+        "total_tokens": 6825,
+        "completion_tokens": 21,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "闲聊"
+      ],
+      "predicted": [
+        "闲聊"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "闲聊": 1.0
+      },
+      "id": "wind_oov_chat01",
+      "group": "wind_oov",
+      "text": "十二风算神话生物吗",
+      "latency_ms": 714.8,
+      "usage": {
+        "prompt_tokens": 6804,
+        "total_tokens": 6825,
+        "completion_tokens": 21,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "闲聊"
+      ],
+      "predicted": [
+        "闲聊"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "闲聊": 1.0
+      },
+      "id": "wind_oov_chat02",
+      "group": "wind_oov",
+      "text": "埃俄罗斯是谁",
+      "latency_ms": 716.1,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6822,
+        "completion_tokens": 21,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "闲聊"
+      ],
+      "predicted": [
+        "闲聊"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "闲聊": 1.0
+      },
+      "id": "wind_oov_chat03",
+      "group": "wind_oov",
+      "text": "风袋是谁给我的",
+      "latency_ms": 702.6,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6823,
+        "completion_tokens": 21,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询环境状况"
+      ],
+      "predicted": [
+        "查询环境状况"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询环境状况": 1.0
+      },
+      "id": "wind_oov_env01",
+      "group": "wind_oov",
+      "text": "风神岛那边现在什么风向",
+      "latency_ms": 950.5,
+      "usage": {
+        "prompt_tokens": 6805,
+        "total_tokens": 6835,
+        "completion_tokens": 30,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询环境状况"
+      ],
+      "predicted": [
+        "查询环境状况"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询环境状况": 1.0
+      },
+      "id": "wind_oov_env02",
+      "group": "wind_oov",
+      "text": "东风什么时候刮",
+      "latency_ms": 813.8,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6823,
+        "completion_tokens": 22,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.6666666666666666,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "查询地点信息"
+      ],
+      "predicted": [
+        "查询地点信息"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询地点信息": 0.6667
+      },
+      "id": "wind_oov_loc01",
+      "group": "wind_oov",
+      "text": "风神岛上有什么",
+      "latency_ms": 958.3,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6833,
+        "completion_tokens": 31,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.5,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "查询地点信息"
+      ],
+      "predicted": [
+        "查询地点信息"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询地点信息": 0.5
+      },
+      "id": "wind_oov_loc02",
+      "group": "wind_oov",
+      "text": "埃俄罗斯岛安全吗",
+      "latency_ms": 957.0,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6835,
+        "completion_tokens": 32,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "导航到地点"
+      ],
+      "predicted": [
+        "导航到地点"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "导航到地点": 1.0
+      },
+      "id": "wind_oov_nav01",
+      "group": "wind_oov",
+      "text": "我要去风神岛",
+      "latency_ms": 757.4,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6826,
+        "completion_tokens": 24,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "导航到地点"
+      ],
+      "predicted": [
+        "导航到地点"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "导航到地点": 1.0
+      },
+      "id": "wind_oov_nav02",
+      "group": "wind_oov",
+      "text": "带我去埃俄罗斯的浮岛",
+      "latency_ms": 829.8,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6828,
+        "completion_tokens": 25,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "其他意图"
+      ],
+      "predicted": [
+        "其他意图"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "其他意图": 1.0
+      },
+      "id": "wind_oov_neg01",
+      "group": "wind_oov",
+      "text": "把风停了",
+      "latency_ms": 628.2,
+      "usage": {
+        "prompt_tokens": 6801,
+        "total_tokens": 6815,
+        "completion_tokens": 14,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 0.6666666666666666,
+      "fully_correct": false,
+      "false_trigger": false,
+      "expected": [
+        "接取任务"
+      ],
+      "predicted": [
+        "接取任务"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "接取任务": 0.6667
+      },
+      "id": "wind_oov_qst01",
+      "group": "wind_oov",
+      "text": "接下释放四风的活",
+      "latency_ms": 960.5,
+      "usage": {
+        "prompt_tokens": 6804,
+        "total_tokens": 6836,
+        "completion_tokens": 32,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "查询任务进度"
+      ],
+      "predicted": [
+        "查询任务进度"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "查询任务进度": 1.0
+      },
+      "id": "wind_oov_qst02",
+      "group": "wind_oov",
+      "text": "释放四风做到哪了",
+      "latency_ms": 825.0,
+      "usage": {
+        "prompt_tokens": 6803,
+        "total_tokens": 6827,
+        "completion_tokens": 24,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "使用消耗品"
+      ],
+      "predicted": [
+        "使用消耗品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "使用消耗品": 1.0
+      },
+      "id": "wind_oov_use01",
+      "group": "wind_oov",
+      "text": "把风袋用上",
+      "latency_ms": 823.5,
+      "usage": {
+        "prompt_tokens": 6802,
+        "total_tokens": 6825,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "category_correct": true,
+      "args_f1": 1.0,
+      "fully_correct": true,
+      "false_trigger": false,
+      "expected": [
+        "使用消耗品"
+      ],
+      "predicted": [
+        "使用消耗品"
+      ],
+      "extra_categories": [],
+      "extra_instances": 0,
+      "per_category_f1": {
+        "使用消耗品": 1.0
+      },
+      "id": "wind_oov_use02",
+      "group": "wind_oov",
+      "text": "用一下风袋放阵风",
+      "latency_ms": 820.1,
+      "usage": {
+        "prompt_tokens": 6804,
+        "total_tokens": 6827,
+        "completion_tokens": 23,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    }
+  ]
+}

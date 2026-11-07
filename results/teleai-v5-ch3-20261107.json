@@ -1,0 +1,174 @@
+{
+    "summary":  {
+                    "total":  257,
+                    "category_accuracy":  0.9416,
+                    "args_f1":  0.928,
+                    "fully_correct_rate":  0.821,
+                    "false_trigger_rate":  0.0333,
+                    "fallback_case_count":  30,
+                    "latency_ms":  {
+                                       "p50":  809.4,
+                                       "p90":  998.1,
+                                       "p99":  1258.2,
+                                       "mean":  809.9,
+                                       "max":  1481.3
+                                   },
+                    "by_group":  {
+                                     "boundary":  {
+                                                      "n":  22,
+                                                      "category_acc":  0.9091,
+                                                      "args_f1":  0.9697,
+                                                      "fully_correct":  0.8182
+                                                  },
+                                     "ch3_oov":  {
+                                                     "n":  14,
+                                                     "category_acc":  1.0,
+                                                     "args_f1":  0.881,
+                                                     "fully_correct":  0.6429
+                                                 },
+                                     "chitchat":  {
+                                                      "n":  14,
+                                                      "category_acc":  1.0,
+                                                      "args_f1":  0.8571,
+                                                      "fully_correct":  0.8571
+                                                  },
+                                     "clear":  {
+                                                   "n":  64,
+                                                   "category_acc":  1.0,
+                                                   "args_f1":  0.9557,
+                                                   "fully_correct":  0.875
+                                               },
+                                     "confuse":  {
+                                                     "n":  24,
+                                                     "category_acc":  0.9167,
+                                                     "args_f1":  0.7917,
+                                                     "fully_correct":  0.625
+                                                 },
+                                     "hades_oov":  {
+                                                       "n":  16,
+                                                       "category_acc":  1.0,
+                                                       "args_f1":  1.0,
+                                                       "fully_correct":  1.0
+                                                   },
+                                     "hostile":  {
+                                                     "n":  8,
+                                                     "category_acc":  1.0,
+                                                     "args_f1":  1.0,
+                                                     "fully_correct":  1.0
+                                                 },
+                                     "multi":  {
+                                                   "n":  13,
+                                                   "category_acc":  0.6154,
+                                                   "args_f1":  0.8077,
+                                                   "fully_correct":  0.5385
+                                               },
+                                     "multiturn":  {
+                                                       "n":  12,
+                                                       "category_acc":  0.75,
+                                                       "args_f1":  0.8889,
+                                                       "fully_correct":  0.6667
+                                                   },
+                                     "negative":  {
+                                                      "n":  12,
+                                                      "category_acc":  1.0,
+                                                      "args_f1":  1.0,
+                                                      "fully_correct":  1.0
+                                                  },
+                                     "oov":  {
+                                                 "n":  14,
+                                                 "category_acc":  0.9286,
+                                                 "args_f1":  0.9762,
+                                                 "fully_correct":  0.8571
+                                             },
+                                     "slot_missing":  {
+                                                          "n":  18,
+                                                          "category_acc":  0.8889,
+                                                          "args_f1":  1.0,
+                                                          "fully_correct":  0.8889
+                                                      },
+                                     "state_set":  {
+                                                       "n":  12,
+                                                       "category_acc":  1.0,
+                                                       "args_f1":  1.0,
+                                                       "fully_correct":  1.0
+                                                   },
+                                     "wind_oov":  {
+                                                      "n":  14,
+                                                      "category_acc":  1.0,
+                                                      "args_f1":  0.8452,
+                                                      "fully_correct":  0.7143
+                                                  }
+                                 },
+                    "top_confusions":  [
+                                           [
+                                               "查询附近目标 -\u003e 查询地点信息",
+                                               1
+                                           ],
+                                           [
+                                               "使用消耗品 -\u003e 其他意图",
+                                               1
+                                           ],
+                                           [
+                                               "导航到地点 -\u003e 查询地点信息",
+                                               1
+                                           ],
+                                           [
+                                               "查询地点信息 -\u003e 查询生物情报",
+                                               1
+                                           ],
+                                           [
+                                               "闲聊 -\u003e 查询附近目标",
+                                               1
+                                           ],
+                                           [
+                                               "购买物品 -\u003e 闲聊",
+                                               1
+                                           ],
+                                           [
+                                               "闲聊 -\u003e 接取任务",
+                                               1
+                                           ],
+                                           [
+                                               "导航到地点/购买物品 -\u003e 购买物品",
+                                               1
+                                           ],
+                                           [
+                                               "接取任务/查询任务线索 -\u003e 接取任务",
+                                               1
+                                           ],
+                                           [
+                                               "告别/提交任务 -\u003e 告别",
+                                               1
+                                           ],
+                                           [
+                                               "导航到地点/查询附近目标 -\u003e 导航到地点",
+                                               1
+                                           ],
+                                           [
+                                               "获取物资/营地准备 -\u003e 使用消耗品/营地准备",
+                                               1
+                                           ],
+                                           [
+                                               "其他意图 -\u003e 使用消耗品",
+                                               1
+                                           ],
+                                           [
+                                               "给予物品 -\u003e 其他意图",
+                                               1
+                                           ],
+                                           [
+                                               "卸下装备 -\u003e 其他意图",
+                                               1
+                                           ]
+                                       ],
+                    "wall_seconds":  104.38
+                },
+    "meta":  {
+                 "label":  "teleai-v5-ch3",
+                 "date":  "2026-11-07",
+                 "schema":  "v2.4.1（v2.4 六类边界 + v2.4.1 四类收口，补丁脚本 .temp/schema_v24_patch.py / schema_v241_patch.py，备份 .temp/schema-v23-backup.json / schema-v24-backup.json）",
+                 "cases":  "257 条 / 14 组（新增 ch3_oov 14 条；ch3_chat01 期望透明修正为查询生物情报，与 clear_bio_01/confuse_16 同族边界对齐）",
+                 "runs":  "全量 2 并发一次跑完 0 error（v2.4.1）；v2.4 中间轮 1 条网络 error 已单并发补跑合并（result-ch3-v24.json 本机留存不入库）",
+                 "driver":  "评测线会话（与游戏线并行会话分工：游戏侧 index.html 修复由其负责）"
+             }
+}

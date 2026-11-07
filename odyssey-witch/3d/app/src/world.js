@@ -206,9 +206,10 @@ function buildWater() {
 
 // ---------- 天穹 ----------
 function buildSky() {
-  // 地平线接近雾色(藏住水面与天际的接缝),暖金只集中在太阳方向
+  // 地平线取雾色本尊,水面远处渐隐的雾色与天穹地平线完全一致 → 天水交界缝消失(P1 遗留②);
+  // 暖金只以太阳方向光晕的形式叠加,不参与地平线基色。
   const uniforms = {
-    uHorizon: { value: new THREE.Color(PALETTE.oceanMid).lerp(new THREE.Color(PALETTE.duskGold), 0.5) },
+    uHorizon: { value: new THREE.Color(PALETTE.oceanMid) },
     uZenith: { value: new THREE.Color(PALETTE.oceanMid).lerp(new THREE.Color(PALETTE.nightBase), 0.45) },
     uSunColor: { value: new THREE.Color(PALETTE.duskGold) },
     uSunDir: { value: SUN_DIRECTION.clone().normalize() },
@@ -236,8 +237,8 @@ function buildSky() {
         vec3 d = normalize(vDir);
         vec3 col = mix(uHorizon, uZenith, smoothstep(0.0, 0.4, d.y));
         float sunDot = max(dot(d, normalize(uSunDir)), 0.0);
-        // 太阳方向暖光加权:窄光晕为主,大范围暖色收敛,避免整片天泛橙
-        col += uSunColor * (pow(sunDot, 40.0) * 0.65 + pow(sunDot, 6.0) * 0.12);
+        // 太阳方向暖光加权:补偿地平线回归雾色后损失的暖意,窄光晕为主
+        col += uSunColor * (pow(sunDot, 40.0) * 0.85 + pow(sunDot, 6.0) * 0.2);
         gl_FragColor = vec4(col, 1.0);
         #include <colorspace_fragment>
       }
@@ -249,18 +250,18 @@ function buildSky() {
 
 // ---------- 草卡 ----------
 function buildGrass() {
-  // 交叉双三角:两个正交四边形,底部为轴。
+  // 交叉双叶 → 收尖叶片:底宽顶窄 + 顶部前倾,消除 P1 遗留的"芯片感"(HANDOFF P1 遗留①)
   // 无光照材质 + 顶点明暗渐变:竖直卡片若用光照材质,背面法线会被翻转为朝下而发黑。
-  const w = 0.55;
-  const h = 0.75;
+  const wBase = 0.5, wTop = 0.1, h = 0.75, bend = 0.1;
   const positions = [];
   const colors = [];   // 底暗顶亮,模拟草叶根部阴影
   const indices = [];
-  const quads = [
-    [[-w / 2, 0, 0], [w / 2, 0, 0], [w / 2, h, 0], [-w / 2, h, 0]],
-    [[0, 0, -w / 2], [0, 0, w / 2], [0, h, w / 2], [0, h, -w / 2]],
+  const blades = [
+    // 同一竖直面内的两片交叉叶(x 向 / z 向),顶点顺序: 左底 右底 右顶 左顶
+    [[-wBase / 2, 0, 0], [wBase / 2, 0, 0], [wTop / 2, h, bend], [-wTop / 2, h, bend]],
+    [[0, 0, -wBase / 2], [0, 0, wBase / 2], [bend, h, wTop / 2], [bend, h, -wTop / 2]],
   ];
-  quads.forEach((q, qi) => {
+  blades.forEach((q, qi) => {
     const base = qi * 4;
     for (const p of q) {
       positions.push(...p);
@@ -321,14 +322,18 @@ function buildFire() {
     seeds.push({ off: rand(), speed: 0.35 + rand() * 0.4, sway: rand() * Math.PI * 2 });
   }
   const positions = new Float32Array(COUNT * 3);
+  const colors = new Float32Array(COUNT * 3);
 
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  // P1 遗留②:纯色 + AdditiveBlending 会在粒子密集处堆成偏白 → 改顶点色渐变
+  // (底亮橙→顶深红,粒子升空降温),同时降 size/opacity 压白。
   const mat = new THREE.PointsMaterial({
-    color: PALETTE.fireOrange,
-    size: 0.4,
+    vertexColors: true,
+    size: 0.32,
     transparent: true,
-    opacity: 0.78,
+    opacity: 0.6,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
     sizeAttenuation: true,
@@ -343,11 +348,15 @@ function buildFire() {
   const light = new THREE.PointLight(PALETTE.fireOrange, 1.4, 14, 2);
   light.position.copy(base).add(new THREE.Vector3(0, 0.8, 0));
 
-  return { points, light, seeds, positions, count: COUNT };
+  return { points, light, seeds, positions, colors, count: COUNT };
 }
 
+const _ember = new THREE.Color();
+const EMBER_LOW = new THREE.Color(0xff9a3e);  // 底部亮橙
+const EMBER_HIGH = new THREE.Color(0xc2401f); // 顶部深红(避免加色混合堆白)
+
 function updateFire(fire, elapsed) {
-  const { seeds, positions, count } = fire;
+  const { seeds, positions, colors, count } = fire;
   for (let i = 0; i < count; i++) {
     const s = seeds[i];
     const t = (elapsed * s.speed + s.off) % 1;
@@ -355,8 +364,13 @@ function updateFire(fire, elapsed) {
     positions[i * 3] = Math.sin(elapsed * 2.2 + s.sway) * sway;
     positions[i * 3 + 1] = t * 1.7;
     positions[i * 3 + 2] = Math.cos(elapsed * 1.9 + s.sway * 1.3) * sway;
+    _ember.copy(EMBER_LOW).lerp(EMBER_HIGH, t);
+    colors[i * 3] = _ember.r;
+    colors[i * 3 + 1] = _ember.g;
+    colors[i * 3 + 2] = _ember.b;
   }
   fire.points.geometry.attributes.position.needsUpdate = true;
+  fire.points.geometry.attributes.color.needsUpdate = true;
   // 火光闪烁:双正弦叠加,不需要噪声函数
   fire.light.intensity = 1.2 + (Math.sin(elapsed * 11) + Math.sin(elapsed * 23 + 1.7)) * 0.22;
 }

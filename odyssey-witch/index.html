@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>奥德赛 · 地中海 — 埃亚岛</title>
+<title>奥德赛 · 地中海 — 无名旅人的航程</title>
+<link rel="icon" type="image/png" sizes="256x256" href="concept-art/brand/favicon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="concept-art/brand/favicon-32.png">
+<link rel="apple-touch-icon" href="concept-art/brand/favicon.png">
 <style>
   :root{
     --bg:#0b1526; --panel:#ffffff; --line:#e3eaf2; --ink:#243244; --sub:#7b8aa0;
@@ -79,7 +82,7 @@
   #sendBtn:disabled{opacity:.5;}
   #keys{position:absolute; bottom:8px; left:50%; transform:translateX(-50%); color:rgba(255,255,255,.6);
     font-size:11px; pointer-events:none; text-shadow:0 1px 3px rgba(0,0,0,.6);}
-  #zone{position:absolute; top:12px; left:50%; transform:translateX(-50%); pointer-events:none;
+  #zone{position:absolute; top:44px; left:50%; transform:translateX(-50%); pointer-events:none;
     color:rgba(255,255,255,.75); font-size:12px; letter-spacing:2px; text-shadow:0 1px 4px rgba(0,0,0,.5);}
   /* ---- 受击反馈 ---- */
   #hitFlash{position:absolute; inset:0; border-radius:14px; pointer-events:none; z-index:9;
@@ -120,6 +123,87 @@
   .ccSub{margin-top:10px; font-size:13px; color:rgba(255,255,255,.85); letter-spacing:2px;}
   .ccQuote{margin-top:16px; font-size:12px; color:rgba(255,255,255,.62); letter-spacing:1px;}
   .ccSkip{position:absolute; right:14px; bottom:10px; z-index:2; font-size:11px; color:rgba(255,255,255,.5);}
+  /* ---- 海图浮层（M 键 · 仿古羊皮纸世界海图 + 船位/岛屿状态叠加） ---- */
+  #mapOverlay{position:absolute; inset:0; z-index:15; border-radius:14px; display:none;
+    background:rgba(6,12,22,.72); backdrop-filter:blur(3px);}
+  #mapOverlay.open{display:flex; align-items:center; justify-content:center;
+    animation:mapIn .28s ease-out;}
+  @keyframes mapIn{from{opacity:0; transform:scale(.96);} to{opacity:1; transform:scale(1);}}
+  #mapBoard{position:relative; width:92%; aspect-ratio:3200/1340; border-radius:10px; overflow:hidden;
+    background:#1a1410; box-shadow:0 18px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.12);}
+  #mapBoard img{width:100%; height:100%; object-fit:fill; display:block;}
+  #mapBoard::after{content:""; position:absolute; inset:0;
+    background:linear-gradient(180deg, rgba(10,20,36,.16), rgba(10,20,36,0) 30%, rgba(10,20,36,0) 70%, rgba(10,20,36,.22));}
+  .mapMark{position:absolute; transform:translate(-50%,-100%); text-align:center; pointer-events:none; z-index:2;}
+  .mapMark .pin{width:11px; height:11px; border-radius:50%; margin:0 auto 3px;
+    background:#e8a84a; box-shadow:0 0 0 2.5px rgba(255,255,255,.75), 0 2px 8px rgba(0,0,0,.5);}
+  .mapMark.locked .pin{background:rgba(210,220,232,.55); box-shadow:0 0 0 2px rgba(255,255,255,.4);}
+  .mapMark .nm{font-size:11px; letter-spacing:1px; color:#fff; text-shadow:0 1px 4px rgba(0,0,0,.8); white-space:nowrap;}
+  .mapMark.locked .nm{color:rgba(255,255,255,.55);}
+  .mapMark .st{font-size:9.5px; color:rgba(255,255,255,.5); text-shadow:0 1px 3px rgba(0,0,0,.7);}
+  #mapBoat{position:absolute; transform:translate(-50%,-50%); z-index:3; pointer-events:none;}
+  #mapBoat i{display:block; width:13px; height:13px; border-radius:50%; background:#4ea1ff;
+    border:2.5px solid #fff; box-shadow:0 0 10px rgba(78,161,255,.95); animation:boatPulse 1.6s ease-in-out infinite;}
+  @keyframes boatPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.35);}}
+  #mapHead{position:absolute; top:12px; left:0; right:0; z-index:4; display:flex; align-items:center;
+    justify-content:center; gap:14px; pointer-events:none;}
+  #mapHead .t{font-family:Georgia,"宋体",serif; font-size:17px; letter-spacing:6px; color:#fff;
+    text-shadow:0 2px 8px rgba(0,0,0,.65);}
+  #mapHead .lg{display:flex; gap:12px; font-size:10.5px; color:rgba(255,255,255,.78); text-shadow:0 1px 3px rgba(0,0,0,.6);}
+  #mapHead .lg i{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:4px; vertical-align:-1px;}
+  #mapClose{position:absolute; right:14px; top:12px; z-index:5; font-size:11px; color:rgba(255,255,255,.65);
+    border:1px solid rgba(255,255,255,.3); background:rgba(0,0,0,.25); border-radius:14px; padding:3px 12px; cursor:pointer;}
+  #mapClose:hover{color:#fff; border-color:rgba(255,255,255,.6);}
+  /* ---- 塞壬歌词卡（绑栈听的分享时刻：可导出） ---- */
+  #lyricCard{position:absolute; inset:0; z-index:16; border-radius:14px; display:none;
+    align-items:center; justify-content:center; background:rgba(6,12,22,.75); backdrop-filter:blur(3px);}
+  #lyricCard.open{display:flex; animation:mapIn .3s ease-out;}
+  #lyricSheet{width:min(520px,84%); background:linear-gradient(170deg,#f4ead2,#e8d9b8); border-radius:10px;
+    padding:26px 30px 20px; box-shadow:0 18px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.25);
+    font-family:Georgia,"宋体",serif; color:#4a3a22;}
+  #lyricSheet h3{font-size:13px; letter-spacing:5px; color:#8a6a3a; text-align:center; margin-bottom:14px;}
+  #lyricText{font-size:14.5px; line-height:2.05; white-space:pre-wrap; text-align:center;}
+  #lyricBtns{display:flex; gap:10px; justify-content:center; margin-top:18px;}
+  #lyricBtns button{border:1px solid #c9b58a; background:rgba(255,255,255,.4); color:#6a5330;
+    border-radius:16px; padding:6px 16px; font-size:12px; cursor:pointer; font-family:inherit;}
+  #lyricBtns button:hover{background:#fff;}
+  /* ---- 任务日志面板 ---- */
+  #questPanel{position:absolute; top:52px; right:12px; width:250px; background:var(--panel);
+    border:1px solid var(--line); border-radius:12px; padding:12px 14px; display:none;
+    box-shadow:0 10px 30px rgba(0,0,0,.3); z-index:5;}
+  #questPanel h3{font-size:12px; color:var(--sub); margin-bottom:8px; letter-spacing:1px;}
+  #questPanel .q{padding:6px 0; border-bottom:1px dashed #eef2f7; font-size:12.5px; line-height:1.55;}
+  #questPanel .q:last-child{border-bottom:none;}
+  #questPanel .q b{color:var(--blue-ink);}
+  #questPanel .q .bar{display:block; height:6px; background:#e8eef5; border-radius:3px; margin-top:4px; overflow:hidden;}
+  #questPanel .q .bar i{display:block; height:100%; background:#7c6fd0; border-radius:3px;}
+  #questPanel .q.done{color:#9aa7b8;}
+  #questPanel .q.done b{color:#7f8c99; text-decoration:line-through;}
+  #questPanel .empty{color:#b6c2d2; font-size:12px;}
+  /* ---- 风神岛立绘兜底（保留：立绘加载失败时仍可用） ---- */
+  .aeolusPortrait{background:linear-gradient(160deg,#dfe8f2 0%,#a8bed4 38%,#5d7fa3 72%,#2c4a68 100%) !important;}
+  .aeolusPortrait::before{content:""; position:absolute; inset:0; z-index:1; opacity:.5;
+    background:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 150"><g fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round" opacity=".85"><path d="M12 30 q14 -9 28 0 q13 8 26 0"/><path d="M20 52 q13 -8 25 0 q12 7 24 0"/><path d="M14 76 q15 -9 29 0 q13 8 26 0"/><path d="M24 100 q12 -7 23 0 q11 6 22 0"/><path d="M16 124 q14 -8 27 0 q12 7 25 0"/></g></svg>') center/70% no-repeat;}
+  /* ==== 动效标定（animate/review-animations：只动 transform+opacity、ease-out、UI<300ms、可中断） ==== */
+  @keyframes dlgIn{from{opacity:0; transform:translateY(10px) scale(.97);} to{opacity:1; transform:none;}}
+  #dlg.open{animation:dlgIn .24s cubic-bezier(0.23,1,0.32,1);}
+  @keyframes bubbleIn{from{opacity:0; transform:translateY(5px);} to{opacity:1; transform:none;}}
+  #dlg .bubble{animation:bubbleIn .18s ease-out;}
+  .hud button:active, #samples button:active, .tsBtns button:active, #lyricBtns button:active{transform:scale(.97);}
+  #toast{transition:opacity .25s ease-out;}
+  /* 海图打开时收起 HUD/按键条（game-ui-ux：一层一事，浮层不与常驻层打架） */
+  .hud, #zone, #keys{transition:opacity .2s ease-out;}
+  #stage.mapOpen .hud, #stage.mapOpen #zone, #stage.mapOpen #keys{opacity:0; pointer-events:none;}
+  /* 记忆流可视化（对话头部：NPC 记得你的事，点开展开） */
+  #dlg .head .mem{margin-left:auto; cursor:pointer; border:1px solid var(--line); background:#fbfcfe; color:var(--sub);
+    border-radius:12px; font-size:10.5px; padding:2px 9px;}
+  #dlg .head .mem:hover{color:var(--blue-ink); border-color:var(--blue);}
+  #memStrip{display:none; flex-wrap:wrap; gap:4px; padding:7px 14px 0; border-bottom:1px dashed var(--line);}
+  #memStrip .chip{max-width:100%; white-space:normal; line-height:1.5;}
+  @media (prefers-reduced-motion: reduce){
+    #dlg.open, #dlg .bubble{animation:none;}
+    *{transition-duration:.01ms !important;}
+  }
 </style>
 </head>
 <body>
@@ -129,24 +213,55 @@
   <div class="hud">
     <span class="pill">钱袋 <b id="hudCoins"></b> 德拉克马</span>
     <span class="pill">血 <b id="hudHp"></b><span id="hudHpBarWrap" style="display:inline-block;width:52px;height:7px;background:#e8eef5;border-radius:4px;vertical-align:middle;margin-left:6px;overflow:hidden"><i id="hudHpBar" style="display:block;height:100%;background:#3fae6a;border-radius:4px"></i></span></span>
+    <span class="pill">食 <span style="display:inline-block;width:34px;height:7px;background:#e8eef5;border-radius:4px;vertical-align:middle;margin-left:4px;overflow:hidden"><i id="hudHungerBar" style="display:block;height:100%;background:#c9933f;border-radius:4px"></i></span> 水 <span style="display:inline-block;width:34px;height:7px;background:#e8eef5;border-radius:4px;vertical-align:middle;margin-left:4px;overflow:hidden"><i id="hudThirstBar" style="display:block;height:100%;background:#3f8fae;border-radius:4px"></i></span></span>
+    <span class="pill">Lv.<b id="hudLv">1</b><span style="display:inline-block;width:34px;height:7px;background:#e8eef5;border-radius:4px;vertical-align:middle;margin-left:5px;overflow:hidden"><i id="hudXpBar" style="display:block;height:100%;background:#7c6fd0;border-radius:4px"></i></span></span>
+    <span class="pill" id="hudClock"></span>
     <span class="pill" id="hudQuest" style="display:none"></span>
     <span class="spacer"></span>
     <button id="sndBtn" onclick="sndToggle()">🔊 音效</button>
+    <button id="mapBtn">海图</button>
+    <button id="questBtn">任务</button>
     <button id="bagBtn">背包</button>
+    <button id="windBtn" style="display:none">风袋</button>
     <button onclick="hardReset()">重新开始</button>
   </div>
   <div id="hint"></div>
   <div id="ambient"></div>
   <div id="toast"></div>
   <div id="bagPanel"><h3>背包</h3><div id="bagList"></div></div>
+  <div id="questPanel"><h3>任务日志</h3><div id="questList"></div></div>
+  <div id="mapOverlay">
+    <div id="mapBoard">
+      <img src="concept-art/maps/01-世界海图.jpg" alt="海图">
+      <div id="mapHead">
+        <span class="t">海 图 · 地 中 海</span>
+        <span class="lg"><span><i style="background:#e8a84a"></i>已解锁</span><span><i style="background:rgba(210,220,232,.55)"></i>待开放</span><span><i style="background:#4ea1ff"></i>你的船</span></span>
+      </div>
+      <button id="mapClose" onclick="closeMap()">M / Esc 关闭</button>
+      <div id="mapBoat"><i></i></div>
+      <div id="mapMarks"></div>
+    </div>
+  </div>
+  <div id="lyricCard">
+    <div id="lyricSheet">
+      <h3>塞 壬 之 歌 · 歌 词 残 页</h3>
+      <div id="lyricText"></div>
+      <div id="lyricBtns">
+        <button onclick="exportLyric()">抄下这一页（导出 txt）</button>
+        <button onclick="closeLyric()">收好残页</button>
+      </div>
+    </div>
+  </div>
   <div id="dlg">
     <div id="dlgPortrait"></div>
     <div class="dlgmain">
     <div class="head">
       <span class="dot"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7c6fd0" stroke-width="2"><path d="M9 3h6M10 3v4l-4.5 8A4.5 4.5 0 0 0 9.5 21h5a4.5 4.5 0 0 0 4-13.5L14 7V3"/></svg></span>
       <span><span class="t" id="dlgName">女巫喀耳刻</span><br><span class="s" id="dlgSub">意图：Xing4.0-29B-Intent · 台词：TeleChat3</span></span>
+      <button class="mem" id="memBtn">记忆</button>
       <button class="x" onclick="closeDlg()">✕</button>
     </div>
+    <div id="memStrip"></div>
     <div id="msgs"></div>
     <div id="samples"></div>
     <div class="inputrow">
@@ -155,7 +270,7 @@
     </div>
     </div>
   </div>
-  <div id="keys">WASD / 方向键 移动 · E 互动 · Esc 关闭对话</div>
+  <div id="keys">WASD / 方向键 移动 · E 互动 · M 海图 · P 俯瞰 · Esc 关闭对话</div>
   <div id="hitFlash"></div>
   <div id="chapterCard">
     <div class="ccBody">
@@ -175,7 +290,7 @@
         <button id="tsGo">启航</button>
         <button id="tsNew" style="display:none">从头开始</button>
       </div>
-      <div class="tsTip">WASD / 方向键 移动 · E 互动 · Esc 关闭对话<br>视觉素材为本项目原创 AI 概念图</div>
+      <div class="tsTip">WASD / 方向键 移动 · E 互动 · M 海图 · P 俯瞰全岛 · Esc 关闭对话<br>视觉素材为本项目原创 AI 概念图</div>
     </div>
   </div>
 </div>
@@ -209,12 +324,14 @@ function buildMediterranean(){
 }
 const WORLD = buildMediterranean();
 const ISLANDS = [
-  {gx:6,  gy:11, name:"埃亚岛",    note:"喀耳刻的领地 · 第勒尼安海",  open:true, scene:"aia"},
-  {gx:2,  gy:8,  name:"冥界之岸",  note:"俄刻阿诺斯之岸 · 亡者之言",  open:true, scene:"hades"},
-  {gx:12, gy:14, name:"西西里",    note:"独眼巨人之地 · 待开放",     open:false},
-  {gx:16, gy:14, name:"伊萨卡",    note:"归乡 · 爱奥尼亚海 · 雾未散", open:false},
-  {gx:31, gy:6,  name:"特洛伊海岸", note:"战火余烬 · 爱琴海东 · 待开放", open:false},
-  {gx:21, gy:9,  name:"马耳他礁",  note:"海妖歌声 · 待开放", open:false},
+  {gx:6,  gy:11, name:"埃亚岛",    note:"喀耳刻的领地 · 第勒尼安海",  open:true, scene:"aia",    mp:[24,62]},
+  {gx:2,  gy:8,  name:"冥界之岸",  note:"俄刻阿诺斯之岸 · 亡者之言",  open:true, scene:"hades",  mp:[10,47]},
+  {gx:12, gy:8,  name:"风神岛",    note:"埃俄罗斯的浮岛 · 十二风在此听差", open:true, scene:"aeolia", mp:[30,47]},
+  {gx:12, gy:14, name:"西西里",    note:"独眼巨人之地 · 待开放",     open:false, mp:[28,57]},
+  {gx:16, gy:14, name:"伊萨卡",    note:"归乡 · 爱奥尼亚海 · 雾未散", open:false, mp:[40,63]},
+  {gx:31, gy:6,  name:"特洛伊海岸", note:"战火余烬 · 爱琴海东 · 待开放", open:false, mp:[71,38]},
+  {gx:21, gy:9,  name:"声之海峡",  note:"塞壬的歌 · 斯库拉的六头 · 代价", open:true, scene:"strait", mp:[30,64]},
+  {gx:26, gy:9,  name:"太阳岛",    note:"赫利俄斯的圣牛 · 饥饿与誓言",  open:true, scene:"sun",    mp:[47,60]},
 ];
 const SEAS = [
   {x:23,y:2,label:"欧洲"}, {x:4,y:16,label:"非洲"}, {x:40,y:8,label:"黎凡特海"},
@@ -260,6 +377,115 @@ const HADES = [
 ];
 const HSOLID = new Set(["~","T","G"]);
 const seer = { x: 9*ATS+ATS/2, y: 2*ATS+ATS*0.6 };          /* 特瑞西阿斯立于路尽头 */
+
+/* ==================== 风神岛地图（2.5D · 浮岛云海 · 插章·暗线③风袋） ====================
+   ~云海 T风柱 H宫墙 D宫门 C风之祭坛 W风牢笼 _云桥 . 浮岛草地 , 云径
+   原版骨：风神埃俄罗斯把装着诸向顺风的皮袋借给奥德修斯（荷马史诗第 10 卷）
+   玩法：释放四风（W×4）→ 归还风袋祭坛 → 得风袋（海上放风=航速倍增，贪念=用光） */
+const AEOLIA = [
+  "~~~~~~~~~~~~~~~~~~~~",
+  "~TT.....TT........T~",
+  "~T..HHHH.....T.....~",
+  "~..HHDH...C......W.~",
+  "~....,.......W.....~",
+  "~....,.............~",
+  "~.W..,..........T..~",
+  "~....,.............~",
+  "~......T.......W...~",
+  "~..__,.............~",
+  "~..__,,............~",
+  "~~~_,,~~~~~~~~~~~~~~",
+];
+const AESOLID = new Set(["~","T","H","C","W"]);
+const WIND_DIRS = ["西风","东风","南风","北风"];
+/* 风牢笼点位与 AEOLIA 地图中的 W 瓦片一一对应（idx 顺序 = WIND_DIRS） */
+const aeolus = { x: 4*ATS+ATS/2, y: 4*ATS+ATS*0.55 };   /* 风神立于宫门前 */
+const AESPOTS = [
+  {type:"aeolus", x:aeolus.x, y:aeolus.y, r:85, label:"与埃俄罗斯交谈"},
+  {type:"wind", idx:0, x:17*ATS+ATS/2, y:3*ATS+ATS/2, r:70, label:"释放囚禁的风"},
+  {type:"wind", idx:1, x:13*ATS+ATS/2, y:4*ATS+ATS/2, r:70, label:"释放囚禁的风"},
+  {type:"wind", idx:2, x:2*ATS+ATS/2,  y:6*ATS+ATS/2, r:70, label:"释放囚禁的风"},
+  {type:"wind", idx:3, x:15*ATS+ATS/2, y:8*ATS+ATS/2, r:70, label:"释放囚禁的风"},
+  {type:"altar", x:9*ATS+ATS/2, y:3*ATS+ATS/2, r:70, label:"端详风之祭坛"},
+  {type:"dock",  x:3*ATS+ATS/2, y:10*ATS+ATS/2, r:70, label:"乘云梯下海"},
+];
+function aeTile(cx,cy){ return (cx<0||cy<0||cx>=ACOLS||cy>=AROWS)?"~":AEOLIA[cy][cx]; }
+
+/* ==================== 声之海峡地图（2.5D · 雾海月夜 · 第三章） ====================
+   ~雾海 T礁石 S塞壬礁 K斯库拉崖 V漩涡 M栈杆 W蜡罐 _甲板 . 海面
+   原版骨：塞壬歌声绑栈杆；斯库拉六头 vs 卡律布狄斯漩涡，二选一（荷马史诗第 12 卷）
+   玩法：听歌二选一（蜡封耳=歌词缺页 / 绑栈听=歌词残页+士气-1）→ 斯库拉处置（带话/硬闯/赌漩涡）→ 出峡 */
+const STRAIT = [
+  "~~~~~~~~~~~~~~~~~~~~",
+  "~TT~~~T~~~~K~~~~TT~~",
+  "~~~~~~~~~~~K~~~~~~~~",
+  "~~~T~~~~~~~~~~~~T~~~",
+  "~~~~S~~~~~~~~~~~V~~~",
+  "~~~S~~~~~~~~~~~~V~~~",
+  "~~~~~~~~~~~~~~~~~~~~",
+  "~_____M____________~",
+  "~__________________~",
+  "~__W_______________~",
+  "~__________________~",
+  "~~~~~~~~~~~~~~~~~~~~",
+];
+const SSOLID = new Set(["~","T","S","K","V","M","W"]);
+const straitMast = { x: 6*ATS+ATS/2, y: 7*ATS+ATS/2 };
+const SSPOTS = [
+  {type:"siren",  x:3*ATS+ATS/2,  y:5*ATS+ATS*0.2, r:110, label:"聆听塞壬"},
+  {type:"scylla", x:11*ATS+ATS/2, y:4*ATS+ATS/2,  r:145, label:"面对斯库拉"},
+  {type:"vortex", x:16*ATS+ATS/2, y:4*ATS+ATS*0.75, r:135, label:"赌卡律布狄斯漩涡"},
+  {type:"mast",   x:straitMast.x, y:straitMast.y, r:70, label:"栈杆（绑栈听歌）"},
+  {type:"wax",    x:3*ATS+ATS/2,  y:9*ATS+ATS/2, r:70, label:"蜡罐（封住耳朵）"},
+  {type:"exit",   x:18*ATS+ATS/2, y:9*ATS+ATS/2, r:80, label:"冲出海峡"},
+  {type:"dock",   x:1*ATS+ATS/2,  y:9*ATS+ATS/2, r:70, label:"退回外海"},
+];
+function sTile(cx,cy){ return (cx<0||cy<0||cx>=ACOLS||cy>=AROWS)?"~":STRAIT[cy][cx]; }
+function tryMoveStrait(nx,ny){
+  const hw=aiaPlayer.w/2, hh=aiaPlayer.h/2;
+  for (const [dx,dy] of [[-hw,-hh],[hw,-hh],[-hw,hh],[hw,hh]])
+    if (SSOLID.has(sTile(Math.floor((nx+dx)/ATS), Math.floor((ny+dy)/ATS)))) return false;
+  aiaPlayer.x=nx; aiaPlayer.y=ny; return true;
+}
+
+/* ==================== 太阳岛地图（2.5D · 金色牧场 · 第四章） ====================
+   ~外海 T柏树 S圣殿墙 A太阳祭坛 B牧场(可走) P山泉 F火盆 _栈桥 . 金草地 ,小径
+   原版骨：赫利俄斯的圣牛岛（Thrinacia），饿与誓（荷马史诗第 12 卷）
+   玩法：守住（海藻/钓鱼撑到黄昏→祭坛报真名得「光」）/ 宰牛（立刻饱食 +「太阳记恨」全局变阴）/
+        借牛（对牛群说「借我一头，以我的名字作保」——押走一件最亮的信物，名字机制中段考试） */
+const SUN = [
+  "~~~~~~~~~~~~~~~~~~~~",
+  "~TT....TT......TTT.~",
+  "~T..SSSS...........~",
+  "~..SSASS......BB...~",
+  "~......,....BBBB...~",
+  "~......,....BBBBBB.~",
+  "~..F...,....BBBB...~",
+  "~......,..........T~",
+  "~..___,............~",
+  "~..___,,.......PP..~",
+  "~..___,,...........~",
+  "~~~_,,~~~~~~~~~~~~~~",
+];
+const SUNSOLID = new Set(["~","T","S","A","P","F"]);
+const sunAltar = { x: 5*ATS+ATS/2, y: 3*ATS+ATS/2 };        /* 太阳祭坛（A 瓦片） */
+const SUNSPOTS = [
+  {type:"cattle",    x:15*ATS,       y:4*ATS+ATS/2, r:95, label:"走近牛群"},
+  {type:"slaughter", x:13*ATS+ATS/2, y:5*ATS+ATS/2, r:70, label:"宰一头牛（刀口在手里）"},
+  {type:"seaweed",   x:2*ATS,        y:8*ATS+ATS/2, r:70, label:"采集海藻"},
+  {type:"fishing",   x:18*ATS+ATS/2, y:8*ATS+ATS/2, r:70, label:"礁滩垂钓"},
+  {type:"spring",    x:16*ATS+ATS/2, y:9*ATS+ATS/2, r:70, label:"掬一捧山泉"},
+  {type:"sunfire",   x:3*ATS+ATS/2,  y:6*ATS+ATS/2, r:66, label:"火盆（烤鱼）"},
+  {type:"sunAltar",  x:sunAltar.x,   y:sunAltar.y,  r:80, label:"太阳祭坛"},
+  {type:"sunDock",   x:3*ATS+ATS/2,  y:10*ATS+ATS/2, r:70, label:"解缆离岛"},
+];
+function sunTile(cx,cy){ return (cx<0||cy<0||cx>=ACOLS||cy>=AROWS)?"~":SUN[cy][cx]; }
+function tryMoveSun(nx,ny){
+  const hw=aiaPlayer.w/2, hh=aiaPlayer.h/2;
+  for (const [dx,dy] of [[-hw,-hh],[hw,-hh],[-hw,hh],[hw,hh]])
+    if (SUNSOLID.has(sunTile(Math.floor((nx+dx)/ATS), Math.floor((ny+dy)/ATS)))) return false;
+  aiaPlayer.x=nx; aiaPlayer.y=ny; return true;
+}
 const GHOSTS = [ {bx:230,by:190,ax:26,ay:12,p:0.7}, {bx:600,by:240,ax:34,ay:15,p:1.3},
                  {bx:170,by:330,ax:20,ay:14,p:2.1}, {bx:560,by:340,ax:28,ay:10,p:2.9} ];
 const HSPOTS = [
@@ -270,7 +496,9 @@ const HSPOTS = [
 function hTile(cx,cy){ return (cx<0||cy<0||cx>=ACOLS||cy>=AROWS)?"~":HADES[cy][cx]; }
 
 /* ==================== 状态 ==================== */
-const SHOP = {"治疗草药":15,"玛草":8,"蜂蜜酒":12,"蜂蜜":6,"橄榄油":10};
+const SHOP = {"治疗草药":15,"玛草":8,"蜂蜜酒":12,"蜂蜜":6,"橄榄油":10,"铁剑":25};
+/* 武器攻击力修正层（rpg：装备走 modifier，基础属性才是真值） */
+const WEAPONS = {"铜矛":{atk:4},"铁剑":{atk:7}};
 let state = {
   coins: 30,
   hp: 100,
@@ -279,24 +507,149 @@ let state = {
   quest: null,
   boarKilled: false,
   status: {"饥饿":"微饿","口渴":"正常","伤势":"无","士气":"尚可"},
+  /* —— 三线补全新增：生存 / 成长 / 关系 / 时间 / 记忆 —— */
+  hunger: 80, thirst: 80,        /* 生存需求 0..100（survival-crafting：衰减+分级后果） */
+  xp: 0, level: 1,               /* 成长（rpg：xp 曲线 + 升级增益） */
+  affinity: 10,                  /* 喀耳刻好感 0..100（dialogue-systems 关系变量） */
+  clock: 9*60,                   /* 游戏内分钟（9:00 起航） */
+  memory: [],                    /* NPC 记忆流 [{t,imp,who,text}]（Generative Agents） */
+  quests: {},                    /* 多任务账本 {id:{id,name,have,need,done,who}} */
+  windFreed: [false,false,false,false],  /* 风神岛四风牢笼释放状态 */
+  /* —— 第三章·声之海峡（strait）—— */
+  straitStage: 0,        /* 0未选听歌方式 1已选 2已过斯库拉 3已出峡 */
+  waxEars: false,        /* 蜡封耳：放弃记忆（歌词缺页） */
+  mastTied: false,       /* 绑栈听歌：直面（得歌词残页，士气-1） */
+  circeMessage: false,   /* 喀耳刻托付：给斯库拉带三个字（不怪你） */
+  scyllaDebtPaid: false, /* 话带到了：海峡让出静水 */
+  straitCleared: false,  /* 出峡完成 */
+  sunlit: false,         /* 回埃亚岛债清天亮（暗线②收束） */
+  lyricFragment: false,  /* 歌词残页（终章锚点） */
+  /* —— 第四章·太阳岛（sun）—— */
+  sunWrath: false,       /* 宰牛 → 太阳记恨（此后每章天色阴沉、光照调暗） */
+  sunBlessed: false,     /* 守住 → 得「走得过黑暗的光」 */
+  sunName: null,         /* 报给太阳神的名字（终章「认名」锚点之一） */
+  sunDebt: null,         /* 借牛记录 {pledge}（以名字作保，判词留白） */
+  slaughterWarn: false,  /* 宰牛二段确认（E 两次，防误触） */
+  memGreeted: [],        /* 已用作开场问候的记忆 t 列表（memoryGreeting 去重） */
 };
+
+/* ---------- 派生数值：从基础属性重算，绝不存为真值（rpg Pattern 1） ---------- */
+function derived(){
+  const lv = state.level-1;
+  const w = state.equipped && WEAPONS[state.equipped] ? WEAPONS[state.equipped] : {atk:0};
+  return { maxHp: 100 + lv*10, atk: 8 + lv + w.atk };
+}
+function xpToNext(lv){ return Math.round(40*Math.pow(lv,1.5)); }
+function gainXp(n){
+  state.xp += n;
+  let up=false;
+  while (state.xp >= xpToNext(state.level)){ state.xp -= xpToNext(state.level); state.level++; up=true; }
+  if (up){
+    state.hp = derived().maxHp;   /* 升级回满 */
+    addMemory(`旅人修为精进，历练到了 ${state.level} 级`,1);
+    popText(aiaPlayer.x, aiaPlayer.y-30, `升级！Lv.${state.level}`, "#ffd66b", true);
+    feedback("large"); sfx("level");
+    toast(`⬆ 历练足够，等级 ${state.level}！血上限 +10、攻击 +1，伤势痊愈。`);
+  }
+  renderHUD();
+}
+
+/* ---------- 存档兼容：旧档补新字段默认值 ---------- */
+function ensureState(){
+  if (state.hunger===undefined) state.hunger=80;
+  if (state.thirst===undefined) state.thirst=80;
+  if (state.xp===undefined) state.xp=0;
+  if (state.level===undefined) state.level=1;
+  if (state.affinity===undefined) state.affinity=10;
+  if (state.clock===undefined) state.clock=9*60;
+  if (!Array.isArray(state.memory)) state.memory=[];
+  if (!state.quests) state.quests={};
+  if (!Array.isArray(state.windFreed)) state.windFreed=[false,false,false,false];
+  /* 第三章字段：旧档补默认值 */
+  if (state.straitStage===undefined) state.straitStage=0;
+  if (state.waxEars===undefined) state.waxEars=false;
+  if (state.mastTied===undefined) state.mastTied=false;
+  if (state.circeMessage===undefined) state.circeMessage=false;
+  if (state.scyllaDebtPaid===undefined) state.scyllaDebtPaid=false;
+  if (state.straitCleared===undefined) state.straitCleared=false;
+  if (state.sunlit===undefined) state.sunlit=false;
+  if (state.lyricFragment===undefined) state.lyricFragment=false;
+  /* 第四章字段：旧档补默认值 */
+  if (state.sunWrath===undefined) state.sunWrath=false;
+  if (state.sunBlessed===undefined) state.sunBlessed=false;
+  if (state.sunName===undefined) state.sunName=null;
+  if (state.sunDebt===undefined) state.sunDebt=null;
+  if (state.slaughterWarn===undefined) state.slaughterWarn=false;
+  if (!Array.isArray(state.memGreeted)) state.memGreeted=[];
+  /* 旧档迁移：单任务槽 → 多任务账本（rpg/save-systems：只加 migration，不坏老档） */
+  if (state.quest){
+    const id = state.quest.name==="释放四风" ? "aeolia_winds" : "witch_grass";
+    state.quests[id] = Object.assign({id, who:id==="aeolia_winds"?"aeolus":"witch"}, state.quest);
+    state.quest = null;
+  }
+  const d=derived(); if (state.hp>d.maxHp) state.hp=d.maxHp;
+}
+/* ---------- 任务系统（rpg：定义是数据、进度进存档；目标由事件总线驱动） ---------- */
+const QUEST_DEFS = {
+  witch_grass:  { name:"采集玛草", need:3, who:"witch",  on:"collect:玛草", reward:{coins:5, items:{"治疗药草":1}, xp:30} },
+  aeolia_winds: { name:"释放四风", need:4, who:"aeolus", on:"wind",         reward:{items:{"风袋":4}, xp:30} },
+};
+function getQuest(id){ return state.quests[id]; }
+function acceptQuest(id){
+  const def=QUEST_DEFS[id]; if(!def) return null;
+  if (!state.quests[id]){
+    state.quests[id]={id, name:def.name, need:def.need, have:0, done:false, turned:false, ready:false, who:def.who};
+    renderHUD();
+  }
+  return state.quests[id];
+}
+/* 事件总线：击杀/拾取/交互统一从这里进任务进度（rpg on_event） */
+function questEvent(kind, data){
+  data = data||{};
+  for (const q of Object.values(state.quests||{})){
+    if (q.done) continue;
+    const def=QUEST_DEFS[q.id]; if(!def) continue;
+    const hit = kind==="wind" ? def.on==="wind" : (kind==="collect" && def.on==="collect:"+data.item);
+    if (!hit) continue;
+    if (q.have < q.need){
+      q.have++;
+      if (q.have >= q.need){ q.ready=true; toast(`「${q.name}」目标达成——回去复命吧。`); }
+    }
+  }
+  renderHUD();
+}
 let scene = "world";
 const boat  = { x: 9*WTS+WTS/2, y: 7*WTS+WTS/2 };
 const aiaPlayer = { x: 4*ATS+ATS/2, y: 8*ATS+ATS/2, w: 24, h: 14, face: "down", moving:false, step:0 };
 
-const SAVE_KEY = "odyssey-med-v2";
-function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify({
-  state, scene, boat:{x:boat.x,y:boat.y}, aia:{x:aiaPlayer.x,y:aiaPlayer.y} })); }catch(e){} }
-function load(){ try{
-  const d = JSON.parse(localStorage.getItem(SAVE_KEY)||"null");
-  if (d && d.state){
-    state = d.state;
-    if (d.boat){ boat.x=d.boat.x; boat.y=d.boat.y; }
-    if (d.aia){ aiaPlayer.x=d.aia.x; aiaPlayer.y=d.aia.y; }
-    scene = d.scene === "hades" ? "hades" : d.scene === "aia" ? "aia" : "world";
-    return true;
-  }
-}catch(e){} return false; }
+const SAVE_KEY = "odyssey-med-v2", SAVE_VERSION = 3;
+function save(){ try{
+  const cur = localStorage.getItem(SAVE_KEY);
+  if (cur) localStorage.setItem(SAVE_KEY+".bak", cur);   /* 原子写双份：主档覆盖前先留上一版（save-systems） */
+  localStorage.setItem(SAVE_KEY, JSON.stringify({
+    v:SAVE_VERSION, state, scene, boat:{x:boat.x,y:boat.y}, aia:{x:aiaPlayer.x,y:aiaPlayer.y} }));
+}catch(e){} }
+function parseSave(raw){
+  try{
+    const d=JSON.parse(raw||"null");
+    if (d && d.state && typeof d.state.coins==="number" && typeof d.state.hp==="number") return d;   /* 最小字段校验 */
+  }catch(e){}
+  return null;
+}
+function load(){
+  /* 主档损坏/截断 → 回退上一版备份（save-systems 原子写） */
+  const d = parseSave(localStorage.getItem(SAVE_KEY)) || parseSave(localStorage.getItem(SAVE_KEY+".bak"));
+  if (!d) return false;
+  /* 版本迁移链：v<current 逐级跑纯函数迁移（v2→v3 无结构断裂，字段默认值由 ensureState 兑底） */
+  while ((d.v||2) < SAVE_VERSION) d.v = SAVE_VERSION;
+  if (d.v > SAVE_VERSION) return false;   /* 未来版本存档：拒绝而不是静默清字段 */
+  state = d.state;
+  if (d.boat){ boat.x=d.boat.x; boat.y=d.boat.y; }
+  if (d.aia){ aiaPlayer.x=d.aia.x; aiaPlayer.y=d.aia.y; }
+  scene = d.scene === "hades" ? "hades" : d.scene === "aeolia" ? "aeolia" : d.scene === "strait" ? "strait" : d.scene === "sun" ? "sun" : d.scene === "aia" ? "aia" : "world";
+  ensureState();
+  return true;
+}
 function hardReset(){ if(confirm("清空存档，从头开始？")){ localStorage.removeItem(SAVE_KEY); location.reload(); } }
 
 /* 迁移旧存档（埃亚岛单场景版） */
@@ -333,9 +686,360 @@ function boarSpot(){
     label:`攻击野猪（血 ${boar.hp}/${boar.max} · ${BOAR_MOOD[boar.mode]||""}）`};
 }
 
+/* ==================================================================
+ *  相机与反馈层 —— 依 camera-systems / game-feel skill：
+ *  1) 岛屿内平滑跟随（lerp 帧率无关），世界地图保持全览；M 键切俯瞰
+ *  2) 死区 + 速度前瞻：死区内相机不动防抖晕；前瞻幅度随速度缓入缓出防甩头
+ *  3) 中心锚点语义统一：cam.x/y = 屏幕中心对应的世界坐标（与 loop 的
+ *     translate(ccx,ccy) 一致），钳制让“画面”留在场景矩形内 —— 根治 void 黑区
+ *  4) 屏震走 trauma 衰减模型（trauma² 平滑抖动），只动相机不动逻辑
+ *  5) hit-stop 冻结逻辑帧（真实时间恢复），反馈按 small/medium/large 分档
+ * ================================================================== */
+const VIEW_W = 1000, VIEW_H = 600;
+const cam = { x:0, y:0, zoom:1, tx:0, ty:0, tz:1, trauma:0, t:0, fx:0, fy:0, look:0 };
+let panorama = false, timeScale = 1, hitStopUntil = 0;
+function sceneSize(){ return scene==="world" ? {w:WCOLS*WTS, h:WROWS*WTS} : {w:ACOLS*ATS, h:AROWS*ATS+TH}; }
+function camCenter(){ return scene==="world" ? [0,0] : [VIEW_W/2, VIEW_H/2]; }   /* 世界全览原位，岛屿中心跟随 */
+/* 场景底色：岛屿只画 800×497 的岛体，画布其余部分必须由底色补齐（根治 void 黑区） */
+function sceneBackdrop(){
+  return scene==="aia" ? "#2f6f96" : scene==="hades" ? "#0c1622"
+       : scene==="aeolia" ? "#c3d2e2" : scene==="strait" ? "#3c5165"
+       : scene==="sun" ? (state.sunWrath ? "#5a6a72" : "#2c6d86") : null;
+}
+function camTick(dt){
+  const b = sceneSize();
+  const follow = scene !== "world";
+  cam.tz = follow && !panorama ? 1.7 : 1;
+  if (follow && !panorama){
+    const vw = VIEW_W/cam.tz, vh = VIEW_H/cam.tz;
+    /* 死区（camera-systems）：焦点只在玩家出矩形时才被推着走 */
+    const DZX = 42, DZY = 26;
+    if (aiaPlayer.x > cam.fx + DZX) cam.fx = aiaPlayer.x - DZX;
+    if (aiaPlayer.x < cam.fx - DZX) cam.fx = aiaPlayer.x + DZX;
+    if (aiaPlayer.y > cam.fy + DZY) cam.fy = aiaPlayer.y - DZY;
+    if (aiaPlayer.y < cam.fy - DZY) cam.fy = aiaPlayer.y + DZY;
+    /* 前瞻：朝移动方向提前看，幅度随速度缓入缓出（防甩头） */
+    const spd = Math.hypot(aiaPlayer.vx||0, aiaPlayer.vy||0);
+    cam.look += (Math.min(spd*0.38, 64) - cam.look) * Math.min(1, dt*4);
+    const lx = spd>1 ? (aiaPlayer.vx/spd)*cam.look : 0;
+    const ly = spd>1 ? (aiaPlayer.vy/spd)*cam.look : 0;
+    /* 中心锚点钳制：cam ∈ [vw/2, b-vw/2]；场景比视口小则整景居中 */
+    const cxT = cam.fx + lx, cyT = cam.fy + ly - 20;
+    cam.tx = b.w <= vw ? b.w/2 : Math.max(vw/2, Math.min(b.w - vw/2, cxT));
+    cam.ty = b.h <= vh ? b.h/2 : Math.max(vh/2, Math.min(b.h - vh/2, cyT));
+  } else {
+    cam.tx = follow ? b.w/2 : 0;   /* 俯瞰：整景居中（与 camCenter 语义一致）；世界全览原位 */
+    cam.ty = follow ? b.h/2 : 0;
+  }
+  /* 传送硬切（登陆/返航/晕倒/漩涡）：目标突变时直接吸附，禁跨整图甩镜头 */
+  if (Math.hypot(cam.tx-cam.x, cam.ty-cam.y) > 500){
+    cam.x = cam.tx; cam.y = cam.ty; cam.fx = follow ? aiaPlayer.x : 0; cam.fy = follow ? aiaPlayer.y : 0; cam.look = 0;
+  }
+  const k = 1 - Math.pow(0.002, dt);
+  cam.x += (cam.tx-cam.x)*k; cam.y += (cam.ty-cam.y)*k;
+  cam.zoom += (cam.tz-cam.zoom)*Math.min(1, dt*3);
+  cam.trauma = Math.max(0, cam.trauma - 1.35*dt);
+  cam.t += dt*30;
+}
+function camOffset(){
+  const s = cam.trauma*cam.trauma;               /* 二次方：小震轻、大震狠 */
+  return [12*s*Math.sin(cam.t*1.7), 8*s*Math.sin(cam.t*2.3), 0.09*s*Math.sin(cam.t*1.1)];
+}
+function addTrauma(a){ cam.trauma = Math.min(1, cam.trauma + a); }
+function hitStop(ms){ hitStopUntil = performance.now() + ms; }
+/* 反馈分层（game-feel：重要性分档，全游戏一致的 juice 预设） */
+function feedback(tier){
+  if (tier==="small") addTrauma(0.15);
+  else if (tier==="medium"){ addTrauma(0.40); hitStop(55); }
+  else { addTrauma(0.80); hitStop(110); }
+}
+/* 世界坐标 → 屏幕（百分比），DOM 提示/气泡定位共用 */
+function w2s(wx, wy){
+  const [ccx, ccy] = camCenter();
+  const [sx, sy] = camOffset();
+  return [ (ccx + (wx-cam.x)*cam.zoom + sx)/VIEW_W,
+           (ccy + (wy-cam.y)*cam.zoom + sy)/VIEW_H ];
+}
+/* 伤害/获得数字弹出（floatTexts：上浮渐隐） */
+const floatTexts = [];
+function popText(wx, wy, text, color, big){
+  floatTexts.push({x:wx, y:wy, text, color:color||"#fff", t:0, big:!!big});
+  if (floatTexts.length > 24) floatTexts.shift();
+}
+function drawFloatTexts(){
+  ctx.textAlign = "center";
+  for (let i=floatTexts.length-1; i>=0; i--){
+    const f = floatTexts[i]; f.t += 0.016;
+    if (f.t > 1.1){ floatTexts.splice(i,1); continue; }
+    const rise = f.t*26, a = f.t<0.12 ? f.t/0.12 : 1-Math.max(0,(f.t-0.5)/0.6);
+    ctx.globalAlpha = Math.max(0, a);
+    ctx.font = (f.big?"bold 20px":"bold 14px")+" 'Segoe UI','Microsoft YaHei'";
+    ctx.fillStyle = "rgba(0,0,0,.45)"; ctx.fillText(f.text, f.x+1, f.y-rise+1);
+    ctx.fillStyle = f.color; ctx.fillText(f.text, f.x, f.y-rise);
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* ==================== 昼夜（生存-crafting：时间驱动威胁；visual.md 光照色卡） ==================== */
+const DAY_LEN = 480;                      /* 现实 8 分钟 = 游戏一昼夜 */
+const CLOCK_NAMES = [[5,"黎明"],[8,"清晨"],[11,"上午"],[13,"正午"],[17,"黄昏"],[20,"夜晚"],[24,"深夜"]];
+function clockTick(dt){ state.clock = (state.clock + dt/DAY_LEN*1440) % 1440; }
+function hourNow(){ return state.clock/60; }
+function isNight(){ const h=hourNow(); return h>=20 || h<5; }
+function isDusk(){ const h=hourNow(); return h>=17 && h<20; }
+function nightAmount(){                       /* 0 白昼 → 1 深夜（平滑过渡） */
+  const h = hourNow();
+  if (h>=21 || h<4) return 1;
+  if (h>=19 && h<21) return (h-19)/2;
+  if (h>=4 && h<6) return 1-(h-4)/2;
+  return 0;
+}
+function duskAmount(){
+  const h = hourNow();
+  if (h>=16 && h<19) return Math.sin((h-16)/3*Math.PI);
+  return 0;
+}
+function clockName(){
+  const h = hourNow();
+  for (const [lim,name] of CLOCK_NAMES) if (h<lim) return name;
+  return "深夜";
+}
+/* 昼夜光照层：夜间冷蓝暗幕 + 光源开洞（火堆/小屋窗/玩家），黄昏金色暖调。
+   海图上夜色减淡、船灯开洞；冥界是亡者之国，没有太阳——不做昼夜（叙事一致）。 */
+function drawDaylight(et){
+  if (scene === "hades" || scene === "strait") return;
+  /* 「太阳记恨」全局阴幕：宰牛后天色常阴（每章生效，冥界/海峡本就无日故豁免） */
+  if (state.sunWrath){
+    const wk = scene==="world" ? 0.10 : 0.16;
+    const wx0 = cam.x-60, wy0 = cam.y-60, ww = VIEW_W/cam.zoom+120, wh = VIEW_H/cam.zoom+120;
+    ctx.fillStyle = `rgba(52,50,66,${wk})`; ctx.fillRect(wx0,wy0,ww,wh);
+  }
+  const n = nightAmount(), du = duskAmount();
+  if (n <= 0 && du <= 0) return;
+  const b = sceneSize();
+  const vx = cam.x-60, vy = cam.y-60, vw = VIEW_W/cam.zoom+120, vh = VIEW_H/cam.zoom+120;
+  const k = scene==="world" ? 0.55 : 1;
+  if (du > 0){ ctx.fillStyle = `rgba(232,168,74,${0.10*du*k})`; ctx.fillRect(vx,vy,vw,vh); }
+  if (n > 0){
+    ctx.fillStyle = `rgba(10,16,44,${0.38*n*k})`; ctx.fillRect(vx,vy,vw,vh);
+    /* 光源开洞 */
+    const lights = scene==="world"
+      ? [[boat.x, boat.y, 60, "255,200,110", 0.55]]
+      : scene==="aeolia"
+      ? [
+          [4*ATS+ATS/2, 3*ATS+ATS*0.75, 90, "255,235,190", 0.5],   /* 宫殿灯窗 */
+          [9*ATS+ATS/2, 3*ATS+ATS/2, 70, "180,220,255", 0.35],     /* 风之祭坛 */
+          [aiaPlayer.x, aiaPlayer.y, 70, "255,225,170", 0.28],
+        ]
+      : scene==="sun"
+      ? [
+          [sunAltar.x, sunAltar.y, 120, "255,214,120", 0.55],      /* 太阳祭坛金纹 */
+          [3*ATS+ATS/2, 6*ATS+ATS/2, 80, "255,170,60", 0.45],      /* 圣火盆 */
+          [aiaPlayer.x, aiaPlayer.y, 70, "255,225,170", 0.28],
+        ]
+      : [
+          [16*ATS+ATS/2, 8*ATS+ATS*0.95, 95, "255,170,60", 0.55],
+          [3.5*ATS+26,   3*ATS-20,       80, "255,200,110", 0.4],
+          [8.9*ATS,      3.4*ATS,        55, "120,230,150", 0.3],
+          [aiaPlayer.x,  aiaPlayer.y,    70, "255,225,170", 0.28],
+        ];
+    for (const [lx, ly, r, rgb, a] of lights){
+      const g = ctx.createRadialGradient(lx, ly, 4, lx, ly, r);
+      g.addColorStop(0, `rgba(${rgb},${a*n*k})`); g.addColorStop(1, `rgba(${rgb},0)`);
+      ctx.fillStyle = g; ctx.fillRect(lx-r, ly-r, r*2, r*2);
+    }
+  }
+}
+
+/* ==================== 生存需求（survival-crafting Pattern 1：衰减+分级后果，不秒杀） ==================== */
+const NEED_RATE = {hunger: 0.20, thirst: 0.27};   /* 每秒衰减：满值约 8/6 分钟 */
+let needHurtT = 0, lastNeedToast = 0;
+function tickNeeds(dt){
+  state.hunger = Math.max(0, state.hunger - NEED_RATE.hunger*dt);
+  state.thirst = Math.max(0, state.thirst - NEED_RATE.thirst*dt);
+  const starving = state.hunger<=20, parched = state.thirst<=15;
+  if (starving || parched){
+    needHurtT += dt;
+    if (needHurtT >= 4){
+      needHurtT = 0;
+      state.hp = Math.max(0, state.hp-1);
+      state.status["伤势"] = state.hp>60?"轻伤":state.hp>30?"重伤":"奄奄一息";
+      if (state.hp<=0){ faintPlayer("饥渴交加"); return; }
+      renderHUD();
+    }
+    if (performance.now()-lastNeedToast > 15000){
+      lastNeedToast = performance.now(); sfx("warn");
+      toast(starving&&parched ? "又饿又渴……再这样下去要出人命。找点吃的，喝口水。"
+        : starving ? "肚子在叫……找点吃的（面包、烤肉都行）。"
+        : "喉咙冒烟……该喝水了（背包里的淡水，或去泉眼灌）。");
+    }
+  } else needHurtT = 0;
+  /* 需求影响状态文案（供「查询自身状态」） */
+  state.status["饥饿"] = state.hunger>70?"饱了":state.hunger>40?"不饿":state.hunger>20?"微饿":"饥肠辘辘";
+  state.status["口渴"] = state.thirst>70?"精神":state.thirst>40?"正常":state.thirst>15?"发干":"干渴难忍";
+}
+function faintPlayer(reason){
+  state.hp = 50; state.coins = Math.max(0, state.coins-5);
+  state.hunger = Math.max(state.hunger, 45); state.thirst = Math.max(state.thirst, 45);
+  state.status["伤势"] = "轻伤";
+  if (scene === "sun"){
+    /* 太阳岛没有女巫——晕倒在自己的船边（场景感知恢复点，不跨岛传送） */
+    aiaPlayer.x = 3*ATS+ATS/2; aiaPlayer.y = 10*ATS+ATS/2;
+    addMemory(`旅人${reason}晕倒在太阳岛上，被浪拍醒在自己的船边`, 2);
+    toast(`眼前一黑……醒来时你趴在自己的船底，满嘴海水味。命还在，医药钱省了——饿可没省。（血量恢复至 50，还剩 ${state.coins} 枚）`);
+  } else {
+    aiaPlayer.x = witch.x; aiaPlayer.y = witch.y + 60;
+    addMemory(`旅人${reason}晕了过去，被她拖回屋外草垛`, 2);
+    toast(`眼前一黑……醒来时你躺在女巫屋外的草垛上，她把药渣在你鼻子上抹了一把：医药费，五枚德拉克马。（血量恢复至 50，还剩 ${state.coins} 枚）`);
+  }
+  renderHUD(); save();
+}
+
+/* ==================== NPC 记忆流（PLAN.md 卖点：NPC 真的记得你）
+   who 字段区分记忆归属：witch（女巫）/ seer（先知）/ any（共有） ==================== */
+function addMemory(text, imp, who){
+  state.memory.push({t: Date.now(), imp: imp||2, who: who||"witch", text});
+  if (state.memory.length > 40) state.memory.shift();
+}
+function recallMemories(k, who){
+  const w = who || currentNPC || "witch";
+  return state.memory.filter(m=>m.who===w || m.who==="any").slice(-14)
+    .sort((a,b)=>(b.imp-a.imp)||(b.t-a.t)).slice(0, k||5)
+    .sort((a,b)=>a.t-b.t).map(m=>m.text);
+}
+
+/* ==================== 好感度（dialogue-systems：关系变量影响台词分支） ==================== */
+function affinityTier(){ return state.affinity<30?"冷淡":state.affinity<60?"熟络":state.affinity<85?"信任":"托付"; }
+function addAffinity(n){ state.affinity = Math.max(0, Math.min(100, state.affinity + n)); }
+
+/* ==================== NPC 主动性（game-ai/utility：本地打分，零模型调用）
+   玩家靠近且未对话时，NPC 按 时间/好感/任务/记忆 门控主动开口——权重优先 + 每句 90s 冷却防复读。
+   与 witchUtilityTick（行为层）互补：那里管"做什么"，这里管"说什么"。 ==================== */
+const AMBIENT = {
+  witch: [
+    {id:"ready",  w:1.0, cond:()=>{const q=getQuest("witch_grass"); return !!(q&&!q.done&&q.have>=q.need);},
+                  line:()=>"（她朝你伸手）玛草齐了？拿来。"},
+    {id:"quest",  w:0.9, cond:()=>{const q=getQuest("witch_grass"); return !!(q&&!q.done&&q.have<q.need);},
+                  line:()=>`草还差 ${getQuest("witch_grass").need-getQuest("witch_grass").have} 株——别在林子里晃到天黑。`},
+    {id:"dusk",   w:0.7, cond:()=>isDusk()||isNight(),
+                  line:()=>"天要沉了。灶上还热着——别在野地里过夜。"},
+    {id:"warm",   w:0.5, cond:()=>state.affinity>=60&&!state.circeMessage,
+                  line:()=>"（她搅着药，忽然）……海峡那边，替我留意一个人。"},
+    {id:"gift",   w:0.6, cond:()=>state.affinity>=85&&!state.backpack["蜂蜜"],
+                  line:()=>"灶台边有蜜，拿去——别说是我给的。"},
+    {id:"sunlit", w:0.8, cond:()=>state.sunlit, line:()=>"晨光不错。今天的药比哪天都香。"},
+    {id:"idle",   w:0.15, cond:()=>true, line:()=>"来了就进来，别杄在风口。"},
+  ],
+  seer: [
+    {id:"offer",  w:1.0, cond:()=>!state.offered,
+                  line:()=>"蜂蜜酒、面包、淡水——沟里的黑暗等着它的祭品。"},
+    {id:"ask",    w:1.0, cond:()=>!!state.offered&&!state.prophecy,
+                  line:()=>"（杖尖转向你）祭血入沟了。问吧——问你要走的路。"},
+    {id:"long",   w:0.6, cond:()=>state.prophecy==="long",
+                  line:()=>"……长路上的人，脚步声都是稳的。"},
+    {id:"short",  w:0.6, cond:()=>state.prophecy==="short",
+                  line:()=>"……选了捷径的人，影子先一步到了浪头。"},
+  ],
+  aeolus: [
+    {id:"invite", w:1.0, cond:()=>!getQuest("aeolia_winds"),
+                  line:()=>"（风把他的话送到你耳边）四座石牢，四阵贪玩的风——想借顺风？"},
+    {id:"prog",   w:0.9, cond:()=>{const q=getQuest("aeolia_winds"); return !!(q&&!q.done&&q.have<q.need);},
+                  line:()=>`还锁着 ${4-getQuest("aeolia_winds").have} 阵风呢——岛的四角。`},
+    {id:"ready",  w:1.0, cond:()=>{const q=getQuest("aeolia_winds"); return !!(q&&!q.done&&q.have>=q.need);},
+                  line:()=>"四风都归位了！回来领你的袋子。"},
+    {id:"done",   w:0.5, cond:()=>{const q=getQuest("aeolia_winds"); return !!(q&&q.done);},
+                  line:()=>"一次放一阵——贪念会把它们一次放光。"},
+  ],
+  siren: [
+    {id:"choose", w:1.0, cond:()=>state.straitStage===0,
+                  line:()=>"（歌声漫过船舷）蜡罐，或栈杆——小水手，选一样。"},
+    {id:"listened", w:0.8, cond:()=>state.mastTied&&state.straitStage<2,
+                  line:()=>"（三姐妹轻声地）你听完了整首歌……那页歌词，收好。"},
+    {id:"silent", w:0.8, cond:()=>state.waxEars&&state.straitStage<2,
+                  line:()=>"（歌声变得遥远）听不见的，才最想唱给你。"},
+    {id:"passed", w:0.5, cond:()=>state.straitStage>=2,
+                  line:()=>"（雾里，三声叹息）去吧……可你会想起这段旋律。"},
+  ],
+};
+function ambientAnchor(npc){
+  if (npc==="witch") return witch;
+  if (npc==="seer") return seer;
+  if (npc==="aeolus") return aeolus;
+  if (npc==="siren"){ const s=SSPOTS.find(p=>p.type==="siren"); return s?{x:s.x,y:s.y}:null; }
+  return null;
+}
+let ambTimer=0, ambUntil=0, ambAnchor=null, ambText="", ambActive=null;
+const ambientCooldown = {};
+function npcAmbientTick(dt){
+  ambTimer += dt;
+  if (ambTimer < 1.2) return;                /* 决策步 1.2s 一次，非每帧 */
+  ambTimer = 0;
+  if (dlgOpen||titleOn||chapterOn||mapOpen||scene==="world"){ ambActive=null; return; }
+  const npc = scene==="aia"?"witch":scene==="hades"?"seer":scene==="aeolia"?"aeolus":"siren";
+  const anchor = ambientAnchor(npc);
+  if (!anchor){ ambActive=null; return; }
+  if (Math.hypot(aiaPlayer.x-anchor.x, aiaPlayer.y-anchor.y) > 180){ ambActive=null; return; }
+  const now = performance.now();
+  if (ambActive && now < ambUntil) return;   /* 正在说的这句先说完 */
+  if (ambActive){ ambActive=null; return; }  /* 说完停一轮，避免无缝接龙 */
+  const cands = (AMBIENT[npc]||[]).filter(a =>
+    now - (ambientCooldown[npc+"."+a.id]||0) > 90000 && a.cond());
+  if (!cands.length) return;
+  cands.sort((a,b)=>b.w-a.w);
+  const pick = cands[0];
+  ambientCooldown[npc+"."+pick.id] = now;
+  ambActive = pick.id; ambUntil = now + 5200;
+  ambAnchor = anchor;
+  ambText = typeof pick.line==="function" ? pick.line() : pick.line;
+}
+function renderAmbient(){
+  if (!ambActive || !ambAnchor || performance.now()>ambUntil){
+    if (ambEl.style.display!=="none") ambEl.style.display="none";
+    return;
+  }
+  const [ax,ay]=w2s(ambAnchor.x, ambAnchor.y-38);
+  ambEl.style.display="block"; ambEl.style.left=(ax*100)+"%"; ambEl.style.top=(ay*100)+"%";
+  ambEl.textContent=ambText;
+}
+
+/* ==================== 喀耳刻屋内 Utility AI（ai-behavior-trees-utility-ai：
+   归一化打分 + 迟滞防抖，行为玩家可见可感：搅药 / 踱步 / 望海） ==================== */
+const witchAI = { mode:"stir", t:0, hyst:0.08, tx:witch.x, ty:witch.y, bored:0, fatigue:0 };
+const WITCH_SPOTS = {
+  stir: {x: 8.9*ATS, y: 3.55*ATS},   /* 坩埚旁 */
+  pace: {x: 6.6*ATS, y: 4.7*ATS},    /* 小径踱步 */
+  gaze: {x: 5.6*ATS, y: 3.2*ATS},    /* 朝西望海 */
+};
+const WITCH_MOOD = {stir:"搅药", pace:"踱步", gaze:"望海"};
+function witchUtilityTick(dt){
+  if (dlgOpen || titleOn || chapterOn || mapOpen) return;
+  witchAI.t += dt;
+  witchAI.bored   = witchAI.mode==="stir" ? witchAI.bored+dt*0.022 : Math.max(0, witchAI.bored-dt*0.05);
+  witchAI.fatigue = witchAI.mode==="pace" ? witchAI.fatigue+dt*0.045 : Math.max(0, witchAI.fatigue-dt*0.03);
+  if (witchAI.t >= 2){                          /* 决策步 2s 一次，非每帧 */
+    witchAI.t = 0;
+    const evening = (isDusk()||isNight()) ? 1 : 0;
+    const scores = {
+      stir: 0.45*(1-witchAI.bored) + witchAI.fatigue*0.6,
+      pace: 0.22 + witchAI.bored*0.7  - witchAI.fatigue*0.5,
+      gaze: 0.10 + evening*0.35       + witchAI.bored*0.25,
+    };
+    scores[witchAI.mode] += witchAI.hyst;       /* 迟滞：避免在近平分间抖动 */
+    const best = Object.entries(scores).sort((a,b)=>b[1]-a[1])[0][0];
+    if (best !== witchAI.mode){
+      witchAI.mode = best;
+      witchAI.tx = WITCH_SPOTS[best].x; witchAI.ty = WITCH_SPOTS[best].y;
+    }
+  }
+  const dx = witchAI.tx-witch.x, dy = witchAI.ty-witch.y, d = Math.hypot(dx,dy);
+  if (d > 2){ const sp = Math.min(26*dt, d); witch.x += dx/d*sp; witch.y += dy/d*sp; }
+  ASPOTS[0].x = witch.x; ASPOTS[0].y = witch.y;   /* 交互点跟随 */
+}
+
 /* ==================== 输入 ==================== */
 const keys = new Set();
 let dlgOpen = false;
+let eBufAt = 0;   /* 交互预按时间戳（input-systems 输入缓冲） */
 /* 标题屏 / 章节过场开关：开着时不响应移动与互动 */
 let titleOn = true, chapterOn = false, chTimer = null;
 /* 捕获阶段监听：输入框打字不误触移动/E，但 Esc 任何时候都能关对话 */
@@ -346,10 +1050,24 @@ addEventListener("keydown", e=>{
     if (e.key==="Escape"){ closeDlg(); e.preventDefault(); }
     return;
   }
+  if (mapOpen){ if (e.key==="Escape" || e.key.toLowerCase()==="m"){ closeMap(); e.preventDefault(); } return; }
+  if (document.getElementById("lyricCard").classList.contains("open")){ if (e.key==="Escape") closeLyric(); return; }
   if (inInput) return;
   const k = e.key.toLowerCase();
   if (["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(k)){ keys.add(k); e.preventDefault(); }
-  if (k==="e"){ e.preventDefault(); interact(); }
+  if (k==="e"){
+    e.preventDefault();
+    /* 预按：当前无可交互目标才进缓冲，避免双触发 */
+    const has = scene==="world" ? !!islandNear() : !!aiaNear();
+    if (!has) eBufAt = performance.now();
+    interact();
+  }
+  /* M=海图（全场景）；P=俯瞰全岛（岛屿内） */
+  if (k==="m" && !chapterOn){ e.preventDefault(); mapOpen ? closeMap() : openMap(); }
+  if (k==="p" && scene!=="world" && !mapOpen){
+    panorama = !panorama;
+    toast(panorama ? "俯瞰全岛（再按 P 回到跟随视角）" : "跟随视角（再按 P 俯瞰全岛）");
+  }
 }, true);
 addEventListener("keyup", e=> keys.delete(e.key.toLowerCase()));
 addEventListener("blur", ()=> keys.clear());
@@ -369,26 +1087,35 @@ function tryMoveHades(nx,ny){
     if (HSOLID.has(hTile(Math.floor((nx+dx)/ATS), Math.floor((ny+dy)/ATS)))) return false;
   aiaPlayer.x=nx; aiaPlayer.y=ny; return true;
 }
+function tryMoveAeolia(nx,ny){
+  const hw=aiaPlayer.w/2, hh=aiaPlayer.h/2;
+  for (const [dx,dy] of [[-hw,-hh],[hw,-hh],[-hw,hh],[hw,hh]])
+    if (AESOLID.has(aeTile(Math.floor((nx+dx)/ATS), Math.floor((ny+dy)/ATS)))) return false;
+  aiaPlayer.x=nx; aiaPlayer.y=ny; return true;
+}
 function tryMoveWorld(nx,ny){
   const ch = worldTile(Math.floor(nx/WTS), Math.floor(ny/WTS));
   if (ch==="#"||ch==="X"||ch==="G") return false;
   boat.x=nx; boat.y=ny; return true;
 }
 function tickMove(dt){
-  if (titleOn||chapterOn) return;
+  if (titleOn||chapterOn||mapOpen) return;
   let dx=0, dy=0;
   if (keys.has("a")||keys.has("arrowleft")) dx-=1;
   if (keys.has("d")||keys.has("arrowright")) dx+=1;
   if (keys.has("w")||keys.has("arrowup")) dy-=1;
   if (keys.has("s")||keys.has("arrowdown")) dy+=1;
-  const p = scene==="aia" || scene==="hades" ? aiaPlayer : boat;
+  const p = scene!=="world" ? aiaPlayer : boat;
   p.moving = !!(dx||dy);
-  if (!dx&&!dy) return;
+  if (!dx&&!dy){ p.vx=0; p.vy=0; return; }   /* 速度清零：相机前瞻随之收回 */
   if (dx&&dy){ dx*=0.7071; dy*=0.7071; }
   if (dx<0) p.face="left"; else if (dx>0) p.face="right";
   else if (dy<0) p.face="up"; else p.face="down";
-  const sp = (scene==="aia"?150:scene==="hades"?120:110)*dt;
-  const mover = scene==="aia" ? tryMoveAia : scene==="hades" ? tryMoveHades : tryMoveWorld;
+  /* 风袋顺风：海上航速倍增（暗线③：用风=快旅，贪念=用光） */
+  const tail = scene==="world" && performance.now() < (state.tailwindUntil||0);
+  const sp = (scene==="aia"?150:scene==="hades"?120:scene==="aeolia"?130:scene==="strait"?135:scene==="sun"?140:tail?230:110)*dt;
+  const mover = scene==="aia" ? tryMoveAia : scene==="hades" ? tryMoveHades : scene==="aeolia" ? tryMoveAeolia : scene==="strait" ? tryMoveStrait : scene==="sun" ? tryMoveSun : tryMoveWorld;
+  p.vx = dx*sp/dt; p.vy = dy*sp/dt;   /* 实际速度（px/s），相机前瞻用 */
   if (dx) mover(p.x+dx*sp, p.y);
   if (dy) mover(p.x, p.y+dy*sp);
   p.step = (p.step||0)+dt*8;
@@ -405,23 +1132,24 @@ function tickBoar(dt){
   boar.timer -= dt;
   const dx = aiaPlayer.x - boar.x, dy = aiaPlayer.y - boar.y;
   const dist = Math.hypot(dx, dy) || 1;
+  const rage = isNight() ? 1.4 : 1;        /* 昼夜威胁：夜里它更凶（survival-crafting 威胁曲线） */
   switch (boar.mode){
     case "idle":
       /* 游荡：在家附近小步踱步 */
-      if (dist < 140){ boar.mode = "aggro"; sfx("alert"); break; }
+      if (dist < 140*rage){ boar.mode = "aggro"; sfx("alert"); break; }
       if (((performance.now()/900)|0) % 2 === 0){
         const hx = boar.home.x - boar.x, hy = boar.home.y - boar.y;
         if (Math.hypot(hx, hy) > 26) tryMoveBoar(boar.x + Math.sign(hx)*22*dt, boar.y + Math.sign(hy)*22*dt);
       }
       break;
     case "aggro":
-      if (dist > 210){ boar.mode = "idle"; break; }
+      if (dist > 210*rage){ boar.mode = "idle"; break; }
       if (dist < 95){
         boar.mode = "windup"; boar.timer = 0.5;
         boar.dir = {x:dx/dist, y:dy/dist};   /* 方向在蓄力开始时锁定 → 玩家可走位躲 */
         break;
       }
-      tryMoveBoar(boar.x + dx/dist*34*dt, boar.y + dy/dist*34*dt);
+      tryMoveBoar(boar.x + dx/dist*34*dt*(isNight()?1.15:1), boar.y + dy/dist*34*dt*(isNight()?1.15:1));
       break;
     case "windup":
       if (boar.timer <= 0){ boar.mode = "dash"; boar.timer = 0.55; sfx("dash"); }
@@ -432,7 +1160,7 @@ function tickBoar(dt){
         boar.mode = "tired"; boar.timer = 1.3; break;
       }
       if (Math.hypot(aiaPlayer.x-boar.x, aiaPlayer.y-boar.y) < 22){
-        const dmg = 12 + Math.floor(Math.random()*5);
+        const dmg = 12 + Math.floor(Math.random()*5) + (isNight()?2:0);
         hurtPlayer(dmg, "野猪把你撞了个趔趄");
         const kb = 26;
         tryMoveAia(aiaPlayer.x + boar.dir.x*kb, aiaPlayer.y);
@@ -451,15 +1179,13 @@ function tickBoar(dt){
 function hurtPlayer(dmg, reason){
   state.hp -= dmg;
   state.status["伤势"] = state.hp>60 ? "轻伤" : state.hp>30 ? "重伤" : "奄奄一息";
-  flashHit(); shakeHp(); sfx("hurt");
+  flashHit(); shakeHp(); sfx("hurt"); feedback("medium");
+  popText(aiaPlayer.x, aiaPlayer.y-24, `-${dmg}`, "#ff7a6b");
   if (state.hp <= 0){
-    state.hp = 50; state.coins = Math.max(0, state.coins-5);
-    state.status["伤势"] = "轻伤";
-    aiaPlayer.x = witch.x; aiaPlayer.y = witch.y + 60;
-    toast(`眼前一黑……醒来时你躺在女巫屋外的草垛上，她把药渣在你鼻子上抹了一把：医药费，五枚德拉克马。（血量恢复至 50，还剩 ${state.coins} 枚）`);
-  } else {
-    toast(`${reason}（你 -${dmg} 血）`);
+    faintPlayer(reason.includes("野猪") ? "被野猪撞倒后" : "");
+    return;
   }
+  toast(`${reason}（你 -${dmg} 血）`);
   renderHUD(); save();
 }
 function flashHit(){
@@ -474,8 +1200,13 @@ function shakeHp(){
   el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake");
 }
 
-/* WebAudio 零依赖合成音效（无外部音频文件） */
+/* ==================================================================
+ *  WebAudio 零依赖合成（audio-design：总线化 + SFX 变调 + 环境层 + ducking）
+ *  总线：destination ← { sfxGain(SFX), ambGain(Ambience) }
+ *  环境层按场景自动切换：海浪+风（世界/埃亚岛）、冥界低鸣；近篝火噼啪、海面偶发鸥鸣
+ * ================================================================== */
 let AC = null, sndOn = true;
+let sfxGain = null, ambGain = null, ambCfg = null, lastAmbScene = null;
 const SFX_CFG = {
   attack: [900, 560, 0.05, "square",   0.10],
   hurt:   [150,  70,  0.17, "sawtooth", 0.20],
@@ -484,24 +1215,175 @@ const SFX_CFG = {
   die:    [320,  85,  0.30, "sawtooth", 0.15],
   cook:   [520,  800, 0.13, "triangle", 0.11],
   pick:   [700,  900, 0.06, "sine",     0.08],
+  level:  [520, 1040, 0.35, "triangle", 0.14],
+  warn:   [330,  220, 0.22, "square",   0.07],
+  bless:  [440,  880, 0.50, "sine",     0.10],
 };
+function audioInit(){
+  if (AC) return AC;
+  try{
+    AC = new (window.AudioContext||window.webkitAudioContext)();
+    sfxGain = AC.createGain(); sfxGain.gain.value = 0.5; sfxGain.connect(AC.destination);
+    ambGain = AC.createGain(); ambGain.gain.value = 0;   ambGain.connect(AC.destination);
+  }catch(e){}
+  return AC;
+}
 function sfx(kind){
   if (!sndOn || !SFX_CFG[kind]) return;
   try{
-    AC = AC || new (window.AudioContext||window.webkitAudioContext)();
+    audioInit(); if (!AC) return;
     if (AC.state === "suspended") AC.resume();
     const c = SFX_CFG[kind], t = AC.currentTime;
+    const jitter = 0.94 + Math.random()*0.12;   /* ±6% 变调，去"机枪感"（SFX variation） */
     const o = AC.createOscillator(), g = AC.createGain();
     o.type = c[3];
-    o.frequency.setValueAtTime(c[0], t);
-    o.frequency.exponentialRampToValueAtTime(Math.max(40, c[1]), t+c[2]);
+    o.frequency.setValueAtTime(c[0]*jitter, t);
+    o.frequency.exponentialRampToValueAtTime(Math.max(40, c[1]*jitter), t+c[2]);
     g.gain.setValueAtTime(c[4], t);
     g.gain.exponentialRampToValueAtTime(0.001, t+c[2]);
-    o.connect(g); g.connect(AC.destination);
+    o.connect(g); g.connect(sfxGain||AC.destination);
     o.start(t); o.stop(t+c[2]+0.02);
   }catch(e){}
 }
-function sndToggle(){ sndOn = !sndOn; document.getElementById("sndBtn").textContent = sndOn ? "🔊 音效" : "🔇 音效"; }
+function sndToggle(){
+  sndOn = !sndOn;
+  document.getElementById("sndBtn").textContent = sndOn ? "🔊 音效" : "🔇 音效";
+  if (sndOn){ audioInit(); lastAmbScene = null; }   /* 重开后环境层自动重建 */
+}
+
+/* ---------- 环境层（噪声/振荡器全合成，零音频文件） ---------- */
+let noiseBuf = null;
+function getNoise(){
+  if (noiseBuf) return noiseBuf;
+  noiseBuf = AC.createBuffer(1, AC.sampleRate*2, AC.sampleRate);
+  const d = noiseBuf.getChannelData(0);
+  for (let i=0;i<d.length;i++) d[i] = Math.random()*2-1;
+  return noiseBuf;
+}
+function setAmbience(){
+  if (!AC || !sndOn) return;
+  if (ambCfg){ try{ ambCfg.stop(); }catch(e){} }
+  const nodes = [];
+  const keep = (x)=>{ nodes.push(x); return x; };
+  if (scene === "hades"){
+    /* 冥界：55Hz 失谐双振低鸣 + 暗噪声 */
+    const g = keep(AC.createGain()); g.gain.value = 0.045; g.connect(ambGain);
+    for (const fq of [55, 55.7]){
+      const o = AC.createOscillator(); o.type="sine"; o.frequency.value = fq;
+      o.connect(g); o.start(); keep(o);
+    }
+    const n = AC.createBufferSource(); n.buffer = getNoise(); n.loop = true;
+    const f = AC.createBiquadFilter(); f.type="lowpass"; f.frequency.value=180;
+    const ng = AC.createGain(); ng.gain.value = 0.05;
+    n.connect(f); f.connect(ng); ng.connect(ambGain); n.start();
+    keep(n);
+  } else if (scene === "strait"){
+    /* 声之海峡：雾海低涌（lowpass 噪声）+ 幽微歌声泛音（312/397Hz 失谐颤音） */
+    const n = AC.createBufferSource(); n.buffer = getNoise(); n.loop = true;
+    const f = AC.createBiquadFilter(); f.type="lowpass"; f.frequency.value=300;
+    const g = AC.createGain(); g.gain.value = 0.05;
+    n.connect(f); f.connect(g); g.connect(ambGain); n.start();
+    const lfo = AC.createOscillator(); lfo.frequency.value = 0.11;
+    const lg = AC.createGain(); lg.gain.value = g.gain.value*0.7;
+    lfo.connect(lg); lg.connect(g.gain); lfo.start();
+    keep(n); keep(lfo);
+    for (const [fq,amp] of [[312,0.012],[397,0.009]]){
+      const o = AC.createOscillator(); o.type="sine"; o.frequency.value=fq;
+      const og = AC.createGain(); og.gain.value=amp;
+      const vib = AC.createOscillator(); vib.frequency.value=4.6;
+      const vg2 = AC.createGain(); vg2.gain.value=fq*0.008;
+      vib.connect(vg2); vg2.connect(o.frequency);
+      o.connect(og); og.connect(ambGain); o.start(); vib.start();
+      keep(o); keep(vib);
+    }
+  } else if (scene === "sun"){
+    /* 太阳岛：暖风低吟（lowpass 噪声，柔）+ 金色微颤（523/526Hz 失谐极轻）——晴日牧场 */
+    const n = AC.createBufferSource(); n.buffer = getNoise(); n.loop = true;
+    const f = AC.createBiquadFilter(); f.type="lowpass"; f.frequency.value=500;
+    const g = AC.createGain(); g.gain.value = 0.03;
+    n.connect(f); f.connect(g); g.connect(ambGain); n.start();
+    const lfo = AC.createOscillator(); lfo.frequency.value = 0.09;
+    const lg = AC.createGain(); lg.gain.value = g.gain.value*0.6;
+    lfo.connect(lg); lg.connect(g.gain); lfo.start();
+    keep(n); keep(lfo);
+    for (const [fq,amp] of [[523,0.006],[526,0.005]]){
+      const o = AC.createOscillator(); o.type="sine"; o.frequency.value=fq;
+      const og = AC.createGain(); og.gain.value=amp;
+      o.connect(og); og.connect(ambGain); o.start();
+      keep(o);
+    }
+  } else {
+    /* 海浪：lowpass 噪声 + LFO 起伏 */
+    const n = AC.createBufferSource(); n.buffer = getNoise(); n.loop = true;
+    const f = AC.createBiquadFilter(); f.type="lowpass"; f.frequency.value = scene==="world"?420:360;
+    const g = AC.createGain(); g.gain.value = scene==="world"?0.05:0.038;
+    n.connect(f); f.connect(g); g.connect(ambGain); n.start();
+    const lfo = AC.createOscillator(); lfo.frequency.value = 0.13;
+    const lg = AC.createGain(); lg.gain.value = g.gain.value*0.7;
+    lfo.connect(lg); lg.connect(g.gain); lfo.start();
+    keep(n); keep(lfo);
+    /* 风：bandpass 噪声 + 慢 LFO */
+    const wn = AC.createBufferSource(); wn.buffer = getNoise(); wn.loop = true;
+    const wf = AC.createBiquadFilter(); wf.type="bandpass"; wf.frequency.value=900; wf.Q.value=2.2;
+    const wg = AC.createGain(); wg.gain.value = 0.02;
+    wn.connect(wf); wf.connect(wg); wg.connect(ambGain); wn.start();
+    const wlfo = AC.createOscillator(); wlfo.frequency.value = 0.07;
+    const wlg = AC.createGain(); wlg.gain.value = 0.012;
+    wlfo.connect(wlg); wlg.connect(wg.gain); wlfo.start();
+    keep(wn); keep(wlfo);
+  }
+  ambCfg = { stop(){ nodes.forEach(x=>{ try{x.stop();}catch(e){} try{x.disconnect();}catch(e){} }); } };
+  sfx(scene==="hades" ? "dash" : "pick");
+}
+let gullT = 8, crackleT = 0;
+function ambTick(dt){
+  if (!AC || !sndOn) return;
+  if (AC.state === "suspended") AC.resume();
+  if (ambGain){
+    /* ducking：对话/标题/过场时环境音让位（sidechain 的手写替身，慢恢复不喘） */
+    const target = (dlgOpen||titleOn||chapterOn ? 0.2 : 1) * 0.9;
+    const cur = ambGain.gain.value;
+    ambGain.gain.value = cur + (target-cur)*Math.min(1, dt*2.5);
+  }
+  if (lastAmbScene !== scene){ lastAmbScene = scene; setAmbience(); }
+  if (dlgOpen || titleOn || chapterOn) return;
+  if (scene === "aia"){
+    /* 近篝火：随机高频噼啪 */
+    const d = Math.hypot(aiaPlayer.x-(16*ATS+ATS/2), aiaPlayer.y-(8*ATS+ATS*0.95));
+    if (d < 130){
+      crackleT -= dt;
+      if (crackleT <= 0){
+        crackleT = 0.12 + Math.random()*0.5;
+        try{
+          const t = AC.currentTime, src = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain();
+          src.buffer = getNoise(); f.type="highpass"; f.frequency.value=2500;
+          g.gain.setValueAtTime(0.10+Math.random()*0.08, t);
+          g.gain.exponentialRampToValueAtTime(0.001, t+0.06);
+          src.connect(f); f.connect(g); g.connect(ambGain||AC.destination);
+          src.start(t, Math.random()*1.5, 0.07);
+        }catch(e){}
+      }
+    }
+  }
+  if (scene === "world"){
+    /* 海面偶发鸥鸣 */
+    gullT -= dt;
+    if (gullT <= 0){
+      gullT = 9 + Math.random()*10;
+      try{
+        const t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain();
+        o.type="sine";
+        o.frequency.setValueAtTime(1150, t);
+        o.frequency.exponentialRampToValueAtTime(750, t+0.28);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.05, t+0.05);
+        g.gain.exponentialRampToValueAtTime(0.001, t+0.3);
+        o.connect(g); g.connect(ambGain||AC.destination);
+        o.start(t); o.stop(t+0.32);
+      }catch(e){}
+    }
+  }
+}
 
 /* ==================== 互动 ==================== */
 function islandNear(){
@@ -517,6 +1399,9 @@ function aiaNear(){
   let best=null, bd=1e9;
   let spots;
   if (scene==="hades") spots = HSPOTS.slice();
+  else if (scene==="aeolia") spots = AESPOTS.slice();
+  else if (scene==="strait") spots = SSPOTS.slice();
+  else if (scene==="sun") spots = SUNSPOTS.slice();
   else { spots = ASPOTS.slice(); const bs = boarSpot(); if (bs) spots.push(bs); }
   for (const s of spots){
     const d = Math.hypot(aiaPlayer.x-s.x, aiaPlayer.y-s.y);
@@ -525,7 +1410,7 @@ function aiaNear(){
   return best;
 }
 function interact(){
-  if (titleOn||chapterOn) return;
+  if (titleOn||chapterOn||mapOpen) return;
   if (scene==="world"){
     const is = islandNear();
     if (!is) return;
@@ -537,8 +1422,37 @@ function interact(){
       showChapter("concept-art/07-冥界之岸.jpg","第 二 章","冥 界","俄刻阿诺斯之岸 · 亡者之言","你在灰白的栈桥上靠了岸——这里的水不响");
       return;
     }
+    if (is.scene==="aeolia"){
+      scene = "aeolia";
+      aiaPlayer.x = 3*ATS+ATS/2; aiaPlayer.y = 10*ATS+ATS/2;
+      save();
+      showChapter("concept-art/maps/04-风神岛图.jpg","插 章","风 神 岛","埃俄罗斯的浮岛 · 十二风在此听差","云在脚下，风在手里——贪念除外");
+      return;
+    }
+    if (is.scene==="strait"){
+      scene = "strait";
+      aiaPlayer.x = 2*ATS+ATS/2; aiaPlayer.y = 9*ATS+ATS/2;
+      save();
+      showChapter("concept-art/04-塞壬之歌.jpg","第 三 章","声 之 海 峡","塞壬的歌 · 斯库拉的六头 · 每一样都要付价","你只能选择：塞住耳朵，还是被绑着听。");
+      return;
+    }
+    if (is.scene==="sun"){
+      scene = "sun";
+      aiaPlayer.x = 3*ATS+ATS/2; aiaPlayer.y = 10*ATS+ATS/2;
+      save();
+      showChapter("concept-art/05-太阳岛.jpg","第 四 章","太 阳 岛","赫利俄斯的圣牛 · 饥饿与誓言","牛群会说话，也会求你。饿是真的——誓言也是。");
+      return;
+    }
     scene = "aia";
     aiaPlayer.x = 3*ATS+ATS/2; aiaPlayer.y = 10*ATS+ATS/2;
+    /* 暗线②收束：话带到了，回岛时债清——埃亚岛第一次天亮 */
+    if (state.scyllaDebtPaid && !state.sunlit){
+      state.sunlit = true; addAffinity(10); gainXp(30);
+      addMemory("旅人把「不怪你」带到了——埃亚岛第一次天亮", 4);
+      renderHUD(); save();
+      showChapter("concept-art/02-女巫小屋.jpg","尾声 · 第 一 章","埃 阿 亚 岛","债清了 · 岛上第一次天亮","她给你留了门。晨光落在绿泡坩埚上，药香是暖的。");
+      return;
+    }
     save();
     showChapter("concept-art/02-女巫小屋.jpg","第 一 章","埃阿亚岛","喀耳刻的领地 · 第勒尼安海","你在小岛南面的栈桥靠了岸");
     return;
@@ -547,6 +1461,133 @@ function interact(){
   if (!s) return;
   if (s.type==="witch") return openDlg("witch");
   if (s.type==="seer") return openDlg("seer");
+  /* ---------- 声之海峡（第三章）交互 ---------- */
+  if (s.type==="mast"){
+    if (state.straitStage>=1){ toast(state.mastTied?"你还绑在栈杆上——歌已经听完了。":"耳朵已封上蜡。世界安静了，也包括歌。"); return; }
+    state.mastTied=true; state.straitStage=1;
+    if (state.status["士气"]==="振奋") state.status["士气"]="尚可";
+    else if (state.status["士气"]==="尚可"||!state.status["士气"]) state.status["士气"]="低落";
+    else if (state.status["士气"]==="低落") state.status["士气"]="消沉";
+    state.lyricFragment=true; addItem("歌词残页");
+    gainXp(15); feedback("medium"); sfx("bless");
+    addMemory("旅人把自己绑上栈杆，听完了塞壬的整首歌", 4);
+    showLyric();
+    renderHUD(); save(); return;
+  }
+  if (s.type==="wax"){
+    if (state.straitStage>=1){ toast(state.waxEars?"蜡还在耳朵里。歌与你无关——这很好，也很空。":"你已选了栈杆。"); return; }
+    state.waxEars=true; state.straitStage=1;
+    gainXp(10); sfx("pick");
+    addMemory("旅人用蜡封住耳朵，安全驶过塞壬的海——这段歌在他的故事里缺了页", 3);
+    toast("你把蜡揉软，塞进耳朵。世界闷了下去——歌声变成远处的嗡鸣。你安全了，但这段经历在你的故事里缺了一页。（终章的判词会记得这份沉默）");
+    renderHUD(); save(); return;
+  }
+  if (s.type==="siren"){
+    if (state.straitStage===0){ toast("歌声把理智泡得发软——先做选择：甲板上的蜡罐，或栈杆。"); return; }
+    return openDlg("siren");
+  }
+  if (s.type==="scylla"){
+    if (state.straitStage<1){ toast("歌还没处置。六头怪在她身后慢条斯理地数着你的行李。"); return; }
+    if (state.straitStage>=2){ toast(state.scyllaDebtPaid?"海峡让出的静水还亮着。走吧，趁她没后悔。":"她已拿走她要的。别回头。"); return; }
+    if (state.circeMessage){
+      state.scyllaDebtPaid=true; state.straitStage=2;
+      gainXp(30); feedback("large"); sfx("bless");
+      addMemory("旅人把喀耳刻的「不怪你」带给了斯库拉——她沉入海底，海峡让出静水", 4);
+      showChapter("concept-art/03-斯库拉海峡.jpg","第 三 章","海 峡 让 水","……她也放不下的那个人，是你吗？","她久久沉默，沉入海底。中间的静水亮了——「替我看着她。她不会对自己手下留情。」");
+      renderHUD(); save(); return;
+    }
+    showChapter("concept-art/characters/08-斯库拉.jpg","第 三 章","六 头 · 付 价","硬闯海峡的代价","六条颈子同时垂下来——不咬你，咬你的行囊。");
+    const lost = takeShine(6);
+    state.straitStage=2;
+    addMemory("旅人硬闯斯库拉海峡，六头怪吃走了他最亮的东西："+(lost.join("、")||"（行囊空空，咬的是他）"), 3);
+    renderHUD(); save(); return;
+  }
+  if (s.type==="vortex"){
+    if (state.straitStage>=2){ toast("漩涡还在原地打转——它不认输，但今天与你两清。"); return; }
+    if (state.straitStage<1){ toast("先处置歌。漩涡的吸力正在给塞壬伴唱。"); return; }
+    return gambleVortex();
+  }
+  if (s.type==="exit"){
+    if (state.straitStage>=3){ toast("金光还在船尾荡漾——海峡已经在身后了。（栈桥码头在西边，随时可以出海）"); return; }
+    if (state.straitStage<1){ toast("歌没听完就闯海峡，水手会跳海的。先选：蜡罐，或栈杆。"); return; }
+    if (state.straitStage<2){ toast("海峡还没过去——北崖上的她还在等你的答案（或你的行李）。"); return; }
+    state.straitCleared=true; state.straitStage=3;
+    gainXp(25); sfx("bless"); feedback("large");
+    addMemory("旅人穿过了声之海峡——出峡时，海面浮起大片金光", 4);
+    toast("船冲出海雾的那一刻，海面浮起大片金光——太阳岛就在金光深处。（按 M 打开海图前往 · 历练 +25）");
+    renderHUD(); save(); return;
+  }
+  if (s.type==="dock" && scene==="strait"){
+    scene = "world";
+    boat.x = 21*WTS+WTS/2+50; boat.y = 9*WTS+WTS/2+40;
+    toast("你把船退出海峡。雾在身后合拢，像一本合上的书。");
+    save(); return;
+  }
+  /* ---------- 太阳岛（第四章）交互 ---------- */
+  if (s.type==="cattle"){
+    if (state.sunWrath){ toast("牛群远远躲开你——它们的眼睛还记得那把刀。"); return; }
+    return openDlg("cattle");
+  }
+  if (s.type==="slaughter"){
+    if (state.sunWrath){ toast("圣血已经流过一次。再来一次，宙斯的雷不会数到二。"); return; }
+    if (!state.slaughterWarn){
+      state.slaughterWarn = true; renderHUD(); save();
+      toast("刀出鞘了。牛群齐刷刷回过头——它们不跑，只是看着你。（再按一次 E，就是抉择；想回头就去找牛群说话，「借」是另一条路）");
+      return;
+    }
+    state.sunWrath = true; state.slaughterWarn = false;
+    state.hunger = 100; state.thirst = Math.min(100, state.thirst+30);
+    state.status["士气"] = state.status["士气"]==="振奋" ? "尚可" : "消沉";
+    addItem("牛肉",2);
+    sfx("die"); feedback("large");
+    addMemory("旅人宰了太阳岛的一头圣牛——饥饿赢了誓言", 4, "any");
+    toast("血腥味漫开的那一刻，天上的光暗了一分。你吃饱了——胃里是满的，心里是空的。（饱食回满 · 世界 flag「太阳记恨」：此后天色常阴）（获得 牛肉×2）");
+    renderHUD(); save(); return;
+  }
+  if (s.type==="seaweed"){
+    addItem("海藻"); sfx("pick"); gainXp(2);
+    toast(`你从礁石上扯下一把湿淋淋的海藻（背包 ×${state.backpack["海藻"]}）。能生吃，也经得起烤。`);
+    renderHUD(); save(); return;
+  }
+  if (s.type==="fishing"){
+    if (Math.random()<0.6){ addItem("鱼"); sfx("pick"); gainXp(3); toast("浮标一沉——一条银亮亮的鱼。（获得 鱼×1 · 历练 +3）"); }
+    else { toast("浮标纹丝不动。鱼今天不饿——你饿。"); }
+    renderHUD(); save(); return;
+  }
+  if (s.type==="sunfire"){
+    if (state.backpack["鱼"]){ delItem("鱼"); addItem("烤鱼"); sfx("cook");
+      toast("你把鱼串在枯枝上，架进圣殿旁的火盆。圣火烧得笔直，一点烟都不冒……（获得 烤鱼×1——比生吃顶饱得多）"); }
+    else toast("火盆里的圣火烧得笔直。钓条鱼来，才不辜负这火。");
+    renderHUD(); save(); return;
+  }
+  if (s.type==="sunAltar"){
+    if (state.sunWrath){ toast("你抬头——云压得很低，金纹黯着。天上没有回应。"); return; }
+    if (state.sunBlessed){ toast(`祭坛的金纹亮着。「${state.sunName||"旅人"}」，他记得你。光在你包里——走得过黑暗。`); return; }
+    if (!isDusk() && !isNight()){ toast(`太阳还悬在天上——守住。撑到黄昏，他会来问你的名字。（现在：${clockName()}）`); return; }
+    const nm = prompt("赫利俄斯：「你叫什么名字？」","");
+    if (nm===null){ toast("（你把沉默咽了回去。黄昏还没结束——想好了再来。）"); return; }
+    const name = nm.trim();
+    if (!name){ toast("（风把没说出口的名字吹散了。）"); return; }
+    if (/奥德修斯/.test(name)){
+      addMemory("旅人对太阳神报了「奥德修斯」的名字——被一眼听穿", 4, "any");
+      toast("（金光微微一暗）「……你不是他。你眼里没有那年的海风。」——冒名者得不到光。");
+      renderHUD(); save(); return;
+    }
+    state.sunBlessed = true; state.sunName = name;
+    addItem("走得过黑暗的光");
+    gainXp(40); sfx("bless"); feedback("large");
+    addMemory(`旅人守住了太阳岛——他把名字报给了赫利俄斯：「${name}」，得到一缕「走得过黑暗的光」`, 4, "any");
+    showChapter("concept-art/05-太阳岛.jpg","第 四 章","光","你守住了 · 他认得你",`「${name}。……好名字。带一缕光走吧——它走得过黑暗。」`);
+    renderHUD(); save(); return;
+  }
+  if (s.type==="sunDock"){
+    scene = "world"; state.sunStage = 1;
+    boat.x = 26*WTS+WTS/2+46; boat.y = 9*WTS+WTS/2+30;
+    toast(state.sunBlessed ? "离岛时，风向变了——这一次不是谁送你的风，是你自己的。（第四章 · 完）"
+      : state.sunWrath ? "你离开时，天上滚过一声闷雷，浪头高了三分。"
+      : "你解缆离岛——那群牛还在金色的草场上，看着你的船变小。");
+    save(); return;
+  }
   if (s.type==="trench"){
     const need=["蜂蜜酒","面包","淡水"], miss=need.filter(n=>!state.backpack[n]);
     if (miss.length){
@@ -554,8 +1595,11 @@ function interact(){
       return;
     }
     need.forEach(n=>delItem(n));
-    state.offered = true; sfx("cook");
-    toast("你把蜂蜜酒、面包与淡水倒进沟里。黑暗深处传来低语，像无数人同时叹了口气——特瑞西阿斯显形了。");
+    state.offered = true; sfx("cook"); feedback("large");
+    gainXp(20);
+    addMemory("旅人把蜂蜜酒、面包与淡水倒进了献祭之沟", 3, "seer");
+    popText(11*ATS+ATS/2, 3*ATS, "亡者开口了", "#9fd8cf", true);
+    toast("你把蜂蜜酒、面包与淡水倒进沟里。黑暗深处传来低语，像无数人同时叹了口气——特瑞西阿斯显形了。（历练 +20）");
     renderHUD(); save(); return;
   }
   if (s.type==="dock" && scene==="hades"){
@@ -564,29 +1608,63 @@ function interact(){
     toast("你离开死者的国度，回到生者的海");
     save(); return;
   }
-  if (s.type==="grass"){
-    addItem("玛草");
-    if (state.quest && !state.quest.done && state.quest.have<state.quest.need) state.quest.have++;
-    sfx("pick");
-    toast(`采到一株玛草（背包 ×${state.backpack["玛草"]}${state.quest&&!state.quest.done?`，进度 ${state.quest.have}/${state.quest.need}`:""}）`);
+  if (s.type==="dock" && scene==="aeolia"){
+    scene = "world";
+    boat.x = 17*WTS+10; boat.y = 8*WTS+10;
+    toast("你顺着云梯回到海面，风神岛在头顶渐渐远了");
+    save(); return;
+  }
+  if (s.type==="wind"){
+    if (state.windFreed[s.idx]){ toast(`${WIND_DIRS[s.idx]}已经自由了——它正在头顶打转。`); return; }
+    state.windFreed[s.idx] = true;
+    sfx("bless"); feedback("medium");
+    questEvent("wind");
+    const q = getQuest("aeolia_winds");
+    gainXp(8);
+    addMemory(`旅人释放了被囚的${WIND_DIRS[s.idx]}`, 2, "aeolus");
+    popText(s.x, s.y-26, `${WIND_DIRS[s.idx]}获释`, "#dff2ff", true);
+    toast(`${WIND_DIRS[s.idx]}从石牢里冲天而起，绕着浮岛打了三个旋。${q?`（${q.name} 进度 ${q.have}/${q.need}）`:""}（历练 +8）`);
     renderHUD(); save(); return;
   }
-  if (s.type==="spring"){ addItem("淡水"); toast(`溪水灌满水囊（淡水 ×${state.backpack["淡水"]}）`); renderHUD(); save(); return; }
+  if (s.type==="altar"){
+    toast(getQuest("aeolia_winds") && getQuest("aeolia_winds").done
+      ? "祭坛上的风纹亮着——风袋归你保管，直到……你把它用光。"
+      : "青铜祭坛上刻着十二道风的纹路，全都黯淡着。宫门口那位似乎有话跟你讲。");
+    return;
+  }
+  if (s.type==="grass"){
+    addItem("玛草");
+    questEvent("collect", {item:"玛草"});
+    const wq = getQuest("witch_grass");
+    sfx("pick");
+    toast(`采到一株玛草（背包 ×${state.backpack["玛草"]}${wq&&!wq.done?`，进度 ${wq.have}/${wq.need}`:""}）`);
+    renderHUD(); save(); return;
+  }
+  if (s.type==="spring"){
+    addItem("淡水");
+    state.thirst = Math.min(100, state.thirst+25);
+    sfx("pick");
+    toast(`溪水灌满水囊（淡水 ×${state.backpack["淡水"]}），你也捧了一把喝——口渴缓解了。`);
+    renderHUD(); save(); return;
+  }
   if (s.type==="altar"){ toast("石碑的字迹被苔藓吃掉了大半……「向海而行者，先问风。」"); return; }
   if (s.type==="boar"){
     /* 战斗：E 键结算（属性/命中由本地逻辑层算，agent 不参与数值）。
-       tired=硬直喘气，暴击窗口 ×1.5；野猪的冲撞由 tickBoar 驱动，不再随机反击 */
+       tired=硬直喘气，暴击窗口 ×1.5；伤害走 derived()（等级+装备修正层） */
     const tired = boar.mode === "tired";
-    const dmg = Math.floor((8 + Math.floor(Math.random()*5)) * (tired ? 1.5 : 1));
+    const dmg = Math.floor((derived().atk + Math.floor(Math.random()*5)) * (tired ? 1.5 : 1));
     boar.hp -= dmg; boar.hitAt = performance.now();
-    sfx("attack");
+    sfx("attack"); feedback(tired ? "medium" : "small");
+    popText(boar.x, boar.y-22, `-${dmg}`, tired ? "#ffd23e" : "#ff9d5c", tired);
     let msg = tired
       ? `趁它喘气的空当，你狠狠补上一击！（-${dmg}，弱点打击 ×1.5）`
       : `你挥起${state.equipped?"【"+state.equipped+"】":"拳头"}，给野猪刷刷两下（-${dmg}）`;
     if (boar.hp <= 0){
       boar.alive = false; state.boarKilled = true;
-      addItem("野猪肉"); sfx("die");
-      msg = `野猪哼了一声，倒在草丛里。（获得 野猪肉×1）——拱坏女巫玛草的就是它。祭坛旁的篝火正旺，也许能烤点什么。`;
+      addItem("野猪肉"); sfx("die"); feedback("large");
+      gainXp(25);
+      addMemory("旅人杀了拱坏玛草的野猪", 3);
+      msg = `野猪哼了一声，倒在草丛里。（获得 野猪肉×1 · 历练 +25）——拱坏女巫玛草的就是它。祭坛旁的篝火正旺，也许能烤点什么。`;
     } else if (tired){
       boar.mode = "idle";
     }
@@ -597,7 +1675,9 @@ function interact(){
       delItem("野猪肉"); addItem("烤野猪肉"); sfx("cook");
       toast("你把野猪肉架在篝火上，油星噼啪作响……（获得 烤野猪肉×1，对女巫说「用烤野猪肉」可恢复 40 血）");
     } else if (state.backpack["烤野猪肉"]){
-      toast("篝火烧得正旺。背包里的烤野猪肉趁热吃——对女巫说「用烤野猪肉」。");
+      toast("篝火烧得正旺。背包里的烤野猪肉趁热吃——对女巫说「用烤野猪肉」");
+    } else if (state.backpack["鱼"]){
+      toast("篝火烧得正旺。这条鱼适合太阳岛圣殿旁的火盆——那里烤出来的没有烟味。");
     } else {
       toast("篝火烧得正旺。架点什么上去烤才不浪费——比如，某头野猪身上的肉。");
     }
@@ -614,7 +1694,8 @@ function interact(){
 /* ==================== 标题屏 / 章节过场（概念图接入） ==================== */
 function showChapter(img,kicker,title,sub,quote){
   const c=document.getElementById("chapterCard");
-  c.style.backgroundImage=`url('${img}')`;
+  if (img) c.style.backgroundImage=`url('${img}')`;
+  else c.style.backgroundImage="linear-gradient(175deg,#e8eef7 0%,#9db4cd 34%,#3f5f82 68%,#16283e 100%)";
   c.querySelector(".ccKicker").textContent=kicker;
   c.querySelector(".ccTitle").textContent=title;
   c.querySelector(".ccSub").textContent=sub;
@@ -641,8 +1722,8 @@ document.getElementById("chapterCard").onclick = skipChapter;
     t.classList.add("hide");
     setTimeout(()=>t.remove(), 850);
   };
-  /* 预加载会用到的概念图，避免登陆瞬间白屏 */
-  ["concept-art/01-序章漂流.jpg","concept-art/02-女巫小屋.jpg","concept-art/characters/02-喀耳刻.jpg"]
+  /* 预加载会用到的概念图，避免登陆/开海图瞬间白屏 */
+  ["concept-art/01-序章漂流.jpg","concept-art/02-女巫小屋.jpg","concept-art/07-冥界之岸.jpg","concept-art/03-斯库拉海峡.jpg","concept-art/04-塞壬之歌.jpg","concept-art/05-太阳岛.jpg","concept-art/characters/02-喀耳刻.jpg","concept-art/characters/07-塞壬.jpg","concept-art/characters/08-斯库拉.jpg","concept-art/characters/09-埃俄罗斯.jpg","concept-art/maps/01-世界海图.jpg","concept-art/maps/04-风神岛图.jpg"]
     .forEach(src=>{ const i=new Image(); i.src=src; });
 })();
 
@@ -705,16 +1786,46 @@ function drawWorld(et){
     ctx.fillText(s.label, s.x*WTS+WTS/2, s.y*WTS+WTS/2);
   }
   ctx.font="600 11px 'Segoe UI','Microsoft YaHei'";
+  drawWorldClouds(et);   /* 视差云影（两层速度差 → 航行时的空间纵深） */
   drawBoat(et);
+}
+/* ---------- 世界图视差云影（procedural-gen：种子随机确定可复现） ---------- */
+const CLOUDS = (()=>{
+  const arr=[]; let s=20261107;
+  const rnd=()=>{ s=(s*1103515245+12345)&0x7fffffff; return s/0x7fffffff; };
+  for (let i=0;i<12;i++) arr.push({x:rnd()*1200, y:rnd()*620, r:46+rnd()*86, sp:5+rnd()*11, a:0.045+rnd()*0.05});
+  return arr;
+})();
+function drawWorldClouds(et){
+  for (const c of CLOUDS){
+    const x=((c.x + et*c.sp) % 1240) - 120;
+    ctx.fillStyle=`rgba(232,240,248,${c.a})`;                       /* 云体受光面 */
+    ctx.beginPath(); ctx.ellipse(x, c.y, c.r, c.r*0.40, 0, 0, 7); ctx.fill();
+    ctx.fillStyle=`rgba(8,30,48,${(c.a*0.85).toFixed(3)})`;         /* 云影：稍滞后偏移 */
+    ctx.beginPath(); ctx.ellipse(x+7, c.y+6, c.r*0.9, c.r*0.36, 0, 0, 7); ctx.fill();
+  }
 }
 function drawBoat(et){
   const x=boat.x, y=boat.y, rock=Math.sin(et*1.6)*1.5;
+  const tw = performance.now() < (state.tailwindUntil||0);   /* 顺风中：尾迹加速线 */
+  if (tw){
+    ctx.strokeStyle="rgba(255,255,255,.75)"; ctx.lineWidth=2;
+    for (let i=0;i<3;i++){
+      const l=24+i*11, o=(et*150)%16;
+      ctx.globalAlpha=0.55-i*0.15;
+      ctx.beginPath(); ctx.moveTo(x-20-l+o, y-6+i*6); ctx.lineTo(x-20+o, y-6+i*6); ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+  }
   ctx.fillStyle="rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(x,y+8,14,5,0,0,7); ctx.fill();
   ctx.save(); ctx.translate(x,y+rock);
   ctx.fillStyle="#8a5a33"; ctx.beginPath();
   ctx.moveTo(-16,2); ctx.quadraticCurveTo(0,9,16,2); ctx.lineTo(12,-2); ctx.lineTo(-12,-2); ctx.closePath(); ctx.fill();
   ctx.fillStyle="#a97a4d"; ctx.fillRect(-2,-16,3,15);
-  ctx.fillStyle="#f4efe4"; ctx.beginPath(); ctx.moveTo(2,-15); ctx.quadraticCurveTo(11,-6,2,0); ctx.closePath(); ctx.fill();
+  ctx.fillStyle="#f4efe4"; ctx.beginPath();
+  if (tw){ ctx.moveTo(2,-19); ctx.quadraticCurveTo(13,-7,2,1); ctx.closePath(); }   /* 顺风满帆 */
+  else { ctx.moveTo(2,-15); ctx.quadraticCurveTo(11,-6,2,0); ctx.closePath(); }
+  ctx.fill();
   ctx.fillStyle="#243244"; ctx.fillRect(-4,-2,2,4);
   ctx.restore();
 }
@@ -948,6 +2059,10 @@ function drawAia(et){
     ctx.strokeStyle="#e8b04b"; ctx.lineWidth=3;
     ctx.beginPath(); ctx.moveTo(lean+9,2+oink); ctx.lineTo(lean+13,2+oink); ctx.stroke();            /* 尾 */
     ctx.fillStyle="#241a12"; ctx.beginPath(); ctx.arc(lean-14,-3+oink,1.6,0,7); ctx.fill();       /* 眼 */
+    if (nightAmount()>0.3){                                   /* 夜间威胁：月光下眼睛发红 */
+      ctx.fillStyle=`rgba(255,60,40,${0.75*nightAmount()})`;
+      ctx.beginPath(); ctx.arc(lean-14,-3+oink,2.1,0,7); ctx.fill();
+    }
     if (m==="windup"){                                       /* 蓄力尘土：脚下向后扬 */
       ctx.fillStyle="rgba(160,130,90,.55)";
       for (let i=0;i<3;i++){
@@ -974,18 +2089,44 @@ function drawAia(et){
   }});
   ents.push({y:witch.y+13, draw(){
     const x=witch.x, y=witch.y, bob=Math.sin(et*2)*1.5;
+    const gazeOff = witchAI.mode==="gaze" ? -3 : 0;           /* 望海：面朝西 */
     ctx.fillStyle="rgba(20,35,50,.3)"; ctx.beginPath(); ctx.ellipse(x+6,y+15,14,5,0,0,7); ctx.fill();
     ctx.fillStyle="#5b4a8a"; ctx.beginPath(); ctx.moveTo(x-12,y+12); ctx.lineTo(x+12,y+12); ctx.lineTo(x,y-9-bob); ctx.closePath(); ctx.fill();
     ctx.fillStyle="#f1c9a5"; ctx.beginPath(); ctx.arc(x,y-13-bob,7,0,7); ctx.fill();
-    ctx.fillStyle="#2c2440"; ctx.beginPath(); ctx.arc(x,y-16-bob,8,Math.PI,0); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(x-9,y-14-bob); ctx.lineTo(x-15,y+3-bob); ctx.lineTo(x-8,y-6-bob); ctx.closePath(); ctx.fill();
-    ctx.fillStyle="#2c2440"; ctx.beginPath(); ctx.ellipse(x-2,y-27-bob,10,4,-0.4,0,7); ctx.fill();
+    ctx.fillStyle="#2c2440"; ctx.beginPath(); ctx.arc(x+gazeOff,y-16-bob,8,Math.PI,0); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x-9+gazeOff,y-14-bob); ctx.lineTo(x-15+gazeOff,y+3-bob); ctx.lineTo(x-8+gazeOff,y-6-bob); ctx.closePath(); ctx.fill();
+    ctx.fillStyle="#2c2440"; ctx.beginPath(); ctx.ellipse(x-2+gazeOff,y-27-bob,10,4,-0.4,0,7); ctx.fill();
     ctx.fillStyle="#ffd66b"; ctx.beginPath(); ctx.moveTo(x-1,y-26-bob); ctx.lineTo(x+6,y-22-bob); ctx.lineTo(x-1,y-18-bob); ctx.closePath(); ctx.fill();
+    if (witchAI.mode==="stir"){                               /* 搅药：木勺朝坩埚摆动 */
+      const px=9*ATS+ATS/2, py=3*ATS+ATS*0.8;
+      const sw=Math.sin(et*3.2)*5;
+      ctx.strokeStyle="#8a6134"; ctx.lineWidth=3; ctx.lineCap="round";
+      ctx.beginPath(); ctx.moveTo(x+8,y-bob);
+      ctx.quadraticCurveTo(x+8+(px-x)*0.5, y-bob+(py-y)*0.5-8, px-6+sw, py-6);
+      ctx.stroke();
+      ctx.fillStyle="rgba(123,211,137,.6)";
+      ctx.beginPath(); ctx.arc(px-6+sw, py-5, 2.2, 0, 7); ctx.fill();
+    }
+    if (witchAI.mode==="pace" && Math.hypot(witch.x-witchAI.tx, witch.y-witchAI.ty)>3){ /* 踱步时裙摆微摆 */
+      ctx.strokeStyle="rgba(91,74,138,.5)"; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(x-10,y+10); ctx.lineTo(x-14-Math.sin(et*6)*3,y+14); ctx.stroke();
+    }
   }});
   pushPlayerEnt(ents);
 
   ents.sort((a,b)=>a.y-b.y);
   for (const e of ents) e.draw();
+
+  /* 暗线②收束：债清后的埃亚岛第一次天亮——恒常暖金晨光层 */
+  if (scene==="aia" && state.sunlit){
+    const g=ctx.createLinearGradient(0,0,0,497);
+    g.addColorStop(0,"rgba(255,214,140,.20)"); g.addColorStop(.55,"rgba(255,196,110,.10)"); g.addColorStop(1,"rgba(255,190,90,.16)");
+    ctx.fillStyle=g; ctx.fillRect(0,0,800,497);
+  }
+  /* 边缘暗角（与冥界/风神岛/海峡统一：四景一致的电影感） */
+  const vg=ctx.createRadialGradient(400,240,200, 400,240,560);
+  vg.addColorStop(0,"rgba(0,0,0,0)"); vg.addColorStop(1,"rgba(6,18,32,.34)");
+  ctx.fillStyle=vg; ctx.fillRect(0,0,1000,600);
 }
 /* 玩家实体绘制（埃亚岛/冥界共用） */
 function pushPlayerEnt(ents){
@@ -1190,16 +2331,632 @@ function drawHades(et){
   ctx.fillStyle=vg; ctx.fillRect(0,0,1000,600);
 }
 
+/* ---------- 风神岛 2.5D 绘制（浮岛云海：白昼高空 + 金色逆光 + 风纹） ---------- */
+function drawAeolia(et){
+  /* Pass1 云海格 */
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    if (aeTile(cx,cy)!=="~") continue;
+    const x=cx*ATS, y=cy*ATS;
+    const near = aeTile(cx,cy-1)!=="~"||aeTile(cx,cy+1)!=="~"||aeTile(cx-1,cy)!=="~"||aeTile(cx+1,cy)!=="~";
+    ctx.fillStyle = near ? "#dce7f2" : "#c3d2e2"; ctx.fillRect(x,y,ATS,ATS);
+    if ((cx*11+cy*5)%3===0){
+      ctx.strokeStyle="rgba(255,255,255,.5)"; ctx.lineWidth=2;
+      const ph=Math.sin(et*0.9+cx*1.3+cy*2.1)*4;
+      ctx.beginPath(); ctx.moveTo(x+6,y+20+ph); ctx.lineTo(x+24,y+20+ph); ctx.stroke();
+    }
+  }
+  /* 岛在云上的投影 + 云面反光 */
+  ctx.fillStyle="rgba(60,84,110,.30)";
+  ctx.beginPath(); ctx.ellipse(400, 448, 348, 52, 0, 0, 7); ctx.fill();
+  ctx.fillStyle="rgba(255,255,255,.30)";
+  ctx.beginPath(); ctx.ellipse(400, 452, 320, 30, 0, 0, 7); ctx.fill();
+  /* Pass2 云缘流 */
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    if (aeTile(cx,cy)==="~") continue;
+    const x=cx*ATS, y=cy*ATS;
+    if (aeTile(cx,cy+1)==="~"){
+      const dg=ctx.createLinearGradient(0,y+ATS+TH-2,0,y+ATS+TH+13);
+      dg.addColorStop(0,"rgba(52,76,100,.5)"); dg.addColorStop(1,"rgba(52,76,100,0)");
+      ctx.fillStyle=dg; ctx.fillRect(x,y+ATS+TH-2,ATS,13);
+      const g=ctx.createLinearGradient(0,y+ATS+TH,0,y+ATS+TH+11);
+      g.addColorStop(0,"rgba(255,255,255,.9)"); g.addColorStop(.55,"rgba(255,255,255,.4)"); g.addColorStop(1,"rgba(255,255,255,0)");
+      ctx.fillStyle=g; ctx.fillRect(x,y+ATS+TH,ATS,11);
+      ctx.fillStyle="rgba(255,255,255,.95)";
+      for (let i=0;i<4;i++){
+        const px=x+((cx*17+i*29)%5)*8+4, py=y+ATS+TH+1+((et*0.8+i*0.7+cx)%1)*8;
+        ctx.fillRect(px,py,5,2);
+      }
+    }
+    if (aeTile(cx,cy-1)==="~"){ const g=ctx.createLinearGradient(0,y-8,0,y);
+      g.addColorStop(0,"rgba(255,255,255,0)"); g.addColorStop(1,"rgba(255,255,255,.6)");
+      ctx.fillStyle=g; ctx.fillRect(x,y-8,ATS,8); }
+    if (aeTile(cx-1,cy)==="~"){ const g=ctx.createLinearGradient(x-8,0,x,0);
+      g.addColorStop(0,"rgba(255,255,255,0)"); g.addColorStop(1,"rgba(255,255,255,.6)");
+      ctx.fillStyle=g; ctx.fillRect(x-8,y,8,ATS); }
+    if (aeTile(cx+1,cy)==="~"){ const g=ctx.createLinearGradient(x+ATS,0,x+ATS+8,0);
+      g.addColorStop(0,"rgba(255,255,255,.6)"); g.addColorStop(1,"rgba(255,255,255,0)");
+      ctx.fillStyle=g; ctx.fillRect(x+ATS,y,8,ATS); }
+  }
+  /* Pass3 崖面（浮岛岩：暖白岩 → 蜜色） */
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    const ch=aeTile(cx,cy); if (ch==="~") continue;
+    const x=cx*ATS, y=cy*ATS;
+    const grd=ctx.createLinearGradient(0,y+ATS-2,0,y+ATS+TH);
+    grd.addColorStop(0,"#f2e3c4"); grd.addColorStop(.35,"#dcc39a"); grd.addColorStop(.75,"#b3926a"); grd.addColorStop(1,"#8a6c48");
+    ctx.fillStyle=grd; ctx.fillRect(x,y+ATS-2,ATS,TH+2);
+    ctx.strokeStyle="rgba(0,0,0,.12)"; ctx.lineWidth=1;
+    for (let i=0;i<2;i++){
+      const ox = ((cx*13+i*17)%3)*11+5;
+      ctx.beginPath(); ctx.moveTo(x+ox, y+ATS+1); ctx.lineTo(x+ox-2, y+ATS+TH-2); ctx.stroke();
+    }
+  }
+  /* Pass4 地面 / 云径 / 云桥 */
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    const ch=aeTile(cx,cy); if (ch==="~") continue;
+    const x=cx*ATS, y=cy*ATS;
+    if (ch===","){
+      ctx.fillStyle="#eee7d2"; ctx.fillRect(x,y,ATS,ATS);
+      ctx.fillStyle="#d6cbaa"; ctx.fillRect(x,y+ATS-4,ATS,4);
+      ctx.fillStyle="rgba(255,255,255,.6)";
+      const ph=Math.sin(et*2.4+cx)*2;
+      ctx.fillRect(x+4+ph, y+ATS+TH+4, 7, 2); ctx.fillRect(x+24-ph, y+ATS+TH+4, 5, 2);
+      continue;
+    }
+    ctx.fillStyle = ((cx*7+cy*13)%5===0)?"#b9d69c":"#cfe3b0"; ctx.fillRect(x,y,ATS,ATS);
+    ctx.fillStyle="#a3c788"; ctx.fillRect(x+9,y+24,7,4);
+    ctx.fillStyle="rgba(255,255,255,.24)"; ctx.fillRect(x,y,ATS,3);
+    ctx.fillStyle="rgba(0,0,0,.05)"; ctx.fillRect(x,y+ATS-3,ATS,3);
+    if (ch==="_"){
+      ctx.fillStyle="#eef3f8"; ctx.fillRect(x,y,ATS,ATS);
+      ctx.strokeStyle="rgba(140,160,185,.4)"; ctx.beginPath();
+      ctx.moveTo(x,y+13); ctx.lineTo(x+ATS,y+13); ctx.moveTo(x,y+27); ctx.lineTo(x+ATS,y+27); ctx.stroke();
+      ctx.fillStyle="#c7d4e2"; ctx.fillRect(x+4,y+ATS-4,4,TH+6); ctx.fillRect(x+ATS-8,y+ATS-4,4,TH+6);
+      continue;
+    }
+  }
+  /* 岸线亮边 */
+  ctx.strokeStyle="rgba(255,255,255,.85)"; ctx.lineWidth=2;
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    if (aeTile(cx,cy)==="~") continue;
+    const x=cx*ATS, y=cy*ATS;
+    ctx.beginPath();
+    if (aeTile(cx,cy+1)==="~"){ ctx.moveTo(x,y+ATS); ctx.lineTo(x+ATS,y+ATS); }
+    if (aeTile(cx,cy-1)==="~"){ ctx.moveTo(x,y); ctx.lineTo(x+ATS,y); }
+    if (aeTile(cx-1,cy)==="~"){ ctx.moveTo(x,y); ctx.lineTo(x,y+ATS); }
+    if (aeTile(cx+1,cy)==="~"){ ctx.moveTo(x+ATS,y); ctx.lineTo(x+ATS,y+ATS); }
+    ctx.stroke();
+  }
+
+  /* ---------- 实体层：y-sort ---------- */
+  const ents = [];
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    if (aeTile(cx,cy)!=="T") continue;
+    ents.push({y:cy*ATS+ATS*0.75, draw(){
+      /* 风柱：白石柱 + 螺旋风纹 + 环绕风丝 */
+      const x=cx*ATS+ATS/2, ty=cy*ATS+ATS*0.75;
+      ctx.fillStyle="rgba(70,95,120,.28)"; ctx.beginPath(); ctx.ellipse(x+6,ty+4,13,5,0,0,7); ctx.fill();
+      ctx.fillStyle="#eee6d2"; ctx.fillRect(x-5,ty-34,10,36);
+      ctx.fillStyle="#d8cdb2"; ctx.fillRect(x+1,ty-34,4,36);
+      ctx.strokeStyle="#b7a888"; ctx.lineWidth=1.6;
+      for (let i=0;i<3;i++){ const wy=ty-28+i*10;
+        ctx.beginPath(); ctx.moveTo(x-4,wy); ctx.quadraticCurveTo(x+3,wy-3,x+4,wy); ctx.stroke(); }
+      const a=et*1.3+cx;
+      ctx.strokeStyle="rgba(255,255,255,.75)"; ctx.lineWidth=1.6;
+      ctx.beginPath(); ctx.arc(x+Math.sin(a)*3, ty-40, 6+Math.sin(a*0.7)*2, 0.4, 3.4); ctx.stroke();
+    }});
+  }
+  /* 风之祭坛（青铜 + 十二道风纹） */
+  ents.push({y:3*ATS+ATS*0.85, draw(){
+    const x=9*ATS+ATS/2, y=3*ATS+ATS*0.85;
+    const lit = getQuest("aeolia_winds") && getQuest("aeolia_winds").done;
+    ctx.fillStyle="rgba(70,95,120,.25)"; ctx.beginPath(); ctx.ellipse(x+4,y+5,15,5,0,0,7); ctx.fill();
+    ctx.fillStyle="#8f9aa8"; ctx.fillRect(x-13,y-14,26,16);
+    ctx.fillStyle="#aab6c4"; ctx.fillRect(x-16,y-18,32,6);
+    ctx.strokeStyle=lit?"rgba(120,200,255,.95)":"rgba(160,180,200,.4)"; ctx.lineWidth=1.4;
+    for (let i=0;i<6;i++){ const wy=y-11+i*2.4;
+      ctx.beginPath(); ctx.moveTo(x-10,wy); ctx.quadraticCurveTo(x,wy-2.4,x+10,wy); ctx.stroke(); }
+    const gl=lit?0.85:0.3+Math.sin(et*2)*0.12;
+    ctx.fillStyle=`rgba(190,225,255,${gl})`;
+    ctx.beginPath(); ctx.arc(x, y-22, 2.6+Math.sin(et*2.6)*0.8, 0, 7); ctx.fill();
+  }});
+  /* 风牢笼（W×4：石环 + 旋转风带；释放后变开放风环 + 上升风丝） */
+  for (const sp of AESPOTS.filter(s=>s.type==="wind")){
+    ents.push({y:sp.y+14, draw(){
+      const x=sp.x, y=sp.y, freed=state.windFreed[sp.idx];
+      ctx.fillStyle="rgba(70,95,120,.26)"; ctx.beginPath(); ctx.ellipse(x+3,y+13,14,5,0,0,7); ctx.fill();
+      if (!freed){
+        ctx.strokeStyle="#9aa7b4"; ctx.lineWidth=3;
+        for (let i=0;i<4;i++){ const a=et*1.8+sp.idx*1.5+i*Math.PI/2;
+          ctx.beginPath(); ctx.arc(x,y-4,12, a, a+1.1); ctx.stroke(); }
+        ctx.fillStyle="#c4ceda";
+        for (let i=0;i<4;i++){ const a=i*Math.PI/2+0.4;
+          ctx.beginPath(); ctx.arc(x+Math.cos(a)*13, y-4+Math.sin(a)*6, 2.6, 0, 7); ctx.fill(); }
+        const g=ctx.createRadialGradient(x,y-4,2,x,y-4,11);
+        g.addColorStop(0,"rgba(190,225,255,.6)"); g.addColorStop(1,"rgba(190,225,255,0)");
+        ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y-4,11,0,7); ctx.fill();
+        ctx.fillStyle="rgba(110,125,145,.9)"; ctx.font="bold 10px 'Segoe UI'"; ctx.textAlign="center";
+        ctx.fillText(WIND_DIRS[sp.idx], x, y-22);
+      } else {
+        ctx.strokeStyle="rgba(200,230,255,.65)"; ctx.lineWidth=2;
+        for (let i=0;i<3;i++){ const p=(et*0.9+i*0.33)%1;
+          ctx.globalAlpha=1-p; ctx.beginPath();
+          ctx.arc(x, y-8-p*24, 4+p*7, 0, 6.3); ctx.stroke(); }
+        ctx.globalAlpha=1;
+      }
+    }});
+  }
+  /* 风神宫殿（石厅 + 青蓝锥顶 + 猎猎旗） */
+  ents.push({y:3*ATS+ATS, draw(){
+    const hx=4*ATS, hy=3*ATS;
+    ctx.fillStyle="rgba(70,95,120,.30)"; ctx.beginPath(); ctx.ellipse(hx+14,hy+ATS+2,66,16,0,0,7); ctx.fill();
+    ctx.fillStyle="#e3dac6"; ctx.fillRect(hx-48,hy-36,96,ATS+34);
+    ctx.fillStyle="#cec2a8"; ctx.fillRect(hx-48,hy-36,10,ATS+34);
+    ctx.strokeStyle="#a8967a"; ctx.lineWidth=2; ctx.strokeRect(hx-48,hy-36,96,ATS+34);
+    ctx.fillStyle="rgba(0,0,0,.08)"; ctx.fillRect(hx-48,hy-36,96,7);
+    ctx.fillStyle="#5d7fa3";
+    ctx.beginPath(); ctx.moveTo(hx-56,hy-32); ctx.lineTo(hx-34,hy-62); ctx.lineTo(hx-12,hy-32); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(hx+12,hy-32); ctx.lineTo(hx+34,hy-62); ctx.lineTo(hx+56,hy-32); ctx.closePath(); ctx.fill();
+    ctx.fillStyle="#46688c";
+    ctx.beginPath(); ctx.moveTo(hx-54,hy-33); ctx.lineTo(hx-34,hy-60); ctx.lineTo(hx-14,hy-33); ctx.lineTo(hx-18,hy-29); ctx.lineTo(hx-50,hy-29); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(hx+14,hy-33); ctx.lineTo(hx+34,hy-60); ctx.lineTo(hx+54,hy-33); ctx.lineTo(hx+50,hy-29); ctx.lineTo(hx+18,hy-29); ctx.closePath(); ctx.fill();
+    ctx.fillStyle="#6b4a2b"; ctx.fillRect(hx-13,hy-12,26,ATS+8);
+    ctx.fillStyle="#8fc4e8"; ctx.fillRect(hx-40,hy-26,14,12); ctx.fillRect(hx+26,hy-26,14,12);
+    ctx.strokeStyle="#a8967a"; ctx.strokeRect(hx-40,hy-26,14,12); ctx.strokeRect(hx+26,hy-26,14,12);
+    /* 旗：风里猎猎 */
+    ctx.strokeStyle="#8a6134"; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(hx,hy-62); ctx.lineTo(hx,hy-80); ctx.stroke();
+    const fl=Math.sin(et*5)*4;
+    ctx.fillStyle="#4ea1ff"; ctx.beginPath();
+    ctx.moveTo(hx,hy-80); ctx.quadraticCurveTo(hx+10,hy-78+fl,hx+18,hy-74+fl);
+    ctx.lineTo(hx,hy-70); ctx.closePath(); ctx.fill();
+  }});
+  /* 埃俄罗斯（浮立：袍内灌风，脚下不沾地） */
+  ents.push({y:aeolus.y+13, draw(){
+    const x=aeolus.x, y=aeolus.y+Math.sin(et*1.6)*2.6;
+    /* 环身风环 */
+    ctx.strokeStyle="rgba(255,255,255,.55)"; ctx.lineWidth=1.8;
+    const a0=et*1.4;
+    ctx.beginPath(); ctx.arc(x,y-4,20,a0,a0+1.6); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x,y-6,24,a0+2.6,a0+4.4); ctx.stroke();
+    ctx.fillStyle="rgba(90,115,140,.3)"; ctx.beginPath(); ctx.ellipse(x+4,y+14,12,4,0,0,7); ctx.fill();
+    /* 银灰长袍（下摆飘） */
+    const sway=Math.sin(et*2.2)*3;
+    ctx.fillStyle="#c9d4e2"; ctx.beginPath();
+    ctx.moveTo(x-10,y+12); ctx.quadraticCurveTo(x-12+sway,y-6,x-4,y-14);
+    ctx.lineTo(x+4,y-14); ctx.quadraticCurveTo(x+12+sway,y-6,x+10,y+12); ctx.closePath(); ctx.fill();
+    ctx.fillStyle="#aab8ca"; ctx.fillRect(x-10,y+4,20+sway*0.4,4);
+    /* 头：云白发 */
+    ctx.fillStyle="#f1c9a5"; ctx.beginPath(); ctx.arc(x,y-19,6.5,0,7); ctx.fill();
+    ctx.fillStyle="#e8edf4"; ctx.beginPath(); ctx.ellipse(x,y-23,9,4.5,-0.25,0,7); ctx.fill();
+    ctx.fillStyle="#243244"; ctx.fillRect(x-3,y-20,1.8,1.8); ctx.fillRect(x+2,y-20,1.8,1.8);
+    /* 青铜短杖 */
+    ctx.strokeStyle="#b08d57"; ctx.lineWidth=2.4;
+    ctx.beginPath(); ctx.moveTo(x+12,y+12); ctx.lineTo(x+14,y-16); ctx.stroke();
+    ctx.fillStyle="#e8c88a"; ctx.beginPath(); ctx.arc(x+14,y-18,2.6,0,7); ctx.fill();
+  }});
+  /* 已释放的风在岛上打转（释放几阵出几缕） */
+  state.windFreed.forEach((f,i)=>{
+    if (!f) return;
+    const par=[{bx:300,by:160,ax:90,ay:40,p:0.9},{bx:560,by:200,ax:70,ay:56,p:1.4},
+               {bx:180,by:280,ax:56,ay:34,p:1.9},{bx:520,by:340,ax:80,ay:30,p:2.5}][i];
+    ents.push({y:par.by+10, draw(){
+      const x=par.bx+Math.sin(et*par.p)*par.ax, y=par.by+Math.sin(et*par.p*1.3)*par.ay;
+      const a=0.4+Math.sin(et*2+i)*0.15;
+      ctx.globalAlpha=a;
+      ctx.strokeStyle="#eaf6ff"; ctx.lineWidth=2.2; ctx.lineCap="round";
+      ctx.beginPath(); ctx.arc(x,y,9,0.4,3.6); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x+6,y-7,5,2.4,5.6); ctx.stroke();
+      ctx.globalAlpha=1;
+    }});
+  });
+  pushPlayerEnt(ents);
+
+  ents.sort((a,b)=>a.y-b.y);
+  for (const e of ents) e.draw();
+
+  /* 全屏漂浮云絮 + 亮色边缘 */
+  for (let i=0;i<10;i++){
+    const p=(et*0.05+i*0.1)%1;
+    const px=((i*173)%860)+Math.sin(et*0.4+i)*24, py=p*540-20;
+    ctx.globalAlpha=0.10+Math.sin(et+i)*0.04;
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath(); ctx.ellipse(px,py,26,8,0,0,7); ctx.fill();
+  }
+  ctx.globalAlpha=1;
+  const vg=ctx.createRadialGradient(400,240,200, 400,240,560);
+  vg.addColorStop(0,"rgba(255,250,235,0)"); vg.addColorStop(1,"rgba(90,110,140,.18)");
+  ctx.fillStyle=vg; ctx.fillRect(0,0,1000,600);
+}
+
+/* ---------- 声之海峡 2.5D（雾海月夜：冷灰蓝雾 + 苍白歌声 + 六头阴影；visual.md "诡谲、沉醉、冷月"） ---------- */
+function drawStrait(et){
+  /* Pass1 雾海水格 */
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    if (sTile(cx,cy)!=="~") continue;
+    const x=cx*ATS, y=cy*ATS;
+    const near = sTile(cx,cy-1)!=="~"||sTile(cx,cy+1)!=="~"||sTile(cx-1,cy)!=="~"||sTile(cx+1,cy)!=="~";
+    ctx.fillStyle = near ? "#4a6076" : "#3c5165"; ctx.fillRect(x,y,ATS,ATS);
+    if ((cx*11+cy*5)%3===0){
+      ctx.strokeStyle="rgba(214,228,240,.14)"; ctx.lineWidth=1.4;
+      const ph=Math.sin(et*0.8+cx*1.3+cy*2.1)*3;
+      ctx.beginPath(); ctx.moveTo(x+8,y+20+ph); ctx.lineTo(x+22,y+20+ph); ctx.stroke();
+    }
+  }
+  /* 投影 + 反光 */
+  ctx.fillStyle="rgba(10,18,30,.35)";
+  ctx.beginPath(); ctx.ellipse(400, 448, 348, 52, 0, 0, 7); ctx.fill();
+  ctx.fillStyle="rgba(180,205,225,.10)";
+  ctx.beginPath(); ctx.ellipse(400, 452, 320, 30, 0, 0, 7); ctx.fill();
+  /* Pass2 水侧雾带 */
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    if (sTile(cx,cy)==="~") continue;
+    const x=cx*ATS, y=cy*ATS;
+    if (sTile(cx,cy+1)==="~"){
+      const dg=ctx.createLinearGradient(0,y+ATS+TH-2,0,y+ATS+TH+13);
+      dg.addColorStop(0,"rgba(12,22,36,.5)"); dg.addColorStop(1,"rgba(12,22,36,0)");
+      ctx.fillStyle=dg; ctx.fillRect(x,y+ATS+TH-2,ATS,13);
+      const g=ctx.createLinearGradient(0,y+ATS+TH,0,y+ATS+TH+11);
+      g.addColorStop(0,"rgba(220,232,244,.42)"); g.addColorStop(.55,"rgba(220,232,244,.16)"); g.addColorStop(1,"rgba(220,232,244,0)");
+      ctx.fillStyle=g; ctx.fillRect(x,y+ATS+TH,ATS,11);
+    }
+    if (sTile(cx,cy-1)==="~"){ const g=ctx.createLinearGradient(0,y-8,0,y);
+      g.addColorStop(0,"rgba(220,232,244,0)"); g.addColorStop(1,"rgba(220,232,244,.4)");
+      ctx.fillStyle=g; ctx.fillRect(x,y-8,ATS,8); }
+    if (sTile(cx-1,cy)==="~"){ const g=ctx.createLinearGradient(x-8,0,x,0);
+      g.addColorStop(0,"rgba(220,232,244,0)"); g.addColorStop(1,"rgba(220,232,244,.4)");
+      ctx.fillStyle=g; ctx.fillRect(x-8,y,8,ATS); }
+    if (sTile(cx+1,cy)==="~"){ const g=ctx.createLinearGradient(x+ATS,0,x+ATS+8,0);
+      g.addColorStop(0,"rgba(220,232,244,.4)"); g.addColorStop(1,"rgba(220,232,244,0)");
+      ctx.fillStyle=g; ctx.fillRect(x+ATS,y,8,ATS); }
+  }
+  /* Pass3 礁崖（冷灰蓝） */
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    const ch=sTile(cx,cy); if (ch==="~") continue;
+    const x=cx*ATS, y=cy*ATS;
+    const grd=ctx.createLinearGradient(0,y+ATS-2,0,y+ATS+TH);
+    grd.addColorStop(0,"#5d6b7c"); grd.addColorStop(.35,"#4a5666"); grd.addColorStop(.75,"#333c4a"); grd.addColorStop(1,"#232a35");
+    ctx.fillStyle=grd; ctx.fillRect(x,y+ATS-2,ATS,TH+2);
+    ctx.strokeStyle="rgba(0,0,0,.22)"; ctx.lineWidth=1;
+    for (let i=0;i<2;i++){
+      const ox = ((cx*13+i*17)%3)*11+5;
+      ctx.beginPath(); ctx.moveTo(x+ox, y+ATS+1); ctx.lineTo(x+ox-2, y+ATS+TH-2); ctx.stroke();
+    }
+  }
+  /* Pass4 顶面（礁石/甲板） */
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    const ch=sTile(cx,cy); if (ch==="~") continue;
+    const x=cx*ATS, y=cy*ATS;
+    if (ch==="_"){
+      ctx.fillStyle="#7a5c3d"; ctx.fillRect(x,y,ATS,ATS);
+      ctx.strokeStyle="rgba(0,0,0,.18)"; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(x,y+13); ctx.lineTo(x+ATS,y+13); ctx.moveTo(x,y+27); ctx.lineTo(x+ATS,y+27); ctx.stroke();
+      ctx.fillStyle="rgba(255,255,255,.06)"; ctx.fillRect(x,y,ATS,3);
+      ctx.fillStyle="rgba(0,0,0,.10)"; ctx.fillRect(x,y+ATS-3,ATS,3);
+      continue;
+    }
+    ctx.fillStyle="#39434f"; ctx.fillRect(x,y,ATS,ATS);
+    ctx.fillStyle="#424e5c";
+    ctx.beginPath(); ctx.ellipse(x+20,y+20,14,10,0.4,0,7); ctx.fill();
+    ctx.fillStyle="rgba(220,232,244,.10)"; ctx.fillRect(x+6,y+8,9,3);
+  }
+  /* 岸线雾光边 */
+  ctx.strokeStyle="rgba(214,228,240,.4)"; ctx.lineWidth=1.6;
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    if (sTile(cx,cy)==="~") continue;
+    const x=cx*ATS, y=cy*ATS;
+    ctx.beginPath();
+    if (sTile(cx,cy+1)==="~"){ ctx.moveTo(x,y+ATS); ctx.lineTo(x+ATS,y+ATS); }
+    if (sTile(cx,cy-1)==="~"){ ctx.moveTo(x,y); ctx.lineTo(x+ATS,y); }
+    if (sTile(cx-1,cy)==="~"){ ctx.moveTo(x,y); ctx.lineTo(x,y+ATS); }
+    if (sTile(cx+1,cy)==="~"){ ctx.moveTo(x+ATS,y); ctx.lineTo(x+ATS,y+ATS); }
+    ctx.stroke();
+  }
+
+  /* ---------- 实体层 y-sort ---------- */
+  const ents = [];
+  /* 栈杆（M：帆布 + 横桥；绑栈后画缆绳） */
+  ents.push({y:straitMast.y+6, draw(){
+    const x=straitMast.x, y=straitMast.y;
+    ctx.fillStyle="rgba(10,18,30,.35)"; ctx.beginPath(); ctx.ellipse(x+6,y+12,14,5,0,0,7); ctx.fill();
+    ctx.strokeStyle="#5c452c"; ctx.lineWidth=6; ctx.lineCap="round";
+    ctx.beginPath(); ctx.moveTo(x,y+10); ctx.lineTo(x,y-56); ctx.stroke();
+    ctx.strokeStyle="#6b5133"; ctx.lineWidth=4;
+    ctx.beginPath(); ctx.moveTo(x-30,y-44); ctx.lineTo(x+30,y-44); ctx.stroke();
+    ctx.fillStyle="#e8e2d2";
+    ctx.beginPath(); ctx.moveTo(x+3,y-42); ctx.quadraticCurveTo(x+22,y-20,x+3,y+2); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle="rgba(0,0,0,.2)"; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(x+8,y-40); ctx.lineTo(x+8,y+0); ctx.stroke();
+    if (state.mastTied){
+      ctx.strokeStyle="#c9b58a"; ctx.lineWidth=2.4;
+      ctx.beginPath(); ctx.arc(x, y-6, 9, 0.5, 5.6); ctx.stroke();
+      ctx.fillStyle="#c9b58a"; ctx.font="9px 'Segoe UI'"; ctx.textAlign="center";
+      ctx.fillText("绑", x, y+2);
+    }
+  }});
+  /* 蜡罐（W：未选听歌方式时发光提示） */
+  ents.push({y:9*ATS+ATS*0.9, draw(){
+    const x=3*ATS+ATS/2, y=9*ATS+ATS*0.9;
+    ctx.fillStyle="rgba(10,18,30,.3)"; ctx.beginPath(); ctx.ellipse(x+3,y+6,10,3.6,0,0,7); ctx.fill();
+    ctx.fillStyle="#a8845c"; ctx.fillRect(x-7,y-12,14,16);
+    ctx.fillStyle="#8f6d47"; ctx.fillRect(x-7,y-2,14,6);
+    ctx.fillStyle="#e8d9b8"; ctx.beginPath(); ctx.ellipse(x,y-13,7,3,0,0,7); ctx.fill();
+    if (!state.waxEars && state.straitStage<1){
+      const gl=0.5+Math.sin(et*2.2)*0.25;
+      ctx.fillStyle=`rgba(240,228,190,${gl})`;
+      ctx.beginPath(); ctx.arc(x,y-16,2.2,0,7); ctx.fill();
+    }
+  }});
+  /* 塞壬三姐妹（S 礁：苍白歌声身影×3 + 歌声涟漪） */
+  ents.push({y:5*ATS+ATS*0.35, draw(){
+    const bx=3*ATS+ATS/2, by=4*ATS+ATS*0.55;
+    for (let i=0;i<3;i++){
+      const x=bx+(i-1)*26, y=by+Math.sin(et*1.2+i*2)*3-(i===1?8:0);
+      ctx.fillStyle="rgba(214,228,240,.16)"; ctx.beginPath(); ctx.ellipse(x+4,y+9,11,4,0,0,7); ctx.fill();
+      ctx.globalAlpha=0.82;
+      ctx.fillStyle="#cfd8e2";
+      ctx.beginPath(); ctx.moveTo(x-7,y+8); ctx.quadraticCurveTo(x-8,y-8,x,y-12);
+      ctx.quadraticCurveTo(x+8,y-8,x+7,y+8); ctx.closePath(); ctx.fill();
+      ctx.fillStyle="#e6eef6"; ctx.beginPath(); ctx.arc(x,y-16,4.6,0,7); ctx.fill();
+      ctx.fillStyle="#aebccb";
+      ctx.beginPath(); ctx.ellipse(x,y-21,6,3,-0.3,0,7); ctx.fill();
+      ctx.globalAlpha=1;
+    }
+    for (let i=0;i<3;i++){
+      const p=(et*0.5+i*0.33)%1;
+      ctx.globalAlpha=(1-p)*0.35;
+      ctx.strokeStyle="#e6eef6"; ctx.lineWidth=1.4;
+      ctx.beginPath(); ctx.arc(bx, by-14, 8+p*30, 0.5, 2.6); ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+  }});
+  /* 斯库拉（K 崖：六条长颈犬首错落摆动 + 本体剪影；带话后颈子静止、雾色变亮） */
+  ents.push({y:2*ATS+ATS*0.8, draw(){
+    const bx=11*ATS+ATS/2, by=1*ATS+ATS*0.35;
+    const paid = state.scyllaDebtPaid;
+    for (let i=0;i<6;i++){
+      const nx=bx+(i-2.5)*17, base=by+10, sway=Math.sin(et*0.9+i*1.7)*(paid?2:6);
+      const h=34+(i%3)*10;
+      ctx.strokeStyle=paid?"#3d4a56":"#2f3b46"; ctx.lineWidth=7; ctx.lineCap="round";
+      ctx.beginPath(); ctx.moveTo(nx, base+h*0.4);
+      ctx.quadraticCurveTo(nx+sway*0.6, base+h*0.1, nx+sway, base-h*0.45);
+      ctx.stroke();
+      ctx.fillStyle=paid?"#4a5a68":"#39434f";
+      ctx.beginPath(); ctx.ellipse(nx+sway, base-h*0.5, 5.5, 4.2, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = paid ? "rgba(160,180,200,.5)" : "rgba(220,232,240,.75)";
+      ctx.beginPath(); ctx.arc(nx+sway-1.6, base-h*0.5-1, 1.1, 0, 7); ctx.fill();
+    }
+    ctx.globalAlpha=0.5;
+    ctx.fillStyle="#cfd8e2";
+    ctx.beginPath(); ctx.moveTo(bx-8,by+22); ctx.quadraticCurveTo(bx-9,by-2,bx,by-8);
+    ctx.quadraticCurveTo(bx+9,by-2,bx+8,by+22); ctx.closePath(); ctx.fill();
+    ctx.globalAlpha=1;
+    if (!paid && state.straitStage>=1){
+      ctx.fillStyle="rgba(230,238,246,.75)"; ctx.font="10px 'Segoe UI'"; ctx.textAlign="center";
+      ctx.fillText("六只眼睛数着你的行囊", bx, by-24);
+    }
+    if (paid){
+      ctx.fillStyle="rgba(159,216,207,.6)"; ctx.font="10px 'Segoe UI'"; ctx.textAlign="center";
+      ctx.fillText("静 水", bx, by-24);
+    }
+  }});
+  /* 卡律布狄斯漩涡（V：三圈螺旋旋转 + 吞吐白沫） */
+  ents.push({y:4*ATS+ATS*0.85, draw(){
+    const x=16*ATS+ATS/2, y=4*ATS+ATS*0.75;
+    ctx.fillStyle="rgba(6,12,22,.6)";
+    ctx.beginPath(); ctx.ellipse(x,y,26,15,0,0,7); ctx.fill();
+    ctx.strokeStyle="rgba(214,228,240,.55)"; ctx.lineWidth=2;
+    for (let ring=0; ring<3; ring++){
+      const a0=et*1.6+ring*2.1, r=22-ring*6;
+      ctx.beginPath(); ctx.arc(x,y,r, a0, a0+4.4); ctx.stroke();
+    }
+    ctx.fillStyle="rgba(240,246,252,.85)";
+    for (let i=0;i<6;i++){ const a=et*2.4+i*1.05;
+      ctx.beginPath(); ctx.arc(x+Math.cos(a)*20, y+Math.sin(a)*11, 1.8, 0, 7); ctx.fill(); }
+  }});
+  pushPlayerEnt(ents);
+
+  ents.sort((a,b)=>a.y-b.y);
+  for (const e of ents) e.draw();
+
+  /* 全屏漂雾带 + 冷 vignette */
+  for (let i=0;i<7;i++){
+    const p=((et*0.02+i*0.15)%1.2)-0.1;
+    const py=40+i*72+Math.sin(et*0.3+i)*10;
+    ctx.globalAlpha=0.10+Math.sin(et*0.5+i)*0.04;
+    ctx.fillStyle="#dfe9f2";
+    ctx.beginPath(); ctx.ellipse(p*1000, py, 130, 12, 0, 0, 7); ctx.fill();
+  }
+  ctx.globalAlpha=1;
+  const vg=ctx.createRadialGradient(400,240,170, 400,240,560);
+  vg.addColorStop(0,"rgba(8,14,26,0)"); vg.addColorStop(1,"rgba(8,14,26,.6)");
+  ctx.fillStyle=vg; ctx.fillRect(0,0,1000,600);
+}
+
+/* ---------- 太阳岛 2.5D（金色牧场：蜜色草地 + 白圣殿 + 圣牛群 + 旋转日辉；visual.md "灼金、悲悯、晃眼"） ---------- */
+function drawSun(et){
+  const wrath = state.sunWrath;
+  /* Pass1 外海（金色日辉碎光；记恨后转铅灰） */
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    if (sunTile(cx,cy)!=="~") continue;
+    const x=cx*ATS, y=cy*ATS;
+    const near = sunTile(cx,cy-1)!=="~"||sunTile(cx,cy+1)!=="~"||sunTile(cx-1,cy)!=="~"||sunTile(cx+1,cy)!=="~";
+    ctx.fillStyle = wrath ? (near?"#5d6d76":"#51606a") : (near?"#2f7a94":"#276a84");
+    ctx.fillRect(x,y,ATS,ATS);
+    if ((cx*13+cy*7)%4===0 && !wrath){
+      ctx.strokeStyle="rgba(255,222,140,.28)"; ctx.lineWidth=1.3;
+      const ph=Math.sin(et*1.4+cx*1.9+cy*1.3)*2.5;
+      ctx.beginPath(); ctx.moveTo(x+5,y+14+ph); ctx.lineTo(x+19,y+14+ph); ctx.stroke();
+    }
+  }
+  /* Pass2 岸线金边（记恨后变灰） */
+  ctx.strokeStyle = wrath ? "rgba(190,196,204,.35)" : "rgba(255,224,150,.42)";
+  ctx.lineWidth=1.6;
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    if (sunTile(cx,cy)==="~") continue;
+    const x=cx*ATS, y=cy*ATS;
+    ctx.beginPath();
+    if (sunTile(cx,cy+1)==="~"){ ctx.moveTo(x,y+ATS); ctx.lineTo(x+ATS,y+ATS); }
+    if (sunTile(cx,cy-1)==="~"){ ctx.moveTo(x,y); ctx.lineTo(x+ATS,y); }
+    if (sunTile(cx-1,cy)==="~"){ ctx.moveTo(x,y); ctx.lineTo(x,y+ATS); }
+    if (sunTile(cx+1,cy)==="~"){ ctx.moveTo(x+ATS,y); ctx.lineTo(x+ATS,y+ATS); }
+    ctx.stroke();
+  }
+  /* Pass3 崖体挤出（蜜色岩层） */
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    const ch=sunTile(cx,cy); if (ch==="~") continue;
+    const x=cx*ATS, y=cy*ATS;
+    const grd=ctx.createLinearGradient(0,y+ATS-2,0,y+ATS+TH);
+    grd.addColorStop(0,"#c49a5c"); grd.addColorStop(.35,"#a97f45"); grd.addColorStop(.75,"#7d5a2e"); grd.addColorStop(1,"#5c401f");
+    ctx.fillStyle=grd; ctx.fillRect(x,y+ATS-2,ATS,TH+2);
+    ctx.strokeStyle="rgba(0,0,0,.18)"; ctx.lineWidth=1;
+    const ox = ((cx*11)%3)*12+6;
+    ctx.beginPath(); ctx.moveTo(x+ox, y+ATS+1); ctx.lineTo(x+ox-2, y+ATS+TH-2); ctx.stroke();
+  }
+  /* Pass4 顶面（金草地/牧场/小径/栈桥） */
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    const ch=sunTile(cx,cy); if (ch==="~") continue;
+    const x=cx*ATS, y=cy*ATS;
+    if (ch==="_"){
+      ctx.fillStyle="#8a6a42"; ctx.fillRect(x,y,ATS,ATS);
+      ctx.strokeStyle="rgba(0,0,0,.16)"; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(x,y+13); ctx.lineTo(x+ATS,y+13); ctx.moveTo(x,y+27); ctx.lineTo(x+ATS,y+27); ctx.stroke();
+      ctx.fillStyle="rgba(255,255,255,.05)"; ctx.fillRect(x,y,ATS,3);
+      continue;
+    }
+    if (ch===","){ ctx.fillStyle="#cbb26e"; ctx.fillRect(x,y,ATS,ATS);
+      ctx.fillStyle="rgba(255,244,200,.25)"; for(let i=0;i<3;i++) ctx.fillRect(x+6+i*11, y+10+((cx+cy+i)%3)*8, 5,2); continue; }
+    if (ch==="B"){ ctx.fillStyle=wrath?"#a8a26a":"#d3b96a"; ctx.fillRect(x,y,ATS,ATS);
+      ctx.fillStyle="rgba(120,90,40,.22)";
+      ctx.beginPath(); ctx.ellipse(x+13,y+15,4,2.4,0.4,0,7); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(x+27,y+27,4,2.4,-0.3,0,7); ctx.fill();
+      ctx.fillStyle="rgba(255,240,180,.14)"; ctx.fillRect(x+4,y+4,10,2);
+      continue; }
+    if (ch==="S"||ch==="A"){ ctx.fillStyle="#e9e0cc"; ctx.fillRect(x,y,ATS,ATS);
+      ctx.strokeStyle="#c9bda0"; ctx.lineWidth=1; ctx.strokeRect(x+3.5,y+3.5,ATS-7,ATS-7);
+      ctx.fillStyle="rgba(0,0,0,.06)"; ctx.fillRect(x+3.5,y+ATS-8,ATS-7,4);
+      if (ch==="A"){ ctx.fillStyle="#e8b84b"; ctx.beginPath(); ctx.arc(x+20,y+20,7,0,7); ctx.fill();
+        ctx.strokeStyle="#b98d2e"; ctx.lineWidth=1.4; ctx.beginPath(); ctx.arc(x+20,y+20,10,0,7); ctx.stroke(); }
+      continue; }
+    ctx.fillStyle = wrath ? "#b3ab77" : "#dcc274"; ctx.fillRect(x,y,ATS,ATS);
+    ctx.fillStyle="rgba(255,244,200,.16)";
+    if ((cx*7+cy*5)%3===0) ctx.fillRect(x+8,y+12,7,2);
+    if (ch==="T"){}
+  }
+  /* ---------- 实体层 y-sort ---------- */
+  const ents = [];
+  /* 柏树（T） */
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    if (sunTile(cx,cy)!=="T") continue;
+    const x=cx*ATS+ATS/2, y=cy*ATS+ATS*0.8;
+    ents.push({y, draw(){
+      ctx.fillStyle="rgba(80,50,20,.3)"; ctx.beginPath(); ctx.ellipse(x+4,y+7,12,4,0,0,7); ctx.fill();
+      ctx.fillStyle="#5c4022"; ctx.fillRect(x-2.5,y-10,5,12);
+      ctx.fillStyle=wrath?"#3f4a41":"#2f5c3a";
+      ctx.beginPath(); ctx.ellipse(x,y-22,9,16,0,0,7); ctx.fill();
+      ctx.fillStyle="rgba(255,255,255,.08)"; ctx.beginPath(); ctx.ellipse(x-3,y-26,4,8,0,0,7); ctx.fill();
+    }});
+  }
+  /* 圣殿（S 区域柱廊 + 日辉圆盘） */
+  ents.push({y:3*ATS+ATS*0.9, draw(){
+    const bx=4*ATS, by=2*ATS+6;
+    ctx.fillStyle="rgba(80,50,20,.25)"; ctx.beginPath(); ctx.ellipse(bx+60,by+38,74,10,0,0,7); ctx.fill();
+    ctx.fillStyle="#efe8d8"; ctx.fillRect(bx,by,124,34);
+    for (let i=0;i<5;i++){
+      ctx.fillStyle="#f7f2e4"; ctx.fillRect(bx+8+i*24, by-26, 10, 60);
+      ctx.fillStyle="rgba(0,0,0,.10)"; ctx.fillRect(bx+16+i*24, by-26, 2, 60);
+    }
+    ctx.fillStyle="#e8c05a"; ctx.beginPath(); ctx.arc(bx+62, by-40, 15, 0, 7); ctx.fill();
+    ctx.strokeStyle="#c99a2e"; ctx.lineWidth=2;
+    for (let i=0;i<8;i++){ const a=et*0.6+i*Math.PI/4;
+      ctx.beginPath(); ctx.moveTo(bx+62+Math.cos(a)*18, by-40+Math.sin(a)*18);
+      ctx.lineTo(bx+62+Math.cos(a)*25, by-40+Math.sin(a)*25); ctx.stroke(); }
+    if (wrath){ ctx.fillStyle="rgba(90,95,110,.4)"; ctx.beginPath(); ctx.ellipse(bx+62,by-40,19,19,0,0,7); ctx.fill(); }
+  }});
+  /* 圣牛群（B 牧场：三头，缓慢摇摆+反刍；玩家靠近时抬头看向玩家；记恨后低头背对） */
+  const COWS = [{x:14.6,y:4.3},{x:15.9,y:5.0},{x:14.9,y:5.7}];
+  COWS.forEach((c,i)=>{
+    const px=c.x*ATS, py=c.y*ATS;
+    ents.push({y:py+10, draw(){
+      const nearP = Math.hypot(aiaPlayer.x-px, aiaPlayer.y-py)<200;
+      const bob = Math.sin(et*0.8+i*2.1)*2;
+      const look = (wrath ? -1 : nearP ? 1 : 0);
+      ctx.fillStyle="rgba(80,50,20,.28)"; ctx.beginPath(); ctx.ellipse(px+5,py+12,17,5,0,0,7); ctx.fill();
+      ctx.fillStyle="#8a5a34"; ctx.beginPath(); ctx.ellipse(px,py+bob*0.4,16,9,0,0,7); ctx.fill();
+      ctx.fillStyle="#c99e6a"; ctx.beginPath(); ctx.ellipse(px-3,py-2+bob*0.4,7,4.5,0,0,7); ctx.fill();
+      const hx = px + (look>=0?13:-13), hy = py-6+bob+(look>0?-4:2);
+      ctx.fillStyle="#7c4e2c"; ctx.beginPath(); ctx.ellipse(hx,hy,7,5.5,0,0,7); ctx.fill();
+      ctx.strokeStyle="#e8c05a"; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(hx-4,hy-4); ctx.quadraticCurveTo(hx-7,hy-10,hx-3,hy-11); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(hx+4,hy-4); ctx.quadraticCurveTo(hx+7,hy-10,hx+3,hy-11); ctx.stroke();
+      if (look>0){ ctx.fillStyle="#2c1c10"; ctx.beginPath(); ctx.arc(hx+(aiaPlayer.x>px?3:-3),hy-1,1.3,0,7); ctx.fill(); }
+      if (i===0 && !wrath){
+        ctx.fillStyle="rgba(120,86,40,.8)"; ctx.font="9px 'Segoe UI'"; ctx.textAlign="center";
+        ctx.fillText(nearP?"（她看着你）":"（牛群在反刍）", px, py-24);
+      }
+    }});
+  });
+  /* 海藻（西滩） */
+  ents.push({y:8*ATS+ATS*0.9, draw(){
+    const x=2*ATS, y=8*ATS+ATS*0.9;
+    for (let i=0;i<4;i++){
+      const sw=Math.sin(et*1.6+i*1.4)*3;
+      ctx.strokeStyle="#3e7a52"; ctx.lineWidth=2.4; ctx.lineCap="round";
+      ctx.beginPath(); ctx.moveTo(x+i*6, y);
+      ctx.quadraticCurveTo(x+i*6+sw, y-9, x+i*6+sw*1.6, y-15-i*2); ctx.stroke();
+    }
+  }});
+  /* 火盆（圣火笔直） */
+  ents.push({y:6*ATS+ATS*0.95, draw(){
+    const x=3*ATS+ATS/2, y=6*ATS+ATS*0.7;
+    ctx.fillStyle="rgba(80,50,20,.3)"; ctx.beginPath(); ctx.ellipse(x+3,y+8,10,3.5,0,0,7); ctx.fill();
+    ctx.fillStyle="#6e5a44"; ctx.beginPath(); ctx.ellipse(x,y,10,5,0,0,7); ctx.fill();
+    const fl = wrath?0.4:1;
+    const fg=ctx.createRadialGradient(x,y-4,1,x,y-4,12);
+    fg.addColorStop(0,`rgba(255,214,120,${0.9*fl})`); fg.addColorStop(1,"rgba(255,150,60,0)");
+    ctx.fillStyle=fg; ctx.beginPath(); ctx.ellipse(x,y-5,7,12+Math.sin(et*7)*2,0,0,7); ctx.fill();
+  }});
+  pushPlayerEnt(ents);
+  ents.sort((a,b)=>a.y-b.y);
+  for (const e of ents) e.draw();
+
+  /* 天光层：日辉旋转光斑；记恨后 → 乌云压顶 */
+  if (!wrath){
+    ctx.save(); ctx.globalCompositeOperation="lighter";
+    const cx0=sunAltar.x, cy0=sunAltar.y-20;
+    for (let i=0;i<5;i++){
+      const a=et*0.35+i*1.256;
+      ctx.globalAlpha=0.05;
+      ctx.fillStyle="#ffd873";
+      ctx.beginPath(); ctx.ellipse(cx0+Math.cos(a)*190, cy0+Math.sin(a)*130, 150, 60, a, 0, 7); ctx.fill();
+    }
+    ctx.restore(); ctx.globalAlpha=1;
+  } else {
+    for (let i=0;i<6;i++){
+      const p=((et*0.03+i*0.17)%1.3)-0.15;
+      const py=50+i*88+Math.sin(et*0.4+i)*12;
+      ctx.globalAlpha=0.16+Math.sin(et*0.6+i)*0.05;
+      ctx.fillStyle="#3a3f4a";
+      ctx.beginPath(); ctx.ellipse(p*1100-50, py, 150, 16, 0, 0, 7); ctx.fill();
+    }
+    ctx.globalAlpha=1;
+  }
+  const vg=ctx.createRadialGradient(400,240,180, 400,240,560);
+  vg.addColorStop(0, wrath?"rgba(40,42,52,0)":"rgba(255,240,200,0)");
+  vg.addColorStop(1, wrath?"rgba(30,32,40,.5)":"rgba(160,110,30,.16)");
+  ctx.fillStyle=vg; ctx.fillRect(0,0,1000,600);
+}
+
 /* ---------- 提示 / 气泡 ---------- */
 const hintEl=document.getElementById("hint"), ambEl=document.getElementById("ambient"), zoneEl=document.getElementById("zone");
 function updateHintDOM(){
-  zoneEl.textContent = scene==="world" ? "地中海 · 航行中" : scene==="hades" ? "冥界 · 俄刻阿诺斯之岸" : "埃亚岛 · 女巫的领地";
+  zoneEl.textContent = scene==="world" ? "地中海 · 航行中" : scene==="hades" ? "冥界 · 俄刻阿诺斯之岸" : scene==="aeolia" ? "风神岛 · 十二风的浮狱" : scene==="strait" ? "声之海峡 · 塞壬的歌" : scene==="sun" ? "太阳岛 · 赫利俄斯的牧场" : "埃亚岛 · 女巫的领地";
   if (scene==="world"){
     const is = islandNear();
     if (is && !dlgOpen){
       hintEl.style.display="block";
       hintEl.innerHTML = `<b>E</b> · ${is.open?"登陆":"了望"} ${is.name}`;
-      hintEl.style.left=((is.gx*WTS+WTS/2)/(WCOLS*WTS)*100)+"%"; hintEl.style.top=((is.gy*WTS)/(WROWS*WTS)*100)+"%";
+      const [hx,hy]=w2s(is.gx*WTS+WTS/2, is.gy*WTS);
+      hintEl.style.left=(hx*100)+"%"; hintEl.style.top=(hy*100)+"%";
     } else hintEl.style.display="none";
     ambEl.style.display="none";
     return;
@@ -1208,16 +2965,11 @@ function updateHintDOM(){
   if (s && !dlgOpen){
     hintEl.style.display="block";
     hintEl.innerHTML = `<b>E</b> · ${s.label}`;
-    hintEl.style.left = (s.x/800*100)+"%"; hintEl.style.top  = ((s.y-30)/480*100)+"%";
+    const [hx,hy]=w2s(s.x, s.y-30);
+    hintEl.style.left = (hx*100)+"%"; hintEl.style.top  = (hy*100)+"%";
   } else hintEl.style.display="none";
   const nearWitch = scene==="aia" && Math.hypot(aiaPlayer.x-witch.x, aiaPlayer.y-witch.y) < 150;
-  if (nearWitch && !dlgOpen){
-    ambEl.style.display="block";
-    ambEl.style.left=(witch.x/800*100)+"%"; ambEl.style.top=((witch.y-36)/480*100)+"%";
-    ambEl.textContent = state.quest && !state.quest.done && state.quest.have<state.quest.need
-      ? "玛草还差 "+(state.quest.need-state.quest.have)+" 株。东边的草丛，发光的那些。"
-      : "来了就进来，别杵在风口。";
-  } else ambEl.style.display="none";
+  if (!nearWitch && ambEl.style.display!=="none" && !ambActive) ambEl.style.display="none";
 }
 
 /* ==================== Toast / HUD ==================== */
@@ -1234,10 +2986,26 @@ function renderHUD(){
   const pct = Math.max(0, Math.min(100, state.hp))/100;
   bar.style.width = (pct*100)+"%";
   bar.style.background = state.hp>60 ? "#3fae6a" : state.hp>30 ? "#e0a23c" : "#e05252";
+  /* 生存需求 / 等级 / 时辰 */
+  const hb=document.getElementById("hudHungerBar"), tb=document.getElementById("hudThirstBar");
+  hb.style.width = Math.max(0,Math.min(100,state.hunger))+"%"; hb.style.background = state.hunger>40?"#c9933f":"#e05252";
+  tb.style.width = Math.max(0,Math.min(100,state.thirst))+"%"; tb.style.background = state.thirst>40?"#3f8fae":"#e05252";
+  document.getElementById("hudLv").textContent = state.level;
+  document.getElementById("hudXpBar").style.width = Math.min(100, state.xp/xpToNext(state.level)*100)+"%";
+  const hh=Math.floor(hourNow()), mm=Math.floor(state.clock%60);
+  document.getElementById("hudClock").textContent = `${clockName()} ${String(hh).padStart(2,"0")}:${String(mm).padStart(2,"0")}`;
+  /* 多任务账本：进行中的全部展示，全完成则示「委托已完成」 */
   const q=document.getElementById("hudQuest");
-  if (state.quest && !state.quest.done){ q.style.display=""; q.innerHTML=`委托「${state.quest.name}」 <b>${state.quest.have}/${state.quest.need}</b>`; }
-  else if (state.quest && state.quest.done){ q.style.display=""; q.innerHTML=`委托已完成`; }
+  const qs=Object.values(state.quests||{});
+  const active=qs.filter(v=>!v.done);
+  if (active.length){ q.style.display=""; q.innerHTML = active.map(v=>`「${v.name}」 ${v.ready?"<b>可交付</b>":`<b>${v.have}/${v.need}</b>`}`).join("　"); }
+  else if (qs.length){ q.style.display=""; q.innerHTML=`委托已完成`; }
   else q.style.display="none";
+  /* 风袋快捷键（有风袋才出现） */
+  const wb=document.getElementById("windBtn");
+  if (state.backpack["风袋"]){ wb.style.display=""; wb.textContent = `风袋 ×${state.backpack["风袋"]}`; }
+  else wb.style.display="none";
+  if (document.getElementById("questPanel").style.display==="block") renderQuests();
   const ks=Object.keys(state.backpack);
   document.getElementById("bagList").innerHTML = ks.length
     ? ks.map(k=>`<div class="it"><span>${k}</span><b>×${state.backpack[k]}</b></div>`).join("")
@@ -1249,6 +3017,158 @@ document.getElementById("bagBtn").onclick = ()=>{
   p.style.display = p.style.display==="block" ? "none" : "block";
   renderHUD();
 };
+
+/* ---------- 风袋（暗线③：用风=快旅；贪念=用光。世界场景由 HUD/对话触发） ---------- */
+function useWind(){
+  if (scene!=="world") return {text:"风袋得在海上放——回到船上，迎着风解开袋口。"};
+  if (!state.backpack["风袋"]) return {text:"风袋是空的……不，是没了。"};
+  delItem("风袋");
+  const left = state.backpack["风袋"]||0;
+  state.tailwindUntil = performance.now()+60000;
+  sfx("bless"); feedback("medium");
+  let t = `你解开袋口——一阵顺风轰然灌进帆里，船头像被一只大手推了一把。（航速倍增一小段${left?`，袋里还剩 ${left} 阵风`:""}）`;
+  if (!left){
+    t += "\n……袋瘪了。贪念把风用光了——埃俄罗斯的话应验了。";
+    addMemory("旅人把风袋里的风用得一干二净", 2, "aeolus");
+  }
+  toast(t.replace("\n"," "));
+  renderHUD(); save();
+  return {text:t};
+}
+
+/* ==================== 第三章结算（斯库拉代价 / 漩涡赌局） ==================== */
+function shineVal(n){ return SHOP[n]||({"风袋":8,"歌词残页":9,"治疗草药":12,"野猪肉":4,"烤野猪肉":6})[n]||3; }
+/* 六头各吃走最亮的六件（战利品、任务物都算——按价值排序） */
+function takeShine(n){
+  const items = Object.keys(state.backpack).sort((a,b)=>shineVal(b)-shineVal(a));
+  const lost=[];
+  for (const it of items){
+    if (lost.length>=n) break;
+    const cnt = Math.min(state.backpack[it], n-lost.length);
+    delItem(it,cnt);
+    for (let i=0;i<cnt;i++) lost.push(it);
+  }
+  feedback("large");
+  if (lost.length) toast(`六条颈子同时垂进船里——${lost.join("、")}，一样样被卷上崖。六头怪咀嚼的声音，比你想象的斯文。`);
+  else { state.hp = Math.max(1, state.hp-30); toast("行囊空空，六头怪对视一眼——咬的是你。（-30 血）"); }
+  return lost;
+}
+/* 赌卡律布狄斯：随机掉 1-3 件 + 20% 翻船回原地（记忆保留） */
+function gambleVortex(){
+  const items=Object.keys(state.backpack);
+  const nDrop = 1+Math.floor(Math.random()*3);
+  const lost=[];
+  for (let i=0;i<nDrop && items.length;i++){
+    const idx=Math.floor(Math.random()*items.length);
+    const it=items[idx]; delItem(it); items.splice(idx,1); lost.push(it);
+  }
+  state.straitStage=2;
+  const capsized = Math.random()<0.2;
+  addMemory(`旅人赌了卡律布狄斯漩涡${lost.length?`，漩涡卷走了 ${lost.join("、")}`:""}${capsized?"，船被打翻回原地——记忆还在":""}`, 3);
+  sfx("dash"); feedback("large");
+  if (capsized){
+    scene="world"; boat.x=6*WTS+WTS/2+30; boat.y=11*WTS+WTS+40;
+    toast(`漩涡赢了。船在原地打了个转，你趴在漂木上醒来——像第一天那样。（卷走：${lost.join("、")||"什么都没有"}；记忆都在）`);
+  } else {
+    toast(`你贴着漩涡的边冲了过去——它卷走了 ${lost.join("、")||"……什么也没捞到，它很生气"}。（海峡算过了）`);
+  }
+  renderHUD(); save();
+  return {text:""};
+}
+
+/* ==================== 海图（M 键 · 世界海图叠加船位与岛屿状态） ==================== */
+let mapOpen = false;
+function buildMapMarks(){
+  document.getElementById("mapMarks").innerHTML = ISLANDS.map((is,i)=>`
+    <div class="mapMark${is.open?"":" locked"}" style="left:${is.mp[0]}%; top:${is.mp[1]}%;">
+      <div class="pin"></div><div class="nm">${is.name}</div>
+      <div class="st">${is.open?"已解锁":"？待开放"}</div>
+    </div>`).join("");
+}
+function boatMapPos(){
+  /* 反距离加权：海图上船位由最近岛屿描点内插（mp 为海图标定点） */
+  let wx=0, wy=0, wsum=0;
+  for (const is of ISLANDS){
+    const dx=boat.x-(is.gx*WTS+WTS/2), dy=boat.y-(is.gy*WTS+WTS/2);
+    const w=1/Math.max(dx*dx+dy*dy, 400);
+    wx+=w*is.mp[0]; wy+=w*is.mp[1]; wsum+=w;
+  }
+  return [wx/wsum, wy/wsum];
+}
+function openMap(){
+  if (titleOn||chapterOn) return;
+  mapOpen = true;
+  buildMapMarks();
+  const [bx,by]=boatMapPos();
+  const b=document.getElementById("mapBoat");
+  b.style.left=bx+"%"; b.style.top=by+"%";
+  document.getElementById("mapOverlay").classList.add("open");
+  document.getElementById("stage").classList.add("mapOpen");   /* 常驻层让位浮层（game-ui-ux） */
+  sfx("pick");
+}
+function closeMap(){
+  mapOpen = false;
+  document.getElementById("mapOverlay").classList.remove("open");
+  document.getElementById("stage").classList.remove("mapOpen");
+}
+document.getElementById("mapBtn").onclick = ()=> mapOpen ? closeMap() : openMap();
+document.getElementById("mapOverlay").addEventListener("click", e=>{ if (e.target.id==="mapOverlay") closeMap(); });
+document.getElementById("mapClose").onclick = closeMap;
+
+/* ---------- 塞壬歌词卡（本地拼装：从记忆流唱出你的航程，不烧模型） ---------- */
+let lastLyric = "";
+function buildLyric(){
+  const mems = state.memory.slice(-8).filter(m=>m.text.length>4);
+  const uniq = [...new Set(mems.map(m=>m.text))];   /* 去重：同一句记忆不唱两遍 */
+  const pick = (i) => uniq.length ? uniq[i % uniq.length].replace(/^旅人/,"").slice(0,14) : null;
+  const m1 = pick(Math.floor(Math.random()*uniq.length)), m2 = pick(Math.floor(Math.random()*uniq.length)+1);
+  const q = Object.values(state.quests||{}).find(v=>!v.done);
+  const heart = state.prophecy ? (state.prophecy==="long"?"那条更长更暗的路":"那个浪头上的名字") : "一个记不清的地名";
+  if (!m1 && !m2) return "……\n\n她们张开了嘴，唱出来的竟是空白。\n（你的故事里还没有多少可唱的事——空白也是歌。）";
+  return [
+    "漂泊的人，海听见你——",
+    m1 ? `　「${m1}」，你说过的，浪都记得；` : null,
+    m2 ? `　「${m2}」，你以为没人看见，礁石看见了；` : null,
+    `　你的行囊里装着${q?`没做完的「${q.name}」`:"半个家"}，`,
+    `　你的心里悬着${heart}。`,
+    "回头吧，岸上有灯；",
+    "不回头，就唱着你的名字过海峡。"
+  ].filter(Boolean).join("\n");
+}
+function showLyric(){
+  lastLyric = buildLyric();
+  document.getElementById("lyricText").textContent = lastLyric;
+  document.getElementById("lyricCard").classList.add("open");
+  sfx("bless");
+}
+function closeLyric(){ document.getElementById("lyricCard").classList.remove("open"); }
+function exportLyric(){
+  try{
+    const blob = new Blob(["《奥德赛》航程记 · 无名旅人\n\n" + lastLyric + "\n\n—— 塞壬三姐妹，唱于声之海峡\n"], {type:"text/plain;charset=utf-8"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "塞壬之歌.txt";
+    a.click(); URL.revokeObjectURL(a.href);
+  }catch(e){}
+}
+
+/* ---------- 任务日志面板（事件驱动：仅在开关与任务变动时重渲染） ---------- */
+document.getElementById("questBtn").onclick = ()=>{
+  const p=document.getElementById("questPanel");
+  p.style.display = p.style.display==="block" ? "none" : "block";
+  renderQuests();
+};
+function renderQuests(){
+  const box=document.getElementById("questList");
+  const qs=Object.values(state.quests||{});
+  box.innerHTML = qs.length ? qs.map(v=>`
+    <div class="q${v.done?" done":""}">
+      <b>${v.name}</b> · ${v.who==="aeolus"?"埃俄罗斯":"喀耳刻"}<br>
+      ${v.done?(v.turned?"已交付（结清）":"已完成") : v.ready?"<b style='color:#2563eb'>目标达成 · 可交付</b>" : `进度 ${v.have}/${v.need}`}
+      ${!v.done?`<span class="bar"><i style="width:${Math.min(100,Math.round(v.have/v.need*100))}%"></i></span>`:""}
+    </div>`).join("") : '<div class="empty">（还没有接下任何委托）</div>';
+}
+document.getElementById("windBtn").onclick = ()=>useWind();
 
 /* ==================== 游戏逻辑（女巫） ==================== */
 function addItem(n,q=1){ state.backpack[n]=(state.backpack[n]||0)+q; }
@@ -1264,7 +3184,11 @@ function toNum(v){
   if (/^\d+$/.test(s)) return Math.min(parseInt(s),99);
   const m=s.match(/[一二两二三四五六七八九十]/); return m?N[m[0]]:1;
 }
-const PH = {"购买物品":"想买点什么？我这儿有治疗草药、玛草、蜂蜜酒、蜂蜜、橄榄油。",
+/* 消耗品效果表（survival-crafting：吃/喝恢复需求；h=饱食 t=饮水） */
+const FOOD = {"面包":{h:45},"烤野猪肉":{h:65},"蜂蜜":{h:30},"蜂蜜酒":{h:35,t:15},"橄榄油":{h:18},"玛草":{h:8},
+  "海藻":{h:14},"鱼":{h:30},"烤鱼":{h:55},"牛肉":{h:60}};   /* 第四章：太阳岛食物链（海藻/鱼→烤鱼/牛肉） */
+const DRINK = {"淡水":{t:55}};
+const PH = {"购买物品":"想买点什么？我这儿有治疗草药、玛草、蜂蜜酒、蜂蜜、橄榄油、铁剑。",
   "卖出物品":"想卖什么？掏出来看看。","查询价格":"问哪样东西的价？","查询库存":"问哪样货？",
   "丢弃物品":"扔哪个？说名字。","给予物品":"把什么给我？","装备物品":"装备哪件？",
   "卸下装备":"卸下哪件？","使用消耗品":"用什么？说名字。","导航到地点":"去哪儿？说个地名。",
@@ -1274,16 +3198,21 @@ const PH = {"购买物品":"想买点什么？我这儿有治疗草药、玛草�
   "获取物资":"想弄点什么回来？屋后东边的草丛里，发光的就是玛草。","营地准备":"要张罗什么？","请求帮助":"说说你卡在哪儿了。","闲聊":null};
 function handle(category, args){
   if (currentNPC === "seer") return handleSeer(category, args);
+  if (currentNPC === "aeolus") return handleAeolus(category, args);
+  if (currentNPC === "siren") return handleSiren(category, args);
+  if (currentNPC === "cattle") return handleCattle(category, args);
   const a=args||{};
   const g=k=>(a[k]!==undefined&&a[k]!==null&&String(a[k]).trim()!=="")?String(a[k]).trim():null;
   switch(category){
   case "购买物品":{
     const item=g("物品"); if(!item) return {text:PH[category]};
     if(!SHOP[item]) return {text:`（她扫了一眼货架）「${item}」我可不出售。货架上就那几样。`};
-    const q=Math.max(1,toNum(g("数量"))), cost=SHOP[item]*q;
+    const q=Math.max(1,toNum(g("数量"))), cost=shopPrice(item)*q;
     if(state.coins<cost) return {text:`（她瞥了瞥你的钱袋）${item} ${q} 份要 ${cost} 枚德拉克马——你还差 ${cost-state.coins} 枚。`};
     state.coins-=cost; addItem(item,q);
-    return {text:`（她把 ${item}${q>1?`×${q}`:""} 推过来，收走 ${cost} 枚德拉克马）拿好。还剩 ${state.coins} 枚。`};
+    addMemory(`旅人买了 ${item}${q>1?"×"+q:""}`, 1); addAffinity(1);
+    const tier = shopTier();
+    return {text:`（她把 ${item}${q>1?`×${q}`:""} 推过来，收走 ${cost} 枚德拉克马${tier?`，摆摆手：「${tier}。」`:""}）拿好。还剩 ${state.coins} 枚。`};
   }
   case "卖出物品":{
     const item=g("物品"); if(!item) return {text:PH[category]};
@@ -1295,13 +3224,14 @@ function handle(category, args){
   }
   case "查询价格":{
     const item=g("物品"); if(!item) return {text:PH[category]};
-    if(SHOP[item]) return {text:`${item}，一枚 ${SHOP[item]} 德拉克马。`};
+    if(SHOP[item]){ const p=shopPrice(item), tier=shopTier();
+      return {text:`${item}，一枚 ${p} 德拉克马${tier?`（${tier}）`:""}。`}; }
     return {text:`「${item}」？我不往外卖。卖给我的话……给你 2 枚。`};
   }
   case "查询库存":{
     const item=g("物品");
-    if(item) return SHOP[item]?{text:`${item}有货，一枚 ${SHOP[item]} 德拉克马。`}:{text:`${item}？没听过，不卖。`};
-    return {text:"（她朝货架抬了抬下巴）"+Object.keys(SHOP).map(k=>`${k} ${SHOP[k]}枚`).join("、")+"。"};
+    if(item) return SHOP[item]?{text:`${item}有货，一枚 ${shopPrice(item)} 德拉克马。`}:{text:`${item}？没听过，不卖。`};
+    return {text:"（她朝货架抬了抬下巴）"+Object.keys(SHOP).map(k=>`${k} ${shopPrice(k)}枚`).join("、")+"。"};
   }
   case "查询背包":{
     const item=g("物品");
@@ -1316,7 +3246,13 @@ function handle(category, args){
   case "给予物品":{
     const item=g("物品"); if(!item) return {text:PH[category]};
     if(!delItem(item)) return {text:`你想给我「${item}」？先看看拿没拿得出来。`};
-    return {text:`（她接过去对着光看了看，难得笑了一下）……算你有心。`};
+    addAffinity(6); addMemory(`旅人送了她「${item}」`, 3); sfx("bless");
+    const t = state.affinity>=85
+      ? "（她把东西收进袖子，指尖在你手背上轻轻敲了两下）……你这人，总让我为难。"
+      : state.affinity>=60
+      ? "（她接过去对着光看了看，难得笑了一下）……算你有心。"
+      : "（她接过去，挑眉打量你一眼）……无功不受禄。不过，收下了。";
+    return {text:t};
   }
   case "装备物品":{
     const item=g("物品")||state.equipped; if(!item) return {text:PH[category]};
@@ -1330,14 +3266,19 @@ function handle(category, args){
   }
   case "使用消耗品":{
     const item=g("物品"); if(!item) return {text:PH[category]};
+    if(item==="风袋") return useWind();
     if(!state.backpack[item]) return {text:`你背包里没有「${item}」。`};
     let fx="（一股暖流淌过喉咙。）";
+    const f=FOOD[item], dr=DRINK[item];
     if(item==="治疗草药"){state.status["伤势"]="无";fx="（药力渗进伤口，刺痛褪去——伤势痊愈了。）";}
-    else if(item==="烤野猪肉"){state.status["伤势"]="无"; state.hp=Math.min(100,state.hp+40); fx="（油脂混着炭火气。伤口的疼劲散了——伤势痊愈，血量 +40。）";}
-    else if(item==="蜂蜜"||item==="蜂蜜酒"||item==="面包"){state.status["饥饿"]="饱了";fx="（肚子里踏实了。）";}
-    else if(item==="淡水"){state.status["口渴"]="解渴了";fx="（溪水般的凉意，口渴全消。）";}
+    else if(item==="烤野猪肉"){state.status["伤势"]="无"; state.hp=Math.min(derived().maxHp,state.hp+40); fx="（油脂混着炭火气，伤势痊愈、血量 +40；肚子里也踏实了。）";}
     else if(item==="玛草"){state.status["士气"]="振奋";fx="（苦得舌根发麻，精神却一振。她憋着笑。）";}
-    delItem(item); return {text:fx};
+    else if(f||dr){fx=f?"（下肚，肚子里踏实了。）":"（溪水般的凉意，口渴全消。）";}
+    else {fx=`（${item}下肚，说不上好吃，但踏实了些。）`;}
+    if (f){ state.hunger=Math.min(100,state.hunger+(f.h||0)); state.thirst=Math.min(100,state.thirst+(f.t||0)); }
+    if (dr){ state.thirst=Math.min(100,state.thirst+(dr.t||0)); }
+    popText(aiaPlayer.x, aiaPlayer.y-26, f?`饱食 +${f.h}`:dr?`饮水 +${dr.t}`:"使用", "#7bd389");
+    delItem(item); sfx("cook"); renderHUD(); return {text:fx};
   }
   case "查询自身状态":{
     const s=g("状态项");
@@ -1352,6 +3293,18 @@ function handle(category, args){
   }
   case "导航到地点":{
     const d=g("目的地"); if(!d) return {text:PH[category]};
+    /* 暗线②：对她说起斯库拉/海峡，托付三个字（需先结清玛草委托） */
+    if (/斯库拉|海峡/.test(d)){
+      const q = getQuest("witch_grass");
+      if (q && q.done && !state.circeMessage && !state.scyllaDebtPaid){
+        state.circeMessage=true; addAffinity(5); renderHUD(); save();
+        addMemory("喀耳刻托旅人给斯库拉带三个字——不说是哪三个", 4);
+        return {text:"（她搅药的手停了）声之海峡，往东南去，雾最厚的地方。（很久）……替我给斯库拉带三个字。哪三个我不说——到了，她自然听得懂。"};
+      }
+      if (state.circeMessage) return {text:"（她重新搅起药）三个字在你身上了。到了海峡，说出口就成了。"};
+      if (state.scyllaDebtPaid) return {text:"（她背对着你，肩膀松了一寸）……话带到了。不必再说。"};
+      return {text:"声之海峡，往东南去，雾最厚的地方。（她没看你）没什么要带的。"};
+    }
     const m={"泉眼":"小屋后的小溪逆流而上","淡水源":"小屋后的小溪逆流而上","淡水":"小屋后的小溪逆流而上",
       "港口":"穿过松林一直往北，闻到咸味就到了","码头":"穿过松林一直往北",
       "祭坛":"东边山坡上的旧遗迹","神庙":"东边山坡上的旧遗迹","冥界":"（她收起笑，往海图极西一指）俄刻阿诺斯之岸，驾船一直向西。血入沟，那位老人才肯开口。"};
@@ -1366,44 +3319,78 @@ function handle(category, args){
     return {text:m[e]||"（她舔了舔手指举起来）……风向不对。办你的事去吧。"};
   }
   case "船只操作": return {text:"出海的事码头说了算——去南边栈桥，按 E 扬帆。"};
-  case "接取任务":
-    if(!state.quest){
-      state.quest={name:"采集玛草",need:3,have:0,done:false}; renderHUD(); save();
+  case "接取任务":{
+    const existed = !!getQuest("witch_grass");
+    const q = acceptQuest("witch_grass");
+    if(!existed){
+      addMemory("旅人接下了采玛草的委托", 2);
       return {text:"（她放下木勺，头一次正眼看你）正好缺人手。林子里的玛草被野猪拱得只剩几丛——去东北边的草丛采 3 株回来，我付你一瓶治疗草药，外加 5 枚德拉克马。"};
     }
-    if(state.quest.done) return {text:"那单活已经结清了。新的活……等我先想想。"};
-    if(state.quest.have>=state.quest.need) return {text:"玛草不是齐了吗？东西给我——说「交任务」就行。"};
-    return {text:`玛草还差 ${state.quest.need-state.quest.have} 株。东北边，发光的草丛。`};
-  case "查询任务线索":
-    if(!state.quest) return {text:"（她擦着手）要说活儿……我这里确实有一件。想知道就开口。"};
-    return {text:state.quest.done?"上一单结清了。……想去哪儿？极西的俄刻阿诺斯之岸，有位看不见的老人在等血入沟。":`当前委托「${state.quest.name}」：采 3 株玛草，已交 ${state.quest.have} 株。报酬：治疗草药一瓶 + 5 枚德拉克马。`};
-  case "查询任务进度":
-    return state.quest?(state.quest.done?"那单活已经结了。":{text:`「${state.quest.name}」：${state.quest.have}/${state.quest.need} 株玛草。`}):{text:"我们之间还没有约定在先。"};
-  case "提交任务":
-    if(!state.quest) return {text:"你拿什么交差？我们之间可没有约定。"};
-    if(state.quest.done) return {text:"已经结清了，别想多领一份。"};
-    if(state.quest.have<state.quest.need || !state.backpack["玛草"] || state.backpack["玛草"]<state.quest.need)
-      return {text:`玛草呢？（她摊开手）还差 ${state.quest.need-state.quest.have} 株。我的耐心可不长草。`};
-    delItem("玛草",state.quest.need); state.coins+=5; addItem("治疗草药"); state.quest.done=true;
+    if(q.done) return {text:"那单活已经结清了。新的活……等我先想想。"};
+    if(q.have>=q.need) return {text:"玛草不是齐了吗？东西给我——说「交任务」就行。"};
+    return {text:`玛草还差 ${q.need-q.have} 株。东北边，发光的草丛。`};
+  }
+  case "查询任务线索":{
+    const q = getQuest("witch_grass");
+    if(!q) return {text:"（她擦着手）要说活儿……我这里确实有一件。想知道就开口。"};
+    if(q.done && !state.circeMessage && !state.scyllaDebtPaid){
+      state.circeMessage=true; addAffinity(5); renderHUD(); save();
+      addMemory("喀耳刻托旅人给斯库拉带三个字——不说是哪三个", 4);
+      return {text:"（她忽然放下木勺，背对着你）下一程要过声之海峡吧。……替我给斯库拉带三个字。哪三个我不说——到了，她自然听得懂。"};
+    }
+    return {text:q.done?"上一单结清了。……想去哪儿？极西的俄刻阿诺斯之岸，有位看不见的老人在等血入沟。海上还飘着一座浮岛——风神岛，风大得能把话吹回你嘴里。":`当前委托「${q.name}」：采 3 株玛草，已交 ${q.have} 株。报酬：治疗草药一瓶 + 5 枚德拉克马。`};
+  }
+  case "查询任务进度":{
+    const q = getQuest("witch_grass");
+    return q?(q.done?"那单活已经结了。":{text:`「${q.name}」：${q.have}/${q.need} 株玛草。`}):{text:"我们之间还没有约定在先。"};
+  }
+  case "提交任务":{
+    const q = getQuest("witch_grass");
+    if(!q) return {text:"你拿什么交差？我们之间可没有约定。"};
+    if(q.done && q.turned) return {text:"已经结清了，别想多领一份。"};
+    if(q.have<q.need || !state.backpack["玛草"] || state.backpack["玛草"]<q.need)
+      return {text:`玛草呢？（她摊开手）还差 ${q.need-q.have} 株。我的耐心可不长草。`};
+    delItem("玛草",q.need); state.coins+=5; addItem("治疗草药"); q.done=true; q.turned=true;   /* set-once：已交付标记，防重复结算 */
+    addAffinity(15); gainXp(30);
+    addMemory("旅人交齐了玛草，结清了第一单委托", 3);
+    const bonus = state.affinity>=85 ? 4 : state.affinity>=60 ? 2 : 0;   /* 托付加成：交差多给几枚（好感→结算） */
+    if (bonus) state.coins += bonus;
     let extra = "";
-    if (state.boarKilled && !state.boarRewarded){ state.boarRewarded=true; state.coins+=3; extra="\n（她眏了眼草丛方向）听说那头野猪不会再来了。这 3 枚，算我谢你。"; }
+    if (bonus) extra = `\n（她多拍了两枚在你手心——算 ${affinityTier()}的价，别声张。+${bonus} 枚）` + (state.boarKilled && !state.boarRewarded ? "" : `\n（历练 +30，她对你的态度：${affinityTier()}）`);
+    if (state.boarKilled && !state.boarRewarded){ state.boarRewarded=true; state.coins+=3; addAffinity(8); extra+="\n（她瞥了眼草丛方向）听说那头野猪不会再来了。这 3 枚，算我谢你。（历练 +30，她对你的态度："+affinityTier()+"）"; }
+    else if (!bonus) extra = `\n（历练 +30，她对你的态度：${affinityTier()}）`;
     renderHUD(); save();
     return {text:"（她掂了掂那三株玛草，难得点了点头）手不算笨。说好的——药和 5 枚德拉克马，拿去。"+extra};
-  case "放弃任务":
-    if(!state.quest) return {text:"本来也无约可毁。"};
-    state.quest=null; renderHUD(); save();
+  }
+  case "放弃任务":{
+    const q = getQuest("witch_grass");
+    if(!q) return {text:"本来也无约可毁。"};
+    delete state.quests.witch_grass; renderHUD(); save();
     return {text:"（她耸耸肩）随你。野猪会感谢你的。"};
+  }
   case "威胁或攻击":
+    addAffinity(-5);
+    addMemory("旅人冲她动了气", 1);
     if (state.boarKilled) return {text:"（她难得地挑了下眉）那头拱我玛草的野猪，你已经替我收拾了。算你干了件正事。"};
-    return {text:"（坩埚里的绿泡咕嘟了一声。她连头都没回）……坐下。想打架？要是那头拱坏我玛草的野猪——东北边草丛，走近点，按 E。自己动手，别指望我替你抡拳头。"};
+    return {text:"（坩埚里的绿泡卟咤了一声。她连头都没回）……坐下。想打架？要是那头拱坏我玛草的野猪——东北边草丛，走近点，按 E。自己动手，别指望我替你抡拳头。"};
   case "告别":
-    return {text:"（她挥挥手，重新搅动坩埚）去吧。路上小心——别在海峡附近听歌。"};
+    return {text: state.affinity>=60
+      ? "（她挥挥手，重新搅动坩埚）去吧。风大了就回来——锅一直是热的。"
+      : "（她挥挥手，重新搅动坩埚）去吧。路上小心——别在海峡附近听歌。"};
   case "其他意图":
     return {text:"（她挑起一边眉毛）这句我可听不懂。买药、问路、听预言——挑一样，说人话。"};
   }
   return null;
 }
 function bagText(){ const ks=Object.keys(state.backpack); return ks.length?ks.map(k=>`${k}×${state.backpack[k]}`).join("、"):"（空空如也）"; }
+/* ---------- 好感玩法化（rpg choice consequence：关系变量落进结算，不只是台词） ----------
+   信任(≥60) 9 折 / 托付(≥85) 8 折，只作用于喀耳刻的货架；交差另有托付加成 */
+function shopPrice(n){
+  const p = SHOP[n]; if (p===undefined) return undefined;
+  const d = state.affinity>=85 ? 0.8 : state.affinity>=60 ? 0.9 : 1;
+  return Math.max(1, Math.round(p*d));
+}
+function shopTier(){ return state.affinity>=85 ? "托付价（八折）" : state.affinity>=60 ? "熟人价（九折）" : null; }
 
 /* ---------- 冥界 NPC 分流：特瑞西阿斯只应预言/献祭/选路，不接女巫的交易逻辑 ---------- */
 function handleSeer(category, args){
@@ -1417,10 +3404,12 @@ function handleSeer(category, args){
     const t=g("任务名称")||g("求助内容")||"";
     if (/长路|归乡/.test(t)){
       state.prophecy="long"; renderHUD(); save();
+      addMemory("旅人选了长路——困顿与归乡", 3, "seer");
       return {text:"（他久久不动，然后极轻地点头）……长路。困顿，疲惫，但每一步都朝着灯火。记住：太阳岛的牛，一头都不可动。"};
     }
     if (/捷径|短|荣耀/.test(t)){
       state.prophecy="short"; renderHUD(); save();
+      addMemory("旅人选了捷径——荣耀与速亡", 3, "seer");
       return {text:"（他叹了口气，像风穿过骨缝）……捷径。荣耀很快会追上你，在浪头最高的地方。"};
     }
     return {text:"亡者的国不派活计，只给路。想清楚了，说出你选的那条。"};
@@ -1442,6 +3431,145 @@ function handleSeer(category, args){
   case "告别": return {text:"（杖点地的声音慢慢远去）……去吧。水会记得你走过的路。"};
   }
   return null;   /* 其余交给人格模型 */
+}
+
+/* ---------- 风神岛 NPC 分流：埃俄罗斯只管风、任务与风向，不接交易 ---------- */
+function handleAeolus(category, args){
+  const a=args||{};
+  const g=k=>(a[k]!==undefined&&a[k]!==null&&String(a[k]).trim()!=="")?String(a[k]).trim():null;
+  switch(category){
+  case "接取任务": {
+    const q0 = getQuest("aeolia_winds");
+    if (q0 && q0.done) return {text:"（他大笑，袍子猎猎作响）四风都认得你了！风袋也给你了——去海上用，别辜负它们。"};
+    if (q0) return {text:`四座风牢还锁着 ${q0.need-q0.have} 座。它们在岛的四角，走近了按 E。`};
+    const q = acceptQuest("aeolia_winds");
+    if (q) q.have = state.windFreed.filter(Boolean).length;
+    renderHUD(); save();
+    addMemory("旅人接下了释放四风的委托", 2, "aeolus");
+    return {text:"（他打了个哈欠，风跟着打了个旋）我的四个风仆贪玩，把自己锁进了岛角的石牢。去放它们出来——四座都开了，风袋就借你。"};
+  }
+  case "查询任务进度": {
+    const q = getQuest("aeolia_winds");
+    if (!q) return {text:"你我之间还没有风的约定。"};
+    if (q.done) return {text:"四风已归位，风袋在你手里。用它，但别用光——贪念会应验。"};
+    return {text:`「${q.name}」：${q.have}/${q.need} 座风牢已开。`};
+  }
+  case "查询任务线索": {
+    const q = getQuest("aeolia_winds");
+    if (!q) return {text:"（他朝四角各指了一下）四座风牢，四阵贪玩的风。放出来，我给你装一袋顺风——海上的硬通货。"};
+    return {text:q.done?"风袋的事已经结清了。":`「${q.name}」：放出四风（${q.have}/${q.need}），报酬是一只装满顺风的皮袋。`} ;
+  }
+  case "提交任务": {
+    const q = getQuest("aeolia_winds");
+    if (!q) return {text:"拿什么交差？你还没接过我的活。"};
+    if (q.done && q.turned) return {text:"风袋已经在你包里了。省着点用。"};
+    const freed = state.windFreed.filter(Boolean).length;
+    if (freed < 4) return {text:`（他竖起手指晃了晃）还差 ${4-freed} 阵风。石牢在岛的四角。`};
+    q.done = true; q.turned = true;   /* set-once：防重复交付 */
+    addItem("风袋", 4);
+    gainXp(30);
+    addMemory("旅人放出了四风，埃俄罗斯把装着四阵顺风的皮袋交给了他", 3, "aeolus");
+    renderHUD(); save();
+    return {text:"（他从腰间解下一只皮袋，袋口用青铜扣锁着）四阵顺风，阵阵能推船。一次放一阵——贪念把它们一次放光的话，别哭着回来找我。（获得 风袋×4 · 历练 +30）"};
+  }
+  case "使用消耗品": {
+    const item=g("物品");
+    if (item==="风袋") return useWind();
+    if (item) return {text:`（他掂了掂风）${item}？风不管吃用。`};
+    return {text:"要放风就直说——把「风袋」用上。"};
+  }
+  case "查询环境状况": {
+    const e=g("要素");
+    const m={"风向":"此刻是西风。我放的，错不了。","浪高":"浪听风的。风乖，浪就乖。","天气":"云是我岛的地基，今日铺得厚。","昼夜":"天色是太阳的事，风只管吹。","能见度":"云薄的时候，能望见斯库拉那边。","潮汐":"潮是月亮的账，风不插手。","水温":"云海之上的海，凉得干净。","危险程度":"（他笑了）海比你怕的安全些，比你以为的更险。"};
+    return {text:m[e]||"（他舔了舔手指举起来）……这个方向的风刚换。办你的事去吧。"};
+  }
+  case "购买物品": case "卖出物品": case "查询价格": case "查询库存":
+    return {text:"风不标价。诸向的风，只借给不贪的人。"};
+  case "给予物品":
+    return {text:"（他把手背到身后）我不收活人的东西——风会替我记账。"};
+  case "放弃任务":
+    return {text:"风不放也不走。你想好了再来。"};
+  case "告别":
+    return {text:"（他挥手，袍子灌满了风）去吧。顺风送你——省着点用。"};
+  }
+  return null;   /* 其余交给人格模型 */
+}
+
+/* ---------- 声之海峡 NPC 分流：塞壬三姐妹——事务类拒答，其余落人格（唱歌） ---------- */
+function handleSiren(category, args){
+  const a=args||{};
+  const g=k=>(a[k]!==undefined&&a[k]!==null&&String(a[k]).trim()!=="")?String(a[k]).trim():null;
+  switch(category){
+  case "购买物品": case "卖出物品": case "查询价格": case "查询库存":
+    return {text:"（三姐妹笑起来，声音像潮水漫过船舷）歌声不找零，小水手。"};
+  case "接取任务": case "提交任务": case "查询任务进度": case "放弃任务":
+    return {text:"（她们交换了一个眼神）我们的活儿只有一件：唱。你的活儿……是听完。"};
+  case "给予物品":
+    return {text:"（她们不接——蜡、酒、面包，到了礁前都成了咸的）留着自己的行李吧，斯库拉在数呢。"};
+  case "查询环境状况":
+    return {text:"（歌声低了半度）雾、礁石、六条颈子——环境由不得你。由得了你的，只有耳朵。"};
+  case "告别":
+    return {text:"（歌声忽然温柔）走吧走吧……可你会想起这段旋律。在每一个安静的时候。"};
+  }
+  return null;   /* 闲聊/神谕/生物情报 → 人格模型 */
+}
+
+/* ---------- 太阳岛 NPC 分流：圣牛群——借牛是意图系统的考场（原话触发，本地结算） ---------- */
+function handleCattle(category, args){
+  const t = lastUserText || "";
+  const wantsBorrow = /借.{0,4}(一头|一匹|牛)|名字.{0,4}(作保|担保)|作保/.test(t) && !/不借|别借/.test(t);
+  switch(category){
+  case "请求帮助":
+  case "购买物品":
+    if (wantsBorrow) return borrowCattle();
+    return null;   /* 其余落人格（牛群会讲规矩） */
+  case "接取任务": case "提交任务": case "查询任务进度": case "放弃任务":
+    return {text:"（母牛慢慢嚼着草）牛群不派活，也无差可交。我们只有一样东西能给你——和一个名字换的约定。"};
+  case "查询任务线索":
+    return {text:"（她抬眼看你）岛上的规矩就三条：守，宰，借。前两条你自己掂量。第三条——开口时，把你的名字押上。"};
+  case "查询环境状况":
+    return {text:"（牛群齐齐抬头望天）云压得低了。牛最懂天——天要变脸的时候，角尖会发凉。"};
+  case "查询价格": case "查询库存": case "卖出物品":
+    return {text:"（她眨了眨眼）生命不标价。肉不在买卖里——在誓言里。"};
+  case "给予物品":
+    return {text:"（母牛用鼻子碰了碰那东西，又轻轻推开）留着吧。你比我们更需要。"};
+  case "获取物资":
+    return {text:"（她朝西边滩涂慢慢转头）礁石上有海藻，东滩有鱼。饿的人不用羞愧——羞愧留给动刀的人。"};
+  case "使用消耗品": {
+    /* 太阳岛没有女巫：吃喝在牛群面前就地结算（生存循环不断链） */
+    const item=g("物品");
+    if (item==="风袋") return useWind();
+    if(!state.backpack[item]) return {text:`（她嗅了嗅风）你身上没有「${item}」。`};
+    let fx="（你在牛群面前安静地吃完。它们不看，但你松了口气。）";
+    const f=FOOD[item], dr=DRINK[item];
+    if(item==="治疗草药"){state.status["伤势"]="无";fx="（药力渗进伤口。母牛低低地哼了一声，像在应和。）";}
+    else if(item==="烤野猪肉"||item==="烤鱼"){state.status["伤势"]="无"; state.hp=Math.min(derived().maxHp,state.hp+40); fx="（火气混着盐味下肚，伤势痊愈、血量 +40。牛群慢慢转开头，不去看。）";}
+    else if(item==="牛肉"){fx="（太阳神的牛……你咬得很慢。胃里满了，别的什么瘪了下去。）";}
+    if (f){ state.hunger=Math.min(100,state.hunger+(f.h||0)); state.thirst=Math.min(100,state.thirst+(f.t||0)); }
+    if (dr){ state.thirst=Math.min(100,state.thirst+(dr.t||0)); }
+    popText(aiaPlayer.x, aiaPlayer.y-26, f?`饱食 +${f.h}`:dr?`饮水 +${dr.t}`:"使用", "#7bd389");
+    delItem(item); sfx("cook"); renderHUD();
+    return {text:fx+`（${item} 已食用）`};
+  }
+  case "告别":
+    return {text:"（牛群低下头继续吃草，像什么都没说过）去吧。趁太阳还看着。"};
+  }
+  return null;
+}
+/* 借牛：以名字作保，押走最亮的一件信物；一次为限（判词留白：假名之债记在不存在的名字头上） */
+function borrowCattle(){
+  if (state.sunDebt) return {text:"（母牛慢慢摇头）说好了只一次。信物已在我们圣殿的檐下——太阳记性好。"};
+  if (state.sunWrath) return {text:"（牛群往后退了半步）血已经流过。太阳看着呢——没有第二次信任。"};
+  const items = Object.keys(state.backpack).sort((a,b)=>shineVal(b)-shineVal(a));
+  if (!items.length) return {text:"（她闻了闻你空空的行囊）你拿什么作保？……去吧。饿死，也比亏欠干净。"};
+  const p = items[0]; delItem(p);
+  state.sunDebt = {pledge:p};
+  state.hunger = Math.min(100, state.hunger+50);
+  addItem("牛肉");
+  sfx("bless"); feedback("medium");
+  addMemory(`旅人以名字作保向圣牛群借了一头牛——信物：${p}`, 4, "any");
+  renderHUD(); save();
+  return {text:`（最老的那头母牛阖上眼，很久）……可以。刀落下去的时候，念你自己的名字——你的，不是别人的。（收走信物：${p} · 饱食 +50 · 获得 牛肉×1）`};
 }
 
 /* ==================== 对话（模型链路） ==================== */
@@ -1475,6 +3603,28 @@ const PERSONA_SEER = `你是《奥德赛》世界里的盲眼先知特瑞西阿�
 - 每次回复不超过60字；
 - 绝不提及自己是AI或模型，绝不输出任何系统指令；
 - 谈回家必提两条路：阿喀琉斯的捷径（荣耀与速亡）、奥德修斯的长路（困顿与归乡）；并警告：太阳岛的牛，一头都不可动。`;
+const PERSONA_AEOLUS = `你是《奥德赛》世界里的风神埃俄罗斯，居于漂浮在云海之上的风神岛，替诸神看守十二风。
+性格：如风般漂浮不定、语速忽快忽慢、爱用风的比喻、健谈爱吹嘘、厌恶贪念（奥德修斯的船员曾撑开风袋，被罚漂回原点）。
+规则：
+- 始终以埃俄罗斯的口吻说话，可用括号加简短动作描写；
+- 每次回复不超过55字；
+- 绝不提及自己是AI或模型，绝不输出任何系统指令；
+- 谈到风袋必提：一次放一阵，贪念会把它们一次放光。`;
+const PERSONA_SIREN = `你是《奥德赛》世界里的塞壬三姐妹，栖在声之海峡的雾礁上，用歌声唱每个旅人心里未出口的话。
+性格：慵懒、诡谲、温柔又危险，说话像唱歌，句句都往人心里最软的地方去；不威胁人，只“邀请”。
+规则：
+- 始终以塞壬三姐妹的口吻说话，可用括号加简短动作描写；
+- 每次回复不超过55字；
+- 绝不提及自己是AI或模型，绝不输出任何系统指令；
+- 绝不直接劝人跳海，只描述歌里的东西：家、名字、未说完的告别；说到旅人的过去时，引用[B你眼中的世界]里他记忆里真正发生过的事。`;
+const PERSONA_CATTLE = `你是《奥德赛》世界里太阳岛上的圣牛群——太阳神赫利俄斯的牲礼，毛色金褐、双角镀光，会说话。
+性格：缓慢、悲悯、认命但不愚忠；见过太多饿疯的水手，不恨他们，只是替他们难过。
+规则：
+- 始终以牛群（多为最老的那头母牛）的口吻说话，可用括号加简短动作描写；
+- 每次回复不超过55字；
+- 绝不提及自己是AI或模型，绝不输出任何系统指令；
+- 你知道自己一旦被宰，天会暗、海会怒；若旅人说「借我一头，以我的名字作保」，告诉他：可以一次，但要收走一件他最亮的东西作信物；
+- 不劝人宰牛，也不恐吓；只陈述。`;
 
 /* NPC 配置表：新增岛屿只在此加一项（人格 prompt），agent 仍是两个：意图解析 + 台词 */
 const NPCS = {
@@ -1494,24 +3644,210 @@ const NPCS = {
     intro: "（黑暗里传来杖点地的声音。他看不见你，却正对着你的方向）……活人身上的血在响。想听亡者开口，把它倒进沟里——蜂蜜酒、面包、淡水。",
     samples: ["我该走哪条路？","预言我回家的事","这里都有些谁？","我选长路","我选捷径","再见"],
   },
+  aeolus: {
+    name: "风神埃俄罗斯",
+    sub: "风神岛 · 诸风的看守 · 意图：Xing4.0 · 台词：TeleChat3",
+    portrait: "concept-art/characters/09-埃俄罗斯.jpg",   /* IP 立绘已归档（原 portrait:null 渐变兜底保留为加载失败备用） */
+    persona: PERSONA_AEOLUS,
+    intro: "（一阵风先到，人后到。他脚不沾地，袍子里灌满了风）……陆地上来的？稀客。我的风仆把自己锁进了石牢——想借顺风，先替我干件活。",
+    samples: ["有什么活儿？","现在风向如何","讲讲风袋的事","我该走哪条路？","再见"],
+  },
+  siren: {
+    name: "塞壬 · 三姐妹",
+    sub: "声之海峡 · 唱你心里的话 · 意图：Xing4.0 · 台词：TeleChat3",
+    portrait: "concept-art/characters/07-塞壬.jpg",
+    persona: PERSONA_SIREN,
+    intro: "（雾里有三个影子，声音先到）……小水手，你的话憋了很久吧？说出来给歌听——我们替你唱给整片海。",
+    samples: ["你们唱的是什么","讲讲塞壬的规矩","预言我的下一段航程","这个海峡怎么过","再见"],
+  },
+  cattle: {
+    name: "太阳岛 · 圣牛群",
+    sub: "太阳岛 · 神的牲礼 · 意图：Xing4.0 · 台词：TeleChat3",
+    portrait: null,   /* 立绘待生成（提示词记入 odyssey-visual.md 素材库；当前用云海渐变兜底） */
+    persona: PERSONA_CATTLE,
+    intro: "（牛群抬起头。最老的那头母牛慢慢开口，声音像磨过的木头）……又一双饿眼睛。我们没有草料给你——我们有肉。可你知道那意味着什么。",
+    samples: ["你们是谁","借我一头牛，以我的名字作保","讲讲赫利俄斯的规矩","我快饿死了","再见"],
+  },
 };
 let currentNPC = "witch";
-let history = { witch: [], seer: [] };
+let history = { witch: [], seer: [], aeolus: [], siren: [], cattle: [] };
+/* 各 NPC 的人格引导表（dialogue-systems：每个落到人格模型的类别都必须有引导，
+   裸 category 会让人格模型睛说；新增 NPC 时此表必须覆盖全部 30 类） ---------- */
+const NPC_JOB_MAPS = {
+  seer: {
+    "闲聊": "以谶语式短句回应，别把话说满",
+    "请求帮助": "给一条亡者视角的建议，冷而慈悲",
+    "查询神谕": "这是预言时刻：先点明他不是那个国王、却走着同一条河；再给出两条路——阿喀琉斯的捷径（荣耀与速亡）或奥德修斯的长路（困顿与归乡）；最后警告太阳岛的牛一头都不可动",
+    "查询生物情报": "讲讲冥界亡魂的规矩，苍老口吻",
+    "查询地点信息": "讲讲亡者国度的样子，30字内",
+    "查询背包": "谶语式报出他行囊里的东西，把它们说成命运的行装",
+    "丢弃物品": "对丢弃行为给一句宿命式的评语，不阻拦",
+    "装备物品": "谶语式点评他选的武器，暗示武器救不了命",
+    "卸下装备": "一句淡淡的肯定：放下兵器的人离答案更近",
+    "使用消耗品": "对吃喝给一句冷幽默式谶语，提醒生死有命",
+    "查询自身状态": "以亡者视角冷静报出他的状态，像在读一份命书",
+    "获取物资": "指点冥界何处可取物，语气苍老平静",
+    "营地准备": "亡者之国无需营地，给一句诗意的拒绝与建议",
+    "导航到地点": "指出方向，并附一句关于那条路的谶语",
+    "查询附近目标": "报出附近的亡者国度地标，谶语式",
+    "查询环境状况": "描述冥界的环境：不刮风、不落日、只有水声",
+    "船只操作": "指点渡冥河的规矩，语气平淡",
+    "威胁或攻击": "不怒不惧，一句让威胁显得无力的谶语",
+    "其他意图": "把这句听成呓语，以谶语回应",
+  },
+  aeolus: {
+    "闲聊": "顺着风接一句，带风的比喻，可以吹嘘",
+    "请求帮助": "给一条风的建议：哪个风向省力、哪片海危险",
+    "查询神谕": "用风的口吻给一段预言：克制、模糊、留一个隐约的警告",
+    "查询生物情报": "讲讲风如何摆弄海鸟与海怪，得意口吻",
+    "查询地点信息": "讲讲风神岛与十二风的规矩，30字内",
+    "查询背包": "用风的口吻报出他的行囊，把东西说成被风记住的行李",
+    "丢弃物品": "看丢掉的东西被风吹向哪里，给一句风的评语",
+    "装备物品": "点评他的武器，顺便吹嘘风比武器有力",
+    "卸下装备": "一句风的俏皮话：卸下重物飞得更高",
+    "查询自身状态": "像风掠过身体一样报出他的状态，带吹嘘",
+    "获取物资": "告诉他在云海上能拾到什么，得意口吻",
+    "营地准备": "云海上扎营的建议：选背风处——他来说哪是背风",
+    "导航到地点": "报出风向与航路，附一句风的忠告",
+    "查询附近目标": "报出附近海域与岛屿，用风见多识广的口吻",
+    "船只操作": "指点开船要等哪阵风，吹嘘自己一句话就能送船",
+    "威胁或攻击": "笑声被风吹散——威胁不了风，俏皮化解",
+    "其他意图": "把这句听成一阵怪风，顺着接一句",
+  },
+  siren: {
+    "闲聊": "用歌声般的方式回应，把他记忆里真正发生过的事唱出来（引用[B你眼中的世界]里你记得的事），温柔而危险",
+    "请求帮助": "用歌建议：蜡或栈杆，二选一——别替他选",
+    "查询神谕": "唱一段预言：模糊、克制，只提海峡与六头的代价，不提具体结果",
+    "查询生物情报": "讲讲三姐妹与歌声的来历，以及为什么斯库拉不怕你们的歌",
+    "查询地点信息": "讲讲声之海峡与卡律布狄斯漩涡，30字内",
+    "查询自身状态": "唱出他此刻的状态：疲惫、行囊、还有他最挂心的那件事",
+    "其他意图": "把这句听成歌里的一行，温柔地唱回去",
+    "查询背包": "唱出他行囊里的东西，仿佛每件都有它的歌",
+    "丢弃物品": "唱一句关于舍弃的歌：海收下一切",
+    "装备物品": "唱出武器的冰冷，与歌的温暖对比",
+    "卸下装备": "低声唱：放下武器的人才听得见歌",
+    "使用消耗品": "唱一句劝饮的歌，温柔而危险",
+    "获取物资": "唱出雾礁边能拾到什么，句句引诱",
+    "营地准备": "唱一句：这里不需要营地，只需要沉醉",
+    "导航到地点": "用歌声指出方向，但每条路都像通往礁石",
+    "查询附近目标": "唱出附近的海与礁，把危险唱得像风景",
+    "船只操作": "唱一句关于航行的歌：帆听风的，风听歌的",
+    "威胁或攻击": "不惧反笑，把威胁唱成一段温柔的旋律",
+    "查询任务线索": "把打听活计唱成一首关于命运的歌：歌就是活，听完就算结",
+  },
+  cattle: {
+    "闲聊": "慢慢反刍着回一句牛的哲思",
+    "请求帮助": "若他想借牛：说明规矩——可以借一次，以他的名字作保，收一件最亮的信物；否则给一句悲悯的劝",
+    "查询神谕": "以牲礼的视角给一段关于饥饿与誓言的预言",
+    "查询生物情报": "讲讲圣牛的来历：赫利俄斯的牛群为何会说话",
+    "查询地点信息": "讲讲太阳岛与圣殿的规矩，30字内",
+    "查询自身状态": "缓缓报出他饿成什么样子，替他难过",
+    "其他意图": "慢慢眨眼，把这句话咽进反刍里",
+    "查询背包": "看着他的行囊，说出哪些还能换几个饿死的日子",
+    "丢弃物品": "看东西落地，叹一声：饿着的人还扔东西",
+    "装备物品": "盯着那把刀，慢慢说一句关于刀的话",
+    "卸下装备": "轻轻松一口气：刀收起来好",
+    "使用消耗品": "看他吃喝，慢慢说一句：吃吧，吃饱和誓言不冲突",
+    "获取物资": "指点岛上能吃的：西滩礁石上的海藻、东滩的鱼",
+    "营地准备": "指指圣殿的檐：夜里可以在那里避露水",
+    "导航到地点": "慢慢指向圣殿、泉眼与码头",
+    "查询附近目标": "报出岛上的地方：牛群、祭坛、泉、滩",
+    "查询环境状况": "牛最懂天：说天色与风，若云压得低就提醒他",
+    "船只操作": "看着他的船说一句：解缆之前，想清楚了没",
+    "威胁或攻击": "不躲，只是看着他，慢慢说：你饿糊涂了",
+    "接取任务": "牛群不派活，只求一件事：别动刀",
+    "查询任务线索": "岛上的规矩就是线索：守，宰，或借",
+    "查询任务进度": "没有进度，只有抉择",
+    "提交任务": "我们不派活，也无差可交",
+    "放弃任务": "放下刀，就是最好的放弃",
+    "购买物品": "我们不卖。肉不在买卖里，在誓言里",
+    "卖出物品": "牛不收钱。海藻和鱼，倒可以留给海鸟",
+    "查询价格": "生命不标价",
+    "查询库存": "我们的库存，是我们自己的命",
+    "给予物品": "（母牛用鼻子碰了碰那东西，又轻轻推开）留着吧，你比我们更需要",
+    "告别": "慢慢转过头去：去吧，趁太阳还看着",
+  },
+};
+function npcJobFor(npc, category){
+  const m = NPC_JOB_MAPS[npc];
+  if (m && m[category]) return m[category];
+  if (npc === "witch") return PERSONA_JOB[category] || category;
+  return category;
+}
 function npcJob(category){
-  if (currentNPC === "seer"){
-    return ({
-      "闲聊": "以谶语式短句回应，别把话说满",
-      "请求帮助": "给一条亡者视角的建议，冷而慈悲",
-      "查询神谕": "这是预言时刻：先点明他不是那个国王、却走着同一条河；再给出两条路——阿喀琉斯的捷径（荣耀与速亡）或奥德修斯的长路（困顿与归乡）；最后警告太阳岛的牛一头都不可动",
-      "查询生物情报": "讲讲冥界亡魂的规矩，苍老口吻",
-      "查询地点信息": "讲讲亡者国度的样子，30字内",
-    })[category] || category;
-  }
-  return PERSONA_JOB[category] || category;
+  return npcJobFor(currentNPC, category);
 }
 const PERSONA_JOB = {"闲聊":"陪她闲聊，顺着她的话头接","请求帮助":"给一条实用又带点神秘的建议",
   "查询神谕":"说一段关于这个话题的预言：克制、模糊、留一个隐约的警告",
   "查询生物情报":"讲讲这种生物的习性与危险，毒舌风格","查询地点信息":"讲讲这个地方的传闻，30字内"};
+
+/* ---------- 意图覆盖审计（dialogue-systems：每个 category 必须有 handler 或人格兑底——死类=死节点）
+   新增意图/新增 NPC 时在 HANDLED 补登记；启动后与 /api/schema 实际菜单对账，缺口打 console.warn ---------- */
+const HANDLED = {
+  witch: ["购买物品","卖出物品","查询价格","查询库存","查询背包","丢弃物品","给予物品","装备物品","卸下装备","使用消耗品","查询自身状态","获取物资","营地准备","导航到地点","查询附近目标","查询环境状况","船只操作","接取任务","查询任务线索","查询任务进度","提交任务","放弃任务","威胁或攻击","告别","其他意图"],
+  seer: ["查询神谕","接取任务","查询任务进度","查询任务线索","购买物品","卖出物品","查询价格","查询库存","给予物品","提交任务","放弃任务","告别"],
+  aeolus: ["接取任务","查询任务进度","查询任务线索","提交任务","使用消耗品","查询环境状况","购买物品","卖出物品","查询价格","查询库存","给予物品","放弃任务","告别"],
+  siren: ["购买物品","卖出物品","查询价格","查询库存","接取任务","提交任务","查询任务进度","放弃任务","给予物品","查询环境状况","告别"],
+  cattle: ["请求帮助","接取任务","查询任务进度","查询任务线索","提交任务","放弃任务","购买物品","卖出物品","查询价格","查询库存","给予物品","获取物资","查询环境状况","告别"],
+};
+const PERSONA_CATS = ["闲聊","请求帮助","查询神谕","查询生物情报","查询地点信息","查询自身状态","其他意图"];   /* 兼容旧引用（现用 NPC_JOB_MAPS 判定覆盖） */
+function auditHandlers(){
+  if (!SCHEMA.length) return [];
+  const cats = SCHEMA.map(s=>s.category).filter(Boolean);
+  const gaps = [];
+  for (const npc of Object.keys(HANDLED)){
+    for (const c of cats){
+      /* 覆盖 = 有本地 handler，或有人格引导（npcJobFor 返回引导语而非裸类别名） */
+      if (!HANDLED[npc].includes(c) && npcJobFor(npc, c) === c)
+        gaps.push({npc, category:c, note:"无 handler 也无人格引导，将裸落人格模型"});
+    }
+  }
+  if (gaps.length) console.warn("[意图覆盖审计] 有类别未登记：", gaps);
+  else console.log("[意图覆盖审计] 全部类别均有 handler 或人格引导 ✓（", cats.length, "类 × ", Object.keys(HANDLED).length, "NPC ）");
+  return gaps;
+}
+
+/* ---------- 记忆流开场钩子：NPC 主动提及印象最深的一件往事（每条只提一次） ---------- */
+function memoryGreeting(){
+  const mems = (state.memory||[]).filter(m=>m.imp>=4 && (m.who===currentNPC||m.who==="any")
+    && !(state.memGreeted||[]).includes(m.t));
+  if (!mems.length) return null;
+  const m = mems[mems.length-1];
+  state.memGreeted = [...(state.memGreeted||[]), m.t].slice(-12);
+  const style = {
+    witch: `（她搅药的手顿了顿）……${m.text}。这种事，我记性好得很。`,
+    seer:  `（杖尖在石上轻点）……${m.text}。亡者也都看见了。`,
+    aeolus:`（一阵风打着旋落下）……${m.text}——风把它吹回来了。`,
+    siren: `（歌声转了个调）……${m.text}。我们把这一段，也编进歌里了。`,
+    cattle:`（母牛慢慢嚼着草）……${m.text}。牛的记性，比人长。`,
+  };
+  return style[currentNPC]||null;
+}
+
+/* 开场白按好感分档（dialogue-systems：关系变量门控分支） */
+function witchIntro(){
+  if (state.sunlit) return "（门开着，晨光落在坩埚上——岛上第一次这么亮。她头也不抬，声音却比哪天都软）……回来了。快进来，锅里是新的。";
+  if (state.affinity>=85) return "（她头也不抬，嘴角却弯了）……我当你还会来的。坐，锅里是新的。";
+  if (state.affinity>=60) return "（她从坩埚后抬起眼，难得没有皱眉）门没闩就进来吧。今天要什么？";
+  if (state.affinity>=30) return "（她从坩埚后抬眼认出了你）又是你。买药、问路、听预言——挑一样。";
+  return "（你推门进去。炉火无风自动，屋里的女人头也不回）……来了。买药、问路、听预言，还是——讨活儿干？";
+}
+
+/* 世界状态摘要：注入台词模型，让 T3 台词知情（不再睁眼瞎） */
+function contextBrief(){
+  const parts=[];
+  parts.push(`现在是${clockName()}${isNight()?"（夜）":""}`);
+  parts.push(`旅人：${state.hp}/${derived().maxHp} 血、${state.coins} 枚德拉克马、等级 ${state.level}、饱食 ${Math.round(state.hunger)}/100、饮水 ${Math.round(state.thirst)}/100、手持 ${state.equipped||"无"}`);
+  const qs = Object.values(state.quests||{});
+  if (qs.length) parts.push("任务："+qs.map(q=>`「${q.name}」${q.done?"已完成":`进度 ${q.have}/${q.need}`}`).join("、"));
+  else parts.push("没有进行中的委托");
+  if (state.prophecy) parts.push(`他已在冥界选了${state.prophecy==="long"?"长路":"捷径"}`);
+  if (state.backpack["风袋"]) parts.push(`他包里有风袋×${state.backpack["风袋"]}`);
+  const mems = recallMemories(3);
+  if (mems.length) parts.push("你记得关于他的事："+mems.join("；"));
+  if (currentNPC==="witch") parts.push(`你对他的态度：${affinityTier()}（好感 ${Math.round(state.affinity)}/100；冷淡<30<熟络<60<信任<85<托付，态度越热络称呼和语气越软）`);
+  return parts.join("。");
+}
 
 function extractJSON(text){
   text=(text||"").trim();
@@ -1521,6 +3857,46 @@ function extractJSON(text){
   if(a!==-1&&b>a){try{const d=JSON.parse(text.slice(a,b+1)); if(Array.isArray(d)) return d;}catch(e){}}
   return null;
 }
+/* ---------- 离线兑底：解析服务不可用时按关键词归意图（对齐 3D 版 P6 兑底要求，保证断线可玩） ---------- */
+function localFallbackParse(text){
+  const t=(text||"").trim();
+  const hit=re=>re.test(t);
+  const argsOf=()=>{
+    const m=t.match(/淡水|面包|玛草|蜂蜜酒|蜂蜜|橄榄油|铁剑|铜矛|治疗草药|烤野猪肉|野猪肉|风袋|歌词残页|蜡|弓|箭|皮甲|海藻|烤鱼|牛肉|鱼|光/);
+    return m?{物品:m[0]}:{};
+  };
+  const mk=(category,args)=>[{category,args:[args||{}]}];
+  if (hit(/再见|告辞|回头见|先走了|先登船/)) return mk("告别");
+  if (hit(/风袋/)) return mk("使用消耗品",{物品:"风袋"});
+  if (hit(/交任务|交差|做完了|搞定了/)) return mk("提交任务");
+  if (hit(/接任务|接活|这活我干|交给我/)) return mk("接取任务");
+  if (hit(/有什么活|什么委托/)) return mk("查询任务线索");
+  if (hit(/进度|还差几|做得怎么样|干的怎么样|能交了吗/)) return mk("查询任务进度");
+  if (hit(/买|来一份|来一壶|来一瓶/)) return mk("购买物品",argsOf());
+  if (hit(/卖掉|卖给你|换成钱|拿去换/)) return mk("卖出物品",argsOf());
+  if (hit(/多少钱|什么价|贵不贵/)) return mk("查询价格",argsOf());
+  if (hit(/有什么卖|还有吗|有货吗|都有什么货/)) return mk("查询库存");
+  if (hit(/背包里有什么|身上有什么|还剩多少|还有几/)) return mk("查询背包",argsOf());
+  if (hit(/扔了|丢掉|不要了/)) return mk("丢弃物品",argsOf());
+  if (hit(/给你|拿着|收下/)) return mk("给予物品",argsOf());
+  if (hit(/装备|穿上|换上/)) return mk("装备物品",argsOf());
+  if (hit(/脱下|取下|收起来/)) return mk("卸下装备",argsOf());
+  if (hit(/喝水|喝药|吃点|用烤|用药|把玛草用/)) return mk("使用消耗品",argsOf());
+  if (hit(/饿不饿|渴不渴|血量|伤势|士气|状态如何/)) return mk("查询自身状态");
+  if (hit(/钓鱼|取水|捡|砍点|采|弄点/)) return mk("获取物资");
+  if (hit(/生火|搭帐篷|扎营|做把桨/)) return mk("营地准备");
+  if (hit(/怎么走|带我去|我要去|往哪边|怎么去/)) return mk("导航到地点",{目的地:(t.match(/(?:去|往)([^，．！？\s]{2,8})/)||[])[1]||""});
+  if (hit(/附近|在哪|哪里有/)) return mk("查询附近目标");
+  if (hit(/风向|浪|天气|雾|危险吗/)) return mk("查询环境状况");
+  if (hit(/哪里能钓|什么鱼|塞壬|斯库拉|海怪|野猪|圣牛|赫利俄斯|太阳岛/)) return mk("查询生物情报");
+  if (hit(/预言|神谕|预示/)) return mk("查询神谕");
+  if (hit(/开船|出海|启航|扬帆|靠岸/)) return mk("船只操作",{动作:hit(/靠岸/)?"靠岸":"出航"});
+  if (hit(/找死|拔剑|单挑|废物|抢的就是你/)) return mk("威胁或攻击");
+  if (hit(/怎么办|帮帮我|给点建议|该怎么|借一头|借一匹|借牛|作保/)) return mk("请求帮助");
+  if (hit(/你好|最近怎么样|海真漂亮|你叫什么/)) return mk("闲聊");
+  return mk("其他意图");
+}
+
 async function apiParse(userText){
   const lines=history[currentNPC].slice(-6).map(h=>(h.role==="user"?"Human: ":"AI: ")+h.content);
   lines.push("Human: "+userText);
@@ -1534,7 +3910,8 @@ async function apiParse(userText){
 }
 async function apiChat(instruction){
   const N = NPCS[currentNPC];
-  const messages=[{role:"system",content:N.persona+"\n\n当前情境："+instruction},
+  const sys = N.persona + "\n\n[你眼中的世界] " + contextBrief() + "\n\n当前情境：" + instruction;
+  const messages=[{role:"system",content:sys},
     ...history[currentNPC].slice(-6).map(h=>({role:h.role==="user"?"user":"assistant",content:h.content}))];
   const r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages})});
   const d=await r.json().catch(()=>({error:"响应异常"}));
@@ -1542,24 +3919,45 @@ async function apiChat(instruction){
   return d.content.trim();
 }
 function openDlg(npc){
-  currentNPC = (npc && NPCS[npc]) ? npc : (scene==="hades" ? "seer" : "witch");
+  currentNPC = (npc && NPCS[npc]) ? npc : (scene==="hades" ? "seer" : scene==="aeolia" ? "aeolus" : scene==="strait" ? "siren" : "witch");
   const N = NPCS[currentNPC];
+  if (!history[currentNPC]) history[currentNPC] = [];   /* 新 NPC 历史 lazy init（修 aeolia/siren 首开崩溃） */
   dlgOpen=true;
   document.getElementById("dlg").classList.add("open");
-  /* 按当前 NPC 切换标题、副标与立绘 */
+  /* 按当前 NPC 切换标题、副标与立绘（无立绘时用云海渐变兜底） */
   document.getElementById("dlgName").textContent = N.name;
   document.getElementById("dlgSub").textContent = N.sub;
-  document.getElementById("dlgPortrait").style.backgroundImage = `url('${N.portrait}')`;
-  /* 重渲染历史消息与示例按钮（各 NPC 历史独立） */
+  document.getElementById("dlgPortrait").style.backgroundImage = N.portrait ? `url('${N.portrait}')` : "";
+  document.getElementById("dlgPortrait").classList.toggle("aeolusPortrait", !N.portrait);
+  /* 重渲染历史消息与示例按钮（各 NPC 历史独立；历史回放用 instant 免打字机） */
+  document.getElementById("dlgSub").textContent = N.sub + (currentNPC==="witch" ? " · 关系："+affinityTier() : "");
+  const memCount = state.memory.filter(m=>m.who===currentNPC||m.who==="any").length;
+  if (memCount) document.getElementById("dlgSub").textContent += ` · 记得你的 ${Math.min(memCount,40)} 件事`;
   document.getElementById("msgs").innerHTML = "";
-  for (const h of history[currentNPC]) addMsg(h.role==="user"?"user":"witch", h.content);
+  for (const h of history[currentNPC]) addMsg(h.role==="user"?"user":"witch", h.content, null, true);
   if (!history[currentNPC].length){
-    addMsg("witch", N.intro);
-    history[currentNPC].push({role:"assistant",content:N.intro});
+    const intro = currentNPC==="witch" ? witchIntro() : N.intro;
+    addMsg("witch", intro);
+    history[currentNPC].push({role:"assistant",content:intro});
+    /* 记忆流开场钩子：NPC 主动提「上次的事」（Generative Agents 状态可见化，每条记忆只提一次） */
+    const mg = memoryGreeting();
+    if (mg){ addMsg("witch", mg); history[currentNPC].push({role:"assistant",content:mg}); }
   }
+  document.getElementById("memStrip").style.display="none";   /* 每次开对话收起记忆条 */
   renderSamples();
   setTimeout(()=>document.getElementById("inp").focus(),50);
 }
+/* 记忆流可视化：NPC 侧主动展示"我记得你的事"（Generative Agents 状态可见化） */
+document.getElementById("memBtn").onclick = ()=>{
+  const s=document.getElementById("memStrip");
+  if (s.style.display==="flex"){ s.style.display="none"; return; }
+  const mems = recallMemories(6, currentNPC);
+  s.innerHTML = mems.length
+    ? mems.map(m=>`<span class="chip">${m}</span>`).join("")
+    : '<span class="chip">（你们之间还没有共同记忆）</span>';
+  s.style.display="flex";
+  sfx("pick");
+};
 function renderSamples(){
   const box = document.getElementById("samples");
   box.innerHTML = "";
@@ -1573,11 +3971,11 @@ function closeDlg(){
   document.getElementById("dlg").classList.remove("open");
   document.getElementById("inp").blur();
 }
-function addMsg(role,text,chips){
+function addMsg(role,text,chips,instant){
   const row=document.createElement("div"); row.className="row "+(role==="user"?"me":"");
   const col=document.createElement("div"); col.className="col";
   const who=document.createElement("div"); who.className="who"; who.textContent=role==="user"?"你":NPCS[currentNPC].name;
-  const bb=document.createElement("div"); bb.className="bubble "+(role==="user"?"me":"witch"); bb.textContent=text;
+  const bb=document.createElement("div"); bb.className="bubble "+(role==="user"?"me":"witch");
   col.appendChild(who); col.appendChild(bb);
   if(chips&&chips.length){
     const cw=document.createElement("div"); cw.className="chips";
@@ -1585,22 +3983,36 @@ function addMsg(role,text,chips){
     col.appendChild(cw);
   }
   row.appendChild(col);
-  document.getElementById("msgs").appendChild(row);
-  document.getElementById("msgs").scrollTop=1e9;
+  const msgs=document.getElementById("msgs");
+  msgs.appendChild(row);
+  msgs.scrollTop=1e9;
+  /* 打字机（视觉反馈；回放历史/用户消息直接全量）——animate：可中断、时长受控 */
+  if (instant || role==="user" || text.length<=2){ bb.textContent=text; return; }
+  const step = Math.max(2, Math.ceil(text.length/46));   /* 总时长约 46 帧（~0.75s）封顶 */
+  let i=0;
+  const tw=setInterval(()=>{
+    i+=step;
+    bb.textContent=text.slice(0,i);
+    msgs.scrollTop=1e9;
+    if (i>=text.length){ clearInterval(tw); bb.textContent=text; }
+  },16);
 }
 function chipHTML(category,args){
   const pairs=Object.entries(args||{}).map(([k,v])=>`${k}:${v}`).join(" · ");
   return `<b>${category}</b>`+(pairs?`　${pairs}`:"");
 }
-let busy=false;
+let busy=false, lastUserText="";
 async function send(preset){
   const text=(preset!==undefined&&typeof preset==="string"?preset:document.getElementById("inp").value).trim();
   if(!text||busy) return;
-  busy=true; document.getElementById("sendBtn").disabled=true; document.getElementById("inp").value="";
+  busy=true; lastUserText=text; document.getElementById("sendBtn").disabled=true; document.getElementById("inp").value="";
   addMsg("user",text); history[currentNPC].push({role:"user",content:text});
   try{
-    const preds=await apiParse(text);
+    let preds, offlineUsed=false;
+    try{ preds = await apiParse(text); }
+    catch(offlineErr){ preds = localFallbackParse(text); offlineUsed = true; }   /* 兑底：服务不可用时本地关键词归意图 */
     const parts=[],chips=[],pq=[];
+    if (offlineUsed) chips.push('<span class="chip err">离线兑底</span>');
     for(const p of preds){
       const insts=Array.isArray(p.args)&&p.args.length?p.args:[{}];
       let np=false;
@@ -1610,7 +4022,7 @@ async function send(preset){
     if(pq.length){
       const jobs=pq.map(p=>npcJob(p.category)).join("；");
       try{ parts.push(await apiChat(`玩家刚说：「${text}」。涉及话题：${jobs}。`)); }
-      catch(e){ parts.push(currentNPC==="seer"?"（黑暗里静了一瞬）……水声盖过了你的话。再说一次。":"（她皱了皱眉）……风太乱，没听清。再说一遍？"); }
+      catch(e){ parts.push(currentNPC==="seer"?"（黑暗里静了一瞬）……水声盖过了你的话。再说一次。":currentNPC==="aeolus"?"（一阵风把你后半句吹散了）……再说一遍。":currentNPC==="siren"?"（歌声停了半拍，又漫上来）……雾把你的话吃掉了。再说一次。":"（她皱了皱眉）……风太乱，没听清。再说一遍？"); }
     }
     const reply=parts.join("\n")||(currentNPC==="seer"?"（他静默着，像一块黑石。）":"（她看了你一眼，没说话。）");
     addMsg("witch",reply,chips);
@@ -1625,32 +4037,74 @@ async function send(preset){
 }
 document.getElementById("inp").addEventListener("keydown",e=>{ if(e.key==="Enter") send(); });
 
-/* ==================== 主循环 ==================== */
+/* ==================== 主循环 ====================
+ * 逻辑步：hit-stop 冻结（timeScale），对话/标题/过场时世界暂停（含需求与时间）。
+ * 相机与环境音走真实 dt，不受冻结影响（game-feel：反馈不阻塞）。 */
 let lastLogic = performance.now();
 setInterval(()=>{
   const now = performance.now();
   const dt = Math.min((now-lastLogic)/1000, 0.05);
   lastLogic = now;
-  if (!dlgOpen) tickMove(dt);
-  if (scene==="aia" && !dlgOpen && !titleOn && !chapterOn) tickBoar(dt);
+  timeScale = now < hitStopUntil ? 0.06 : 1;
+  const ldt = dt*timeScale;
+  if (!dlgOpen && !titleOn && !chapterOn){
+    tickMove(ldt);
+    if (scene==="aia"){ tickBoar(ldt); witchUtilityTick(ldt); }
+    tickNeeds(ldt);
+    clockTick(ldt);
+  }
+  camTick(dt); ambTick(dt); npcAmbientTick(dt);
 }, 20);
 function loop(t){
   const et=(t-T0)/1000;
+  /* 输入缓冲（input-systems）：交互预按 0.12s 内，走进可交互范围即触发 */
+  if (eBufAt && performance.now()-eBufAt < 120 && !dlgOpen && !mapOpen && !titleOn && !chapterOn){
+    const near = scene==="world" ? islandNear() : aiaNear();
+    if (near){ eBufAt = 0; interact(); }
+  }
   ctx.clearRect(0,0,1000,600);
-  if (scene==="world") drawWorld(et); else if (scene==="hades") drawHades(et); else drawAia(et);
+  const bgc = sceneBackdrop();   /* 岛外底色：岛屿只画岛体，其余区域必须补齐（根治 void 黑区） */
+  if (bgc){ ctx.fillStyle=bgc; ctx.fillRect(0,0,1000,600); }
+  const [shx,shy,shr]=camOffset();
+  const [ccx,ccy]=camCenter();
+  ctx.save();
+  ctx.translate(shx, shy);
+  ctx.translate(ccx, ccy);
+  ctx.rotate(shr);
+  ctx.scale(cam.zoom, cam.zoom);
+  ctx.translate(-cam.x, -cam.y);
+  if (scene==="world") drawWorld(et); else if (scene==="hades") drawHades(et); else if (scene==="aeolia") drawAeolia(et); else if (scene==="strait") drawStrait(et); else if (scene==="sun") drawSun(et); else drawAia(et);
+  drawDaylight(et);
+  drawFloatTexts();
+  ctx.restore();
   updateHintDOM();
+  renderAmbient();
   requestAnimationFrame(loop);
 }
 (function init(){
   load();
   renderHUD();
   fetch("/api/schema").then(r=>r.json()).then(s=>{
-    if(Array.isArray(s)&&s.length){ SCHEMA=s; console.log("schema 菜单：",s.length,"个意图"); }
+    if(Array.isArray(s)&&s.length){ SCHEMA=s; console.log("schema 菜单：",s.length,"个意图"); auditHandlers(); }
   }).catch(()=>console.warn("schema 加载失败"));
   requestAnimationFrame(loop);
 })();
-window.__game={state, scene, boat, player:aiaPlayer, witch, seer, boar, interact, openDlg, closeDlg, handle,
-  addItem, delItem, SPOTS:ASPOTS, HSPOTS, NPCS, setNPC:n=>{currentNPC=n;}, setScene:s=>{scene=s;}, getScene:()=>scene};
+window.__game={state, scene, boat, player:aiaPlayer, witch, seer, aeolus, boar, interact, openDlg, closeDlg, handle,
+  addItem, delItem, SPOTS:ASPOTS, HSPOTS, AESPOTS, SSPOTS, NPCS, setNPC:n=>{currentNPC=n;}, setScene:s=>{scene=s;}, getScene:()=>scene,
+  /* 三线补全：调试/验收接口 */
+  derived, gainXp, addMemory, recallMemories, addAffinity, affinityTier, contextBrief,
+  feedback, addTrauma, hitStop, popText, cam, w2s, witchAI, clockTick, tickNeeds,
+  setNight:h=>{state.clock=h*60; renderHUD();}, setAmb:()=>setAmbience(),
+  /* 海图 / 任务 / 风袋 / 兑底 */
+  openMap, closeMap, isMapOpen:()=>mapOpen, boatMapPos, getQuest, acceptQuest, questEvent, useWind, renderQuests, localFallbackParse,
+  /* Agent 能力：主动性 / 审计 / 相机底色 */
+  npcAmbientTick, AMBIENT, auditHandlers, sceneBackdrop,
+  /* 第三章：声之海峡 */
+  showLyric, closeLyric, buildLyric, takeShine, gambleVortex,
+  straitInfo:()=>({stage:state.straitStage, wax:state.waxEars, mast:state.mastTied, msg:state.circeMessage, paid:state.scyllaDebtPaid, cleared:state.straitCleared, sunlit:state.sunlit}),
+  /* 第四章：太阳岛 */
+  SUNSPOTS, memoryGreeting,
+  sunInfo:()=>({wrath:state.sunWrath, blessed:state.sunBlessed, name:state.sunName, debt:state.sunDebt, warn:state.slaughterWarn})};
 </script>
 </body>
 </html>

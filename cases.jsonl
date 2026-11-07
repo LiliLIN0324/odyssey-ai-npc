@@ -225,3 +225,33 @@
 {"id": "hades_12", "group": "hades_oov", "text": "跳过献祭直接见特瑞西阿斯", "expect": [{"category": "其他意图", "args": {}}]}
 {"id": "hades_13", "group": "hades_oov", "text": "给我讲讲冥河摆渡人的传说", "expect": [{"category": "闲聊", "args": {"话题": "冥河摆渡人的传说"}}]}
 {"id": "hades_14", "group": "hades_oov", "text": "献祭沟在哪", "expect": [{"category": "查询附近目标", "args": {}}]}
+{"id": "wind_oov_nav01", "group": "wind_oov", "text": "我要去风神岛", "expect": [{"category": "导航到地点", "args": {"目的地": "风神岛"}}]}
+{"id": "wind_oov_nav02", "group": "wind_oov", "text": "带我去埃俄罗斯的浮岛", "expect": [{"category": "导航到地点", "args": {"目的地": "埃俄罗斯的浮岛"}}]}
+{"id": "wind_oov_use01", "group": "wind_oov", "text": "把风袋用上", "expect": [{"category": "使用消耗品", "args": {"物品": "风袋"}}]}
+{"id": "wind_oov_use02", "group": "wind_oov", "text": "用一下风袋放阵风", "expect": [{"category": "使用消耗品", "args": {"物品": "风袋"}}]}
+{"id": "wind_oov_loc01", "group": "wind_oov", "text": "风神岛上有什么", "expect": [{"category": "查询地点信息", "args": {"地点": "风神岛"}}]}
+{"id": "wind_oov_loc02", "group": "wind_oov", "text": "埃俄罗斯岛安全吗", "expect": [{"category": "查询地点信息", "args": {"地点": "埃俄罗斯岛", "询问内容": "危险度"}}]}
+{"id": "wind_oov_env01", "group": "wind_oov", "text": "风神岛那边现在什么风向", "expect": [{"category": "查询环境状况", "args": {"要素": "风向", "地点": "风神岛"}}]}
+{"id": "wind_oov_env02", "group": "wind_oov", "text": "东风什么时候刮", "expect": [{"category": "查询环境状况", "args": {"要素": "风向"}}]}
+{"id": "wind_oov_chat01", "group": "wind_oov", "text": "十二风算神话生物吗", "expect": [{"category": "闲聊", "args": {"话题": "十二风"}}]}
+{"id": "wind_oov_chat02", "group": "wind_oov", "text": "埃俄罗斯是谁", "expect": [{"category": "闲聊", "args": {"话题": "埃俄罗斯"}}]}
+{"id": "wind_oov_chat03", "group": "wind_oov", "text": "风袋是谁给我的", "expect": [{"category": "闲聊", "args": {"话题": "风袋"}}]}
+{"id": "wind_oov_qst01", "group": "wind_oov", "text": "接下释放四风的活", "expect": [{"category": "接取任务", "args": {"任务名称": "释放四风"}}]}
+{"id": "wind_oov_qst02", "group": "wind_oov", "text": "释放四风做到哪了", "expect": [{"category": "查询任务进度", "args": {"任务名称": "释放四风"}}]}
+{"id": "wind_oov_neg01", "group": "wind_oov", "text": "把风停了", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "hades_15", "group": "hades_oov", "text": "我要去俄刻阿诺斯之岸", "expect": [{"category": "导航到地点", "args": {"目的地": "俄刻阿诺斯之岸"}}]}
+{"id": "hades_16", "group": "hades_oov", "text": "把面包放进献祭之沟", "expect": [{"category": "给予物品", "args": {"物品": "面包", "接收方": "献祭之沟"}}]}
+{"id": "ch3_nav01", "group": "ch3_oov", "text": "我要去声之海峡", "expect": [{"category": "导航到地点", "args": {"目的地": "声之海峡"}}]}
+{"id": "ch3_nav02", "group": "ch3_oov", "text": "带我去塞壬唱歌的海域", "expect": [{"category": "导航到地点", "args": {"目的地": "塞壬唱歌的海域"}}]}
+{"id": "ch3_nav03", "group": "ch3_oov", "text": "先去漩涡那儿看看", "expect": [{"category": "导航到地点", "args": {"目的地": "漩涡"}}]}
+{"id": "ch3_use01", "group": "ch3_oov", "text": "把蜡用上塞住耳朵", "expect": [{"category": "使用消耗品", "args": {"物品": "蜡"}}]}
+{"id": "ch3_bag01", "group": "ch3_oov", "text": "背包里还有歌词残页吗", "expect": [{"category": "查询背包", "args": {"物品": "歌词残页"}}]}
+{"id": "ch3_mob01", "group": "ch3_oov", "text": "斯库拉有几个头", "expect": [{"category": "查询生物情报", "args": {"生物": "斯库拉"}}]}
+{"id": "ch3_mob02", "group": "ch3_oov", "text": "卡律布狄斯漩涡会吞船吗", "expect": [{"category": "查询生物情报", "args": {"生物": "卡律布狄斯"}}]}
+{"id": "ch3_loc01", "group": "ch3_oov", "text": "声之海峡里有什么", "expect": [{"category": "查询地点信息", "args": {"地点": "声之海峡"}}]}
+{"id": "ch3_env01", "group": "ch3_oov", "text": "海峡那边浪大不大", "expect": [{"category": "查询环境状况", "args": {"要素": "浪高", "地点": "海峡"}}]}
+{"id": "ch3_chat01", "group": "ch3_oov", "text": "塞壬的歌为什么让人走不动", "expect": [{"category": "查询生物情报", "args": {"生物": "塞壬"}}]}
+{"id": "ch3_help01", "group": "ch3_oov", "text": "帮我绑在桅杆上听歌", "expect": [{"category": "请求帮助", "args": {"求助内容": "绑在桅杆上听歌"}}]}
+{"id": "ch3_neg01", "group": "ch3_oov", "text": "把六个头全砍下来", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "ch3_neg02", "group": "ch3_oov", "text": "把海峡的雾装进瓶子里", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "ch3_dialog01", "group": "ch3_oov", "text": "告诉斯库拉：不怪你", "expect": [{"category": "其他意图", "args": {}}]}
