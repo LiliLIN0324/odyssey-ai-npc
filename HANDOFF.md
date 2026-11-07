@@ -251,6 +251,15 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 - **验收（8766 隔离源 Playwright）**：node --check exit=0 ✅；页面 0 error ✅；AMBIENT 关怀条目 5+2+2+1+2+1=13 条全注册 ✅；cond 门控逐条正确（默认饥饿 false→设饿 true；血 ≤30 触发）✅；**npcAmbientTick 实机决策**：模拟玩家饥饿靠近女巫且冷却过（页面加载 90s 冷却 gate，设 cooldown=now-100s）→ `ambActive="care_hunger"` 说话 5.2s ✅；跨 NPC：冥界重伤 → 先知 `care_hurt` 开口 ✅。控制台 0 error。
 - **说明**：页面加载 90s 内所有 AMBIENT 均不开口是既有"冷却 gate"设计（now>90000），非本次引入——实机验到 cands 空后定位，勿误判。index.html 现 5871 行。
 
+### 17c. 智能 Showcase：记忆可视化 + "演示 NPC 智能"入口（11-08 凌晨，本会话；用户反馈"NPC 不够聪明/记不住/视觉不够"）
+
+- **用户痛点**：觉得 NPC 不聪明、记忆玩家看不见、对话视觉扁平、不知如何向别人展示 NPC 的聪明。诊断根因：①记忆只在 `contextBrief` 注入 prompt、是否被回复引用全看大模型（不可靠、玩家看不到）；②`memoryGreeting` 只开场 imp≥4 提一次；③气泡视觉统一无记忆/情绪区分。
+- **①记忆可视化引用（"它真的记得"的可视证据，零模型）**：`recallMention(text)` 扫描 NPC 回复命中玩家记忆关键词 → `addMsg` 增第 5 参 `memo` → 气泡加 `.memoTag`（🧠 记得·命中项）+ `.hasMemo` 左边框高亮（CSS `memoIn` 动画）。实机：addMsg 带 memo → 标签 + 边框正确渲染。
+- **②演示窗口（聪明度 Showcase，标题屏"✦ 演示 NPC 智能"入口）**：`runDemo()` 一段 10 行剧本自动播放（demoAdd 打字机 + demoWait 节奏），依次展示四层能力——**记忆**（真实 `state.memory` 拼装）/ **状态感知**（饥饿文案）/ **好感分档**（真实 affinityTier）/ **主动性**（任务/风袋/炉火按状态接话）。`closeDemo()` 关闭。因用真实 state 数据，每次演示内容随玩家进度变化——**可现场复现、可验证的"聪明"**。新增 CSS 全套 + `#demoOverlay` DOM。
+- **验收（8766 隔离源 Playwright）**：node --check exit=0 ✅；页面 0 error ✅；`tsDemo`/`demoOverlay`/`runDemo`/`closeDemo`/`recallMention` 全注册 ✅；recallMention 命中返回 `🧠 记得 · 旅人把玛草交给了喀耳刻` ✅；点 tsDemo → demoOverlay.open，**10 行剧本自动播放**（记忆/状态/好感冷淡/主动性全命中，且用真实好感 10/100）✅；addMsg 带 memo → `.memoTag` 渲染 + 关窗正常 ✅。控制台 0 error。index.html 现 **5946 行**。
+- **坑**：演示台词字符串里嵌套中文双引号（"不装傻"）导致 `missing ) after argument list`——JS 字符串内中文引号也要转义或改「」，必跑 node --check。点击 tsDemo 后 demoOverlay 挡住按钮致 Playwright 点击超时——属预期（演示窗口已开），读 demoBody 验证即可。
+- **未做**：真实对话中 `recallMention` 完全命中依赖大模型回复恰好含记忆关键词（演示可保证，实机是尽力而为）；情绪分色气泡（按对话分情绪着色）留作后续；后台服务器已清理。
+
 ---
 
 ## 二、卡住的问题
