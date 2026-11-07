@@ -200,6 +200,28 @@
   #dlg .head .mem:hover{color:var(--blue-ink); border-color:var(--blue);}
   #memStrip{display:none; flex-wrap:wrap; gap:4px; padding:7px 14px 0; border-bottom:1px dashed var(--line);}
   #memStrip .chip{max-width:100%; white-space:normal; line-height:1.5;}
+  /* 航程闭环：海图目标脉动 + HUD 航向 + 终章结算卡 */
+  .mapMark.next .pin{background:#ffd66b; box-shadow:0 0 0 2px rgba(255,214,107,.35), 0 0 12px 3px rgba(255,214,107,.55); animation:pulseNext 1.6s ease-in-out infinite;}
+  .mapMark.next .st{color:#ffd66b;}
+  @keyframes pulseNext{0%,100%{transform:scale(1)}50%{transform:scale(1.45)}}
+  #hudCompass{background:#f2f8ff; border:1px solid #bcd6ee; color:#0f4c81; font-size:11px;}
+  #endingCard{position:absolute; inset:0; z-index:40; display:none; align-items:center; justify-content:center;
+    background:linear-gradient(175deg,#0d1b2c 0%,#16283e 45%,#0d1b2c 100%); border-radius:14px; overflow:hidden;}
+  #endingCard.show{display:flex; animation:ecIn .6s cubic-bezier(.23,1,.32,1);}
+  @keyframes ecIn{from{opacity:0}to{opacity:1}}
+  .ecBody{width:min(640px,86%); max-height:88%; overflow:auto; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14);
+    border-radius:18px; padding:34px 38px; backdrop-filter:blur(10px); color:#e9eef5;}
+  .ecKicker{font-size:11px; letter-spacing:6px; color:#ffd66b; margin-bottom:10px; text-align:center;}
+  .ecTitle{font-size:26px; letter-spacing:10px; text-align:center; font-weight:700; margin-bottom:18px;}
+  .ecPara{font-size:13.5px; line-height:1.9; color:#cfdcea; margin:0 0 12px; text-indent:2em;}
+  .ecStats{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin:16px 0 20px;}
+  .ecStats .stx{border:1px solid rgba(255,255,255,.16); border-radius:10px; padding:6px 12px; font-size:11.5px; color:#aebfd4;}
+  .ecStats .stx b{color:#ffd66b;}
+  .ecBtns{display:flex; gap:12px; justify-content:center;}
+  .ecBtns button{cursor:pointer; border:none; border-radius:22px; padding:9px 26px; font-size:13px; font-weight:600; letter-spacing:2px;}
+  .ecBtns .go{background:#ffd66b; color:#16324e;}
+  .ecBtns .re{background:transparent; border:1px solid rgba(255,255,255,.3); color:#cfdcea;}
+  .ecBtns button:hover{transform:translateY(-1px);}
   @media (prefers-reduced-motion: reduce){
     #dlg.open, #dlg .bubble{animation:none;}
     *{transition-duration:.01ms !important;}
@@ -217,6 +239,7 @@
     <span class="pill">Lv.<b id="hudLv">1</b><span style="display:inline-block;width:34px;height:7px;background:#e8eef5;border-radius:4px;vertical-align:middle;margin-left:5px;overflow:hidden"><i id="hudXpBar" style="display:block;height:100%;background:#7c6fd0;border-radius:4px"></i></span></span>
     <span class="pill" id="hudClock"></span>
     <span class="pill" id="hudQuest" style="display:none"></span>
+    <span class="pill" id="hudCompass" style="display:none"></span>
     <span class="spacer"></span>
     <button id="sndBtn" onclick="sndToggle()">🔊 音效</button>
     <button id="mapBtn">海图</button>
@@ -280,6 +303,18 @@
       <div class="ccQuote"></div>
     </div>
     <div class="ccSkip">点击任意处跳过</div>
+  </div>
+  <div id="endingCard">
+    <div class="ecBody">
+      <div class="ecKicker">奥 德 赛 · 终 章</div>
+      <div class="ecTitle">航 程 的 回 声</div>
+      <div class="ecParas"></div>
+      <div class="ecStats"></div>
+      <div class="ecBtns">
+        <button class="go">继续漂流</button>
+        <button class="re">从头开始</button>
+      </div>
+    </div>
   </div>
   <div id="titleScreen">
     <div class="tsBody">
@@ -581,6 +616,11 @@ function ensureState(){
   if (state.sunDebt===undefined) state.sunDebt=null;
   if (state.slaughterWarn===undefined) state.slaughterWarn=false;
   if (!Array.isArray(state.memGreeted)) state.memGreeted=[];
+  /* 航程闭环字段：旧档补默认值 */
+  if (state.prophecy===undefined) state.prophecy=null;
+  if (state.sunStage===undefined) state.sunStage=null;
+  if (state.freeSail===undefined) state.freeSail=false;
+  if (state.epilogueDone===undefined) state.epilogueDone=false;
   /* 旧档迁移：单任务槽 → 多任务账本（rpg/save-systems：只加 migration，不坏老档） */
   if (state.quest){
     const id = state.quest.name==="释放四风" ? "aeolia_winds" : "witch_grass";
@@ -1385,6 +1425,78 @@ function ambTick(dt){
   }
 }
 
+/* ==================== 航程闭环（章节门控 + 目标引导 + 终章判词） ====================
+   圣经顺序：一章埃阿亚岛 → 二章冥界 → 插章风神岛(可选) → 三章声之海峡 → 四章太阳岛 → 回岛终章。
+   门控条件全部单调（flag 只进不退），老档靠已有 flag 重算，零迁移字段。 */
+function progressHades(){ return !!(state.prophecy || state.straitStage>0 || state.straitCleared || state.sunStage!=null); }
+const GATES = {
+  hades:  { cond:()=>{ const q=getQuest("witch_grass"); return !!(q&&q.done) || progressHades(); },
+            hint:"雾还没散——喀耳刻的委托还没结清。（先在埃亚岛采满 3 株玛草交给她）" },
+  aeolia: { cond:()=>progressHades(),
+            hint:"浮岛还在云上——先去冥界，听特瑞西阿斯把两条路说清。（献祭沟要：蜂蜜酒、面包、淡水）" },
+  strait: { cond:()=>progressHades(),
+            hint:"海峡的歌还没到听的时候——先去冥界问路。（特瑞西阿斯会指给你两条路）" },
+  sun:    { cond:()=> !!(state.straitCleared || state.straitStage>=2 || state.sunStage!=null || state.sunBlessed || state.sunWrath),
+            hint:"金光未现——海峡还没过去。（处置了塞壬的歌，才看得见金光深处）" },
+};
+function islandOpen(is){
+  if (typeof is.scene!=="string") return !!is.open;   /* 无场景的远岛（西西里/伊萨卡/特洛伊）维持待开放 */
+  if (state.freeSail) return true;                    /* 终章后自由漂流 */
+  const g=GATES[is.scene];
+  return g ? !!g.cond() : !!is.open;
+}
+/* 当前航向（纯规则、零模型调用；HUD 引导与海图脉动共用） */
+function nextObjective(){
+  const q=getQuest("witch_grass");
+  if (!q) return {k:"aia", text:"去埃亚岛找喀耳刻接下委托"};
+  if (!q.done) return {k:"aia", text:q.ready?"回埃亚岛向喀耳刻复命":`采玛草 ${q.have}/${q.need}（岛东北草丛）`};
+  if (!state.prophecy) return {k:"hades", text:"去冥界之岸：献上蜂蜜酒、面包、淡水，向特瑞西阿斯问路"};
+  if (state.straitStage<2 && !state.straitCleared) return {k:"strait", text:"穿过声之海峡（先处置塞壬的歌：蜡，或栈杆）"};
+  if (!state.sunStage && !state.sunBlessed && !state.sunWrath) return {k:"sun", text:"去太阳岛——守住圣牛，或付出代价"};
+  if (!state.epilogueDone) return {k:"aia", text:"回埃亚岛——航程该收尾了"};
+  return {k:null, text:state.freeSail?"自由漂流 · 海图全开":"航程已完——想漂去哪就去哪"};
+}
+/* 终章判词：按圣经 §六 结局矩阵拼装（分章 flag → 段落库），不新编神话事实 */
+function showEnding(){
+  const paras=[];
+  paras.push(state.prophecy==="long"
+    ? "你选了长路。困顿一路跟着你，像条忠心的老狗——也正是它，把你一寸一寸驮回了熟悉的海。"
+    : state.prophecy==="short"
+    ? "你选了捷径。荣耀的灰暖过一时——浪替你省下的年月，都记在别人的歌里了。"
+    : "你没来得及问路。海替你挑了一条——它最擅长这个。");
+  paras.push(state.lyricFragment
+    ? "塞壬的歌你听完了。残页贴身放着——有些知识，是用来疼的。"
+    : state.waxEars
+    ? "你的故事里缺了一页歌。蜡还封在耳骨里——安全和空，原来是同一个味道。"
+    : "歌从海峡上空飘过去，没有落进你的故事。");
+  paras.push(state.sunBlessed
+    ? ("太阳岛上你守住了誓言。"+(state.sunName?`「${state.sunName}」——他记住了这个名字。`:"")+"一缕走得过黑暗的光，此刻正在你包里。")
+    : "圣牛的血漫过草场。你吃饱了——胃是满的，天是阴的；往后每一阵风里都有闷雷。");
+  const tails=[];
+  if (state.scyllaDebtPaid) tails.push("「不怪你」三个字，你带到了。喀耳刻的岛天亮了，海底的静水也还亮着。");
+  const windLeft=state.backpack["风袋"]||0;
+  if (windLeft) tails.push(`风袋里还剩 ${windLeft} 阵风。贪念那次，放过了你。`);
+  if (tails.length) paras.push(tails.join(" "));
+  paras.push(state.sunName
+    ? "船头调向西的时候，你没有报旧名。你报的是自己挑的——这一回，名字是你的了。"
+    : "船头调向西。无名旅人航完了这段海——无名，所以自由。");
+  const mem=(state.memory||[]).length;
+  const ec=document.getElementById("endingCard");
+  ec.querySelector(".ecParas").innerHTML = paras.map(p=>`<p class="ecPara">${p}</p>`).join("");
+  ec.querySelector(".ecStats").innerHTML =
+    `<span class="stx">等级 <b>Lv.${state.level}</b></span>`+
+    `<span class="stx">历练 <b>${state.xp}</b></span>`+
+    `<span class="stx">钱袋 <b>${state.coins}</b> 德拉克马</span>`+
+    `<span class="stx">被记得的事 <b>${mem}</b> 件</span>`+
+    (windLeft?`<span class="stx">风袋 <b>×${windLeft}</b></span>`:"");
+  ec.classList.add("show"); sfx("bless");
+  ec.querySelector(".go").onclick = ()=>{
+    state.freeSail=true; save(); ec.classList.remove("show");
+    toast("航程归档了。海还长——去漂吧。（自由模式：航路全开）"); renderHUD();
+  };
+  ec.querySelector(".re").onclick = ()=>{ if(confirm("清空存档，从新的航程开始？")){ localStorage.removeItem(SAVE_KEY); location.reload(); } };
+}
+
 /* ==================== 互动 ==================== */
 function islandNear(){
   let best=null, bd=1e9;
@@ -1414,7 +1526,7 @@ function interact(){
   if (scene==="world"){
     const is = islandNear();
     if (!is) return;
-    if (!is.open){ toast(`${is.name} —— ${is.note}`); return; }
+    if (!islandOpen(is)){ const g=GATES[is.scene]; toast((g&&g.hint)||`${is.name} —— ${is.note}`); return; }
     if (is.scene==="hades"){
       scene = "hades";
       aiaPlayer.x = 2*ATS+ATS/2; aiaPlayer.y = 10*ATS+ATS/2;
@@ -1446,6 +1558,11 @@ function interact(){
     scene = "aia";
     aiaPlayer.x = 3*ATS+ATS/2; aiaPlayer.y = 10*ATS+ATS/2;
     /* 暗线②收束：话带到了，回岛时债清——埃亚岛第一次天亮 */
+    /* 航程闭环：四章打完回岛 → 终章判词（结局矩阵拼装，见 showEnding） */
+    if ((state.sunBlessed || state.sunWrath) && !state.epilogueDone){
+      state.epilogueDone=true; save();
+      showEnding(); return;
+    }
     if (state.scyllaDebtPaid && !state.sunlit){
       state.sunlit = true; addAffinity(10); gainXp(30);
       addMemory("旅人把「不怪你」带到了——埃亚岛第一次天亮", 4);
@@ -1721,6 +1838,7 @@ document.getElementById("chapterCard").onclick = skipChapter;
     const t=document.getElementById("titleScreen");
     t.classList.add("hide");
     setTimeout(()=>t.remove(), 850);
+    renderHUD();   /* 航向条在进图那一刻就点亮（闭环引导） */
   };
   /* 预加载会用到的概念图，避免登陆/开海图瞬间白屏 */
   ["concept-art/01-序章漂流.jpg","concept-art/02-女巫小屋.jpg","concept-art/07-冥界之岸.jpg","concept-art/03-斯库拉海峡.jpg","concept-art/04-塞壬之歌.jpg","concept-art/05-太阳岛.jpg","concept-art/characters/02-喀耳刻.jpg","concept-art/characters/07-塞壬.jpg","concept-art/characters/08-斯库拉.jpg","concept-art/characters/09-埃俄罗斯.jpg","concept-art/maps/01-世界海图.jpg","concept-art/maps/04-风神岛图.jpg"]
@@ -2954,7 +3072,7 @@ function updateHintDOM(){
     const is = islandNear();
     if (is && !dlgOpen){
       hintEl.style.display="block";
-      hintEl.innerHTML = `<b>E</b> · ${is.open?"登陆":"了望"} ${is.name}`;
+      hintEl.innerHTML = `<b>E</b> · ${islandOpen(is)?"登陆":"了望"} ${is.name}`;
       const [hx,hy]=w2s(is.gx*WTS+WTS/2, is.gy*WTS);
       hintEl.style.left=(hx*100)+"%"; hintEl.style.top=(hy*100)+"%";
     } else hintEl.style.display="none";
@@ -3001,6 +3119,11 @@ function renderHUD(){
   if (active.length){ q.style.display=""; q.innerHTML = active.map(v=>`「${v.name}」 ${v.ready?"<b>可交付</b>":`<b>${v.have}/${v.need}</b>`}`).join("　"); }
   else if (qs.length){ q.style.display=""; q.innerHTML=`委托已完成`; }
   else q.style.display="none";
+  /* 航向引导（闭环）：当前该去哪，一行说清（纯规则零模型） */
+  const cp=document.getElementById("hudCompass");
+  const obj=nextObjective();
+  if (obj && !titleOn && !dlgOpen && !mapOpen){ cp.style.display=""; cp.innerHTML=`⛵ 航向 · ${obj.text}`; }
+  else cp.style.display="none";
   /* 风袋快捷键（有风袋才出现） */
   const wb=document.getElementById("windBtn");
   if (state.backpack["风袋"]){ wb.style.display=""; wb.textContent = `风袋 ×${state.backpack["风袋"]}`; }
@@ -3079,11 +3202,14 @@ function gambleVortex(){
 /* ==================== 海图（M 键 · 世界海图叠加船位与岛屿状态） ==================== */
 let mapOpen = false;
 function buildMapMarks(){
-  document.getElementById("mapMarks").innerHTML = ISLANDS.map((is,i)=>`
-    <div class="mapMark${is.open?"":" locked"}" style="left:${is.mp[0]}%; top:${is.mp[1]}%;">
+  const obj=nextObjective();
+  document.getElementById("mapMarks").innerHTML = ISLANDS.map((is,i)=>{
+    const open = islandOpen(is);
+    const isNext = !!(obj && obj.k && is.scene===obj.k);
+    return `<div class="mapMark${open?"":" locked"}${isNext?" next":""}" style="left:${is.mp[0]}%; top:${is.mp[1]}%;">
       <div class="pin"></div><div class="nm">${is.name}</div>
-      <div class="st">${is.open?"已解锁":"？待开放"}</div>
-    </div>`).join("");
+      <div class="st">${isNext?"\u25b6 航向":open?"已解锁":"？待开放"}</div>
+    </div>`;}).join("");
 }
 function boatMapPos(){
   /* 反距离加权：海图上船位由最近岛屿描点内插（mp 为海图标定点） */
@@ -3296,7 +3422,7 @@ function handle(category, args){
     /* 暗线②：对她说起斯库拉/海峡，托付三个字（需先结清玛草委托） */
     if (/斯库拉|海峡/.test(d)){
       const q = getQuest("witch_grass");
-      if (q && q.done && !state.circeMessage && !state.scyllaDebtPaid){
+      if (q && q.done && state.prophecy && !state.circeMessage && !state.scyllaDebtPaid){
         state.circeMessage=true; addAffinity(5); renderHUD(); save();
         addMemory("喀耳刻托旅人给斯库拉带三个字——不说是哪三个", 4);
         return {text:"（她搅药的手停了）声之海峡，往东南去，雾最厚的地方。（很久）……替我给斯库拉带三个字。哪三个我不说——到了，她自然听得懂。"};
@@ -3333,7 +3459,7 @@ function handle(category, args){
   case "查询任务线索":{
     const q = getQuest("witch_grass");
     if(!q) return {text:"（她擦着手）要说活儿……我这里确实有一件。想知道就开口。"};
-    if(q.done && !state.circeMessage && !state.scyllaDebtPaid){
+    if(q.done && state.prophecy && !state.circeMessage && !state.scyllaDebtPaid){
       state.circeMessage=true; addAffinity(5); renderHUD(); save();
       addMemory("喀耳刻托旅人给斯库拉带三个字——不说是哪三个", 4);
       return {text:"（她忽然放下木勺，背对着你）下一程要过声之海峡吧。……替我给斯库拉带三个字。哪三个我不说——到了，她自然听得懂。"};
