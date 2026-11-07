@@ -4189,7 +4189,10 @@ function loop(t){
     if (near){ eBufAt = 0; interact(); }
   }
   ctx.clearRect(0,0,1000,600);
-  const bgc = sceneBackdrop();   /* 岛外底色：岛屿只画岛体，其余区域必须补齐（根治 void 黑区） */
+  /* 世界图 3D 大陆视觉：W3D 就绪时 2D 画布只留透明合成层（日光/夜色/浮字），岛内场景不受影响 */
+  const w3dOn = scene==="world" && window.W3D && W3D.ready && !W3D.failed;
+  if (w3dOn) W3D.frame(et);
+  const bgc = w3dOn ? null : sceneBackdrop();   /* 岛外底色：岛屿只画岛体，其余区域必须补齐（根治 void 黑区） */
   if (bgc){ ctx.fillStyle=bgc; ctx.fillRect(0,0,1000,600); }
   const [shx,shy,shr]=camOffset();
   const [ccx,ccy]=camCenter();
@@ -4199,7 +4202,7 @@ function loop(t){
   ctx.rotate(shr);
   ctx.scale(cam.zoom, cam.zoom);
   ctx.translate(-cam.x, -cam.y);
-  if (scene==="world") drawWorld(et); else if (scene==="hades") drawHades(et); else if (scene==="aeolia") drawAeolia(et); else if (scene==="strait") drawStrait(et); else if (scene==="sun") drawSun(et); else drawAia(et);
+  if (scene==="world"){ if (!w3dOn) drawWorld(et); } else if (scene==="hades") drawHades(et); else if (scene==="aeolia") drawAeolia(et); else if (scene==="strait") drawStrait(et); else if (scene==="sun") drawSun(et); else drawAia(et);
   drawDaylight(et);
   drawFloatTexts();
   ctx.restore();
@@ -4232,5 +4235,6 @@ window.__game={state, scene, boat, player:aiaPlayer, witch, seer, aeolus, boar, 
   SUNSPOTS, memoryGreeting,
   sunInfo:()=>({wrath:state.sunWrath, blessed:state.sunBlessed, name:state.sunName, debt:state.sunDebt, warn:state.slaughterWarn})};
 </script>
+<script type="module" src="./world3d.js?v=7"></script>
 </body>
 </html>

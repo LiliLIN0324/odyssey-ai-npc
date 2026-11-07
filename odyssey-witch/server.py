@@ -70,6 +70,7 @@ def call_model(model: str, messages: list, max_tokens: int, temperature: float,
 
 
 STATIC_TYPES = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}
+JS_TYPES = {".js": "text/javascript; charset=utf-8", ".mjs": "text/javascript; charset=utf-8"}
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -92,6 +93,24 @@ class Handler(BaseHTTPRequestHandler):
         else:
             self._send(404, {"error": "not found"})
 
+    def _send_js(self, target: Path, base: Path):
+        """托管本地 JS 模块（world3d / vendor three.js；路径穿越防护 + 限扩展名）"""
+        try:
+            target = target.resolve()
+        except OSError:
+            return self._send(404, {"error": "not found"})
+        if (target.is_file() and str(target).startswith(str(base) + os.sep)
+                and target.suffix.lower() in JS_TYPES):
+            data = target.read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", JS_TYPES[target.suffix.lower()])
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Cache-Control", "public, max-age=60")
+            self.end_headers()
+            self.wfile.write(data)
+        else:
+            self._send(404, {"error": "not found"})
+
     def _send(self, code: int, obj, ctype: str = "application/json; charset=utf-8"):
         data = obj if isinstance(obj, bytes) else json.dumps(obj, ensure_ascii=False).encode("utf-8")
         self.send_response(code)
@@ -101,7 +120,8 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def do_GET(self):
-        if self.path in ("/", "/index.html"):
+        path = self.path.split("?", 1)[0]
+        if path in ("/", "/index.html"):
             try:
                 self._send(200, (HERE / "index.html").read_bytes(), "text/html; charset=utf-8")
             except OSError:
@@ -115,6 +135,11 @@ class Handler(BaseHTTPRequestHandler):
         elif self.path.startswith("/concept-art/"):
             rel = unquote(self.path.split("?", 1)[0][len("/concept-art/"):])
             self._send_static(rel)
+        elif path == "/world3d.js":
+            self._send_js(HERE / "world3d.js", HERE)
+        elif self.path.startswith("/vendor/"):
+            rel = unquote(self.path.split("?", 1)[0][len("/vendor/"):])
+            self._send_js(HERE / "vendor" / rel, HERE / "vendor")
         else:
             self._send(404, {"error": "not found"})
 
