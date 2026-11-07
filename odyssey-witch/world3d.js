@@ -65,6 +65,10 @@ const ISLE_LOOK = {
   aeolia:  { r: 2.7, grass: 0xe8ecef, grassDeep: 0xc3d2da, seed: 20261109, floatY: 3.4, cloud: true, mh: 1.0 },
   strait:  { r: 2.9, grass: 0x5d6b74, grassDeep: 0x3e4a52, seed: 20261110, spires: true, mh: 1.1 },
   sun:     { r: 2.7, grass: 0xd8bd76, grassDeep: 0xb09250, seed: 20261111, gold: true, mh: 0.75 },
+  /* 圣经收官三岛：奥吉吉亚暮紫 / 斯克里白亮橄榄 / 伊萨卡黎明青灰 */
+  ogggia:  { r: 2.4, grass: 0xb08890, grassDeep: 0x8a6878, seed: 20261113, mh: 0.8 },
+  scheria: { r: 2.6, grass: 0xc8d8a8, grassDeep: 0x9ab088, seed: 20261114, mh: 0.7 },
+  ithaca:  { r: 2.8, grass: 0x8a9a88, grassDeep: 0x6a7a68, seed: 20261115, mh: 1.0 },
 };
 const LOCKED_LOOK = { r: 1.3, grass: 0x93a3ad, grassDeep: 0x6d7d88, seed: 20261112, mist: true };
 

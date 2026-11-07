@@ -255,3 +255,59 @@
 {"id": "ch3_neg01", "group": "ch3_oov", "text": "把六个头全砍下来", "expect": [{"category": "其他意图", "args": {}}]}
 {"id": "ch3_neg02", "group": "ch3_oov", "text": "把海峡的雾装进瓶子里", "expect": [{"category": "其他意图", "args": {}}]}
 {"id": "ch3_dialog01", "group": "ch3_oov", "text": "告诉斯库拉：不怪你", "expect": [{"category": "其他意图", "args": {}}]}
+{"id": "prologue_01", "group": "prologue_oov", "text": "我要去西西里", "expect": [{"category": "导航到地点", "args": {"目的地": "西西里"}}]}
+{"id": "prologue_02", "group": "prologue_oov", "text": "伊斯玛洛斯在哪", "expect": [{"category": "导航到地点", "args": {"目的地": "伊斯玛洛斯"}}]}
+{"id": "prologue_03", "group": "prologue_oov", "text": "食莲岛是个什么地方", "expect": [{"category": "查询地点信息", "args": {"地点": "食莲岛"}}]}
+{"id": "prologue_04", "group": "prologue_oov", "text": "忒勒皮洛斯有什么", "expect": [{"category": "查询地点信息", "args": {"地点": "忒勒皮洛斯"}}]}
+{"id": "prologue_05", "group": "prologue_oov", "text": "波吕斐摩斯还活着吗", "expect": [{"category": "查询生物情报", "args": {"生物": "波吕斐摩斯"}}]}
+{"id": "prologue_06", "group": "prologue_oov", "text": "巨羊怕人吗", "expect": [{"category": "查询生物情报", "args": {"生物": "巨羊", "询问内容": "危险性"}}]}
+{"id": "prologue_07", "group": "prologue_oov", "text": "莲子能吃吗", "expect": [{"category": "查询生物情报", "args": {"生物": "莲子", "询问内容": "食用性"}}]}
+{"id": "prologue_08", "group": "prologue_oov", "text": "去羊栏剪把羊毛", "expect": [{"category": "获取物资", "args": {"动作": "剪取", "物品": "羊毛"}}]}
+{"id": "prologue_09", "group": "prologue_oov", "text": "把治疗草药给那个伤者", "expect": [{"category": "给予物品", "args": {"物品": "治疗草药", "接收方": "伤者"}}]}
+{"id": "prologue_10", "group": "prologue_oov", "text": "马里阿角那边浪大吗", "expect": [{"category": "查询环境状况", "args": {"要素": "浪高", "地点": "马里阿角"}}]}
+{"id": "prologue_11", "group": "prologue_oov", "text": "喀科恩酒值多少钱", "expect": [{"category": "查询价格", "args": {"物品": "喀科恩酒"}}]}
+{"id": "prologue_12", "group": "prologue_oov", "text": "去船骸上搜个绳结", "expect": [{"category": "获取物资", "args": {"动作": "搜刮", "物品": "绳结"}}]}
+{"id": "prologue_13", "group": "prologue_oov", "text": "吃一颗莲子提提神", "expect": [{"category": "使用消耗品", "args": {"物品": "莲子", "对象": "自己"}}]}
+{"id": "prologue_14", "group": "prologue_oov", "text": "独眼巨人的山洞里有什么", "expect": [{"category": "查询地点信息", "args": {"地点": "独眼巨人的山洞"}}]}
+{"id": "ch5_01", "group": "ch5_oov", "text": "我要去奥吉吉亚", "expect": [{"category": "导航到地点", "args": {"目的地": "奥吉吉亚"}}]}
+{"id": "ch5_02", "group": "ch5_oov", "text": "卡吕普索是谁", "expect": [{"category": "查询生物情报", "args": {"生物": "卡吕普索"}}]}
+{"id": "ch5_03", "group": "ch5_oov", "text": "织机在哪", "expect": [{"category": "查询附近目标", "args": {}}]}
+{"id": "ch5_04", "group": "ch5_oov", "text": "永生真的存在吗", "expect": [{"category": "查询神谕", "args": {}}]}
+{"id": "ch5_05", "group": "ch5_oov", "text": "摘一枚金苹果", "expect": [{"category": "获取物资", "args": {"动作": "摘取", "物品": "金苹果"}}]}
+{"id": "ch5_06", "group": "ch5_oov", "text": "吃掉金苹果", "expect": [{"category": "使用消耗品", "args": {"物品": "金苹果", "对象": "自己"}}]}
+{"id": "ch5_07", "group": "ch5_oov", "text": "砍三根木料", "expect": [{"category": "获取物资", "args": {"动作": "砍伐", "物品": "木料", "数量": "3"}}]}
+{"id": "ch5_08", "group": "ch5_oov", "text": "听听现在什么风向", "expect": [{"category": "查询环境状况", "args": {"要素": "风向"}}]}
+{"id": "ch5_09", "group": "ch5_oov", "text": "把金苹果给她", "expect": [{"category": "给予物品", "args": {"物品": "金苹果", "接收方": "卡吕普索"}}]}
+{"id": "ch5_10", "group": "ch5_oov", "text": "奥吉吉亚是个什么地方", "expect": [{"category": "查询地点信息", "args": {"地点": "奥吉吉亚"}}]}
+{"id": "ch5_11", "group": "ch5_oov", "text": "我该留下还是走", "expect": [{"category": "请求帮助", "args": {}}]}
+{"id": "ch5_12", "group": "ch5_oov", "text": "怎么造筏", "expect": [{"category": "请求帮助", "args": {}}]}
+{"id": "ch5_13", "group": "ch5_oov", "text": "我要出海", "expect": [{"category": "船只操作", "args": {"动作": "出航"}}]}
+{"id": "ch5_14", "group": "ch5_oov", "text": "这个岛上有什么", "expect": [{"category": "查询地点信息", "args": {}}], "meta": {"expect_fixed": "v2.5 透明修正：查询附近目标 → 查询地点信息（对齐 schema 既有边界）"}}
+{"id": "ch6_01", "group": "ch6_oov", "text": "我要去斯克里岛", "expect": [{"category": "导航到地点", "args": {"目的地": "斯克里岛"}}]}
+{"id": "ch6_02", "group": "ch6_oov", "text": "瑙西亚娅是谁", "expect": [{"category": "查询生物情报", "args": {"生物": "瑙西亚娅"}}]}
+{"id": "ch6_03", "group": "ch6_oov", "text": "德摩多科斯会唱什么", "expect": [{"category": "查询生物情报", "args": {"生物": "德摩多科斯"}}]}
+{"id": "ch6_04", "group": "ch6_oov", "text": "费埃克斯人的船在哪", "expect": [{"category": "查询附近目标", "args": {}}]}
+{"id": "ch6_05", "group": "ch6_oov", "text": "把干粮给她", "expect": [{"category": "给予物品", "args": {"物品": "干粮", "接收方": "瑙西亚娅"}}]}
+{"id": "ch6_06", "group": "ch6_oov", "text": "吃点干粮", "expect": [{"category": "使用消耗品", "args": {"物品": "干粮", "对象": "自己"}}]}
+{"id": "ch6_07", "group": "ch6_oov", "text": "码头怎么走", "expect": [{"category": "导航到地点", "args": {"目的地": "码头"}}]}
+{"id": "ch6_08", "group": "ch6_oov", "text": "明天风怎么样", "expect": [{"category": "查询环境状况", "args": {"要素": "风向"}}]}
+{"id": "ch6_09", "group": "ch6_oov", "text": "我要回家", "expect": [{"category": "导航到地点", "args": {"目的地": "家"}}]}
+{"id": "ch6_10", "group": "ch6_oov", "text": "瑙西亚娅喜欢什么", "expect": [{"category": "查询生物情报", "args": {"生物": "瑙西亚娅", "询问内容": "喜好"}}]}
+{"id": "ch6_11", "group": "ch6_oov", "text": "橄榄能摘吗", "expect": [{"category": "获取物资", "args": {"动作": "摘取", "物品": "橄榄"}}]}
+{"id": "ch6_12", "group": "ch6_oov", "text": "橄榄能吃吗", "expect": [{"category": "查询生物情报", "args": {"生物": "橄榄", "询问内容": "食用性"}}]}
+{"id": "ch6_13", "group": "ch6_oov", "text": "宫殿在哪个方向", "expect": [{"category": "查询附近目标", "args": {}}]}
+{"id": "ch6_14", "group": "ch6_oov", "text": "斯克里岛是个什么地方", "expect": [{"category": "查询地点信息", "args": {"地点": "斯克里岛"}}]}
+{"id": "ith_01", "group": "ithaca_oov", "text": "我要去伊萨卡", "expect": [{"category": "导航到地点", "args": {"目的地": "伊萨卡"}}]}
+{"id": "ith_02", "group": "ithaca_oov", "text": "佩涅洛佩在楼上吗", "expect": [{"category": "查询附近目标", "args": {"生物": "佩涅洛佩"}}], "meta": {"expect_fixed": "v2.5 透明修正：查询生物情报 → 查询附近目标（对齐 schema 既有边界）"}}
+{"id": "ith_03", "group": "ithaca_oov", "text": "求婚者有多少人", "expect": [{"category": "查询生物情报", "args": {"生物": "求婚者", "询问内容": "数量"}}]}
+{"id": "ith_04", "group": "ithaca_oov", "text": "斧阵在哪儿", "expect": [{"category": "查询附近目标", "args": {}}]}
+{"id": "ith_05", "group": "ithaca_oov", "text": "借你的弓用用", "expect": [{"category": "请求帮助", "args": {}}]}
+{"id": "ith_06", "group": "ithaca_oov", "text": "把面包给那个乞丐", "expect": [{"category": "给予物品", "args": {"物品": "面包", "接收方": "乞丐"}}]}
+{"id": "ith_07", "group": "ithaca_oov", "text": "吃口面包", "expect": [{"category": "使用消耗品", "args": {"物品": "面包", "对象": "自己"}}]}
+{"id": "ith_08", "group": "ithaca_oov", "text": "宴厅怎么走", "expect": [{"category": "导航到地点", "args": {"目的地": "宴厅"}}]}
+{"id": "ith_09", "group": "ithaca_oov", "text": "码头在哪", "expect": [{"category": "查询附近目标", "args": {}}]}
+{"id": "ith_10", "group": "ithaca_oov", "text": "伊萨卡是谁的岛", "expect": [{"category": "查询地点信息", "args": {"地点": "伊萨卡"}}]}
+{"id": "ith_11", "group": "ithaca_oov", "text": "穿上皮甲", "expect": [{"category": "装备物品", "args": {"物品": "皮甲"}}]}
+{"id": "ith_12", "group": "ithaca_oov", "text": "这把弓值多少钱", "expect": [{"category": "查询价格", "args": {"物品": "弓"}}]}
+{"id": "ith_13", "group": "ithaca_oov", "text": "安提诺奥斯是谁", "expect": [{"category": "查询生物情报", "args": {"生物": "安提诺奥斯"}}]}
+{"id": "ith_14", "group": "ithaca_oov", "text": "家到底是什么", "expect": [{"category": "查询神谕", "args": {}}]}

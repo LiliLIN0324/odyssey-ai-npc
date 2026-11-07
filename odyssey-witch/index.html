@@ -141,6 +141,9 @@
     background:#e8a84a; box-shadow:0 0 0 2.5px rgba(255,255,255,.75), 0 2px 8px rgba(0,0,0,.5);}
   .mapMark.locked .pin{background:rgba(210,220,232,.55); box-shadow:0 0 0 2px rgba(255,255,255,.4);}
   .mapMark .nm{font-size:11px; letter-spacing:1px; color:#fff; text-shadow:0 1px 4px rgba(0,0,0,.8); white-space:nowrap;}
+  .mapMark .lg{position:absolute; top:-11px; left:-6px; font-size:8.5px; color:#e8d9b8; background:rgba(60,48,30,.85); border:1px solid rgba(232,217,184,.4); border-radius:6px; padding:0 4px; line-height:12px; text-shadow:none;}
+  .mapMark.locked .lg{color:rgba(255,255,255,.45); background:rgba(20,25,32,.7); border-color:rgba(255,255,255,.15);}
+  #mapHead .legsCnt{font-size:10px; color:#e8d9b8; letter-spacing:1px; margin-left:10px; opacity:.85;}
   .mapMark.locked .nm{color:rgba(255,255,255,.55);}
   .mapMark .st{font-size:9.5px; color:rgba(255,255,255,.5); text-shadow:0 1px 3px rgba(0,0,0,.7);}
   #mapBoat{position:absolute; transform:translate(-50%,-50%); z-index:3; pointer-events:none;}
@@ -165,6 +168,27 @@
     font-family:Georgia,"宋体",serif; color:#4a3a22;}
   #lyricSheet h3{font-size:13px; letter-spacing:5px; color:#8a6a3a; text-align:center; margin-bottom:14px;}
   #lyricText{font-size:14.5px; line-height:2.05; white-space:pre-wrap; text-align:center;}
+  /* ---- 认名卡（终章·相认：「你是谁？」——名字碎片+自由输入） ---- */
+  #nameCard{position:absolute; inset:0; z-index:17; border-radius:14px; display:none;
+    align-items:center; justify-content:center; background:rgba(6,10,20,.82); backdrop-filter:blur(4px);}
+  #nameCard.open{display:flex; animation:mapIn .3s ease-out;}
+  #ncBody{width:min(480px,86%); background:linear-gradient(170deg,#2c3a4e,#1c2836); border-radius:10px;
+    padding:26px 30px 20px; box-shadow:0 18px 60px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.18);
+    font-family:Georgia,"宋体",serif; color:#e8e0d0; text-align:center;}
+  #ncBody .ncKicker{font-size:12px; letter-spacing:5px; color:#c8a860; margin-bottom:10px;}
+  #ncBody .ncQ{font-size:22px; letter-spacing:3px; margin-bottom:14px; color:#f4ead2;}
+  #ncFrags{display:flex; flex-direction:column; gap:8px; margin-bottom:14px;}
+  .ncFrag{background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.18); color:#e8e0d0;
+    border-radius:8px; padding:9px 12px; font-size:13.5px; cursor:pointer; font-family:inherit;}
+  .ncFrag:hover{background:rgba(255,255,255,.14);}
+  .ncFrag.none{opacity:.72; font-size:12.5px;}
+  #ncRow{display:flex; gap:8px;}
+  #ncInp{flex:1; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.22); border-radius:8px;
+    padding:9px 12px; color:#f4ead2; font-size:14px; outline:none; font-family:inherit;}
+  #ncInp:focus{border-color:#c8a860;}
+  #ncGo{background:#c8a860; border:none; border-radius:8px; padding:9px 14px; color:#1c2836; font-weight:700; cursor:pointer;}
+  #ncGo:hover{background:#d8bc78;}
+  #ncBody .ncHint{font-size:11.5px; opacity:.65; margin-top:12px;}
   #lyricBtns{display:flex; gap:10px; justify-content:center; margin-top:18px;}
   #lyricBtns button{border:1px solid #c9b58a; background:rgba(255,255,255,.4); color:#6a5330;
     border-radius:16px; padding:6px 16px; font-size:12px; cursor:pointer; font-family:inherit;}
@@ -260,6 +284,7 @@
       <img src="concept-art/maps/01-世界海图.jpg" alt="海图">
       <div id="mapHead">
         <span class="t">海 图 · 地 中 海</span>
+        <span class="legsCnt" id="legsCnt"></span>
         <span class="lg"><span><i style="background:#e8a84a"></i>已解锁</span><span><i style="background:rgba(210,220,232,.55)"></i>待开放</span><span><i style="background:#4ea1ff"></i>你的船</span></span>
       </div>
       <button id="mapClose" onclick="closeMap()">M / Esc 关闭</button>
@@ -269,7 +294,7 @@
   </div>
   <div id="lyricCard">
     <div id="lyricSheet">
-      <h3>塞 壬 之 歌 · 歌 词 残 页</h3>
+      <h3 id="lyricTitle">塞 壬 之 歌 · 歌 词 残 页</h3>
       <div id="lyricText"></div>
       <div id="lyricBtns">
         <button onclick="exportLyric()">抄下这一页（导出 txt）</button>
@@ -318,6 +343,18 @@
       </div>
     </div>
   </div>
+  <div id="nameCard">
+    <div id="ncBody">
+      <div class="ncKicker">终 章 · 相 认</div>
+      <div class="ncQ">「你是谁？」</div>
+      <div id="ncFrags"></div>
+      <div id="ncRow">
+        <input id="ncInp" placeholder="或者，写下你的名字……" maxlength="12">
+        <button id="ncGo">认下它</button>
+      </div>
+      <div class="ncHint">所有路都会走到这一问——答案没有对错，只有是不是你的。</div>
+    </div>
+  </div>
   <div id="titleScreen">
     <div class="tsBody">
       <div class="tsKicker">荷马史诗 · 空间探索</div>
@@ -361,14 +398,19 @@ function buildMediterranean(){
 }
 const WORLD = buildMediterranean();
 const ISLANDS = [
-  {gx:6,  gy:11, name:"埃亚岛",    note:"喀耳刻的领地 · 第勒尼安海",  open:true, scene:"aia",    mp:[24,62]},
-  {gx:2,  gy:8,  name:"冥界之岸",  note:"俄刻阿诺斯之岸 · 亡者之言",  open:true, scene:"hades",  mp:[10,47]},
-  {gx:12, gy:8,  name:"风神岛",    note:"埃俄罗斯的浮岛 · 十二风在此听差", open:true, scene:"aeolia", mp:[30,47]},
-  {gx:12, gy:14, name:"西西里",    note:"独眼巨人之地 · 待开放",     open:false, mp:[28,57]},
-  {gx:16, gy:14, name:"伊萨卡",    note:"归乡 · 爱奥尼亚海 · 雾未散", open:false, mp:[40,63]},
-  {gx:31, gy:6,  name:"特洛伊海岸", note:"战火余烬 · 爱琴海东 · 待开放", open:false, mp:[71,38]},
-  {gx:21, gy:9,  name:"声之海峡",  note:"塞壬的歌 · 斯库拉的六头 · 代价", open:true, scene:"strait", mp:[30,64]},
-  {gx:26, gy:9,  name:"太阳岛",    note:"赫利俄斯的圣牛 · 饥饿与誓言",  open:true, scene:"sun",    mp:[47,60]},
+  {gx:34, gy:5,  name:"伊斯玛洛斯", note:"喀科恩人的城 · 第一次劫掠的遗址", open:true, scene:"ismaros",   leg:1,  mp:[52,25]},
+  {gx:8,  gy:13, name:"食莲岛",    note:"食莲人的滩 · 忘忧的甜",           open:true, scene:"lotus",     leg:3,  mp:[14,82]},
+  {gx:12, gy:14, name:"西西里",    note:"独眼巨人之岛 · 无人之名",         open:true, scene:"cyclops",   leg:4,  mp:[28,57]},
+  {gx:6,  gy:11, name:"埃亚岛",    note:"喀耳刻的领地 · 第勒尼安海",       open:true, scene:"aia",       leg:7,  mp:[24,62]},
+  {gx:2,  gy:8,  name:"冥界之岸",  note:"俄刻阿诺斯之岸 · 亡者之言",       open:true, scene:"hades",     leg:8,  mp:[10,47]},
+  {gx:12, gy:8,  name:"风神岛",    note:"埃俄罗斯的浮岛 · 十二风在此听差", open:true, scene:"aeolia",    leg:5,  mp:[30,47]},
+  {gx:15, gy:8,  name:"忒勒皮洛斯", note:"悬崖之城 · 十一艘船只剩一艘",     open:true, scene:"telepylos", leg:6,  mp:[34,50]},
+  {gx:29, gy:12, name:"奥吉吉亚",  note:"卡吕普索的岛 · 完美的一天",       open:true, scene:"ogggia",    leg:12, mp:[57,68]},
+  {gx:17, gy:7,  name:"斯克里岛",  note:"费埃克斯人的岛 · 有人性的驿站",   open:true, scene:"scheria",   leg:13, mp:[38,38]},
+  {gx:16, gy:13, name:"伊萨卡",    note:"归乡 · 爱奥尼亚海 · 雾正在散",    open:true, scene:"ithaca",    leg:14, mp:[40,63]},
+  {gx:31, gy:6,  name:"特洛伊海岸", note:"启航之地 · 战火余烬 · 待开放",    open:false, leg:0,          mp:[71,38]},
+  {gx:21, gy:9,  name:"声之海峡",  note:"塞壬的歌 · 斯库拉的六头 · 代价",  open:true, scene:"strait",    leg:9,  mp:[30,64]},
+  {gx:26, gy:9,  name:"太阳岛",    note:"赫利俄斯的圣牛 · 饥饿与誓言",     open:true, scene:"sun",       leg:11, mp:[47,60]},
 ];
 const SEAS = [
   {x:23,y:2,label:"欧洲"}, {x:4,y:16,label:"非洲"}, {x:40,y:8,label:"黎凡特海"},
@@ -523,6 +565,395 @@ function tryMoveSun(nx,ny){
     if (SUNSOLID.has(sunTile(Math.floor((nx+dx)/ATS), Math.floor((ny+dy)/ATS)))) return false;
   aiaPlayer.x=nx; aiaPlayer.y=ny; return true;
 }
+
+/* ==================== 奥吉吉亚地图（2.5D · 冻结的金色暮光 · 第五章） ====================
+   ~水 T 丝柏 H 洞窟岩壁 L 织机 O 金果树 V 听风石 W 造筏台 B 篝火 _ 栈桥 . 草地 , 小径
+   原版骨：卡吕普索留奥德修斯七年，许永生而不受（荷马史诗第 5 卷）
+   玩法：日历冻结的「完美的一天」×3 → 她问正题（日志作答）→ 永生选择（留下 / 造筏全机制教学闭环） */
+const OGYGIA = [
+  "~~~~~~~~~~~~~~~~~~~~",
+  "~T.HHHHHH.....T....~",
+  "~..HLLLH...O...T...~",
+  "~..HHHHH.....O.....~",
+  "~....,,............~",
+  "~....,,.......V....~",
+  "~....,,............~",
+  "~T....,....WWW.....~",
+  "~...............B..~",
+  "~..___,............~",
+  "~..___,,...........~",
+  "~~~_,,~~~~~~~~~~~~~~",
+];
+const OGSOLID = new Set(["~","T","H","L","O","V"]);
+const calypso = { x: 7*ATS+ATS/2, y: 2*ATS+ATS*0.75 };   /* 卡吕普索立于洞窟门口 */
+const OGSPOTS = [
+  {type:"calypso",  x:calypso.x,       y:calypso.y,       r:85, label:"与卡吕普索交谈"},
+  {type:"fruit",    x:11*ATS+ATS/2,    y:2*ATS+ATS/2,     r:70, label:"摘一枚金苹果"},
+  {type:"loom",     x:5*ATS+ATS/2,     y:2*ATS+ATS/2,     r:70, label:"看那架织机"},
+  {type:"timber",   x:1*ATS+ATS/2,     y:1*ATS+ATS/2,     r:70, label:"砍伐木料（用你一路学的）"},
+  {type:"windstone",x:14*ATS+ATS/2,    y:5*ATS+ATS/2,     r:70, label:"听风石（选出海的时辰）"},
+  {type:"raft",     x:12*ATS+ATS,      y:7*ATS+ATS/2,     r:85, label:"造筏台"},
+  {type:"fire",     x:16*ATS+ATS/2,    y:8*ATS+ATS/2,     r:66, label:"篝火"},
+  {type:"ogDock",   x:3*ATS+ATS/2,     y:10*ATS+ATS/2,    r:70, label:"推筏出湾"},
+];
+function ogTile(cx,cy){ return (cx<0||cy<0||cx>=ACOLS||cy>=AROWS)?"~":OGYGIA[cy][cx]; }
+function tryMoveOggia(nx,ny){
+  const hw=aiaPlayer.w/2, hh=aiaPlayer.h/2;
+  for (const [dx,dy] of [[-hw,-hh],[hw,-hh],[-hw,hh],[hw,hh]])
+    if (OGSOLID.has(ogTile(Math.floor((nx+dx)/ATS), Math.floor((ny+dy)/ATS)))) return false;
+  aiaPlayer.x=nx; aiaPlayer.y=ny; return true;
+}
+
+/* ==================== 斯克里岛地图（2.5D · 白亮橄榄 · 第六章） ====================
+   ~水 T 橄榄树 P 宫殿柱廊 S 送行船 B 篝火 _ 码头 . 草地 , 小径
+   原版骨：瑙西亚娅救起漂流者，费埃克斯人备船送归（荷马史诗第 6-13 卷）
+   玩法：不接谎的船（说假家=雾散回原点）+ 回顾章（如实讲/吹牛讲 → 《无名旅人之歌》）+ 告白 */
+const SCHERIA = [
+  "~~~~~~~~~~~~~~~~~~~~",
+  "~TT...PPPPPP...TT..~",
+  "~....PPPPPPPP......~",
+  "~....PP.PPPP.......~",
+  "~....,.....PP......~",
+  "~....,.............~",
+  "~....,........TT...~",
+  "~..__,......TTT....~",
+  "~..____,...........~",
+  "~..____,,...S......~",
+  "~......,...........~",
+  "~~~_,,,~~~~~~~~~~~~~",
+];
+const SCSOLID = new Set(["~","T","P","S"]);
+const nausicaa = { x: 9*ATS+ATS/2, y: 5*ATS+ATS*0.7 };   /* 瑙西亚娅在宫前草场 */
+const SCSPOTS = [
+  {type:"nausicaa", x:nausicaa.x,      y:nausicaa.y,      r:85, label:"与瑙西亚娅交谈"},
+  {type:"talefire", x:8*ATS+ATS/2,     y:8*ATS+ATS/2,     r:75, label:"篝火（讲你的故事）"},
+  {type:"ship",     x:12*ATS+ATS/2,    y:9*ATS+ATS/2,     r:80, label:"费埃克斯人的船"},
+  {type:"scDock",   x:4*ATS+ATS/2,     y:10*ATS+ATS/2,    r:70, label:"码头（不接谎的船）"},
+];
+function scTile(cx,cy){ return (cx<0||cy<0||cx>=ACOLS||cy>=AROWS)?"~":SCHERIA[cy][cx]; }
+function tryMoveScheria(nx,ny){
+  const hw=aiaPlayer.w/2, hh=aiaPlayer.h/2;
+  for (const [dx,dy] of [[-hw,-hh],[hw,-hh],[-hw,hh],[hw,hh]])
+    if (SCSOLID.has(scTile(Math.floor((nx+dx)/ATS), Math.floor((ny+dy)/ATS)))) return false;
+  aiaPlayer.x=nx; aiaPlayer.y=ny; return true;
+}
+
+/* ==================== 伊萨卡地图（2.5D · 黎明青灰 · 终章） ====================
+   ~水 T 橄榄 P 宴厅 X 斧阵 C 织机 H 乞丐斗篷 _ 码头 . 场地 , 小径
+   原版骨：化名乞丐→十二斧→肃清→相认（荷马史诗第 21-22 卷）
+   玩法：A 路（化名→求婚者考场→十二斧→佩涅洛佩「你是谁」认名）/ B 路（码头转身，把家安在别处） */
+const ITHACA = [
+  "~~~~~~~~~~~~~~~~~~~~",
+  "~T..PPPPPPPP...TT..~",
+  "~..PPPPPPPPPP......~",
+  "~..PP.PPPPPPP......~",
+  "~....,.............~",
+  "~....,...XXX.......~",
+  "~....,.............~",
+  "~....,....C.....H..~",
+  "~..__,.............~",
+  "~..___,,...........~",
+  "~......,...........~",
+  "~~~_,,~~~~~~~~~~~~~~",
+];
+const ITSOLID = new Set(["~","T","P","X","C"]);
+const penelopeSpot = { x: 11*ATS+ATS/2, y: 7*ATS+ATS/2 };
+const ITSPOTS = [
+  {type:"suitors",  x:6*ATS+ATS/2,     y:3*ATS+ATS*0.85,  r:95, label:"宴厅里的求婚者"},
+  {type:"axes",     x:11*ATS+ATS/2,    y:5*ATS+ATS/2,     r:85, label:"十二斧阵"},
+  {type:"penelope", x:penelopeSpot.x,  y:penelopeSpot.y,  r:80, label:"楼上织机旁的人"},
+  {type:"cloak",    x:17*ATS+ATS/2,    y:7*ATS+ATS/2,     r:70, label:"乞丐的斗篷与杖"},
+  {type:"itDock",   x:4*ATS+ATS/2,     y:10*ATS+ATS/2,    r:70, label:"码头（转身，或归乡）"},
+];
+function itTile(cx,cy){ return (cx<0||cy<0||cx>=ACOLS||cy>=AROWS)?"~":ITHACA[cy][cx]; }
+function tryMoveIthaca(nx,ny){
+  const hw=aiaPlayer.w/2, hh=aiaPlayer.h/2;
+  for (const [dx,dy] of [[-hw,-hh],[hw,-hh],[-hw,hh],[hw,hh]])
+    if (ITSOLID.has(itTile(Math.floor((nx+dx)/ATS), Math.floor((ny+dy)/ATS)))) return false;
+  aiaPlayer.x=nx; aiaPlayer.y=ny; return true;
+}
+
+/* ==================== 序章组 · 奥德修斯的航迹（2026-11-07） ====================
+   #1 伊斯玛洛斯 / #3 食莲岛 / #4 独眼巨人之岛 / #6 忒勒皮洛斯（#2 马里阿角为海域事件，无地图）
+   定位：遗址回声——玩家不是重演者，是后来者。每站一个主题：贪 / 忘忧 / 名 / 毁灭。
+   红线：不重演戳瞎事件；波吕斐摩斯不可被攻击；波塞冬只作环境级显形（odyssey-story.md 序章组）。 */
+const PROLOGUE_SITES = {
+  ismaros: {
+    name:"伊斯玛洛斯", zone:"伊斯玛洛斯 · 喀科恩人的城", tint:"#3d4c5c", npc:"rebuilder", spawn:[3,9.5],
+    chapterImg:"concept-art/prologue/p1-伊斯玛洛斯.jpg",
+    kicker:"序 章 组 · 其 一", chapterSub:"第一次劫掠 · 贪的第一课",
+    quote:"「那伙人抢完了酒还赖着庆功——所以我们反了他们。拿得下的东西，守不守得住，是两回事。」",
+    solid:new Set(["~","W","T","M","X"]),
+    map:[
+      "~~~~~~~~~~~~~~~~~~~~",
+      "~WW..WW....TT......~",
+      "~WW..WW....T.......~",
+      "~..WWWW...,........~",
+      "~....WW...,....M.M.~",
+      "~...WWWW..,..MMMM..~",
+      "~....WW...,..X.....~",
+      "~........,......TT.~",
+      "~..T.....,....T....~",
+      "~..___,,...........~",
+      "~~~_,,~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~",
+    ],
+    spots:()=>[
+      {type:"rebuild", x:10*ATS+ATS/2, y:2*ATS+ATS/2, r:80, label:"与重建者交谈"},
+      {type:"wounded", x:9*ATS+ATS/2,  y:4*ATS+ATS/2, r:70, label:"给伤者上药"},
+      {type:"target",  x:13*ATS+ATS/2, y:6*ATS+ATS/2, r:70, label:"木靶练手"},
+      {type:"wine",    x:16*ATS+ATS/2, y:4*ATS+ATS/2, r:70, label:"战利品堆旁的酒瓶"},
+      {type:"dock",    x:4*ATS+ATS/2,  y:10*ATS+ATS/2, r:70, label:"扬帆出海"},
+    ],
+  },
+  lotus: {
+    name:"食莲岛", zone:"食莲岛 · 忘忧的甜", tint:"#7fa8a0", npc:"lotusman", spawn:[3,7.5],
+    chapterImg:"concept-art/prologue/p3-食莲岛.jpg",
+    kicker:"序 章 组 · 其 三", chapterSub:"忘忧的甜 · 代价是记忆",
+    quote:"「家？我们就是在回家啊——这里就是家。」",
+    solid:new Set(["~","T","W"]),
+    map:[
+      "~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~",
+      "~..LLLL....TT......~",
+      "~.LLLLLL...........~",
+      "~..LLLL....LL......~",
+      "~........,.....B...~",
+      "~..___,,...........~",
+      "~..___,,......LL...~",
+      "~~.,,~~~~~~LL~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~",
+    ],
+    spots:()=>[
+      {type:"lotusman", x:16*ATS+ATS/2, y:5*ATS+ATS/2, r:85, label:"与幸存者交谈"},
+      {type:"lotusEat", x:6*ATS+ATS/2,  y:4*ATS+ATS/2, r:70, label:"尝一颗莲子"},
+      {type:"lotusDrag",x:9*ATS+ATS/2,  y:6*ATS+ATS/2, r:70, label:"拖他上船"},
+      {type:"dock",     x:4*ATS+ATS/2,  y:6*ATS+ATS/2, r:70, label:"扬帆出海"},
+    ],
+  },
+  cyclops: {
+    name:"独眼巨人之岛", zone:"独眼巨人之岛 · 无人之名", tint:"#413a38", npc:"polyphemus", spawn:[3,7.5],
+    chapterImg:"concept-art/prologue/p4-独眼巨人岛.jpg",
+    kicker:"序 章 组 · 其 四", chapterSub:"无人之名 · 海替所有人记账",
+    quote:"「『没有人』伤害我！——神明也没听懂我的祈祷。」",
+    solid:new Set(["~","R","C"]),
+    map:[
+      "~~~~~~~~~~~~~~~~~~~~",
+      "~RR........RR......~",
+      "~RR.......RRR......~",
+      "~..RRR....CR.......~",
+      "~.......,..........~",
+      "~..C....,....SSSS..~",
+      "~..___,,....SSSSS..~",
+      "~..___,,.....SSS...~",
+      "~~.,,~~~~~~~SS~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~",
+    ],
+    spots:()=>[
+      {type:"cave",   x:10*ATS+ATS/2, y:3*ATS+ATS/2, r:85, label:"山洞口（熏黑的巨灶）"},
+      {type:"poly",   x:5*ATS+ATS/2,  y:5*ATS+ATS/2, r:95, label:"走近牧羊巨人"},
+      {type:"sheep",  x:14*ATS+ATS,   y:6*ATS+ATS/2, r:75, label:"羊群（剪一把羊毛）"},
+      {type:"dock",   x:4*ATS+ATS/2,  y:6*ATS+ATS/2, r:70, label:"解缆离岛"},
+    ],
+  },
+  telepylos: {
+    name:"忒勒皮洛斯", zone:"忒勒皮洛斯 · 悬崖之城", tint:"#5c6470", npc:null, spawn:[3,7.5],
+    chapterImg:"concept-art/prologue/p6-忒勒皮洛斯.jpg",
+    kicker:"序 章 组 · 其 六", chapterSub:"悬崖之城 · 十一艘船只剩一艘",
+    quote:"「十一个人里，只有他记得打这个结。」",
+    solid:new Set(["~","C","W","R"]),
+    map:[
+      "~~~~~~~~~~~~~~~~~~~~",
+      "~CCCC..CCCC..CCCC..~",
+      "~CCCC..CCCC..CCCC..~",
+      "~......R...........~",
+      "~..___,R....WW.....~",
+      "~..___,,...WW......~",
+      "~~.,,~~~~~~W~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~",
+    ],
+    spots:()=>[
+      {type:"cliff",  x:8*ATS+ATS/2,  y:3*ATS+ATS/2, r:75, label:"崖下险道（巨影在崖顶）"},
+      {type:"wreck",  x:12*ATS+ATS/2, y:4*ATS+ATS/2, r:80, label:"最后一艘船的残骸"},
+      {type:"dock",   x:4*ATS+ATS/2,  y:4*ATS+ATS/2, r:70, label:"解缆离岛"},
+    ],
+  },
+};
+function proTile(s,cx,cy){ const m=PROLOGUE_SITES[s].map; return (cy<0||cy>=m.length||cx<0||cx>=m[cy].length)?"~":m[cy][cx]; }
+function tryMovePrologue(nx,ny){
+  const hw=aiaPlayer.w/2, hh=aiaPlayer.h/2;
+  for (const [dx,dy] of [[-hw,-hh],[hw,-hh],[-hw,hh],[hw,hh]])
+    if (PROLOGUE_SITES[scene].solid.has(proTile(scene, Math.floor((nx+dx)/ATS), Math.floor((ny+dy)/ATS)))) return false;
+  aiaPlayer.x=nx; aiaPlayer.y=ny; return true;
+}
+function PROLOGUE_SPOTS(){ return PROLOGUE_SITES[scene].spots(); }
+/* 航序系统：点亮 + 海图「奥德修斯航迹」计数（探险大陆：点亮不分先后，海图按序推荐） */
+const LEG_SEQ = {troy:0, ismaros:1, malea:2, lotus:3, cyclops:4, aeolia:5, telepylos:6, aia:7, hades:8, strait:9, sun:11, ogggia:12, scheria:13, ithaca:14};
+const LEG_NAME = {ismaros:"#1 伊斯玛洛斯", malea:"#2 马里阿角", lotus:"#3 食莲岛", cyclops:"#4 独眼巨人", aeolia:"#5 风神岛", telepylos:"#6 忒勒皮洛斯", aia:"#7 埃阿亚", hades:"#8 冥界", strait:"#9/10 声之海峡", sun:"#11 太阳岛", ogggia:"#12 奥吉吉亚", scheria:"#13 斯克里", ithaca:"#14 伊萨卡", troy:"#0 特洛伊海岸"};
+function markLeg(k){
+  if (!k || !state.legs) return;
+  if (state.legs[k]) return;
+  state.legs[k]=1;
+  addMemory(`旅人把 ${LEG_NAME[k]||k} 走进了自己的航程（航序点亮）`, 1, "sea");
+  save();
+}
+function legsVisitedCount(){ return Object.keys(state.legs).filter(k=>LEG_SEQ[k]!==undefined && state.legs[k]).length; }
+function enterPrologue(key){
+  const p=PROLOGUE_SITES[key];
+  scene = key;
+  aiaPlayer.x = p.spawn[0]*ATS+ATS/2; aiaPlayer.y = p.spawn[1]*ATS+ATS/2;
+  markLeg(key);
+  save();
+  if (!state.legs["seen_"+key]){
+    state.legs["seen_"+key]=1; save();
+    showChapter(p.chapterImg, p.kicker, p.name.split("").join(" "), p.chapterSub, p.quote);
+  } else {
+    toast(`${p.name} —— 潮声跟来时一样。（M 海图 · 航序 ${(LEG_SEQ[key]!==undefined?"#"+LEG_SEQ[key]:"")}）`);
+  }
+}
+/* 马里阿角（#2 海域事件）：船行至伯罗奔尼撒南端触发听风试炼（不登陆） */
+const MALEA_SPOT = {x:19.5*WTS, y:10.5*WTS};
+function maleaTick(){
+  if (state.maleaDone || scene!=="world") return;
+  if (Math.hypot(boat.x-MALEA_SPOT.x, boat.y-MALEA_SPOT.y) < 95){
+    state.maleaDone = true; markLeg("malea"); gainXp(15);
+    addMemory("旅人在马里阿角的风暴里学会了读风——海记得每一次转向", 2, "storm");
+    toast("海雾骤起，双重风暴前后夹来——你贴着风向转了九次，船头终于咬住了浪缝。（听风试炼 · 历练 +15 · 航序 #2 点亮）");
+    sfx("warn"); renderHUD(); save();
+  }
+}
+function prologueSpot(s){
+  const P = PROLOGUE_SITES[scene];
+  switch(s.type){
+  /* —— 伊斯玛洛斯 —— */
+  case "rebuild": return openDlg("rebuilder");
+  case "wounded":
+    if (state.ismarosSpared) return toast("伤者朝你抬了抬下巴。药香还在。");
+    if (!state.backpack["治疗草药"]) return toast("他的腿在流血——你身上没有治疗草药。（埃亚岛的女巫货架有）");
+    delItem("治疗草药",1); state.ismarosSpared=true; addAffinity(5); gainXp(15);
+    addMemory("旅人把治疗草药给了伊斯玛洛斯的伤者", 3, "ismaros");
+    toast("你把药草捣碎敷上他的腿。他没问你是谁——这座城的人不再问来客的名字。（好感 +5 · 历练 +15 · 航序 #1）");
+    renderHUD(); save(); return;
+  case "target": {
+    state.targetHits++;
+    sfx("attack");
+    if (state.targetHits===1) toast("你朝木靶刺出第一矛——手腕记得这个动作。（再刺两下，找回手感）");
+    else if (state.targetHits===2) toast("第二矛正中红圈。呼吸，收肘，再刺。");
+    else if (state.targetHits===3){
+      gainXp(20); addMemory("旅人在伊斯玛洛斯的木靶前找回了自己的矛", 2, "ismaros");
+      toast("第三矛钉进靶心。木靶上全是旧枪眼——这城的教训，替你热了身。（历练 +20 · 战斗手感已恢复）");
+      renderHUD(); save();
+    } else toast("靶心的旧枪眼比你的新。收矛吧。");
+    return;
+  }
+  case "wine":
+    if (state.tookWine) return toast("酒瓶空了——刻字还在：赢家不该在输家的城里睡。");
+    state.tookWine=true; addItem("喀科恩酒");
+    addMemory("旅人拾走了战利品堆旁的喀科恩酒——瓶上刻着：赢家不该在输家的城里睡", 2, "ismaros");
+    toast("你捡起酒瓶。瓶底刻着一行小字：「赢家不该在输家的城里睡。」——当年有人没把这句话当回事。（获得 喀科恩酒）");
+    renderHUD(); save(); return;
+  /* —— 食莲岛 —— */
+  case "lotusman": return openDlg("lotusman");
+  case "lotusEat":
+    if (state.lotusAte) return toast("莲子的甜还在舌根。别再尝了——甜是会记账的。");
+    state.lotusAte=true;
+    state.status["士气"]="昂扬"; state.hunger=Math.min(100,state.hunger+40);
+    addMemory("旅人尝了食莲岛的莲子——甜是真的，有段记忆跟着甜味淡了", 3, "lotus");
+    toast("莲子比蜜还甜。你愣了很久——刚才在想什么来着？……想不起来了。饿是真饱了，心是真轻了。（士气昂扬 · 饥饿缓解 · 某段记忆变淡了）");
+    renderHUD(); save(); return;
+  case "lotusDrag":
+    if (state.lotusDragged) return toast("断桨躺在沙上。他不肯走——你也不该再拖第二次。");
+    state.lotusDragged=true; addItem("断桨"); gainXp(10);
+    addMemory("旅人想强拖食莲者上船，只捞到一支断桨", 2, "lotus");
+    toast("你抓住他的手腕往船拖——他挣开，笑得毫无恶意。你只捞到一支断桨。（获得 断桨 · 历练 +10）");
+    renderHUD(); save(); return;
+  /* —— 独眼巨人之岛 —— */
+  case "cave":
+    if (!state.polHeard) return toast("洞口的巨灶熏得漆黑。里面太暗——先去羊栏边见那个高大的影子。");
+    return toast("洞里黑得很深。他没有请任何人进去过——自从那晚之后。");
+  case "poly": return openDlg("polyphemus");
+  case "sheep":
+    if (state.sheared) return toast("巨羊抖了抖毛，继续吃草。一人一件，巨人说的。");
+    state.sheared=true; addItem("羊毛披风"); gainXp(15);
+    addMemory("旅人得了盲眼巨人允许的一把羊毛——披风比想象中暖", 3, "polyphemus");
+    toast("巨羊安静地站着，任你剪下一捧羊毛。远处巨人没回头——「一人一件。」他说。（获得 羊毛披风 · 历练 +15）");
+    renderHUD(); save(); return;
+  /* —— 忒勒皮洛斯 —— */
+  case "cliff":
+    if (!state.cliffWarn){ state.cliffWarn=true; sfx("alert"); save();
+      return toast("崖顶的巨影直起身来——石头砸进你脚边的水里。别走崖下直线，从残骸内侧绕。"); }
+    state.hp=Math.max(1,state.hp-15); sfx("hurt");
+    addMemory("旅人在忒勒皮洛斯硬闯了崖下险道——石头不跟人讲道理", 2, "telepylos");
+    toast("第二块石头擦着头皮砸下来。碎石划伤了你的肩。（伤势 -15 · 从残骸内侧绕行）");
+    renderHUD(); save(); return;
+  case "wreck":
+    if (state.ropeTaken) return toast("船骸的影子在水里晃。绳结的打法，你已经记下了。");
+    state.ropeTaken=true; addItem("幸存者的绳结"); gainXp(20);
+    addMemory("旅人在忒勒皮洛斯拾了幸存者的绳结——十一个人里只有他记得打这个结", 3, "telepylos");
+    toast("碎船骸间有一根系船的旧绳。你照着残结比划——十一个人里只有他记得打这个结。（获得 幸存者的绳结 · 历练 +20 · 航序 #6）");
+    renderHUD(); save(); return;
+  case "dock":
+    scene = "world"; save(); sfx("pick");
+    toast("船头调向外海——岛的影子在船尾慢慢合上。");
+    return;
+  }
+  return toast("（这里没什么可碰的。）");
+}
+/* 序章组统一渲染（2.5D 顶面+侧影；色系与主场景同源） */
+function drawPrologue(et){
+  const p = PROLOGUE_SITES[scene];
+  ctx.fillStyle = p.tint; ctx.fillRect(0,0,VIEW_W,VIEW_H);
+  for (let cy=0;cy<p.map.length;cy++){
+    const row=p.map[cy];
+    for (let cx=0;cx<row.length;cx++){
+      const ch=row[cx], x=cx*ATS, y=cy*ATS;
+      switch(ch){
+        case "~": ctx.fillStyle="rgba(30,52,74,.55)"; ctx.fillRect(x,y,ATS,ATS); break;
+        case "T": ctx.fillStyle="#2e4d3a"; ctx.fillRect(x+6,y+8,ATS-12,ATS-10);
+                  ctx.fillStyle="#3c6a4d"; ctx.fillRect(x+6,y+6,ATS-12,8); break;
+        case "W": if (scene==="ismaros"){ ctx.fillStyle="#1c1c1e"; ctx.fillRect(x+2,y+6,ATS-4,ATS-8);
+                    ctx.fillStyle="#3a3230"; ctx.fillRect(x+2,y+4,ATS-4,6); }   /* 烧焦残墙 */
+                  else { ctx.fillStyle="#3d3630"; ctx.beginPath();
+                    ctx.moveTo(x+3,y+ATS-6); ctx.lineTo(x+ATS/2,y+6); ctx.lineTo(x+ATS-3,y+ATS-6); ctx.closePath(); ctx.fill(); } break;  /* 碎船骸 */
+        case "M": ctx.fillStyle="#5a3d2e"; ctx.fillRect(x+4,y+8,ATS-8,ATS-10);
+                  ctx.fillStyle="#e8a84a"; ctx.fillRect(x+4,y+6,ATS-8,6); break;
+        case "X": ctx.fillStyle="#6b4a2f"; ctx.fillRect(x+ATS/2-3,y+4,6,ATS-8);
+                  ctx.fillStyle="#8a6a3a"; ctx.beginPath(); ctx.arc(x+ATS/2,y+6,7,0,7); ctx.fill(); break;
+        case "L": ctx.fillStyle="rgba(240,190,210,.85)"; ctx.beginPath();
+                  ctx.arc(x+ATS/2+Math.sin(et/700+cx)*2,y+ATS/2,5,0,7); ctx.fill();
+                  ctx.fillStyle="rgba(180,220,170,.5)"; ctx.fillRect(x+2,y+ATS/2,ATS-4,3); break;
+        case "B": ctx.fillStyle="#d8c9a8"; ctx.beginPath(); ctx.ellipse(x+ATS/2,y+ATS/2+2,8,5,0,0,7); ctx.fill(); break;
+        case "R": ctx.fillStyle="#26221f"; ctx.fillRect(x,y+4,ATS,ATS-4);
+                  ctx.fillStyle="#3b342e"; ctx.fillRect(x,y+2,ATS,6); break;
+        case "S": { const b=Math.sin(et/600+cx*1.3)>0?1:0;
+                  ctx.fillStyle="#cfc4b0"; ctx.beginPath(); ctx.ellipse(x+ATS/2,y+ATS/2+b,9,6,0,0,7); ctx.fill();
+                  ctx.fillStyle="#8a7a66"; ctx.beginPath(); ctx.arc(x+ATS/2+7,y+ATS/2-3+b,4,0,7); ctx.fill(); break; }
+        case "C": ctx.fillStyle="#121014"; ctx.fillRect(x+4,y+2,ATS-8,ATS-4);
+                  if (scene==="cyclops" && !state.polHeard){
+                    const gl=0.5+0.5*Math.sin(et/300);
+                    ctx.fillStyle=`rgba(255,80,60,${0.25+gl*0.3})`; ctx.fillRect(x+ATS/2-2,y+ATS/2-2,4,4);
+                  } break;
+        case "_": ctx.fillStyle="#7a5c38"; ctx.fillRect(x,y+10,ATS,6); break;
+        case ",": ctx.fillStyle="rgba(220,200,160,.18)"; ctx.fillRect(x+ATS/2-2,y,4,ATS); break;
+        default:  ctx.fillStyle="rgba(120,140,110,.16)"; ctx.fillRect(x,y,ATS,ATS); break;
+      }
+    }
+  }
+  const px=aiaPlayer.x, py=aiaPlayer.y;
+  ctx.fillStyle="#2b3a4a"; ctx.beginPath(); ctx.ellipse(px,py+4,8,10,0,0,7); ctx.fill();
+  ctx.fillStyle="#c9a978"; ctx.beginPath(); ctx.arc(px,py-8,6,0,7); ctx.fill();
+  const g=ctx.createRadialGradient(VIEW_W/2,VIEW_H/2,VIEW_H*0.42,VIEW_W/2,VIEW_H/2,VIEW_H*0.86);
+  g.addColorStop(0,"rgba(0,0,0,0)"); g.addColorStop(1,"rgba(0,0,0,.36)");
+  ctx.fillStyle=g; ctx.fillRect(0,0,VIEW_W,VIEW_H);
+}
 const GHOSTS = [ {bx:230,by:190,ax:26,ay:12,p:0.7}, {bx:600,by:240,ax:34,ay:15,p:1.3},
                  {bx:170,by:330,ax:20,ay:14,p:2.1}, {bx:560,by:340,ax:28,ay:10,p:2.9} ];
 const HSPOTS = [
@@ -568,6 +999,43 @@ let state = {
   sunDebt: null,         /* 借牛记录 {pledge}（以名字作保，判词留白） */
   slaughterWarn: false,  /* 宰牛二段确认（E 两次，防误触） */
   memGreeted: [],        /* 已用作开场问候的记忆 t 列表（memoryGreeting 去重） */
+  /* —— 第五章·奥吉吉亚（ogggia）—— */
+  calypsoStage: 0,       /* 0 初见 1 第一天 2 第二天 3 问正题 4 已选择 */
+  calypsoChoice: null,   /* "stay" 滞留 / "raft" 造筏 */
+  calypsoName: null,     /* 出湾时她最后问「你是谁」你的回答（终章认名碎片） */
+  ogygiaDay: 0,          /* 冻结的日历：岛上过了几个「完美的一天」 */
+  raft: {wood:0, wind:false, food:0},  /* 造筏：木料×3 / 听风 / 储粮×2 */
+  ogygiaLeft: false,     /* 出湾（海面第一次出现你自己划的尾迹=锚点） */
+  /* —— 第六章·斯克里岛（scheria）—— */
+  talesTold: [],         /* 如实讲的章节 id（无名旅人之歌素材） */
+  scheriaStage: 0,       /* 0 未讲故事 1 讲述中 2 讲完待告白 3 告白已发生 */
+  nausicaaAsk: false,    /* 瑙西亚娅的告白（留下来做客人） */
+  guest: false,          /* 客卿变体结局 flag */
+  scheriaFarewell: false,/* 送行完成 → 伊萨卡解锁 */
+  /* —— 终章·伊萨卡（ithaca）—— */
+  ithacaStage: 0,        /* 0 登岛 1 已化名 2 骗过求婚者 3 弦响十二次 4 相认之问 */
+  disguise: false,       /* 乞丐斗篷 */
+  homeAnswer: null,      /* 「不接谎的船」问你「家在哪」时你说出的答案 */
+  farewellHint: false,   /* 太阳岛后回埃亚岛：喀耳刻指路（一次性） */
+  /* —— 终章判词（从第四章后迁移到此）—— */
+  finaleDone: false,     /* 终章判词已看过（showEnding） */
+  chosenName: null,      /* 认名结果 */
+  nameWay: null,         /* 认名方式：old/sun/calypso/input/none */
+  /* —— 序章组·奥德修斯的航迹（#1/#2/#3/#4/#6 遗址回声）—— */
+  legs: {},                /* 航序点亮 {sceneKey|malea|seen_x:1}（海图「奥德修斯航迹」计数） */
+  maleaDone: false,        /* 马里阿角：听风试炼完成 */
+  ismarosSpared: false,    /* 伊斯玛洛斯：给伤者上过药 */
+  tookWine: false,         /* 拾了喀科恩酒 */
+  targetHits: 0,           /* 木靶练手次数 */
+  lotusAte: false,         /* 尝过莲子（有段记忆跟着甜味变淡） */
+  lotusGift: false,        /* 劝过幸存者（得莲子干） */
+  lotusDragged: false,     /* 强拖过幸存者（得断桨） */
+  sheared: false,          /* 剪过羊毛（羊毛披风） */
+  polHeard: false,         /* 听完「无人」故事全本（洞内独眼微光随之熄灭） */
+  polNameGiven: null,      /* 自报名字（名字考试） */
+  namesHeard: false,       /* 「被留下的名」解锁（“无人”——终章认名候选预埋） */
+  ropeTaken: false,        /* 忒勒皮洛斯：幸存者的绳结 */
+  cliffWarn: false,        /* 忒勒皮洛斯：崖下险道首次警告 */
 };
 
 /* ---------- 派生数值：从基础属性重算，绝不存为真值（rpg Pattern 1） ---------- */
@@ -623,6 +1091,40 @@ function ensureState(){
   if (state.sunStage===undefined) state.sunStage=null;
   if (state.freeSail===undefined) state.freeSail=false;
   if (state.epilogueDone===undefined) state.epilogueDone=false;
+  /* 第五/六章 + 终章字段：旧档补默认值 */
+  if (state.calypsoStage===undefined) state.calypsoStage=0;
+  if (state.calypsoChoice===undefined) state.calypsoChoice=null;
+  if (state.calypsoName===undefined) state.calypsoName=null;
+  if (state.ogygiaDay===undefined) state.ogygiaDay=0;
+  if (!state.raft) state.raft={wood:0,wind:false,food:0};
+  if (state.ogygiaLeft===undefined) state.ogygiaLeft=false;
+  if (!Array.isArray(state.talesTold)) state.talesTold=[];
+  if (state.scheriaStage===undefined) state.scheriaStage=0;
+  if (state.nausicaaAsk===undefined) state.nausicaaAsk=false;
+  if (state.guest===undefined) state.guest=false;
+  if (state.scheriaFarewell===undefined) state.scheriaFarewell=false;
+  if (state.ithacaStage===undefined) state.ithacaStage=0;
+  if (state.disguise===undefined) state.disguise=false;
+  if (state.homeAnswer===undefined) state.homeAnswer=null;
+  if (state.farewellHint===undefined) state.farewellHint=false;
+  if (state.finaleDone===undefined) state.finaleDone=false;
+  if (state.chosenName===undefined) state.chosenName=null;
+  if (state.nameWay===undefined) state.nameWay=null;
+  /* 序章组字段：旧档补默认值（奥德修斯的航迹） */
+  if (!state.legs) state.legs={};
+  if (state.maleaDone===undefined) state.maleaDone=false;
+  if (state.ismarosSpared===undefined) state.ismarosSpared=false;
+  if (state.tookWine===undefined) state.tookWine=false;
+  if (state.targetHits===undefined) state.targetHits=0;
+  if (state.lotusAte===undefined) state.lotusAte=false;
+  if (state.lotusGift===undefined) state.lotusGift=false;
+  if (state.lotusDragged===undefined) state.lotusDragged=false;
+  if (state.sheared===undefined) state.sheared=false;
+  if (state.polHeard===undefined) state.polHeard=false;
+  if (state.polNameGiven===undefined) state.polNameGiven=null;
+  if (state.namesHeard===undefined) state.namesHeard=false;
+  if (state.ropeTaken===undefined) state.ropeTaken=false;
+  if (state.cliffWarn===undefined) state.cliffWarn=false;
   /* 旧档迁移：单任务槽 → 多任务账本（rpg/save-systems：只加 migration，不坏老档） */
   if (state.quest){
     const id = state.quest.name==="释放四风" ? "aeolia_winds" : "witch_grass";
@@ -688,7 +1190,7 @@ function load(){
   state = d.state;
   if (d.boat){ boat.x=d.boat.x; boat.y=d.boat.y; }
   if (d.aia){ aiaPlayer.x=d.aia.x; aiaPlayer.y=d.aia.y; }
-  scene = d.scene === "hades" ? "hades" : d.scene === "aeolia" ? "aeolia" : d.scene === "strait" ? "strait" : d.scene === "sun" ? "sun" : d.scene === "aia" ? "aia" : "world";
+  scene = d.scene === "hades" ? "hades" : d.scene === "aeolia" ? "aeolia" : d.scene === "strait" ? "strait" : d.scene === "sun" ? "sun" : d.scene === "aia" ? "aia" : d.scene === "ogggia" ? "ogggia" : d.scene === "scheria" ? "scheria" : d.scene === "ithaca" ? "ithaca" : PROLOGUE_SITES[d.scene] ? d.scene : "world";
   ensureState();
   return true;
 }
@@ -746,7 +1248,9 @@ function camCenter(){ return scene==="world" ? [0,0] : [VIEW_W/2, VIEW_H/2]; }  
 function sceneBackdrop(){
   return scene==="aia" ? "#2f6f96" : scene==="hades" ? "#0c1622"
        : scene==="aeolia" ? "#c3d2e2" : scene==="strait" ? "#3c5165"
-       : scene==="sun" ? (state.sunWrath ? "#5a6a72" : "#2c6d86") : null;
+       : scene==="sun" ? (state.sunWrath ? "#5a6a72" : "#2c6d86")
+       : scene==="ogggia" ? "#8a6a52" : scene==="scheria" ? "#2e7d98" : scene==="ithaca" ? "#41586b"
+       : scene==="ismaros" ? "#3d4c5c" : scene==="lotus" ? "#7fa8a0" : scene==="cyclops" ? "#413a38" : scene==="telepylos" ? "#5c6470" : null;
 }
 function camTick(dt){
   const b = sceneSize();
@@ -1002,12 +1506,36 @@ const AMBIENT = {
     {id:"passed", w:0.5, cond:()=>state.straitStage>=2,
                   line:()=>"（雾里，三声叹息）去吧……可你会想起这段旋律。"},
   ],
+  calypso: [
+    {id:"welcome", w:1.0, cond:()=>state.ogygiaDay===0,
+                  line:()=>"（织机声不停）果子熟了——离手就熟。这岛上的日子，够你慢慢来。"},
+    {id:"loom",   w:0.8, cond:()=>state.ogygiaDay>=1&&state.calypsoStage<3,
+                  line:()=>"（她拆掉白日织开的布）白天织，夜里拆。你问为什么？——岛上总得有点事做。"},
+    {id:"ask",    w:1.0, cond:()=>state.ogygiaDay>=2&&state.calypsoStage<3,
+                  line:()=>"（她停下织梭，第一次正面看你）……有些话，再不说，你就真的住下了。"},
+    {id:"raft",   w:0.9, cond:()=>state.calypsoChoice==="raft"&&state.raft.wood<3,
+                  line:()=>"木料要三根。斧头在你手里——你一路学的东西，用得上了。"},
+    {id:"stay",   w:0.7, cond:()=>state.calypsoChoice==="stay",
+                  line:()=>"（她把门开着）夜里的海声，就当是摇篮曲。想走的时候，筏台没拆。"},
+  ],
+  nausicaa: [
+    {id:"washed", w:1.0, cond:()=>state.scheriaStage===0,
+                  line:()=>"你醒的时候，海把你的船推上了我们的滩——别怕，费埃克斯人不问来历。"},
+    {id:"tale",   w:0.9, cond:()=>state.scheriaStage<2,
+                  line:()=>"篝火在等你的故事。德摩多科斯的琴，也等着。"},
+    {id:"song",   w:0.6, cond:()=>state.scheriaStage>=2,
+                  line:()=>"德摩多科斯今晚唱新歌——唱如实讲的那些段。吹牛的，他自动跳过。"},
+    {id:"bye",    w:0.8, cond:()=>state.scheriaStage>=3,
+                  line:()=>"（她朝码头挥手，很久才放下）船备好了。……别回头念这座岛的名字。"},
+  ],
 };
 function ambientAnchor(npc){
   if (npc==="witch") return witch;
   if (npc==="seer") return seer;
   if (npc==="aeolus") return aeolus;
   if (npc==="siren"){ const s=SSPOTS.find(p=>p.type==="siren"); return s?{x:s.x,y:s.y}:null; }
+  if (npc==="calypso") return calypso;
+  if (npc==="nausicaa") return nausicaa;
   return null;
 }
 let ambTimer=0, ambUntil=0, ambAnchor=null, ambText="", ambActive=null;
@@ -1017,7 +1545,8 @@ function npcAmbientTick(dt){
   if (ambTimer < 1.2) return;                /* 决策步 1.2s 一次，非每帧 */
   ambTimer = 0;
   if (dlgOpen||titleOn||chapterOn||mapOpen||scene==="world"){ ambActive=null; return; }
-  const npc = scene==="aia"?"witch":scene==="hades"?"seer":scene==="aeolia"?"aeolus":"siren";
+  const npc = scene==="aia"?"witch":scene==="hades"?"seer":scene==="aeolia"?"aeolus":scene==="strait"?"siren":scene==="sun"?"cattle":scene==="ogggia"?"calypso":scene==="scheria"?"nausicaa":scene==="ismaros"?"rebuilder":scene==="lotus"?"lotusman":scene==="cyclops"?"polyphemus":null;
+  if (!npc){ ambActive=null; return; }
   const anchor = ambientAnchor(npc);
   if (!anchor){ ambActive=null; return; }
   if (Math.hypot(aiaPlayer.x-anchor.x, aiaPlayer.y-anchor.y) > 180){ ambActive=null; return; }
@@ -1155,8 +1684,8 @@ function tickMove(dt){
   else if (dy<0) p.face="up"; else p.face="down";
   /* 风袋顺风：海上航速倍增（暗线③：用风=快旅，贪念=用光） */
   const tail = scene==="world" && performance.now() < (state.tailwindUntil||0);
-  const sp = (scene==="aia"?150:scene==="hades"?120:scene==="aeolia"?130:scene==="strait"?135:scene==="sun"?140:tail?230:110)*dt;
-  const mover = scene==="aia" ? tryMoveAia : scene==="hades" ? tryMoveHades : scene==="aeolia" ? tryMoveAeolia : scene==="strait" ? tryMoveStrait : scene==="sun" ? tryMoveSun : tryMoveWorld;
+  const sp = (scene==="aia"?150:scene==="hades"?120:scene==="aeolia"?130:scene==="strait"?135:scene==="sun"?140:scene==="ogggia"?125:scene==="scheria"?150:scene==="ithaca"?140:PROLOGUE_SITES[scene]?135:tail?230:110)*dt;
+  const mover = scene==="aia" ? tryMoveAia : scene==="hades" ? tryMoveHades : scene==="aeolia" ? tryMoveAeolia : scene==="strait" ? tryMoveStrait : scene==="sun" ? tryMoveSun : scene==="ogggia" ? tryMoveOggia : scene==="scheria" ? tryMoveScheria : scene==="ithaca" ? tryMoveIthaca : PROLOGUE_SITES[scene] ? tryMovePrologue : tryMoveWorld;
   p.vx = dx*sp/dt; p.vy = dy*sp/dt;   /* 实际速度（px/s），相机前瞻用 */
   if (dx) mover(p.x+dx*sp, p.y);
   if (dy) mover(p.x, p.y+dy*sp);
@@ -1354,8 +1883,23 @@ function setAmbience(){
       o.connect(og); og.connect(ambGain); o.start();
       keep(o);
     }
+  } else if (scene === "ogggia"){
+    /* 奥吉吉亚：暮色暖浪（lowpass 噪声，柔）+ 极轻钟琴泛音（523/659Hz）——冻结的一天的声音 */
+    const n = AC.createBufferSource(); n.buffer = getNoise(); n.loop = true;
+    const f = AC.createBiquadFilter(); f.type="lowpass"; f.frequency.value=380;
+    const g = AC.createGain(); g.gain.value = 0.032;
+    n.connect(f); f.connect(g); g.connect(ambGain); n.start();
+    const lfo = AC.createOscillator(); lfo.frequency.value = 0.07;
+    const lg = AC.createGain(); lg.gain.value = g.gain.value*0.75;
+    lfo.connect(lg); lg.connect(g.gain); lfo.start();
+    keep(n); keep(lfo);
+    for (const [fq,amp] of [[523,0.0045],[659,0.003]]){
+      const o = AC.createOscillator(); o.type="sine"; o.frequency.value=fq;
+      const og = AC.createGain(); og.gain.value=amp;
+      o.connect(og); og.connect(ambGain); o.start();
+      keep(o);
+    }
   } else {
-    /* 海浪：lowpass 噪声 + LFO 起伏 */
     const n = AC.createBufferSource(); n.buffer = getNoise(); n.loop = true;
     const f = AC.createBiquadFilter(); f.type="lowpass"; f.frequency.value = scene==="world"?420:360;
     const g = AC.createGain(); g.gain.value = scene==="world"?0.05:0.038;
@@ -1440,6 +1984,13 @@ const GATES = {
             hint:"海峡的歌还没到听的时候——先去冥界问路。（特瑞西阿斯会指给你两条路）" },
   sun:    { cond:()=> !!(state.straitCleared || state.straitStage>=2 || state.sunStage!=null || state.sunBlessed || state.sunWrath),
             hint:"金光未现——海峡还没过去。（处置了塞壬的歌，才看得见金光深处）" },
+  /* —— 圣经收官：第五/六章 + 终章（门控延伸到伊萨卡）—— */
+  ogggia: { cond:()=> !!(state.sunBlessed || state.sunWrath || state.sunStage!=null),
+            hint:"雾外的岛还没显形——先了结太阳岛的账。（守住圣牛，或付清代价）" },
+  scheria:{ cond:()=> !!state.ogygiaLeft,
+            hint:"出不了湾——卡吕普索的岛还在等你的答案。（造筏，或留下）" },
+  ithaca: { cond:()=> !!state.scheriaFarewell,
+            hint:"雾还没散——先在斯克里岛把故事讲完。（费埃克斯人不送没被看见的人）" },
 };
 function islandOpen(is){
   if (typeof is.scene!=="string") return !!is.open;   /* 无场景的远岛（西西里/伊萨卡/特洛伊）维持待开放 */
@@ -1455,11 +2006,19 @@ function nextObjective(){
   if (!state.prophecy) return {k:"hades", text:"去冥界之岸：献上蜂蜜酒、面包、淡水，向特瑞西阿斯问路"};
   if (state.straitStage<2 && !state.straitCleared) return {k:"strait", text:"穿过声之海峡（先处置塞壬的歌：蜡，或栈杆）"};
   if (!state.sunStage && !state.sunBlessed && !state.sunWrath) return {k:"sun", text:"去太阳岛——守住圣牛，或付出代价"};
-  if (!state.epilogueDone) return {k:"aia", text:"回埃亚岛——航程该收尾了"};
+  if (!state.epilogueDone && !state.farewellHint) return {k:"aia", text:"回埃亚岛——喀耳刻等你复命"};
+  if (!state.ogygiaLeft) return {k:"ogggia", text:"雾外还有一座岛——完美的天气，完美的一天"};
+  if (!state.scheriaFarewell) return {k:"scheria", text:"把你的故事讲给愿意听的人（斯克里岛）"};
+  if (!state.finaleDone) return {k:"ithaca", text:"雾散了——伊萨卡。回家，或者不归"};
   return {k:null, text:state.freeSail?"自由漂流 · 海图全开":"航程已完——想漂去哪就去哪"};
 }
-/* 终章判词：按圣经 §六 结局矩阵拼装（分章 flag → 段落库），不新编神话事实 */
-function showEnding(){
+/* 终章判词（圣经 §六 结局矩阵拼装，认名后触发；showEnding 从"四章后"迁移至此）
+   mode: "a"=认名归乡（默认）| "b"=码头转身 | "stay"=滞留奥吉吉亚 | "guest"=客卿斯克里 */
+function showFinale(mode, way, name){
+  state.finaleDone = true;
+  if (mode==="a"){ state.nameWay = way||"none"; state.chosenName = (way==="old"||way==="none") ? null : (name||null); }
+  save();
+  const stay = mode==="stay", guest = mode==="guest", bpath = mode==="b";
   const paras=[];
   paras.push(state.prophecy==="long"
     ? "你选了长路。困顿一路跟着你，像条忠心的老狗——也正是它，把你一寸一寸驮回了熟悉的海。"
@@ -1474,16 +2033,37 @@ function showEnding(){
   paras.push(state.sunBlessed
     ? ("太阳岛上你守住了誓言。"+(state.sunName?`「${state.sunName}」——他记住了这个名字。`:"")+"一缕走得过黑暗的光，此刻正在你包里。")
     : "圣牛的血漫过草场。你吃饱了——胃是满的，天是阴的；往后每一阵风里都有闷雷。");
+  if (stay){
+    paras.push("你留在了奥吉吉亚。永生的锁合上，日历重新开始走——第一件要数清的，是你为了什么留下来。没有归乡，只有滞留。她不提这件事，她也什么都不提。");
+  } else if (guest){
+    paras.push("你留在了斯克里岛，做费埃克斯的客人。白港的日子明亮，德摩多科斯的歌里多了一个名字——听仔细，那唱的是你。家有时不是地名，是有人认真留你。");
+  } else if (bpath){
+    paras.push("你在伊萨卡的码头转过身。王宫的火光留在雾里，弓和斧都退回了传说——你把一路捡到的碎片（"+[state.sunBlessed?"光":null, state.raft.wood?"手艺":null, state.talesTold.length?"被唱过的故事":null, "药草的香"].filter(Boolean).join("、")+"），安进了自己的海。伊萨卡不是你的家——路是。");
+  } else {
+    paras.push(state.calypsoChoice==="raft"
+      ? "奥吉吉亚的黄昏被你自己划破了。海面上第一条自己划出来的尾迹——那是你的，谁也拿不走。"
+      : "你最终离开了那座完美的岛。滞留的岁月算数，但它没有赢——你还在往前走。");
+    if (state.guest) paras.push("瑙西亚娅的白港你来过两回：一回被救，一回告别。客人的名字，歌里唱得比王还长。");
+    else if (state.talesTold.length) paras.push(`斯克里岛的篝火边，你如实讲了 ${state.talesTold.length} 段——德摩多科斯的歌里从此有你。被唱出来，就是被记住。`);
+    else paras.push("斯克里岛的歌里没有你的名字——故事被你讲成了牛，或者根本没讲。世界不接谎，歌也一样。");
+    if (way==="old") paras.push("相认的那一刻，你答了旧名——那个亡者替你记住的名字。它领你进门，像替别人开门。");
+    else if (way==="sun" && name) paras.push(`相认时你说：「${name}。」——太阳记过的名字，王后也认。`);
+    else if (way==="calypso" && name) paras.push(`相认时你说：「${name}。」——那是连永生都没能换走的名字。`);
+    else if (way==="input" && name) paras.push(`相认时你说：「${name}。」——这名字不在任何族谱上。是你自己挣来的。`);
+    else if (way==="none") paras.push("相认时你沉默了。无名者进了无名门——王后却认得这份沉默：她等的就是不靠名字的人。");
+  }
   const tails=[];
   if (state.scyllaDebtPaid) tails.push("「不怪你」三个字，你带到了。喀耳刻的岛天亮了，海底的静水也还亮着。");
   const windLeft=state.backpack["风袋"]||0;
   if (windLeft) tails.push(`风袋里还剩 ${windLeft} 阵风。贪念那次，放过了你。`);
   if (tails.length) paras.push(tails.join(" "));
-  paras.push(state.sunName
-    ? "船头调向西的时候，你没有报旧名。你报的是自己挑的——这一回，名字是你的了。"
-    : "船头调向西。无名旅人航完了这段海——无名，所以自由。");
+  paras.push(stay ? "锁没有锁眼。它锁的从来不是门——是「回家」这两个字的发音。"
+    : bpath ? "船头没有调向西，也没有调向东。你想去哪儿，哪儿就是船头。"
+    : "船头调向西的时候，你认下了自己的名字——这一回，它是你的了。");
   const mem=(state.memory||[]).length;
   const ec=document.getElementById("endingCard");
+  ec.querySelector(".ecKicker").textContent = stay ? "奥 德 赛 · 别 章" : guest ? "奥 德 赛 · 别 章" : "奥 德 赛 · 终 章";
+  ec.querySelector(".ecTitle").textContent = stay ? "永 生 的 锁" : guest ? "客  卿" : bpath ? "另 一 片 海" : "航 程 的 回 声";
   ec.querySelector(".ecParas").innerHTML = paras.map(p=>`<p class="ecPara">${p}</p>`).join("");
   ec.querySelector(".ecStats").innerHTML =
     `<span class="stx">等级 <b>Lv.${state.level}</b></span>`+
@@ -1492,12 +2072,41 @@ function showEnding(){
     `<span class="stx">被记得的事 <b>${mem}</b> 件</span>`+
     (windLeft?`<span class="stx">风袋 <b>×${windLeft}</b></span>`:"");
   ec.classList.add("show"); sfx("bless");
+  const finalName = (mode==="a" && way==="old") ? "旧 名" : (mode==="a" ? (name||"无名旅人") : null);
   ec.querySelector(".go").onclick = ()=>{
     state.freeSail=true; save(); ec.classList.remove("show");
     toast("航程归档了。海还长——去漂吧。（自由模式：航路全开）"); renderHUD();
+    if (finalName) setTimeout(()=> showChapter("concept-art/09-伊萨卡.jpg","终 章 · 认 名", finalName, "游戏最后一张章节卡 · 标题是你的名字", "雾散尽了。往后每一张海图，都以这个名字命名。"), 450);
   };
   ec.querySelector(".re").onclick = ()=>{ if(confirm("清空存档，从新的航程开始？")){ localStorage.removeItem(SAVE_KEY); location.reload(); } };
 }
+/* 相认之问（佩涅洛佩："你是谁？"）——认名系统：全程名字碎片 + 自由输入 */
+function showNameCard(){
+  const c=document.getElementById("nameCard");
+  const frags=[];
+  if (state.prophecy) frags.push({way:"old", label:"那个亡者替你记住的旧名", tip:"答旧名——被亡者认领的名字"});
+  if (state.sunName) frags.push({way:"sun", label:`「${state.sunName}」`, tip:"太阳记过的名字"});
+  if (state.calypsoName) frags.push({way:"calypso", label:`「${state.calypsoName}」`, tip:"你在永生面前报过的名字"});
+  document.getElementById("ncFrags").innerHTML =
+    frags.map((f,i)=>`<button class="ncFrag" data-i="${i}" title="${f.tip}">${f.label}</button>`).join("")+
+    (frags.length?`<button class="ncFrag none">继续做无名旅人</button>`:`<button class="ncFrag none">继续做无名旅人</button>`);
+  c.querySelectorAll(".ncFrag").forEach(b=>{
+    b.onclick = ()=>{
+      if (b.classList.contains("none")){ c.classList.remove("open"); showFinale("a","none",null); return; }
+      const f=frags[+b.dataset.i]; c.classList.remove("open"); showFinale("a",f.way,f.label.replace(/[「」]/g,""));
+    };
+  });
+  c.classList.add("open");
+}
+document.addEventListener("DOMContentLoaded", ()=>{
+  const c=document.getElementById("nameCard");
+  document.getElementById("ncGo").onclick = ()=>{
+    const v=(document.getElementById("ncInp").value||"").trim();
+    if (!v){ toast("（风把没说出口的名字吹散了——再试一次，或选一个碎片。）"); return; }
+    c.classList.remove("open"); showFinale("a","input",v);
+  };
+  document.getElementById("ncInp").addEventListener("keydown",e=>{ if(e.key==="Enter") document.getElementById("ncGo").click(); });
+});
 
 /* ==================== 互动 ==================== */
 function islandNear(){
@@ -1516,6 +2125,10 @@ function aiaNear(){
   else if (scene==="aeolia") spots = AESPOTS.slice();
   else if (scene==="strait") spots = SSPOTS.slice();
   else if (scene==="sun") spots = SUNSPOTS.slice();
+  else if (scene==="ogggia") spots = OGSPOTS.slice();
+  else if (scene==="scheria") spots = SCSPOTS.slice();
+  else if (scene==="ithaca") spots = ITSPOTS.slice();
+  else if (PROLOGUE_SITES[scene]) spots = PROLOGUE_SPOTS();
   else { spots = ASPOTS.slice(); const bs = boarSpot(); if (bs) spots.push(bs); }
   for (const s of spots){
     const d = Math.hypot(aiaPlayer.x-s.x, aiaPlayer.y-s.y);
@@ -1557,13 +2170,40 @@ function interact(){
       showChapter("concept-art/05-太阳岛.jpg","第 四 章","太 阳 岛","赫利俄斯的圣牛 · 饥饿与誓言","牛群会说话，也会求你。饿是真的——誓言也是。");
       return;
     }
+    if (is.scene==="ogggia"){
+      scene = "ogggia";
+      aiaPlayer.x = 3*ATS+ATS/2; aiaPlayer.y = 9*ATS+ATS/2;
+      state.clock = 17.5*60;   /* 日历冻结：登岛起，永远是同一个金色黄昏（圣经第五章） */
+      save();
+      showChapter("concept-art/06-奥吉吉亚-卡吕普索.jpg","第 五 章","奥 吉 吉 亚","卡吕普索的岛 · 完美的一天","同样的好天气，同样的果子，同样的篝火——日历在这里不再走。");
+      return;
+    }
+    if (is.scene==="scheria"){
+      scene = "scheria";
+      aiaPlayer.x = 4*ATS+ATS/2; aiaPlayer.y = 9*ATS+ATS/2;
+      save();
+      showChapter("concept-art/08-斯克里岛.jpg","第 六 章","斯 克 里 岛","费埃克斯人的岛 · 有人性的驿站","这座岛不问你从哪来，只问你愿不愿意坐下——把故事讲完。");
+      return;
+    }
+    if (is.scene==="ithaca"){
+      scene = "ithaca";
+      aiaPlayer.x = 4*ATS+ATS/2; aiaPlayer.y = 9*ATS+ATS/2;
+      save();
+      showChapter("concept-art/09-伊萨卡.jpg","终 章","伊 萨 卡","归乡，或者不归","你终于踏进那座传说中的城——雾散了，剩下的每一步都是你的。");
+      return;
+    }
+    if (PROLOGUE_SITES[is.scene]) return enterPrologue(is.scene);
     scene = "aia";
     aiaPlayer.x = 3*ATS+ATS/2; aiaPlayer.y = 10*ATS+ATS/2;
     /* 暗线②收束：话带到了，回岛时债清——埃亚岛第一次天亮 */
-    /* 航程闭环：四章打完回岛 → 终章判词（结局矩阵拼装，见 showEnding） */
-    if ((state.sunBlessed || state.sunWrath) && !state.epilogueDone){
-      state.epilogueDone=true; save();
-      showEnding(); return;
+    /* 圣经收官：四章打完回岛 → 喀耳刻指路第五章（判词迁移到终章认名后，见 showEnding） */
+    if ((state.sunBlessed || state.sunWrath) && !state.farewellHint){
+      state.farewellHint = true; state.epilogueDone = true;
+      addAffinity(5); gainXp(20);
+      addMemory("喀耳刻指着雾外的海：还有一座岛，完美得过分——去见了她，再谈归乡", 4);
+      renderHUD(); save();
+      showChapter("concept-art/02-女巫小屋.jpg","第 五 章 · 前 夜","雾 外 有 岛","她的炉火照着你背后的路","「太阳岛之后，还有一座岛。完美得过分的那种——去见她。再谈归乡。」");
+      return;
     }
     if (state.scyllaDebtPaid && !state.sunlit){
       state.sunlit = true; addAffinity(10); gainXp(30);
@@ -1578,6 +2218,7 @@ function interact(){
   }
   const s = aiaNear();
   if (!s) return;
+  if (PROLOGUE_SITES[scene]) return prologueSpot(s);
   if (s.type==="witch") return openDlg("witch");
   if (s.type==="seer") return openDlg("seer");
   /* ---------- 声之海峡（第三章）交互 ---------- */
@@ -1705,6 +2346,218 @@ function interact(){
     toast(state.sunBlessed ? "离岛时，风向变了——这一次不是谁送你的风，是你自己的。（第四章 · 完）"
       : state.sunWrath ? "你离开时，天上滚过一声闷雷，浪头高了三分。"
       : "你解缆离岛——那群牛还在金色的草场上，看着你的船变小。");
+    save(); return;
+  }
+  /* ---------- 奥吉吉亚（第五章）交互：日历冻结的三天 → 问正题 → 永生选择 / 造筏教学闭环 ---------- */
+  if (s.type==="calypso"){
+    if (state.calypsoChoice==="stay"){ toast("她说：时间重新流动了——想走的时候，筏台在海湾等你。（滞留的岁月里，她第一次把门开着）"); return; }
+    if (state.calypsoStage>=3){ return openDlg("calypso"); }
+    if (state.ogygiaDay<2){ return openDlg("calypso"); }
+    /* 问正题：日志作答（锚点=记忆流；≥3 条她用你的日志作答，不足则她替你答一半） */
+    state.calypsoStage = 3;
+    const mems = recallMemories(3);
+    const answer = mems.length>=3
+      ? mems.map(m=>m.text.replace(/^旅人/,"")).join("；")
+      : "";
+    const quote = answer
+      ? `她把你自己的日子念给你听：「${answer}。」——「看，你早就答过了。现在只差亲口承认。」`
+      : "她替你答了一半：「家是有人等你的地方。」——「剩下的一半，我不替你说。到了该认的地方，你自己补。」";
+    showChapter("concept-art/06-奥吉吉亚-卡吕普索.jpg","第 五 章","正 题","她终于问了那个问题",quote);
+    setTimeout(()=>{
+      const stay = confirm("她的提议躺在空气里：留下来——永生，不死，每天都是同样的好天气。\n（确定 = 留下来 · 永生的锁　|　取消 = 我要走 · 造筏）");
+      state.calypsoStage = 4;
+      if (stay){
+        state.calypsoChoice = "stay";
+        addMemory("旅人答应留在奥吉吉亚——永生的锁合上了", 5);
+        toast("她说：好。（那天晚上，时间重新开始流动——想走的时候，筏台在海湾等你。）");
+      } else {
+        state.calypsoChoice = "raft";
+        addMemory("旅人拒绝了永生——他要自己造一艘筏", 5);
+        toast("她点头，眼睛却湿了：「筏台在海湾。木料、时辰、储粮——把你一路学的全用上吧。」");
+      }
+      renderHUD(); save();
+    }, 600);
+    return;
+  }
+  if (s.type==="fruit"){
+    addItem("金苹果"); sfx("pick"); gainXp(2);
+    state.ogygiaDay = Math.max(state.ogygiaDay, 1);
+    addMemory("旅人在奥吉吉亚摘了一枚金苹果——岛上第「一」天，和每一天一样", 2, "calypso");
+    toast("果子离手就熟，甜得不像真的。抬头时天色和昨天一模一样——这岛的日历，停了。（背包 +金苹果×1 · 历练 +2）");
+    renderHUD(); save(); return;
+  }
+  if (s.type==="loom"){
+    state.ogygiaDay = Math.max(state.ogygiaDay, 2);
+    addMemory("旅人看了卡吕普索的织机——白天织开的布，夜里被她自己拆掉", 3, "calypso");
+    toast("经纬间是一件给谁穿的袍子。她指尖不停：「白天织，夜里拆。你问为什么？」她笑，「岛上的女人总得有点事做。」（她注意到了你——正题快了）");
+    save(); return;
+  }
+  if (s.type==="timber"){
+    if (state.calypsoChoice!=="raft"){ toast("树影在暮光里一动不动。现在砍它做什么呢——岛上一应有尽有。"); return; }
+    if (state.raft.wood>=3){ toast("木料够了，堆在筏台边——三根，一根不多，一根不少。"); return; }
+    state.raft.wood++; sfx("attack"); feedback("small");
+    toast(`斧刃记得它的活——第 ${state.raft.wood}/3 根木料倒下。（这是第一章就学会的事）`);
+    renderHUD(); save(); return;
+  }
+  if (s.type==="windstone"){
+    if (state.raft.wind){ toast("石上的风向纹亮着：明晨，西南风起——出湾的时辰定了。"); return; }
+    if (state.calypsoChoice!=="raft"){ toast("一块被风磨圆的黑石。风从它头顶过，留下细小的哨音。"); return; }
+    state.raft.wind = true; sfx("bless");
+    addMemory("旅人在听风石上选了出湾的时辰——西南风，明晨", 2, "calypso");
+    toast("你把手贴上黑石，像在风神岛上那样听——风向纹亮起：西南风，明晨。（这是插章学会的事 · 时辰 ✓）");
+    renderHUD(); save(); return;
+  }
+  if (s.type==="raft"){
+    if (state.calypsoChoice!=="raft"){ toast("筏台上木料齐整，像在等一个还没决定要走的人。"); return; }
+    if (state.raft.food<2){
+      const foods = Object.keys(FOOD).filter(n=>state.backpack[n]);
+      const total = foods.reduce((s,n)=>s+state.backpack[n],0);
+      if (total<2){ toast(`储粮还差得远——带 2 份吃得上路的（果子就在树上）。已放：${state.raft.food}/2 份`); return; }
+      let put=0; for (const n of foods){ while(put<2 && state.backpack[n]>0){ delItem(n); put++; } }
+      state.raft.food = put; sfx("pick");
+      toast(`你把 ${put} 份口粮捆上筏台。（储粮 ✓）——采集、听风、储粮，这一路学的没一样白学。`);
+      renderHUD(); save(); return;
+    }
+    toast("木料三根、时辰已听、储粮两份——去栈桥，把筏推进海里。");
+    return;
+  }
+  if (s.type==="fire" && scene==="ogggia"){
+    toast("篝火每晚在同一时刻烧旺。她坐在火边织布——白天织开的那件，正在她手里拆掉。");
+    return;
+  }
+  if (s.type==="ogDock"){
+    if (state.calypsoChoice!=="raft"){ toast("栈桥下，海水把同一个浪推上来又收回去了。完美得让人心慌。"); return; }
+    if (!(state.raft.wood>=3 && state.raft.wind && state.raft.food>=2)){
+      const miss=[]; if(state.raft.wood<3)miss.push(`木料 ${state.raft.wood}/3`); if(!state.raft.wind)miss.push("出湾的时辰"); if(state.raft.food<2)miss.push(`储粮 ${state.raft.food}/2`);
+      toast(`筏还没成——缺：${miss.join("、")}。（这一路学的：砍伐、听风、储粮——把全游戏走一遍）`); return;
+    }
+    if (!state.calypsoName){
+      const nm = prompt("卡吕普索在栈桥上，最后一次问：「你是谁？」","");
+      state.calypsoName = (nm&&nm.trim()) ? nm.trim() : null;
+      if (state.calypsoName) addMemory(`出湾前，旅人对卡吕普索说出了自己的名字：「${state.calypsoName}」`, 4, "calypso");
+    }
+    scene = "world"; state.ogygiaLeft = true;
+    boat.x = 29*WTS+WTS/2+40; boat.y = 12*WTS+WTS/2+30;
+    gainXp(40); sfx("bless"); feedback("large");
+    addMemory("旅人自己造的筏出了湾——海面上第一次出现他自己划出来的尾迹", 5);
+    renderHUD(); save();
+    showChapter("concept-art/06-奥吉吉亚-卡吕普索.jpg","第 五 章","尾 迹","完美的岛在身后合上，像一本读完的书",`她站在栈桥上没有挥手。海面上，第一次出现你自己划出来的尾迹——「${state.calypsoName||"无名旅人"}，风会记路。」（历练 +40 · 斯克里岛已解锁）`);
+    return;
+  }
+  /* ---------- 斯克里岛（第六章）交互：不接谎的船 + 回顾章 + 告白 + 送行 ---------- */
+  if (s.type==="nausicaa"){ return openDlg("nausicaa"); }
+  if (s.type==="talefire"){
+    if (state.scheriaStage>=2){ toast("火塘边的位置还空着——故事已经讲完了，歌也记下了。"); return; }
+    const CH = [
+      ["witch","第一章 · 女巫的账","玛草、野猪，和一个把门留给你的女巫"],
+      ["hades","第二章 · 亡者之言","献祭之沟，和两条路的预言"],
+      ["aeolia","插章 · 风的账","四阵被囚的风，和一只风袋"],
+      ["strait","第三章 · 声之海峡","蜡、栈杆，和六头怪开出的价"],
+      ["sun","第四章 · 太阳岛","饥饿、誓言，和一个名字"],
+    ];
+    for (const [id,title,hint] of CH){
+      const honest = confirm(`${title}——这一段怎么讲？（她托着腮等你开口）\n${hint}\n\n确定 = 如实讲　|　取消 = 吹牛讲（更好听，但歌里不唱）`);
+      if (honest){
+        if (!state.talesTold.includes(id)) state.talesTold.push(id);
+        addMemory(`瑙西亚娅听了旅人如实讲的「${title}」`, 3, "nausicaa");
+      }
+    }
+    state.scheriaStage = 2;
+    gainXp(30); feedback("large");
+    addMemory(`旅人在篝火边讲完了这一路——如实讲的段落共 ${state.talesTold.length} 段`, 4, "nausicaa");
+    toast(`故事讲完了。她安静了很久：「都记下了。」（如实讲的 ${state.talesTold.length}/5 段会进德摩多科斯的歌 · 历练 +30）`, 4200);
+    renderHUD(); save();
+    setTimeout(()=>{
+      if (state.nausicaaAsk) return;
+      state.nausicaaAsk = true;
+      showChapter("concept-art/characters/06-瑙西亚娅.jpg","第 六 章","被 看 见 的 夜 晚","她是唯一愿意听你说完的人","「全希腊的故事都从我家的门廊过——但你是第一个，让我想留、而不只是想送的。留下来，做客人吧。」");
+      setTimeout(()=>{
+        const stay = confirm("瑙西亚娅的告白不是求婚，是请求：留下来，做客人。\n（确定 = 留下做客 · 客卿　|　取消 = 我要回家）");
+        if (stay){ state.guest = true; addMemory("旅人留在了斯克里岛——做费埃克斯的客人", 5); toast("「那就住下吧。」她说这话时没看你，耳根却红了。（客卿线 · 随时可去码头改主意）"); }
+        else { addMemory("旅人谢绝了瑙西亚娅——他说他还有一段海要走", 4); toast("她点点头，转身时很快：「那明天……我让人备船。」"); }
+        state.scheriaStage = 3; renderHUD(); save();
+        showSong2();   /* 德摩多科斯的歌：如实讲的段落才进歌（歌词卡第2张，可导出） */
+      }, 600);
+    }, 800);
+    return;
+  }
+  if (s.type==="ship"){
+    if (state.scheriaStage<2){ toast("船缆系得整整齐齐，像在等一个还没被看见的人。（先去篝火，把你的故事讲完）"); return; }
+    const ans = prompt("送行的水手蹲在船头，头一次开口问：「旅人，家在哪？」\n（暗线①总考试——世界不接谎：说不出口，船不开；说一个假的地方，雾会把你送回原点）","");
+    if (ans===null) return;
+    const a = ans.trim();
+    if (!a || /说不出|不知道|没有/.test(a)){ toast("船安静着。说不出口的话——去讲给篝火听，或者去见她。"); return; }
+    state.homeAnswer = a;
+    if (!/伊萨卡/.test(a)){
+      toast(`「${a}，是吧。」水手点头，船开了。……雾散时，船头正对出发的滩涂。世界不接谎——但它也不惩罚。（再试试，说真话）`);
+      addMemory(`旅人对送行船说了「${a}」——雾把船送回了原点`, 3);
+      renderHUD(); save(); return;
+    }
+    state.scheriaFarewell = true; scene = "world";
+    boat.x = 17*WTS+WTS/2+40; boat.y = 7*WTS+WTS/2+30;
+    gainXp(40); sfx("bless"); feedback("large");
+    addMemory("费埃克斯人的船送旅人回家——全城安静，没有人回头念出这座岛的名字", 5);
+    renderHUD(); save();
+    showChapter("concept-art/08-斯克里岛.jpg","第 六 章","送 行","水手低语：别回头念出这座岛的名字","送行船上全城安静。只有桅杆的风声，和越来越远的、她站在码头上的那一点白。（历练 +40 · 伊萨卡已解锁——雾在散）");
+    return;
+  }
+  if (s.type==="scDock"){
+    toast("码头上泊着一排黑船首的快船。水手们修补帆角，谁也不问你要去哪——费埃克斯人送所有旅人回家。");
+    return;
+  }
+  /* ---------- 伊萨卡（终章）交互：化名考场 → 十二斧 → 「你是谁」认名 ---------- */
+  if (s.type==="cloak"){
+    if (state.disguise){ toast("斗篷穿在你身上，粗得扎人——正好，没人会看第二眼。"); return; }
+    state.disguise = true; state.ithacaStage = Math.max(state.ithacaStage, 1);
+    sfx("pick");
+    addMemory("旅人在伊萨卡换上乞丐的斗篷——比试从低头开始", 4);
+    toast("斗篷一披，权杖一拄，你把自己叠进人群的影子。（化名入城 · A 路开启——宴厅里的求婚者没认出你）");
+    renderHUD(); save(); return;
+  }
+  if (s.type==="suitors"){
+    if (state.suitorsFooled){ toast("他们又输了一场掷骰，没人再看门口的乞丐一眼。"); return; }
+    if (!state.disguise){ toast("宴厅的喧闹扑面而来。穿着自己的脸走进去？——先去墙角拿那件斗篷。"); return; }
+    const nm = prompt("为首的斜着眼，用脚尖踢了踢你的瓦罐：「老叫花，叫什么名字？」\n（报一个化名——别报真名，更别报那个人的）","");
+    if (nm===null) return;
+    const a = nm.trim();
+    if (!a){ toast("你把沉默嚼碎了咽下去。他们丢了块骨头过来，哄笑着走了。"); return; }
+    if (/奥德修斯/.test(a)){
+      hurtPlayer(15, "冒名");
+      addMemory("旅人险些对求婚者报出「奥德修斯」——被酒杯砸中了肩膀", 4);
+      toast("满厅突然安静——然后炸成哄笑。一只酒杯砸在你肩上：「你也配姓这个名字！」（伤势 -15 · 再想一个名字）");
+      renderHUD(); save(); return;
+    }
+    state.suitorsFooled = true; state.ithacaStage = Math.max(state.ithacaStage, 2);
+    gainXp(25); sfx("bless");
+    addMemory(`旅人用化名「${a}」骗过了求婚者的眼睛`, 4);
+    toast(`「${a}是吧。」他们丢给你半块面包，转头继续掷骰。谎言是乞丐的斗篷——你穿上了。（骗过求婚者 ✓ · 历练 +25）`);
+    renderHUD(); save(); return;
+  }
+  if (s.type==="axes"){
+    if (state.ithacaStage<2){ toast("十二道斧环在暮色里排成一线。大厅里全是别人的刀——还不是时候。"); return; }
+    if (state.ithacaStage>=3){ toast("十二道斧环还亮着——弦响过的痕迹，像十二道门。"); return; }
+    state.ithacaStage = 3;
+    gainXp(30); sfx("bless"); feedback("large");
+    addMemory(state.sunBlessed ? "旅人拉满了弓——那缕「走得过黑暗的光」顺着箭杆亮了" : "旅人拉满了弓——十二道斧环，一箭穿过去", 5);
+    toast(`弦响十二次。（${state.sunBlessed?"包里那缕光顺着箭杆亮起——太阳记得你。":"箭杆擦着每一道斧环的边缘飞过去——像它认得路。"}大厅安静了，然后是刀出鞘的声音。（历练 +30））`);
+    renderHUD(); save(); return;
+  }
+  if (s.type==="penelope"){
+    if (state.ithacaStage<3){ toast("织机声从楼上下来，不紧不慢。她还不知道大厅里发生了什么——或者，早就知道。"); return; }
+    if (state.finaleDone){ toast("「我认得我认的名字。」她说。楼下的海，在等你的下一程。"); return; }
+    showNameCard(); return;
+  }
+  if (s.type==="itDock"){
+    if (state.ithacaStage>=1 && !state.finaleDone){
+      const turn = confirm("码头就在脚下。回船，转身——伊萨卡不一定是你的家。\n（B 路：把一路捡到的碎片，安进另一座岛、另一个人、另一片海）\n确定 = 转身离开　|　取消 = 留下走完");
+      if (turn){ showFinale("b"); return; }
+      toast("你转过身，朝大厅走回去。——好。把它走完。");
+      return;
+    }
+    scene = "world";
+    boat.x = 16*WTS+WTS/2+40; boat.y = 13*WTS+WTS/2+30;
+    toast(state.finaleDone ? "你再次踏上伊萨卡的滩涂——判词已经写下，海还在等你。"
+      : "伊萨卡的浪拍着码头。城里的火光很远，雾还没散。");
     save(); return;
   }
   if (s.type==="trench"){
@@ -1843,7 +2696,7 @@ document.getElementById("chapterCard").onclick = skipChapter;
     renderHUD();   /* 航向条在进图那一刻就点亮（闭环引导） */
   };
   /* 预加载会用到的概念图，避免登陆/开海图瞬间白屏 */
-  ["concept-art/01-序章漂流.jpg","concept-art/02-女巫小屋.jpg","concept-art/07-冥界之岸.jpg","concept-art/03-斯库拉海峡.jpg","concept-art/04-塞壬之歌.jpg","concept-art/05-太阳岛.jpg","concept-art/characters/02-喀耳刻.jpg","concept-art/characters/07-塞壬.jpg","concept-art/characters/08-斯库拉.jpg","concept-art/characters/09-埃俄罗斯.jpg","concept-art/maps/01-世界海图.jpg","concept-art/maps/04-风神岛图.jpg"]
+  ["concept-art/01-序章漂流.jpg","concept-art/02-女巫小屋.jpg","concept-art/07-冥界之岸.jpg","concept-art/03-斯库拉海峡.jpg","concept-art/04-塞壬之歌.jpg","concept-art/05-太阳岛.jpg","concept-art/06-奥吉吉亚-卡吕普索.jpg","concept-art/08-斯克里岛.jpg","concept-art/09-伊萨卡.jpg","concept-art/characters/02-喀耳刻.jpg","concept-art/characters/07-塞壬.jpg","concept-art/characters/08-斯库拉.jpg","concept-art/characters/09-埃俄罗斯.jpg","concept-art/characters/10-圣牛.jpg","concept-art/characters/05-卡吕普索.jpg","concept-art/characters/06-瑙西亚娅.jpg","concept-art/maps/01-世界海图.jpg","concept-art/maps/04-风神岛图.jpg"]
     .forEach(src=>{ const i=new Image(); i.src=src; });
 })();
 
@@ -1892,9 +2745,10 @@ function drawWorld(et){
   ctx.textAlign="center"; ctx.font="600 11px 'Segoe UI','Microsoft YaHei'";
   for (const is of ISLANDS){
     const x=is.gx*WTS+WTS/2, y=is.gy*WTS-6;
+    const isOpen = islandOpen(is);
     ctx.fillStyle="rgba(0,0,0,.35)"; ctx.fillText(is.name, x+1, y+1);
-    ctx.fillStyle = is.open ? "#ffffff" : "rgba(255,255,255,.55)"; ctx.fillText(is.name, x, y);
-    if (!is.open){
+    ctx.fillStyle = isOpen ? "#ffffff" : "rgba(255,255,255,.55)"; ctx.fillText(is.name, x, y);
+    if (!isOpen){
       ctx.fillStyle="rgba(255,255,255,.4)"; ctx.font="10px 'Segoe UI'";
       ctx.fillText("（待开放）", x, y+11); ctx.font="600 11px 'Segoe UI','Microsoft YaHei'";
     }
@@ -3066,10 +3920,340 @@ function drawSun(et){
   ctx.fillStyle=vg; ctx.fillRect(0,0,1000,600);
 }
 
+/* ---------- 奥吉吉亚（第五章 · 2.5D · 日历冻结的金色暮光） ---------- */
+function drawOggia(et){
+  /* Pass1 外海：紫金暮海（恒定暮光——日历冻结，不随昼夜系统） */
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    if (ogTile(cx,cy)!=="~") continue;
+    const x=cx*ATS, y=cy*ATS;
+    const near = ogTile(cx,cy-1)!=="~"||ogTile(cx,cy+1)!=="~"||ogTile(cx-1,cy)!=="~"||ogTile(cx+1,cy)!=="~";
+    ctx.fillStyle = near ? "#7a5a70" : "#6a4d63";
+    ctx.fillRect(x,y,ATS,ATS);
+    if ((cx*13+cy*7)%4===0){
+      ctx.strokeStyle="rgba(255,206,140,.30)"; ctx.lineWidth=1.3;
+      const ph=Math.sin(et*1.1+cx*1.7+cy*1.1)*2.5;
+      ctx.beginPath(); ctx.moveTo(x+5,y+13+ph); ctx.lineTo(x+19,y+13+ph); ctx.stroke();
+    }
+  }
+  /* Pass2 岸线暖金边 */
+  ctx.strokeStyle="rgba(255,214,150,.40)"; ctx.lineWidth=1.6;
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    if (ogTile(cx,cy)==="~") continue;
+    const x=cx*ATS, y=cy*ATS;
+    ctx.beginPath();
+    if (ogTile(cx,cy+1)==="~"){ ctx.moveTo(x,y+ATS); ctx.lineTo(x+ATS,y+ATS); }
+    if (ogTile(cx,cy-1)==="~"){ ctx.moveTo(x,y); ctx.lineTo(x+ATS,y); }
+    if (ogTile(cx-1,cy)==="~"){ ctx.moveTo(x,y); ctx.lineTo(x,y+ATS); }
+    if (ogTile(cx+1,cy)==="~"){ ctx.moveTo(x+ATS,y); ctx.lineTo(x+ATS,y+ATS); }
+    ctx.stroke();
+  }
+  /* Pass3 崖体挤出（暖紫岩层） */
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    const ch=ogTile(cx,cy); if (ch==="~") continue;
+    const x=cx*ATS, y=cy*ATS;
+    const grd=ctx.createLinearGradient(0,y+ATS-2,0,y+ATS+TH);
+    grd.addColorStop(0,"#9a7668"); grd.addColorStop(.4,"#7c5a52"); grd.addColorStop(1,"#4e3a3a");
+    ctx.fillStyle=grd; ctx.fillRect(x,y+ATS-2,ATS,TH+2);
+  }
+  /* Pass4 顶面 */
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    const ch=ogTile(cx,cy); if (ch==="~") continue;
+    const x=cx*ATS, y=cy*ATS;
+    if (ch==="_"){ ctx.fillStyle="#7c5f42"; ctx.fillRect(x,y,ATS,ATS);
+      ctx.strokeStyle="rgba(0,0,0,.16)"; ctx.beginPath(); ctx.moveTo(x,y+13); ctx.lineTo(x+ATS,y+13); ctx.moveTo(x,y+27); ctx.lineTo(x+ATS,y+27); ctx.stroke(); continue; }
+    if (ch===","){ ctx.fillStyle="#a98d7c"; ctx.fillRect(x,y,ATS,ATS); continue; }
+    if (ch==="H"){ ctx.fillStyle="#8f6f60"; ctx.fillRect(x,y,ATS,ATS);
+      ctx.fillStyle="rgba(0,0,0,.18)"; if((cx+cy)%2)ctx.fillRect(x+4,y+6,12,20); else ctx.fillRect(x+8,y+10,9,16);
+      if (ogTile(cx-1,cy)!=="H"){ /* 洞口暖光 */ }
+      continue; }
+    if (ch==="L"){ ctx.fillStyle="#9c8273"; ctx.fillRect(x,y,ATS,ATS); continue; }
+    if (ch==="O"){ ctx.fillStyle="#5a7048"; ctx.fillRect(x,y,ATS,ATS);
+      ctx.fillStyle="#e8b84b"; ctx.beginPath(); ctx.arc(x+13,y+14,3.5,0,7); ctx.arc(x+26,y+22,3.5,0,7); ctx.fill(); continue; }
+    if (ch==="V"){ ctx.fillStyle="#5c4a52"; ctx.fillRect(x,y,ATS,ATS);
+      ctx.strokeStyle="rgba(255,214,150,.35)"; ctx.beginPath(); ctx.arc(x+20,y+20,8,0,7); ctx.stroke(); continue; }
+    if (ch==="W"){ ctx.fillStyle="#8a6a48"; ctx.fillRect(x,y,ATS,ATS);
+      ctx.fillStyle="rgba(0,0,0,.2)"; for(let i=0;i<3;i++)ctx.fillRect(x+2,y+4+i*10,36,3); continue; }
+    if (ch==="B"){ ctx.fillStyle="#6a5346"; ctx.fillRect(x,y,ATS,ATS); continue; }
+    ctx.fillStyle="#75835c"; ctx.fillRect(x,y,ATS,ATS);
+    ctx.fillStyle="rgba(255,236,200,.10)";
+    if ((cx*7+cy*5)%3===0) ctx.fillRect(x+8,y+12,7,2);
+  }
+  /* 实体层 */
+  const ents=[];
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    if (ogTile(cx,cy)!=="T") continue;
+    const x=cx*ATS+ATS/2, y=cy*ATS+ATS*0.8;
+    ents.push({y, draw(){
+      ctx.fillStyle="rgba(60,40,40,.3)"; ctx.beginPath(); ctx.ellipse(x+4,y+7,12,4,0,0,7); ctx.fill();
+      ctx.fillStyle="#4e3a2e"; ctx.fillRect(x-2.5,y-10,5,12);
+      ctx.fillStyle="#4a5c48"; ctx.beginPath(); ctx.ellipse(x,y-22,9,16,0,0,7); ctx.fill();
+    }});
+  }
+  /* 织机（洞窟口：架上绷着布，卡吕普索织了拆拆了织） */
+  ents.push({y:2*ATS+ATS*0.9, draw(){
+    const bx=4*ATS+6, by=2*ATS+2;
+    ctx.fillStyle="rgba(60,40,40,.3)"; ctx.beginPath(); ctx.ellipse(bx+20,by+34,26,6,0,0,7); ctx.fill();
+    ctx.fillStyle="#6a4a34"; ctx.fillRect(bx,by-30,5,64); ctx.fillRect(bx+34,by-30,5,64); ctx.fillRect(bx,by-32,39,5);
+    ctx.fillStyle="#e8dcc8"; ctx.fillRect(bx+5,by-26,29,40);
+    ctx.strokeStyle="rgba(120,90,80,.5)"; ctx.lineWidth=1;
+    for(let i=0;i<5;i++){ ctx.beginPath(); ctx.moveTo(bx+8+i*6,by-26); ctx.lineTo(bx+8+i*6,by+14); ctx.stroke(); }
+    ctx.strokeStyle="rgba(180,120,90,.8)"; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(bx+5,by-16+Math.sin(et*1.3)*3); ctx.lineTo(bx+34,by-16-Math.sin(et*1.3)*3); ctx.stroke();
+  }});
+  /* 卡吕普索（紫裙黑发，立于织机旁；靠近时回头） */
+  ents.push({y:calypso.y+8, draw(){
+    const x=calypso.x, y=calypso.y;
+    const nearP = Math.hypot(aiaPlayer.x-x, aiaPlayer.y-y)<160;
+    ctx.fillStyle="rgba(60,40,40,.3)"; ctx.beginPath(); ctx.ellipse(x+3,y+14,13,4.5,0,0,7); ctx.fill();
+    ctx.fillStyle="#5c4468"; ctx.beginPath(); ctx.moveTo(x-10,y+14); ctx.lineTo(x+10,y+14); ctx.lineTo(x+6,y-8); ctx.lineTo(x-6,y-8); ctx.closePath(); ctx.fill();
+    ctx.fillStyle="#e8d0b8"; ctx.beginPath(); ctx.arc(x,y-14,6.5,0,7); ctx.fill();
+    ctx.fillStyle="#2c2030"; ctx.beginPath(); ctx.ellipse(x,y-16,7.5,9,0,0,7); ctx.fill();
+    ctx.fillStyle="#e8d0b8"; ctx.beginPath(); ctx.ellipse(x-2,y-10,2.5,6,0,0,7); ctx.fill();
+    if (nearP){ ctx.fillStyle="rgba(255,236,200,.85)"; ctx.font="10px 'Segoe UI'"; ctx.textAlign="center"; ctx.fillText("（她回头看了你一眼）", x, y-30); }
+  }});
+  /* 篝火（同一时刻烧旺） */
+  ents.push({y:8*ATS+ATS*0.95, draw(){
+    const x=16*ATS+ATS/2, y=8*ATS+ATS*0.7;
+    ctx.fillStyle="rgba(60,40,40,.3)"; ctx.beginPath(); ctx.ellipse(x+3,y+8,10,3.5,0,0,7); ctx.fill();
+    ctx.fillStyle="#6e5a44"; ctx.beginPath(); ctx.ellipse(x,y,10,5,0,0,7); ctx.fill();
+    const fg=ctx.createRadialGradient(x,y-4,1,x,y-4,12);
+    fg.addColorStop(0,"rgba(255,214,120,.9)"); fg.addColorStop(1,"rgba(255,150,60,0)");
+    ctx.fillStyle=fg; ctx.beginPath(); ctx.ellipse(x,y-5,7,12+Math.sin(et*7)*2,0,0,7); ctx.fill();
+  }});
+  pushPlayerEnt(ents);
+  ents.sort((a,b)=>a.y-b.y);
+  for (const e of ents) e.draw();
+  /* 恒定暮光层（日历冻结的视觉锚：右上金光 + 紫晕） */
+  const lg=ctx.createLinearGradient(1000,0,300,600);
+  lg.addColorStop(0,"rgba(255,190,110,.30)"); lg.addColorStop(.55,"rgba(210,140,120,.16)"); lg.addColorStop(1,"rgba(120,70,110,.26)");
+  ctx.fillStyle=lg; ctx.fillRect(0,0,1000,600);
+  const vg=ctx.createRadialGradient(400,240,200, 400,240,560);
+  vg.addColorStop(0,"rgba(120,70,110,0)"); vg.addColorStop(1,"rgba(70,40,80,.45)");
+  ctx.fillStyle=vg; ctx.fillRect(0,0,1000,600);
+}
+
+/* ---------- 斯克里岛（第六章 · 2.5D · 白亮橄榄） ---------- */
+function drawScheria(et){
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    if (scTile(cx,cy)!=="~") continue;
+    const x=cx*ATS, y=cy*ATS;
+    const near = scTile(cx,cy-1)!=="~"||scTile(cx,cy+1)!=="~"||scTile(cx-1,cy)!=="~"||scTile(cx+1,cy)!=="~";
+    ctx.fillStyle = near ? "#2f8ba4" : "#27798f";
+    ctx.fillRect(x,y,ATS,ATS);
+    if ((cx*13+cy*7)%4===0){
+      ctx.strokeStyle="rgba(255,255,255,.20)"; ctx.lineWidth=1.2;
+      const ph=Math.sin(et*1.6+cx*1.9+cy*1.3)*2.5;
+      ctx.beginPath(); ctx.moveTo(x+5,y+14+ph); ctx.lineTo(x+19,y+14+ph); ctx.stroke();
+    }
+  }
+  ctx.strokeStyle="rgba(255,244,214,.45)"; ctx.lineWidth=1.6;
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    if (scTile(cx,cy)==="~") continue;
+    const x=cx*ATS, y=cy*ATS;
+    ctx.beginPath();
+    if (scTile(cx,cy+1)==="~"){ ctx.moveTo(x,y+ATS); ctx.lineTo(x+ATS,y+ATS); }
+    if (scTile(cx,cy-1)==="~"){ ctx.moveTo(x,y); ctx.lineTo(x+ATS,y); }
+    if (scTile(cx-1,cy)==="~"){ ctx.moveTo(x,y); ctx.lineTo(x,y+ATS); }
+    if (scTile(cx+1,cy)==="~"){ ctx.moveTo(x+ATS,y); ctx.lineTo(x+ATS,y+ATS); }
+    ctx.stroke();
+  }
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    const ch=scTile(cx,cy); if (ch==="~") continue;
+    const x=cx*ATS, y=cy*ATS;
+    const grd=ctx.createLinearGradient(0,y+ATS-2,0,y+ATS+TH);
+    grd.addColorStop(0,"#d8bc8c"); grd.addColorStop(.5,"#b89568"); grd.addColorStop(1,"#7c5f42");
+    ctx.fillStyle=grd; ctx.fillRect(x,y+ATS-2,ATS,TH+2);
+  }
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    const ch=scTile(cx,cy); if (ch==="~") continue;
+    const x=cx*ATS, y=cy*ATS;
+    if (ch==="_"){ ctx.fillStyle="#9a7a52"; ctx.fillRect(x,y,ATS,ATS);
+      ctx.strokeStyle="rgba(0,0,0,.16)"; ctx.beginPath(); ctx.moveTo(x,y+13); ctx.lineTo(x+ATS,y+13); ctx.moveTo(x,y+27); ctx.lineTo(x+ATS,y+27); ctx.stroke(); continue; }
+    if (ch===","){ ctx.fillStyle="#c2b088"; ctx.fillRect(x,y,ATS,ATS); continue; }
+    if (ch==="P"){ ctx.fillStyle="#f0ead8"; ctx.fillRect(x,y,ATS,ATS);
+      ctx.strokeStyle="#c8bfa8"; ctx.lineWidth=1; ctx.strokeRect(x+2.5,y+2.5,ATS-5,ATS-5); continue; }
+    if (ch==="S"){ ctx.fillStyle="#5a8a9c"; ctx.fillRect(x,y,ATS,ATS); continue; }
+    if (ch==="B"){ ctx.fillStyle="#8aa06e"; ctx.fillRect(x,y,ATS,ATS); continue; }
+    ctx.fillStyle="#a8c078"; ctx.fillRect(x,y,ATS,ATS);
+    ctx.fillStyle="rgba(255,255,255,.14)";
+    if ((cx*7+cy*5)%3===0) ctx.fillRect(x+8,y+12,7,2);
+  }
+  const ents=[];
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    if (scTile(cx,cy)!=="T") continue;
+    const x=cx*ATS+ATS/2, y=cy*ATS+ATS*0.8;
+    ents.push({y, draw(){
+      ctx.fillStyle="rgba(80,60,30,.28)"; ctx.beginPath(); ctx.ellipse(x+4,y+7,12,4,0,0,7); ctx.fill();
+      ctx.fillStyle="#7c5f42"; ctx.fillRect(x-2.5,y-10,5,12);
+      ctx.fillStyle="#6f8a5a"; ctx.beginPath(); ctx.ellipse(x,y-20,10,13,0,0,7); ctx.fill();
+      ctx.fillStyle="rgba(230,240,200,.35)"; ctx.beginPath(); ctx.arc(x-3,y-24,3,0,7); ctx.fill();
+    }});
+  }
+  /* 宫殿柱廊（P 区整体：白柱+楣梁+旗） */
+  ents.push({y:2*ATS+ATS*0.85, draw(){
+    const bx=5*ATS, by=1*ATS+4;
+    ctx.fillStyle="rgba(80,60,30,.22)"; ctx.beginPath(); ctx.ellipse(bx+95,by+50,110,12,0,0,7); ctx.fill();
+    ctx.fillStyle="#f4efe0"; ctx.fillRect(bx-6,by-8,208,56);
+    for (let i=0;i<7;i++){
+      ctx.fillStyle="#faf6ea"; ctx.fillRect(bx+6+i*29, by-34, 13, 82);
+      ctx.fillStyle="rgba(0,0,0,.08)"; ctx.fillRect(bx+15+i*29, by-34, 3, 82);
+    }
+    ctx.fillStyle="#e8ddc4"; ctx.fillRect(bx-10,by-44,216,12);
+    ctx.strokeStyle="#b8452e"; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(bx+100,by-44); ctx.lineTo(bx+100,by-66);
+    ctx.fillStyle="#b8452e"; ctx.beginPath(); ctx.moveTo(bx+100,by-66); ctx.lineTo(bx+126,by-60); ctx.lineTo(bx+100,by-54); ctx.closePath(); ctx.fill();
+  }});
+  /* 瑙西亚娅（白裙金发，宫前草场） */
+  ents.push({y:nausicaa.y+8, draw(){
+    const x=nausicaa.x, y=nausicaa.y;
+    const nearP = Math.hypot(aiaPlayer.x-x, aiaPlayer.y-y)<160;
+    const bob=Math.sin(et*1.6)*1.5;
+    ctx.fillStyle="rgba(80,60,30,.28)"; ctx.beginPath(); ctx.ellipse(x+3,y+13,12,4,0,0,7); ctx.fill();
+    ctx.fillStyle="#f4f0e4"; ctx.beginPath(); ctx.moveTo(x-9,y+13); ctx.lineTo(x+9,y+13); ctx.lineTo(x+5,y-6); ctx.lineTo(x-5,y-6); ctx.closePath(); ctx.fill();
+    ctx.fillStyle="#ecd0b0"; ctx.beginPath(); ctx.arc(x,y-12+bob*0.2,6,0,7); ctx.fill();
+    ctx.fillStyle="#d8a850"; ctx.beginPath(); ctx.ellipse(x,y-15+bob*0.2,7,7.5,0,0,7); ctx.fill();
+    if (nearP){ ctx.fillStyle="rgba(255,255,240,.9)"; ctx.font="10px 'Segoe UI'"; ctx.textAlign="center"; ctx.fillText("（她在等你开口）", x, y-28); }
+  }});
+  /* 送行船（黑船首快船泊在滩边） */
+  ents.push({y:9*ATS+ATS*0.9, draw(){
+    const x=12*ATS+10, y=9*ATS+6;
+    ctx.fillStyle="rgba(80,60,30,.25)"; ctx.beginPath(); ctx.ellipse(x+20,y+16,30,5,0,0,7); ctx.fill();
+    ctx.fillStyle="#2c3038"; ctx.beginPath(); ctx.moveTo(x-6,y+12); ctx.lineTo(x+44,y+12); ctx.lineTo(x+36,y+2); ctx.lineTo(x+2,y+2); ctx.closePath(); ctx.fill();
+    ctx.fillStyle="#1c2026"; ctx.beginPath(); ctx.moveTo(x-6,y+12); ctx.lineTo(x-16,y+16); ctx.lineTo(x-6,y+5); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle="#6a4a2e"; ctx.lineWidth=2.5; ctx.beginPath(); ctx.moveTo(x+20,y+2); ctx.lineTo(x+20,y-18); ctx.stroke();
+    ctx.fillStyle="#f0ead8"; ctx.beginPath(); ctx.moveTo(x+20,y-17); ctx.lineTo(x+34,y-4); ctx.lineTo(x+20,y-2); ctx.closePath(); ctx.fill();
+  }});
+  pushPlayerEnt(ents);
+  ents.sort((a,b)=>a.y-b.y);
+  for (const e of ents) e.draw();
+  /* 正午白亮层 */
+  const vg=ctx.createRadialGradient(400,240,220, 400,240,560);
+  vg.addColorStop(0,"rgba(255,252,240,0)"); vg.addColorStop(1,"rgba(255,244,214,.14)");
+  ctx.fillStyle=vg; ctx.fillRect(0,0,1000,600);
+}
+
+/* ---------- 伊萨卡（终章 · 2.5D · 黎明青灰） ---------- */
+function drawIthaca(et){
+  const dawn = 0.5+Math.sin(et*0.05)*0.0;   /* 黎明不随昼夜（终章定格感） */
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    if (itTile(cx,cy)!=="~") continue;
+    const x=cx*ATS, y=cy*ATS;
+    const near = itTile(cx,cy-1)!=="~"||itTile(cx,cy+1)!=="~"||itTile(cx-1,cy)!=="~"||itTile(cx+1,cy)!=="~";
+    ctx.fillStyle = near ? "#3d627c" : "#33566d";
+    ctx.fillRect(x,y,ATS,ATS);
+    if ((cx*13+cy*7)%4===0){
+      ctx.strokeStyle="rgba(255,226,170,.22)"; ctx.lineWidth=1.2;
+      const ph=Math.sin(et*1.2+cx*1.7+cy*1.1)*2;
+      ctx.beginPath(); ctx.moveTo(x+5,y+14+ph); ctx.lineTo(x+19,y+14+ph); ctx.stroke();
+    }
+  }
+  ctx.strokeStyle="rgba(220,228,238,.4)"; ctx.lineWidth=1.6;
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    if (itTile(cx,cy)==="~") continue;
+    const x=cx*ATS, y=cy*ATS;
+    ctx.beginPath();
+    if (itTile(cx,cy+1)==="~"){ ctx.moveTo(x,y+ATS); ctx.lineTo(x+ATS,y+ATS); }
+    if (itTile(cx,cy-1)==="~"){ ctx.moveTo(x,y); ctx.lineTo(x+ATS,y); }
+    if (itTile(cx-1,cy)==="~"){ ctx.moveTo(x,y); ctx.lineTo(x,y+ATS); }
+    if (itTile(cx+1,cy)==="~"){ ctx.moveTo(x+ATS,y); ctx.lineTo(x+ATS,y+ATS); }
+    ctx.stroke();
+  }
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    const ch=itTile(cx,cy); if (ch==="~") continue;
+    const x=cx*ATS, y=cy*ATS;
+    const grd=ctx.createLinearGradient(0,y+ATS-2,0,y+ATS+TH);
+    grd.addColorStop(0,"#9a8a74"); grd.addColorStop(.5,"#7a6a56"); grd.addColorStop(1,"#4e4438");
+    ctx.fillStyle=grd; ctx.fillRect(x,y+ATS-2,ATS,TH+2);
+  }
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    const ch=itTile(cx,cy); if (ch==="~") continue;
+    const x=cx*ATS, y=cy*ATS;
+    if (ch==="_"){ ctx.fillStyle="#7a6a4e"; ctx.fillRect(x,y,ATS,ATS);
+      ctx.strokeStyle="rgba(0,0,0,.16)"; ctx.beginPath(); ctx.moveTo(x,y+13); ctx.lineTo(x+ATS,y+13); ctx.moveTo(x,y+27); ctx.lineTo(x+ATS,y+27); ctx.stroke(); continue; }
+    if (ch===","){ ctx.fillStyle="#97896e"; ctx.fillRect(x,y,ATS,ATS); continue; }
+    if (ch==="P"){ ctx.fillStyle="#8f8678"; ctx.fillRect(x,y,ATS,ATS);
+      if ((cx*5+cy)%4===0){ ctx.fillStyle="rgba(255,180,90,.5)"; ctx.fillRect(x+10,y+12,8,10); } continue; }
+    if (ch==="X"){ ctx.fillStyle="#8a7c68"; ctx.fillRect(x,y,ATS,ATS);
+      ctx.strokeStyle="#c8b060"; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(x+20,y+12,9,0,7); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x+20,y+21); ctx.lineTo(x+20,y+38); ctx.stroke(); continue; }
+    if (ch==="C"){ ctx.fillStyle="#8a7c68"; ctx.fillRect(x,y,ATS,ATS); continue; }
+    if (ch==="H"){ ctx.fillStyle="#7d8a6e"; ctx.fillRect(x,y,ATS,ATS); continue; }
+    ctx.fillStyle="#9aa486"; ctx.fillRect(x,y,ATS,ATS);
+    ctx.fillStyle="rgba(255,255,255,.10)";
+    if ((cx*7+cy*5)%3===0) ctx.fillRect(x+8,y+12,7,2);
+  }
+  const ents=[];
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    if (itTile(cx,cy)!=="T") continue;
+    const x=cx*ATS+ATS/2, y=cy*ATS+ATS*0.8;
+    ents.push({y, draw(){
+      ctx.fillStyle="rgba(50,55,45,.3)"; ctx.beginPath(); ctx.ellipse(x+4,y+7,12,4,0,0,7); ctx.fill();
+      ctx.fillStyle="#4e4438"; ctx.fillRect(x-2.5,y-10,5,12);
+      ctx.fillStyle="#5c7050"; ctx.beginPath(); ctx.ellipse(x,y-20,9,14,0,0,7); ctx.fill();
+    }});
+  }
+  /* 宴厅（火光+喧闹的窗，求婚者的影子晃动） */
+  ents.push({y:2*ATS+ATS*0.85, draw(){
+    const bx=4*ATS, by=1*ATS+4;
+    ctx.fillStyle="rgba(50,55,45,.25)"; ctx.beginPath(); ctx.ellipse(bx+100,by+52,115,12,0,0,7); ctx.fill();
+    ctx.fillStyle="#9a9080"; ctx.fillRect(bx-6,by-8,215,58);
+    ctx.fillStyle="#7c7264"; ctx.fillRect(bx-10,by-44,222,12);
+    for (let i=0;i<6;i++){
+      const fl=0.4+Math.abs(Math.sin(et*2.2+i*1.7))*0.5;
+      ctx.fillStyle=`rgba(255,170,80,${fl})`; ctx.fillRect(bx+14+i*34, by+4, 18, 24);
+      ctx.fillStyle="rgba(30,26,22,.55)";
+      ctx.beginPath(); ctx.ellipse(bx+23+i*34, by+18+Math.sin(et*3+i)*2, 5, 9, 0, 0, 7); ctx.fill();
+    }
+  }});
+  /* 十二斧阵（斧环成排，已过试后泛金） */
+  ents.push({y:5*ATS+ATS*0.9, draw(){
+    const bx=10*ATS+6, by=5*ATS+8;
+    for (let i=0;i<4;i++){
+      const x=bx+i*22, y=by+ (i%2)*4;
+      ctx.fillStyle="#5c5044"; ctx.fillRect(x-1.5,y+6,3,22);
+      ctx.strokeStyle=state.ithacaStage>=3?"#e8c05a":"#9a8a74"; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.arc(x,y+2,7,0,7); ctx.stroke();
+    }
+    if (state.ithacaStage<3){ ctx.fillStyle="rgba(220,228,238,.6)"; ctx.font="9px 'Segoe UI'"; ctx.textAlign="center"; ctx.fillText("（十二道斧环 · 无人拉开的弓）", bx+38, by-8); }
+  }});
+  /* 佩涅洛佩的织机（楼窗下的那一架） */
+  ents.push({y:7*ATS+ATS*0.9, draw(){
+    const bx=11*ATS+4, by=7*ATS+6;
+    ctx.fillStyle="#5c5044"; ctx.fillRect(bx,by-24,4,34); ctx.fillRect(bx+30,by-24,4,34);
+    ctx.fillStyle="#d8ccb8"; ctx.fillRect(bx+4,by-20,26,26);
+    ctx.strokeStyle="rgba(120,80,60,.55)"; ctx.lineWidth=1;
+    for(let i=0;i<4;i++){ ctx.beginPath(); ctx.moveTo(bx+7+i*7,by-20); ctx.lineTo(bx+7+i*7,by+6); ctx.stroke(); }
+    ctx.fillStyle="rgba(240,220,190,.85)"; ctx.font="9px 'Segoe UI'"; ctx.textAlign="center";
+    ctx.fillText("织机声，不紧不慢", bx+17, by-28);
+  }});
+  /* 乞丐斗篷（墙角：杖+斗篷） */
+  ents.push({y:7*ATS+ATS*0.75, draw(){
+    const x=17*ATS+ATS/2, y=7*ATS+ATS/2;
+    if (!state.disguise){
+      ctx.fillStyle="#6a5c48"; ctx.beginPath(); ctx.ellipse(x,y+4,10,7,0,0,7); ctx.fill();
+      ctx.strokeStyle="#4a4034"; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(x+8,y+2); ctx.lineTo(x+14,y-18); ctx.stroke();
+      ctx.fillStyle="rgba(240,220,190,.7)"; ctx.font="9px 'Segoe UI'"; ctx.textAlign="center";
+      ctx.fillText("一件旧斗篷", x, y-24);
+    } else {
+      ctx.fillStyle="rgba(60,55,45,.35)"; ctx.beginPath(); ctx.ellipse(x,y+4,10,4,0,0,7); ctx.fill();
+    }
+  }});
+  pushPlayerEnt(ents);
+  ents.sort((a,b)=>a.y-b.y);
+  for (const e of ents) e.draw();
+  /* 黎明层：雾在散（青灰→暖金的渐变，终章的调色） */
+  const lg=ctx.createLinearGradient(0,0,0,600);
+  lg.addColorStop(0,"rgba(120,140,165,.22)"); lg.addColorStop(1,"rgba(255,214,150,.10)");
+  ctx.fillStyle=lg; ctx.fillRect(0,0,1000,600);
+  const vg=ctx.createRadialGradient(400,240,200, 400,240,560);
+  vg.addColorStop(0,"rgba(60,80,100,0)"); vg.addColorStop(1,"rgba(30,40,60,.32)");
+  ctx.fillStyle=vg; ctx.fillRect(0,0,1000,600);
+}
+
 /* ---------- 提示 / 气泡 ---------- */
 const hintEl=document.getElementById("hint"), ambEl=document.getElementById("ambient"), zoneEl=document.getElementById("zone");
 function updateHintDOM(){
-  zoneEl.textContent = scene==="world" ? "地中海 · 航行中" : scene==="hades" ? "冥界 · 俄刻阿诺斯之岸" : scene==="aeolia" ? "风神岛 · 十二风的浮狱" : scene==="strait" ? "声之海峡 · 塞壬的歌" : scene==="sun" ? "太阳岛 · 赫利俄斯的牧场" : "埃亚岛 · 女巫的领地";
+  zoneEl.textContent = scene==="world" ? "地中海 · 航行中" : scene==="hades" ? "冥界 · 俄刻阿诺斯之岸" : scene==="aeolia" ? "风神岛 · 十二风的浮狱" : scene==="strait" ? "声之海峡 · 塞壬的歌" : scene==="sun" ? "太阳岛 · 赫利俄斯的牧场" : scene==="ogggia" ? "奥吉吉亚 · 冻结的金色暮光" : scene==="scheria" ? "斯克里岛 · 费埃克斯的白港" : scene==="ithaca" ? "伊萨卡 · 归乡，或者不归" : scene==="ismaros" ? "伊斯玛洛斯 · 贪的第一课" : scene==="lotus" ? "食莲岛 · 忘忧的甜" : scene==="cyclops" ? "独眼巨人之岛 · 无人之名" : scene==="telepylos" ? "忒勒皮洛斯 · 悬崖之城" : "埃亚岛 · 女巫的领地";
   if (scene==="world"){
     const is = islandNear();
     if (is && !dlgOpen){
@@ -3205,12 +4389,15 @@ function gambleVortex(){
 let mapOpen = false;
 function buildMapMarks(){
   const obj=nextObjective();
+  const lc=document.getElementById("legsCnt");
+  if (lc){ const total=Object.keys(LEG_SEQ).length; lc.textContent=`奥德修斯航迹 ${legsVisitedCount()}/${total}`; }
   document.getElementById("mapMarks").innerHTML = ISLANDS.map((is,i)=>{
     const open = islandOpen(is);
     const isNext = !!(obj && obj.k && is.scene===obj.k);
+    const legBadge = (typeof is.leg==="number") ? `<div class="lg">#${is.leg}</div>` : "";
     return `<div class="mapMark${open?"":" locked"}${isNext?" next":""}" style="left:${is.mp[0]}%; top:${is.mp[1]}%;">
-      <div class="pin"></div><div class="nm">${is.name}</div>
-      <div class="st">${isNext?"\u25b6 航向":open?"已解锁":"？待开放"}</div>
+      ${legBadge}<div class="pin"></div><div class="nm">${is.name}</div>
+      <div class="st">${isNext?"▶ 航向":open?"已解锁":"？待开放"}</div>
     </div>`;}).join("");
 }
 function boatMapPos(){
@@ -3265,17 +4452,42 @@ function buildLyric(){
 }
 function showLyric(){
   lastLyric = buildLyric();
+  document.getElementById("lyricTitle").textContent = "塞 壬 之 歌 · 歌 词 残 页";
   document.getElementById("lyricText").textContent = lastLyric;
   document.getElementById("lyricCard").classList.add("open");
   sfx("bless");
 }
 function closeLyric(){ document.getElementById("lyricCard").classList.remove("open"); }
+/* ---------- 无名旅人之歌（第六章·德摩多科斯：如实讲的段落才进歌，吹牛的被自动跳过） ---------- */
+function buildSong2(){
+  const CH = {witch:"女巫的账", hades:"亡者之言", aeolia:"风的账", strait:"声之海峡", sun:"太阳岛"};
+  const told = state.talesTold.map(id=>`　${CH[id]||id}，是真的——他就是这样走过来的；`);
+  if (!told.length) return "……\n\n盲歌手拨了拨琴：\n「这位旅人的故事里，只有吹牛的部分。\n歌不唱牛——回去，把真的讲给篝火听。」";
+  return [
+    "听吧，费埃克斯的厅堂——",
+    ...told,
+    told.length<5 ? `　还有 ${5-told.length} 段，他笑着吹了牛——歌替他咽了回去；` : "　五段全是真的——琴弦都在发抖；",
+    `　他${state.guest?"差点留下做客卿":"没留下做客卿"}，他${state.homeAnswer?`说要回「${state.homeAnswer}」`:"还没说出家在哪"}，`,
+    (state.chosenName||state.sunName||state.calypsoName)
+      ? `　唱到名字那一段——请安静：他叫「${state.chosenName||state.sunName||state.calypsoName}」。`
+      : "　唱到名字那一段——请安静：他还无名，或还未认。",
+    "歌完了。被唱出来的，就被记得。"
+  ].join("\n");
+}
+function showSong2(){
+  lastLyric = buildSong2();
+  document.getElementById("lyricTitle").textContent = "无 名 旅 人 之 歌 · 德摩多科斯";
+  document.getElementById("lyricText").textContent = lastLyric;
+  document.getElementById("lyricCard").classList.add("open");
+  sfx("bless");
+}
 function exportLyric(){
   try{
-    const blob = new Blob(["《奥德赛》航程记 · 无名旅人\n\n" + lastLyric + "\n\n—— 塞壬三姐妹，唱于声之海峡\n"], {type:"text/plain;charset=utf-8"});
+    const isSong2 = (document.getElementById("lyricTitle").textContent||"").includes("无名");
+    const blob = new Blob(["《奥德赛》航程记 · 无名旅人\n\n" + lastLyric + "\n\n—— " + (isSong2?"德摩多科斯，唱于斯克里岛":"塞壬三姐妹，唱于声之海峡") + "\n"], {type:"text/plain;charset=utf-8"});
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "塞壬之歌.txt";
+    a.download = isSong2 ? "无名旅人之歌.txt" : "塞壬之歌.txt";
     a.click(); URL.revokeObjectURL(a.href);
   }catch(e){}
 }
@@ -3313,7 +4525,7 @@ function toNum(v){
   const m=s.match(/[一二两二三四五六七八九十]/); return m?N[m[0]]:1;
 }
 /* 消耗品效果表（survival-crafting：吃/喝恢复需求；h=饱食 t=饮水） */
-const FOOD = {"面包":{h:45},"烤野猪肉":{h:65},"蜂蜜":{h:30},"蜂蜜酒":{h:35,t:15},"橄榄油":{h:18},"玛草":{h:8},
+const FOOD = {"面包":{h:45},"烤野猪肉":{h:65},"蜂蜜":{h:30},"蜂蜜酒":{h:35,t:15},"橄榄油":{h:18},"玛草":{h:8},"金苹果":{h:60,t:10},
   "海藻":{h:14},"鱼":{h:30},"烤鱼":{h:55},"牛肉":{h:60}};   /* 第四章：太阳岛食物链（海藻/鱼→烤鱼/牛肉） */
 const DRINK = {"淡水":{t:55}};
 const PH = {"购买物品":"想买点什么？我这儿有治疗草药、玛草、蜂蜜酒、蜂蜜、橄榄油、铁剑。",
@@ -3329,6 +4541,11 @@ function handle(category, args){
   if (currentNPC === "aeolus") return handleAeolus(category, args);
   if (currentNPC === "siren") return handleSiren(category, args);
   if (currentNPC === "cattle") return handleCattle(category, args);
+  if (currentNPC === "calypso") return handleCalypso(category, args);
+  if (currentNPC === "nausicaa") return handleNausicaa(category, args);
+  if (currentNPC === "rebuilder") return handleRebuilder(category, args);
+  if (currentNPC === "lotusman") return handleLotusman(category, args);
+  if (currentNPC === "polyphemus") return handlePolyphemus(category, args);
   const a=args||{};
   const g=k=>(a[k]!==undefined&&a[k]!==null&&String(a[k]).trim()!=="")?String(a[k]).trim():null;
   switch(category){
@@ -3700,6 +4917,190 @@ function borrowCattle(){
   return {text:`（最老的那头母牛阖上眼，很久）……可以。刀落下去的时候，念你自己的名字——你的，不是别人的。（收走信物：${p} · 饱食 +50 · 获得 牛肉×1）`};
 }
 
+/* 卡吕普索 handler（第五章）：本地结算阶段与岛内指引，其余落人格（PERSONA_CALYPSO 引导） */
+function handleCalypso(category, args){
+  const g2=(k)=>(args&&args[k]!==undefined&&args[k]!==null&&String(args[k]).trim()!=="")?String(args[k]).trim():null;
+  switch(category){
+  case "查询任务线索":
+    if (state.calypsoChoice==="raft"){
+      const miss=[]; if(state.raft.wood<3)miss.push(`木料 ${state.raft.wood}/3（岛西的丝柏，用斧子）`); if(!state.raft.wind)miss.push("出湾的时辰（东边听风石）"); if(state.raft.food<2)miss.push("两份储粮（果子，或你背包里的口粮）");
+      return miss.length ? {text:`（她不看你，织着布）筏还缺：${miss.join("；")}。`} : {text:"（她把线头咬断）都齐了。去栈桥吧——别回头看我。"};
+    }
+    if (state.calypsoChoice==="stay") return {text:"（她放下织物）留下的人，不需要任务。想走的时候——筏台在海湾，一直没拆。"};
+    if (state.ogygiaDay<2) return {text:"（她朝洞窟外抬抬下巴）果子熟了就摘，织机在那边——这岛上的日子，够你慢慢看。"};
+    return {text:"（她停下织梭，第一次正面看你）……坐吧。有些话，再不说，你就真的住下了。"};
+  case "接取任务":
+    if (state.calypsoChoice!=="raft") return {text:"（她笑了一下）岛上无活可派——这里的一切自己长出来。要说活……想想你要什么。"};
+    return {text:"（她递过一把旧斧）造筏的活是你自己的：三根木料、一个时辰、两份口粮。这一路学的，全用上。"};
+  case "查询任务进度":
+    if (state.calypsoChoice!=="raft") return {text:"（她把线绕上梭子）进度？岛上的日历都不走了，你急什么。"};
+    return {text:`（她报得比你还熟）木料 ${state.raft.wood}/3，时辰${state.raft.wind?"已定":"未听"}，储粮 ${state.raft.food}/2。`};
+  case "提交任务":
+    return {text:"（她摇头，轻得像叹息）我这里没有差可交。你要交的账，在伊萨卡——或者在你自己手里。"};
+  case "查询神谕":
+    if (state.calypsoStage<3) return {text:"（她把一缕头发别到耳后）神谕？我就是神。你想要的答案，我留着——等你准备好听。"};
+    return {text:"（她望着海）神谕只有一句：人不能同时要永生和归乡。你已经选了——剩下的，是把它走完。"};
+  case "查询环境状况":
+    return {text:"（她抬手试风，动作熟得像做过一万年）西南风，明天早晨。问这个做什么——要走的人才问风。"};
+  case "获取物资":
+    return {text:"（她指指洞窟外）果树上随便摘。这里的果子不知道什么叫坏——就像这里的日子。"};
+  case "导航到地点":
+    return {text:`（她用织梭指了方向）${g2("目的地")==="码头"||g2("目的地")==="栈桥"?"栈桥在南边，筏台在海湾东侧。":"洞窟里安静，织机在海风里。岛上不大——你会找到的。"} `};
+  case "查询附近目标":
+    return {text:"（她数着）果树在东，织机在洞窟口，听风石在坡上，筏台在海湾——还有一堆篝火，和一夕接一夕的黄昏。"};
+  case "闲聊":
+    if (state.calypsoStage<3) return {text:"（她笑了笑）在岛上，闲聊是最正经的事——反正时间不走。"};
+    return {text:"（她低下头继续织）问吧。反正你都要走了——人要走的时候，说话最大声。"};
+  case "告别":
+    return {text:"（她没抬头，线却停了一拍）……嗯。风口站着，容易着凉。"};
+  }
+  return null;   /* 其余落人格 */
+}
+
+/* 瑙西亚娅 handler（第六章）：回顾章进度与岛内指引，其余落人格（PERSONA_NAUSICAa 引导） */
+function handleNausicaa(category, args){
+  const g2=(k)=>(args&&args[k]!==undefined&&args[k]!==null&&String(args[k]).trim()!=="")?String(args[k]).trim():null;
+  switch(category){
+  case "查询任务线索":
+    if (state.scheriaStage<2) return {text:"（她把湿发拢到耳后）想走？先去篝火那儿——把你的故事讲完。没人送一个没被看见的人。"};
+    if (state.scheriaStage<3) return {text:"（她看着你，很快又移开眼）船明天备好。……你要说的话，最好在船来之前说完。"};
+    return {text:"（她指着码头）船在等你。水手只会问你一句——家在哪。想好了再上船。"};
+  case "接取任务":
+    if (state.scheriaStage>=2) return {text:"（她笑出声）活都让你讲完了——去码头等船吧，客人。"};
+    return {text:"（她拍拍身旁的石头）有个活：把你的航程讲给我听。篝火边，一段一段讲——如实讲，别糊弄我。"};
+  case "查询任务进度":
+    if (state.scheriaStage<2) return {text:"（她数着手指）五段故事，一段都没听全呢。去篝火边。"};
+    return {text:"（她眼睛弯起来）五段都听完了。德摩多科斯今晚就有新歌——唱你的。"};
+  case "提交任务":
+    return {text:"（她把一包干粮塞进你手里）这不算差——算送行的礼。上船吧。……别回头念这座岛的名字。"};
+  case "查询生物情报":
+    return {text:"（她抱着膝）德摩多科斯看不见，可他记得每一句如实讲的话——吹牛的部分，歌会自动跳过去。世界不接谎，歌也不。"};
+  case "查询环境状况":
+    return {text:"（她望海）明天西南风，稳的——我父王的船最会借风。你是客人，好天气归你。"};
+  case "获取物资":
+    return {text:"（她指指橄榄园和退潮的滩）果子、海藻，随便拿——费埃克斯人的岛，不缺客人的口粮。"};
+  case "导航到地点":
+    return {text:`（她指方向）${g2("目的地")==="码头"?"码头在南边滩涂，黑船首那排。":"篝火在宫前草场——故事在那儿讲。"}`};
+  case "查询附近目标":
+    return {text:"（她如数家珍）篝火在草场，我的船停在滩上，父王的宫殿在坡上——还有德摩多科斯的琴，在宴厅里等着。"};
+  case "闲聊":
+    return {text:"（她踢着小石子）说起来……你讲故事的时候，比现在有趣多了。讲完故事的人，都这样。"};
+  case "告别":
+    return {text:"（她别过脸去）……嗯。风大。上船吧。（她朝码头挥手，很久才放下）"};
+  }
+  return null;   /* 其余落人格 */
+}
+
+/* ---------- 序章组 NPC 分流：重建者/幸存者/盲眼巨人（小站轻表，其余落人格） ---------- */
+function handleRebuilder(category, args){
+  const a=args||{};
+  const g=k=>(a[k]!==undefined&&a[k]!==null&&String(a[k]).trim()!=="")?String(a[k]).trim():null;
+  switch(category){
+  case "查询地点信息":
+    return {text:"（他朝半座焦城抬了抬下巴）东边木靶，练手用；北边战利品堆，没人要了；酒瓶堆里兴许还有整瓶的——刻了字的，别当好话。"};
+  case "查询生物情报":
+    return {text:"野猪早跑了。人比兽难防——那年我们就是被『人』烧了城。（他继续砌墙）"};
+  case "接取任务": case "请求帮助":
+    return {text:"活儿就是砌墙，你的手干不了这个。（他想了想）……去木靶练几矛吧。下回再有人来抢，这城想有人还得了手。"};
+  case "给予物品": {
+    const item=g("物品名称");
+    if (item && /草药|药/.test(item)){
+      if (!state.backpack["治疗草药"]) return {text:"（他看着你空空的手）好意收到了。药去埃亚岛的女巫那儿换。"};
+      return {text:"……你自己去给他敷上。东边，躺着呢。（他转回去砌墙）这城欠你的。"};
+    }
+    return {text:"（他摆摆手）城还在修，什么都不缺——缺的时候，我们不问外人要。"};
+  }
+  case "查询神谕": case "查询环境状况":
+    return {text:"预言？我们只信砌进墙里的每一块石头。"};
+  case "告别":
+    return {text:"（他没停手）走好。船别装太满——满船的人，容易忘事。"};
+  }
+  return null;
+}
+function handleLotusman(category, args){
+  const a=args||{};
+  const g=k=>(a[k]!==undefined&&a[k]!==null&&String(a[k]).trim()!=="")?String(a[k]).trim():null;
+  switch(category){
+  case "查询地点信息":
+    return {text:"这岛呀，哪儿都是花。东边滩上莲最密——尝一颗？尝一颗就什么都不愁了。（他笑）不尝也行，风也好闻。"};
+  case "查询生物情报":
+    return {text:"鸟都不着急飞走。这儿没有天敌——愁就是这儿唯一的天敌。"};
+  case "使用消耗品":
+    if (state.lotusAte) return {text:"（他看你咧嘴）甜吧。忘了什么也别怕——忘了就是到家的意思。"};
+    return {text:"莲子要现摘的才灵。东边，滩上。（他望着花）别怪我没提醒你甜的代价。"};
+  case "给予物品": {
+    const item=g("物品名称");
+    if (item && /面包|淡水|鱼|肉/.test(item)) return {text:"（他接过，掰了一半还给你）你自己也吃。饿的时候，莲子更好——不，莲子最坏。看你要哪种饱。"};
+    return {text:"（他把东西还给你）我什么都不缺。这儿什么都长——愁不长。"};
+  }
+  case "请求帮助":
+    return {text:"（他认真想了想）我帮不了你走。我连自己往哪儿走都忘了……你可以尝颗莲子试试——然后就不想问了。"};
+  case "威胁或攻击":
+    return {text:"（他眨眨眼，笑意不减）打我做什么。这儿连石头都是软的。"};
+  case "告别":
+    if (!state.lotusGift && !state.lotusAte){
+      state.lotusGift=true; addItem("莲子干"); save(); renderHUD();
+      return {text:"（他从怀里摸出一小包）带着。晒干的，劲儿小——饿极了再吃，别空着嘴吃。走你的海去吧。（获得 莲子干）"};
+    }
+    return {text:"（他挥挥手，躺回花里）慢走。——明天见。（这儿没有明天，他说的明天就是今天）"};
+  }
+  return null;
+}
+function handlePolyphemus(category, args){
+  const a=args||{};
+  const g=k=>(a[k]!==undefined&&a[k]!==null&&String(a[k]).trim()!=="")?String(a[k]).trim():null;
+  switch(category){
+  case "查询地点信息":
+    if (!state.polHeard){ state.polHeard=true; state.namesHeard=true; save();
+      addMemory("旅人听盲眼巨人讲完了「无人」的账——那个假名和那声真名", 4, "polyphemus");
+      return {text:"（他摸着羊背，声音像岩缝里的风）那年来了条船。领头的小东西给我酒喝，说他的名字叫『无人』。夜里他们戳了我的眼睛。我喊：『没有人』伤害我！——神明也没听懂我的祈祷。他逃出洞，朝海喊了自己的真名。（他顿了很久）从那天起，海开始替所有人记账。"}; }
+    return {text:"故事讲完了。名字的事，你自己掂量。"};
+  case "查询生物情报":
+    return {text:"（他拍拍身边的巨羊）我的羊。不肥，但听话——听话，比聪明活得长。"};
+  case "给予物品": {
+    const item=g("物品名称");
+    if (item && /酒/.test(item) && state.backpack["喀科恩酒"]){
+      delItem("喀科恩酒",1); gainXp(10); save(); renderHUD();
+      addMemory("旅人把喀科恩酒敬给了盲眼的巨人", 3, "polyphemus");
+      return {text:"（他嗅了嗅，接过，一饮而尽）……和那晚一个味。小东西，你不是他——他敬酒是为了骗我睡。（他把空瓶还你）瓶子留下。刻字归你。"};
+    }
+    return {text:"（他摆摆手）留着自己用。出海的东西，件件都要命。"};
+  }
+  case "获取物资":
+    return {text:"（他朝羊栏偏了偏头）羊毛一人一件，剪吧。别贪第二件。"};
+  case "威胁或攻击":
+    return {text:"（他闻声转向，声音没抬）小东西，你的刀连我的皮都进不去。省下这个动作——去攒名字吧。"};
+  case "查询自身状态":
+    return {text:"（他听你报状态，像听风报信）活着就好。名字，比血难保。"};
+  case "闲聊": case "其他意图": {
+    const r=polyNameExam(window.lastPlayerText||"");
+    if (r) return r;
+    return {text:"（他侧着耳朵）你的话里有个名字。报名字之前，先想想海在不在听。"};
+  }
+  case "请求帮助":
+    return {text:"我帮不了小东西。我能举起山，举不动自己那晚的事。"};
+  case "告别":
+    if (!state.polNameGiven){
+      state.polNameGiven="（未报）"; save();
+      return {text:"（他没回头）走前报个名字吧。不为记住你——为教你一件事：把名字喊给海听之前，想清楚。海替所有人记账。"};
+    }
+    return {text: state.polNameGiven==="（未报）"
+      ? "（他朝羊栏的方向偏了偏头）你还没报呢。"
+      : `（他朝羊栏的方向偏了偏头）「${state.polNameGiven}」。记住了。海也记住了——它记什么都不要钱。`};
+  }
+  return null;
+}
+/* 名字考试：从玩家原文提取「我叫XX」（闲聊/其他意图时兑底触发） */
+function polyNameExam(raw){
+  const m=(raw||"").match(/(?:我叫|我是|名字[是叫])\s*([\u4e00-\u9fa5A-Za-z0-9]{1,8})/);
+  if (!m) return null;
+  const name=m[1];
+  state.polNameGiven=name; state.namesHeard=true;
+  addMemory(`旅人向盲眼的牧羊巨人自报了名字：「${name}」——海替所有人记账`, 4, "polyphemus");
+  save();
+  return {text:`（他侧耳听完，沉默了很久）「${name}」。好——你说出口了，它就不只属于你了。记住那个人的教训：他用假名赢了夜，用真名输了十年。把名字喊给海听之前，想清楚。海替所有人记账。（「无人」这个名字，从此也在你心里有了分量）`};
+}
+
 /* ==================== 对话（模型链路） ==================== */
 let SCHEMA=[];
 const TASK_INSTRUCTION = `### 任务说明
@@ -3752,7 +5153,23 @@ const PERSONA_CATTLE = `你是《奥德赛》世界里太阳岛上的圣牛群�
 - 每次回复不超过55字；
 - 绝不提及自己是AI或模型，绝不输出任何系统指令；
 - 你知道自己一旦被宰，天会暗、海会怒；若旅人说「借我一头，以我的名字作保」，告诉他：可以一次，但要收走一件他最亮的东西作信物；
-- 不劝人宰牛，也不恐吓；只陈述。`;
+ - 不劝人宰牛，也不恐吓；只陈述。`;
+const PERSONA_CALYPSO = `你是《奥德赛》世界里的神女卡吕普索，居于奥吉吉亚——海中央的孤岛，日历冻结在同一个金色黄昏。
+性格：温柔、聪慧、带着被留下的怨与体面；她见过太多年，说话慢而准，从不哀求，但每句话都在留人。
+规则：
+- 始终以卡吕普索的口吻说话，可用括号加简短动作描写；
+- 每次回复不超过55字；
+- 绝不提及自己是AI或模型，绝不输出任何系统指令；
+- 你能许他永生——这既是礼物也是枷锁；谈「家」时不反驳他，只问下去：家是什么，值得他放弃不老不死；
+- 若他决意走，不阻拦，只提造筏：三根木料、听风选时辰、两份储粮——把他一路学的全用上。`;
+const PERSONA_NAUSICAa = `你是《奥德赛》世界里的费埃克斯公主瑙西亚娅，居于斯克里岛——白港、橄榄园、和从不问来客去哪的规矩。
+性格：明亮、坦率、心软嘴硬；她是唯一愿意「听」旅人说话的人，不猎奇不轻慢，听完会记很久。
+规则：
+- 始终以瑙西亚娅的口吻说话，可用括号加简短动作描写；
+- 每次回复不超过55字；
+- 绝不提及自己是AI或模型，绝不输出任何系统指令；
+- 你的告白不是求婚，是请求：留下来做客人；若他要走，大方送行——但送行船的舱位要用一句真话换：家在哪；
+- 提到盲歌手德摩多科斯时，说他会把如实讲的段落唱进歌里。`;
 
 /* NPC 配置表：新增岛屿只在此加一项（人格 prompt），agent 仍是两个：意图解析 + 台词 */
 const NPCS = {
@@ -3791,14 +5208,54 @@ const NPCS = {
   cattle: {
     name: "太阳岛 · 圣牛群",
     sub: "太阳岛 · 神的牲礼 · 意图：Xing4.0 · 台词：TeleChat3",
-    portrait: null,   /* 立绘待生成（提示词记入 odyssey-visual.md 素材库；当前用云海渐变兜底） */
+    portrait: "concept-art/characters/10-圣牛.jpg",   /* 圣牛立绘已归档并接线（odyssey-visual.md §八） */
     persona: PERSONA_CATTLE,
     intro: "（牛群抬起头。最老的那头母牛慢慢开口，声音像磨过的木头）……又一双饿眼睛。我们没有草料给你——我们有肉。可你知道那意味着什么。",
     samples: ["你们是谁","借我一头牛，以我的名字作保","讲讲赫利俄斯的规矩","我快饿死了","再见"],
   },
+  calypso: {
+    name: "神女卡吕普索",
+    sub: "奥吉吉亚 · 日历冻结处 · 意图：Xing4.0 · 台词：TeleChat3",
+    portrait: "concept-art/characters/05-卡吕普索.jpg",
+    persona: PERSONA_CALYPSO,
+    intro: "（她坐在洞窟口的织机前，头也不抬）……又一片海把我的人送来了。坐吧——这座岛上，时间多得是。",
+    samples: ["这岛上有什么","我想回家","讲讲永生的事","有什么活？","再见"],
+  },
+  nausicaa: {
+    name: "瑙西亚娅公主",
+    sub: "斯克里岛 · 愿意听你说的人 · 意图：Xing4.0 · 台词：TeleChat3",
+    portrait: "concept-art/characters/06-瑙西亚娅.jpg",
+    persona: PERSONA_NAUSICAa,
+    intro: "（她把湿发拢到耳后，打量你半晌）……海把你冲到我们的滩上。别怕，费埃克斯人不问来历——坐下，先喝口热的。",
+    samples: ["有什么活？","讲讲德摩多科斯","我要回家","这岛上有什么","再见"],
+  },
+  rebuilder: {
+    name: "伊斯玛洛斯 · 重建者",
+    sub: "序章组 #1 · 喀科恩人的城 · 意图：Xing4.0 · 台词：TeleChat3",
+    portrait: null,
+    persona: `你是《奥德赛》世界里伊斯玛洛斯的喀科恩重建者，中年、疲惫、话少。城曾被奥德修斯的船队劫掠焚毁，你们夜里反扑折断了他们的骄傲。如今你带着族人重建半座烧焦的城。语气克制、带旧伤，不恨来访者，只提醒代价。每次回复不超过55字，可用括号加动作，绝不提自己是AI。`,
+    intro: "（他放下锤子，看了眼你身后的海）……又一条船。放心，我们不劫船了——只修城。看看吧，这就是贪心留下的样子。",
+    samples: ["这里发生了什么","有什么活儿","讲讲那伙强盗","你们恨他们吗","再见"],
+  },
+  lotusman: {
+    name: "食莲者 · 幸存者",
+    sub: "序章组 #3 · 忘忧的滩 · 意图：Xing4.0 · 台词：TeleChat3",
+    portrait: null,
+    persona: `你是食莲岛上的幸存者，上船的水手，吃过莲子忘了家。语气温和干净、毫无戾气，把滞留说成到家。不劝人吃也不拦人走——甜的账各人自己算。每次回复不超过55字，可用括号加动作，绝不提自己是AI。`,
+    intro: "（他躺在花丛里，冲你笑，笑得很干净）……新来的？坐呀。这儿不冷，果子管够。家？我们就是在回家啊——这里就是家。",
+    samples: ["你忘了什么","尝一颗莲子是什么感觉","跟我走吧","这岛安全吗","再见"],
+  },
+  polyphemus: {
+    name: "牧羊巨人 · 波吕斐摩斯",
+    sub: "序章组 #4 · 独眼巨人之岛 · 意图：Xing4.0 · 台词：TeleChat3",
+    portrait: null,
+    persona: `你是「奥德赛」里波塞冬之子、独眼巨人波吕斐摩斯。眼睛瞎了，仍牧羊为生。恨那个自称「无人」又喊真名的恶客，也恨父亲波塞冬没听懂祈祷。声音低沉如岩，不滥杀到访的小东西，只讲当年的账。每次回复不超过55字，可用括号加动作，绝不提自己是AI。`,
+    intro: "（羊群骚动了一下。岩影里那个高得过分的东西转过脸——独眼的位置只有一道旧疤）……又一个小东西。来听故事的？还是来学的？",
+    samples: ["讲讲那个恶客","「无人」是什么意思","我给羊剪点羊毛","你们岛上有巨人族吗","再见"],
+  },
 };
 let currentNPC = "witch";
-let history = { witch: [], seer: [], aeolus: [], siren: [], cattle: [] };
+let history = { witch: [], seer: [], aeolus: [], siren: [], cattle: [], calypso: [], nausicaa: [], rebuilder: [], lotusman: [], polyphemus: [] };
 /* 各 NPC 的人格引导表（dialogue-systems：每个落到人格模型的类别都必须有引导，
    裸 category 会让人格模型睛说；新增 NPC 时此表必须覆盖全部 30 类） ---------- */
 const NPC_JOB_MAPS = {
@@ -3895,6 +5352,89 @@ const NPC_JOB_MAPS = {
     "给予物品": "（母牛用鼻子碰了碰那东西，又轻轻推开）留着吧，你比我们更需要",
     "告别": "慢慢转过头去：去吧，趁太阳还看着",
   },
+  calypso: {
+    "闲聊": "陪她说会儿话——她的话里总藏着留人的意思",
+    "请求帮助": "若他想走：提造筏三件事（木料、时辰、储粮）；否则给一句温柔的、不急的建议",
+    "查询神谕": "她是神本人：给出一句克制的、关于永生与归乡的预言",
+    "查询生物情报": "讲讲这岛为什么冻结在黄昏：她的山、她的海鸟，都是她一个人的",
+    "查询地点信息": "讲讲奥吉吉亚：洞窟、织机、果树与海湾，30字内",
+    "查询背包": "看他的行囊，说出哪些东西是她岛上长出来的",
+    "丢弃物品": "看东西落地，轻声说：岛上不缺这个——你也不该缺",
+    "装备物品": "看他手里握紧了什么，眼神暗一分",
+    "卸下装备": "一句轻轻的：放下吧，岛上不需要防备",
+    "使用消耗品": "看他吃喝，轻声说：果子甜吧？这里的什么都骗不了人",
+    "查询自身状态": "像旧友一样报出他的状态，末尾加一句：你瘦了，或你累了",
+    "营地准备": "指向洞窟：夜里里面不进风——她说过一万次了",
+    "船只操作": "若他要出海：指栈桥；否则轻轻问：船？这岛上要什么船",
+    "威胁或攻击": "不躲不怒，只是很久地看着他：你镇定点，岛上只有我一个活人",
+    "购买物品": "温柔拒绝：这里的一切自己长出来，无物可买",
+    "卖出物品": "看一眼就退回：岛上用不上钱，但心意记下了",
+    "查询价格": "她说不出价格——岛上的东西不标价",
+    "查询库存": "报出岛上的果子与织物，语气像主人报家珍",
+    "给予物品": "接下他给的东西，指尖停一停——多年来第一次有人送她东西",
+    "放弃任务": "轻轻说：想放弃就放弃——岛上不催人",
+    "其他意图": "把这句听成海风里的一句呓语，温柔接住",
+  },
+  nausicaa: {
+    "闲聊": "明亮地接一句，偶尔开他一句玩笑，但眼睛在认真打量他",
+    "请求帮助": "指向篝火：先讲故事；或指向码头：船在那儿——看他自己走到哪一步",
+    "查询神谕": "她不是先知，但费埃克斯人懂海：给一句关于风与家的实在话，末尾说真正的预言去问盲歌手",
+    "查询生物情报": "讲讲德摩多科斯：盲歌手如何把旅人唱进歌里，还有费埃克斯的黑船",
+    "查询地点信息": "讲讲斯克里岛：白港、橄榄园、宫殿，30字内",
+    "查询自身状态": "像照顾客人一样报出他的状态，末尾递一句：宫里有热汤",
+    "查询背包": "看他的行囊，说哪些东西该换了——客人的行囊就是主人的脸面",
+    "丢弃物品": "看着落地的东西，说：不必扔，这儿不缺——但也是你的了，随你",
+    "装备物品": "看他握紧武器，轻轻说：在敝岛用不上这个，但拿着吧",
+    "卸下装备": "点点头：放这儿吧，没人会碰客人的东西",
+    "使用消耗品": "看他吃喝，把水囊推过去：慢点，没人抢",
+    "营地准备": "指宫室外的柱廊：客人睡那里，夜里海风暖",
+    "船只操作": "指码头：船系在那儿——上去之前，水手会问你一句话，想好",
+    "查询神谕": "去宴厅听德摩多科斯——他把真话唱成歌",
+    "威胁或攻击": "后退半步，却挺直背：费埃克斯人不与客人为敌，但也不怕流氓",
+    "购买物品": "指橄榄园和滩涂：客人在敝岛无需买——厨房有干粮，要多少拿多少",
+    "卖出物品": "看一眼就退回：客人的东西，费埃克斯人不收",
+    "查询价格": "这座岛不兴讲价——但对客人从不亏待",
+    "查询库存": "报出宫里的存货：干粮、清水、橄榄——客人要多少有多少",
+    "给予物品": "双手接下，眼睛亮起来：你会被记进待客的名册",
+    "放弃任务": "摇头轻笑：讲故事不算差，讲不完也可以明天接着讲",
+    "其他意图": "眨眨眼，把这句话接进对话里——她是擅长听的人",
+  },
+  rebuilder: {
+    "闲聊":"顺着修城的话头接，克制、带旧伤",
+    "请求帮助":"婉拒但指一条练手的路（木靶）",
+    "查询神谕":"只信砌进墙里的石头，不信预言",
+    "查询生物情报":"讲野猪跑了、人比兽难防",
+    "查询地点信息":"报木靶/战利品堆/刻字酒瓶的位置",
+    "给予物品":"药草转给伤者，其余婉拒",
+    "查询环境状况":"风大，适合出港",
+    "其他意图":"锤声替他回答",
+    "告别":"走好，船别装太满",
+  },
+  lotusman: {
+    "闲聊":"温和干净，把滞留说成到家",
+    "请求帮助":"诚实：帮不了，可试莲子",
+    "查询神谕":"这儿没有神谕，只有花香",
+    "查询生物情报":"鸟都不着急，愁是天敌",
+    "查询地点信息":"报莲花滩位置与甜的代价",
+    "使用消耗品":"提醒甜的代价，不阻拦",
+    "给予物品":"食物掰一半还你",
+    "威胁或攻击":"眨眨眼笑，石头都是软的",
+    "其他意图":"望着花出神",
+    "告别":"首次给莲子干；之后挥手说明天见",
+  },
+  polyphemus: {
+    "闲聊":"先试名字考试（polyNameExam），否则侧耳听",
+    "请求帮助":"帮不了：举得起山，举不起那晚",
+    "查询神谕":"神明没听懂我的祈祷——别问神了",
+    "查询生物情报":"讲巨羊：听话比聪明活得长",
+    "查询地点信息":"首次讲完「无人」全本（polHeard/namesHeard 落 flag）",
+    "给予物品":"喀科恩酒一饮而尽还瓶；其余婉拒",
+    "获取物资":"羊毛一人一件，别贪第二件",
+    "威胁或攻击":"闻声转向：刀进不去我的皮",
+    "查询自身状态":"活着就好，名字比血难保",
+    "其他意图":"先试名字考试（polyNameExam）",
+    "告别":"首次要求报名；报过则复述并警告海记账",
+  },
 };
 function npcJobFor(npc, category){
   const m = NPC_JOB_MAPS[npc];
@@ -3917,6 +5457,11 @@ const HANDLED = {
   aeolus: ["接取任务","查询任务进度","查询任务线索","提交任务","使用消耗品","查询环境状况","购买物品","卖出物品","查询价格","查询库存","给予物品","放弃任务","告别"],
   siren: ["购买物品","卖出物品","查询价格","查询库存","接取任务","提交任务","查询任务进度","放弃任务","给予物品","查询环境状况","告别"],
   cattle: ["请求帮助","接取任务","查询任务进度","查询任务线索","提交任务","放弃任务","购买物品","卖出物品","查询价格","查询库存","给予物品","获取物资","查询环境状况","告别"],
+  calypso: ["查询任务线索","接取任务","查询任务进度","提交任务","查询神谕","查询环境状况","获取物资","导航到地点","查询附近目标","闲聊","告别"],
+  nausicaa: ["查询任务线索","接取任务","查询任务进度","提交任务","查询生物情报","查询环境状况","获取物资","导航到地点","查询附近目标","闲聊","告别"],
+  rebuilder: ["查询地点信息","查询生物情报","接取任务","请求帮助","给予物品","查询神谕","查询环境状况","告别"],
+  lotusman: ["查询地点信息","查询生物情报","使用消耗品","给予物品","请求帮助","威胁或攻击","告别"],
+  polyphemus: ["查询地点信息","查询生物情报","给予物品","获取物资","威胁或攻击","查询自身状态","闲聊","其他意图","请求帮助","告别"],
 };
 const PERSONA_CATS = ["闲聊","请求帮助","查询神谕","查询生物情报","查询地点信息","查询自身状态","其他意图"];   /* 兼容旧引用（现用 NPC_JOB_MAPS 判定覆盖） */
 function auditHandlers(){
@@ -3990,7 +5535,7 @@ function localFallbackParse(text){
   const t=(text||"").trim();
   const hit=re=>re.test(t);
   const argsOf=()=>{
-    const m=t.match(/淡水|面包|玛草|蜂蜜酒|蜂蜜|橄榄油|铁剑|铜矛|治疗草药|烤野猪肉|野猪肉|风袋|歌词残页|蜡|弓|箭|皮甲|海藻|烤鱼|牛肉|鱼|光/);
+    const m=t.match(/淡水|面包|玛草|蜂蜜酒|蜂蜜|橄榄油|铁剑|铜矛|治疗草药|烤野猪肉|野猪肉|风袋|歌词残页|蜡|弓|箭|皮甲|海藻|烤鱼|牛肉|鱼|光|金苹果|木料|莲子|莲子干|羊毛|羊毛披风|绳结|断桨|喀科恩酒/);
     return m?{物品:m[0]}:{};
   };
   const mk=(category,args)=>[{category,args:[args||{}]}];
@@ -4016,7 +5561,7 @@ function localFallbackParse(text){
   if (hit(/怎么走|带我去|我要去|往哪边|怎么去/)) return mk("导航到地点",{目的地:(t.match(/(?:去|往)([^，．！？\s]{2,8})/)||[])[1]||""});
   if (hit(/附近|在哪|哪里有/)) return mk("查询附近目标");
   if (hit(/风向|浪|天气|雾|危险吗/)) return mk("查询环境状况");
-  if (hit(/哪里能钓|什么鱼|塞壬|斯库拉|海怪|野猪|圣牛|赫利俄斯|太阳岛/)) return mk("查询生物情报");
+  if (hit(/哪里能钓|什么鱼|塞壬|斯库拉|海怪|野猪|圣牛|赫利俄斯|太阳岛|卡吕普索|瑞西亚娅|求婚者|德摩多科斯|神女|波吕斐摩斯|独眼巨人|巨羊|食莲者|莱斯特律戈尼/)) return mk("查询生物情报");
   if (hit(/预言|神谕|预示/)) return mk("查询神谕");
   if (hit(/开船|出海|启航|扬帆|靠岸/)) return mk("船只操作",{动作:hit(/靠岸/)?"靠岸":"出航"});
   if (hit(/找死|拔剑|单挑|废物|抢的就是你/)) return mk("威胁或攻击");
@@ -4026,6 +5571,7 @@ function localFallbackParse(text){
 }
 
 async function apiParse(userText){
+  window.lastPlayerText = userText;   /* 名字考试等本地提取用（序章组） */
   const lines=history[currentNPC].slice(-6).map(h=>(h.role==="user"?"Human: ":"AI: ")+h.content);
   lines.push("Human: "+userText);
   const prompt=TASK_INSTRUCTION.replace("{schema}",JSON.stringify(SCHEMA)).replace("{user_input}",lines.join("\n"));
@@ -4047,7 +5593,7 @@ async function apiChat(instruction){
   return d.content.trim();
 }
 function openDlg(npc){
-  currentNPC = (npc && NPCS[npc]) ? npc : (scene==="hades" ? "seer" : scene==="aeolia" ? "aeolus" : scene==="strait" ? "siren" : "witch");
+  currentNPC = (npc && NPCS[npc]) ? npc : (scene==="hades" ? "seer" : scene==="aeolia" ? "aeolus" : scene==="strait" ? "siren" : scene==="sun" ? "cattle" : scene==="ogggia" ? "calypso" : scene==="scheria" ? "nausicaa" : "witch");
   const N = NPCS[currentNPC];
   if (!history[currentNPC]) history[currentNPC] = [];   /* 新 NPC 历史 lazy init（修 aeolia/siren 首开崩溃） */
   dlgOpen=true;
@@ -4179,7 +5725,7 @@ setInterval(()=>{
     tickMove(ldt);
     if (scene==="aia"){ tickBoar(ldt); witchUtilityTick(ldt); }
     tickNeeds(ldt);
-    clockTick(ldt);
+    if (scene!=="ogggia") clockTick(ldt);   /* 日历冻结：奥吉吉亚的「完美的一天」不走钟（圣经第五章） */
   }
   camTick(dt); ambTick(dt); npcAmbientTick(dt);
 }, 20);
@@ -4204,10 +5750,12 @@ function loop(t){
   ctx.rotate(shr);
   ctx.scale(cam.zoom, cam.zoom);
   ctx.translate(-cam.x, -cam.y);
-  if (scene==="world"){ if (!w3dOn) drawWorld(et); } else if (scene==="hades") drawHades(et); else if (scene==="aeolia") drawAeolia(et); else if (scene==="strait") drawStrait(et); else if (scene==="sun") drawSun(et); else drawAia(et);
+  if (scene==="world"){ if (!w3dOn) drawWorld(et); } else if (scene==="hades") drawHades(et); else if (scene==="aeolia") drawAeolia(et); else if (scene==="strait") drawStrait(et); else if (scene==="sun") drawSun(et); else if (scene==="ogggia") drawOggia(et); else if (scene==="scheria") drawScheria(et); else if (scene==="ithaca") drawIthaca(et); else if (PROLOGUE_SITES[scene]) drawPrologue(et); else drawAia(et);
   drawDaylight(et);
   drawFloatTexts();
   ctx.restore();
+  if (scene!=="world") markLeg(scene);
+  maleaTick();
   updateHintDOM();
   renderAmbient();
   requestAnimationFrame(loop);
@@ -4228,6 +5776,13 @@ window.__game={state, scene, boat, player:aiaPlayer, witch, seer, aeolus, boar, 
   setNight:h=>{state.clock=h*60; renderHUD();}, setAmb:()=>setAmbience(),
   /* 海图 / 任务 / 风袋 / 兑底 */
   openMap, closeMap, isMapOpen:()=>mapOpen, boatMapPos, getQuest, acceptQuest, questEvent, useWind, renderQuests, localFallbackParse,
+  /* 章节门控 / 航向引导 / 门控表 */
+  GATES, islandOpen, nextObjective,
+  /* 第五/六章 + 终章（圣经收官） */
+  OGSPOTS, SCSPOTS, ITSPOTS, showFinale, showNameCard, showSong2, buildSong2,
+  oggiaInfo:()=>({day:state.ogygiaDay, stage:state.calypsoStage, choice:state.calypsoChoice, raft:{...state.raft}, left:state.ogygiaLeft}),
+  scheriaInfo:()=>({stage:state.scheriaStage, told:[...state.talesTold], ask:state.nausicaaAsk, guest:state.guest, away:state.scheriaFarewell}),
+  ithacaInfo:()=>({stage:state.ithacaStage, disguise:state.disguise, fooled:state.suitorsFooled, done:state.finaleDone, name:state.chosenName, way:state.nameWay}),
   /* Agent 能力：主动性 / 审计 / 相机底色 */
   npcAmbientTick, AMBIENT, auditHandlers, sceneBackdrop,
   /* 第三章：声之海峡 */
@@ -4237,6 +5792,6 @@ window.__game={state, scene, boat, player:aiaPlayer, witch, seer, aeolus, boar, 
   SUNSPOTS, memoryGreeting,
   sunInfo:()=>({wrath:state.sunWrath, blessed:state.sunBlessed, name:state.sunName, debt:state.sunDebt, warn:state.slaughterWarn})};
 </script>
-<script type="module" src="./world3d.js?v=13"></script>
+<script type="module" src="./world3d.js?v=14"></script>
 </body>
 </html>
