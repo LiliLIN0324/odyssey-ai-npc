@@ -79,6 +79,22 @@
     animation:memoIn .35s ease-out;}
   @keyframes memoIn{from{opacity:0; transform:translateY(3px);} to{opacity:1; transform:none;}}
   .bubble.witch.hasMemo{border-left:3px solid #b78bd0;}
+  .bubble.witch.mood-care{border-left:3px solid #7bd389;}
+  .bubble.witch.mood-warn{border-left:3px solid #e0783a;}
+  .bubble.witch.mood-calm{border-left:3px solid #9fc5dd;}
+  .bubble.witch.mood-cold{border-left:3px solid #8a8a96;}
+  /* 坩埚炼药台（survival-crafting 合成界面） */
+  #craftOverlay{position:absolute; inset:0; z-index:23; display:none; align-items:center; justify-content:center; background:rgba(6,12,22,.62); backdrop-filter:blur(3px);}
+  #craftOverlay .craftPanel{width:min(430px,86vw); background:linear-gradient(160deg,#152033,#0d1420); border:1px solid rgba(255,235,190,.28); border-radius:14px; padding:16px; box-shadow:0 18px 50px rgba(0,0,0,.5);}
+  .craftHead{display:flex; justify-content:space-between; align-items:center; font-weight:600; color:#ffdba8; margin-bottom:6px;}
+  .craftX{background:none;border:none;color:#cbd6e6;font-size:18px;cursor:pointer;}
+  .craftSub{color:#9fb1c8; font-size:12px; margin-bottom:10px;}
+  .craftRow{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px; border:1px solid rgba(255,235,190,.12); border-radius:9px; margin-bottom:8px; background:rgba(255,255,255,.03);}
+  .craftRow.off{opacity:.55;}
+  .craftName{color:#ffe9c4; font-weight:600;}
+  .craftDesc{color:#9fb1c8; font-size:12px;}
+  .craftBtn{border:1px solid #b78bd0; background:rgba(183,139,208,.15); color:#e5d5f5; padding:5px 12px; border-radius:8px; cursor:pointer; font-size:12px;}
+  .craftBtn:disabled{border-color:#445; color:#78839a; cursor:not-allowed;}
   /* 演示窗口（聪明度 Showcase：标题屏"演示 NPC 智能"入口） */
   .demoBtn{margin-top:10px; border:1px solid rgba(255,255,255,.4); background:rgba(255,255,255,.10);
     color:#fff; font-size:11.5px; padding:8px 16px; border-radius:18px; cursor:pointer; letter-spacing:1px;}
@@ -448,7 +464,7 @@ const ISLANDS = [
   {gx:29, gy:12, name:"奥吉吉亚",  note:"卡吕普索的岛 · 完美的一天",       open:true, scene:"ogggia",    leg:12, mp:[57,68]},
   {gx:17, gy:7,  name:"斯克里岛",  note:"费埃克斯人的岛 · 有人性的驿站",   open:true, scene:"scheria",   leg:13, mp:[38,38]},
   {gx:16, gy:13, name:"伊萨卡",    note:"归乡 · 爱奥尼亚海 · 雾正在散",    open:true, scene:"ithaca",    leg:14, mp:[40,63]},
-  {gx:31, gy:6,  name:"特洛伊海岸", note:"启航之地 · 战火余烬 · 待开放",    open:false, leg:0,          mp:[71,38]},
+  {gx:31, gy:6,  name:"特洛伊海岸", note:"启航之地 · 木马之夜 · 十二艘船从这里出发", open:true, scene:"troy", leg:0, mp:[71,38]},
   {gx:21, gy:9,  name:"声之海峡",  note:"塞壬的歌 · 斯库拉的六头 · 代价",  open:true, scene:"strait",    leg:9,  mp:[30,64]},
   {gx:26, gy:9,  name:"太阳岛",    note:"赫利俄斯的圣牛 · 饥饿与誓言",     open:true, scene:"sun",       leg:11, mp:[47,60]},
 ];
@@ -826,7 +842,52 @@ const PROLOGUE_SITES = {
       {type:"dock",   x:4*ATS+ATS/2,  y:4*ATS+ATS/2, r:70, label:"解缆离岛"},
     ],
   },
+  /* —— 特洛伊（#0 启航之地 · 木马之夜 · 2026-11-08 用户拍板开放为开篇战役）——
+     原著流程：厄佩俄斯造马 → 献策 → 藏勇士入马 → 特洛伊人拖马入城 → 夜袭混战 → 屠城抉择 → 率 12 艘船出海 */
+  troy: {
+    name:"特洛伊", zone:"特洛伊平原 · 十年围城", tint:"#54453a", npc:"epeius", spawn:[3,9.5],
+    chapterImg:null,
+    kicker:"序 章 · 战 争", chapterSub:"木马之夜 · 你的成名之计",
+    quote:"「这匹马是献给雅典娜的赔礼——把它拖进城去。」",
+    solid:new Set(["~","C","G","T","B","W","H"]),
+    map:[
+      "~~~~~~~~~~~~~~~~~~~~",
+      "~CCCCCGGGGCCCC.....~",
+      "~CCCCCGGGGCCCC.FF..~",
+      "~......,......FFF..~",
+      "~..,...........FF..~",
+      "~..,...H...........~",
+      "~..B....H......PP..~",
+      "~..BB...,..........~",
+      "~..___,,.......TT...~",
+      "~~~_,,~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~",
+    ],
+    spots:()=>{
+      const arr=[
+        {type:"epeius", x:7*ATS+ATS/2,  y:6*ATS+ATS/2, r:85, label:"与造马师厄佩俄斯交谈"},
+        {type:"wood",   x:4*ATS+ATS/2,  y:5*ATS+ATS/2, r:70, label:"伐木（造马木料）"},
+        {type:"horse",  x:8*ATS+ATS/2,  y:5*ATS+ATS/2, r:95, label:"木马"},
+        {type:"torch",  x:13*ATS+ATS/2, y:3*ATS+ATS/2, r:75, label:"城墙上的火把"},
+        {type:"dock",   x:3*ATS+ATS/2,  y:8*ATS+ATS/2, r:70, label:"出海（船队整帆）"},
+      ];
+      /* 夜袭阶段：城内卫兵为可攻击实体（boar 同款 E 键结算） */
+      TROY_GUARDS.forEach((g,i)=>{ if(g.alive && state.troyStage===3)
+        arr.push({type:"guard", gi:i, x:g.x, y:g.y, r:55,
+          label:`攻击特洛伊卫兵（血 ${g.hp}/${g.max}）`}); });
+      return arr;
+    },
+  },
 };
+/* 特洛伊卫兵：夜袭混战实体（轻量——静态站位+命中反馈+血条；完整 FSM 野猪已有，此为群战版） */
+const TROY_GUARDS = [
+  {x:11*ATS+ATS/2, y:3*ATS+ATS/2, hp:24, max:24, alive:true,  hitAt:0},
+  {x:14*ATS+ATS/2, y:3*ATS+ATS/2, hp:24, max:24, alive:true,  hitAt:0},
+  {x:12*ATS+ATS/2, y:4*ATS+ATS/2, hp:24, max:24, alive:true,  hitAt:0},
+  {x:15*ATS+ATS/2, y:4*ATS+ATS/2, hp:30, max:30, alive:true,  hitAt:0},
+];
+function resetTroyGuards(){ TROY_GUARDS.forEach(g=>{ g.hp=g.max; g.alive=true; g.hitAt=0; }); }
 function proTile(s,cx,cy){ const m=PROLOGUE_SITES[s].map; return (cy<0||cy>=m.length||cx<0||cx>=m[cy].length)?"~":m[cy][cx]; }
 function tryMovePrologue(nx,ny){
   const hw=aiaPlayer.w/2, hh=aiaPlayer.h/2;
@@ -869,6 +930,54 @@ function maleaTick(){
     toast("海雾骤起，双重风暴前后夹来——你贴着风向转了九次，船头终于咬住了浪缝。（听风试炼 · 历练 +15 · 航序 #2 点亮）");
     sfx("warn"); renderHUD(); save();
   }
+}
+/* ==================== 自由航行·海面随机遭遇（freeSail 后，roguelike 里程节 + 种子化，零模型） ====================
+   主航走完、终章「自由的海」开启后：在开阔海航行累计一段里程 → seaEncArmed（海面起了变化）→ 按 E 触发一次
+   由「船位瓦片 × 已遇次数」决定的种子化遭遇（风暴 / 商船 / 海鸟）。确定性可复现、无定位冲突、节奏随次数拉长。 */
+const SEA_ENCOUNTS = [
+  { id:"storm", name:"风暴",
+    memo:"风暴里你的船头咬住了浪缝——海认得你",
+    apply:function(){ state.hp = Math.max(1, state.hp-6); state.thirst = Math.max(0, state.thirst-12); gainXp(8);
+      return "风暴把浪堆成尖，你压住湿桅、船头咬进浪缝，海又退回海里。（血 -6 · 口渴 -12 · 历练 +8）"; } },
+  { id:"merchant", name:"商船",
+    memo:"商船把你当成了熟路的客人",
+    apply:function(){ if ((state.coins||0) >= 6){ state.coins-=6; addItem("治疗草药");
+      return "商船靠过来：「熟路的客人。」你 6 德拉克换了一捆治疗草药——海上总得有人傍身。（金币 -6 · 治疗草药 +1）"; }
+      state.coins = (state.coins||0)+4;
+      return "商船想抄你的熟路。你指了条避风的水道，它送你 4 德拉克——海记得送过人的人。（金币 +4）"; } },
+  { id:"seabird", name:"海鸟",
+    memo:"海鸟衔着橄榄枝——它记得风往哪边吹",
+    apply:function(){ addItem("治疗草药"); state.thirst = Math.min(100, state.thirst+10);
+      return "海鸟衔着橄榄枝领你偏了半舱，你捞到一只漂来的木箱。（治疗草药 +1 · 口渴 +10）"; } }
+];
+let _seaAcc = 0, _lastBoat = null;
+function seaEncounterTick(){
+  if (scene!=="world"){ _seaAcc = 0; return; }
+  if (!state.freeSail || dlgOpen || titleOn || chapterOn || mapOpen) return;
+  const ch = worldTile(Math.floor(boat.x/WTS), Math.floor(boat.y/WTS));
+  if (ch==="#"||ch==="X"||ch==="G"){ _seaAcc = 0; return; }          /* 陆地不蓄能 */
+  if (!_lastBoat) _lastBoat = {x:boat.x, y:boat.y};
+  const dx = boat.x-_lastBoat.x, dy = boat.y-_lastBoat.y;
+  _lastBoat = {x:boat.x, y:boat.y};
+  if (dx||dy) _seaAcc += Math.hypot(dx, dy);
+  if (_seaAcc >= (state.seaThreshold||300)){ _seaAcc = 0; doSeaEncounter(); }
+}
+function doSeaEncounter(){
+  if (!state.freeSail) return;
+  const sx = Math.floor(boat.x/WTS), sy = Math.floor(boat.y/WTS);
+  const seed = (((sx*73856093) ^ (sy*19349663) ^ ((state.seaEncCount||0)*83492791))) >>> 0;
+  const pool = SEA_ENCOUNTS.filter(function(e){ return e.id!==state.seaLastEnc; });
+  const e = pool[seed % pool.length];
+  state.seaLastEnc = e.id;
+  state.seaEncCount = (state.seaEncCount||0)+1;
+  if (!state.seaEncDone) state.seaEncDone = {};
+  const fresh = !state.seaEncDone[e.id];
+  state.seaEncDone[e.id] = 1;
+  const r = e.apply();
+  addMemory(e.memo, fresh?2:1, "sea");
+  state.seaThreshold = Math.min(420, (state.seaThreshold||300)+40);
+  toast((fresh?e.name:(e.name+"（又遇）")) + " · " + r);
+  sfx(e.id==="storm"?"warn":"alert"); renderHUD(); save();
 }
 function prologueSpot(s){
   const P = PROLOGUE_SITES[scene];
@@ -940,7 +1049,96 @@ function prologueSpot(s){
     addMemory("旅人在忒勒皮洛斯拾了幸存者的绳结——十一个人里只有他记得打这个结", 3, "telepylos");
     toast("碎船骸间有一根系船的旧绳。你照着残结比划——十一个人里只有他记得打这个结。（获得 幸存者的绳结 · 历练 +20 · 航序 #6）");
     renderHUD(); save(); return;
+  /* —— 特洛伊（#0 木马之夜：献策→造马→入马→夜袭混战→屠城抉择→船队出海）—— */
+  case "epeius": {
+    if (state.troyStage===0){
+      state.troyStage=1; gainXp(20); sfx("bless");
+      addMemory("奥德修斯向厄佩俄斯献上木马计——十年围城，赢在一只空心木马里", 4, "any");
+      toast("厄佩俄斯放下刨子听完你的话，半晌：「……空心木马，藏进勇士，佯装撤军。诸神在上，这是能写进歌里的毒计。」（木马计已定 · 历练 +20 · 去伐木：木料 ×5）");
+      renderHUD(); save(); return;
+    }
+    if (state.troyStage===1) return toast(`木料 ${state.troyWood||0}/5——平原上的松树都认得斧子。备齐了去木马那开工。`);
+    if (state.troyStage===2) return toast("马已立起，肚膛空着。夜一黑，就从它进去。");
+    if (state.troyStage===3) return toast("城破在即——先清了城门里的卫兵。");
+    return openDlg("epeius");
+  }
+  case "wood":
+    if (state.troyStage<1) return toast("先与厄佩俄斯把话定下来——造什么、为谁造。");
+    if (state.troyStage>1) return toast("木料够了。马肚里闻得见松脂香。");
+    state.troyWood=(state.troyWood||0)+1; sfx("chop"); feedback("small");
+    burst(4*ATS+ATS/2, 5*ATS+ATS/2, "#c9a06a", 8, 60, 2.4);
+    gainXp(4);
+    if (state.troyWood>=5) toast("第五根木料落地——够了。（去木马处：开工造马）");
+    else toast(`斧声在平原上荡开。木料 ${state.troyWood}/5。`);
+    renderHUD(); save(); return;
+  case "horse":
+    if (state.troyStage===1){
+      if ((state.troyWood||0)<5) return toast(`马还只是图样。木料 ${state.troyWood||0}/5——平原上伐去。`);
+      state.troyStage=2; sfx("build"); feedback("large"); gainXp(30);
+      addMemory("木马在一夜之间立起——肚膛空着，像一句没说完的话", 3, "any");
+      toast("锯声响了整夜。天亮时，一匹比城门还高的木马立在滩头，肚膛空着。（再 E 一次：藏入马腹）");
+      renderHUD(); save(); return;
+    }
+    if (state.troyStage===2){
+      state.troyStage=3; resetTroyGuards();
+      aiaPlayer.x=12*ATS+ATS/2; aiaPlayer.y=5*ATS+ATS/2;   /* 已被拖入城内 */
+      showChapter(null,"木 马 之 夜","城 里 的 马","特洛伊把赔礼拖进了自己的城门","你在马腹的黑暗里数着更声。城门在身后合上——卫兵还在门内巡着。\n天快亮之前，把门里的牙齿拔干净。");
+      addMemory("特洛伊人把木马拖进了城——你藏在马腹里，听着城门在身后合上", 4, "any");
+      gainXp(35); renderHUD(); save(); return;
+    }
+    return toast("马立在晨光里，肚膛空了。歌里会记住它。");
+  case "guard": {
+    const g = TROY_GUARDS[s.gi];
+    if (!g || !g.alive) return;
+    const dmg = Math.floor(derived().atk + Math.floor(Math.random()*5));
+    g.hp -= dmg; g.hitAt = performance.now();
+    burst(g.x, g.y-4, "#ff9d5c", 8, 62, 2.4);
+    { const kx=g.x-aiaPlayer.x, ky=g.y-aiaPlayer.y, kd=Math.hypot(kx,ky)||1;
+      g.x = Math.max(0, Math.min(19*ATS, g.x + kx/kd*10)); g.y = Math.max(0, Math.min(9*ATS, g.y + ky/kd*10)); }
+    sfx("attack"); feedback("small");
+    popText(g.x, g.y-22, `-${dmg}`, "#ff9d5c");
+    let msg = `你从阴影里挥出${state.equipped?"【"+state.equipped+"】":"短刃"}（-${dmg}）`;
+    if (g.hp<=0){
+      g.alive=false; sfx("die"); feedback("large");
+      burst(g.x, g.y, "#8a6a52", 16, 100, 3.2);
+      gainXp(18); msg = "一名卫兵闷声倒在门洞的阴影里。（历练 +18）";
+      if (TROY_GUARDS.every(x=>!x.alive)){
+        state.troyStage=4; sfx("bless"); gainXp(40);
+        addMemory("木马之夜——城门里的卫兵被肃清，火把传到了你手上", 4, "any");
+        toast("最后一具甲胄撞在门槛上。城门洞开了——火把在墙垛上等你。（历练 +40 · 去城墙：火把）");
+        renderHUD(); save(); return;
+      }
+    }
+    toast(msg); renderHUD(); save(); return;
+  }
+  case "torch": {
+    if (state.troyStage<4) return toast("火把在墙垛上烧着。城门还没开——先把它抢下来。");
+    if (state.troyStage>=5) return toast(state.troyBurned ? "火光在城脊上跑，一夜没停。灰会记十年。" : "你把火把插回了架上。有人从门缝里看了你一眼——没说话，走了。");
+    const burn = confirm("十年围城，今夜见了分晓。\n\n【烧城】= 按原著：屠城焚屋，船队满帆出海\n【放过】= 放下火把：平民走门，你只带走战争\n\n确定=烧城（原著）| 取消=放下火把（改写）");
+    state.troyStage=5;
+    if (burn){
+      state.troyBurned=true; sfx("warn"); feedback("large");
+      addMemory("特洛伊在身后烧成一条火线——这就是诸神要的胜利", 4, "any");
+      toast("火把落下。风把火从屋顶赶向屋顶——特洛伊在身后烧成一条火线。（原著之夜 · 火光会跟到判词里）");
+    } else {
+      state.troySpared=true; sfx("bless");
+      addMemory("屠城之夜，奥德修斯放下了火把——平民走门，只带走战争", 4, "any");
+      toast("你把火把插回墙垛。妇女和老人从侧门涌出去，没人回头看你。——荷马没写这一页。（改写 · 命运成就）");
+    }
+    renderHUD(); save(); return;
+  }
   case "dock":
+    if (scene==="troy" && state.troyStage<5) return toast("船在滩上等着——可城里的账还没结完。（先把这一夜走完）");
+    if (scene==="troy"){
+      state.troyDone=true;
+      if (!state.fleet){ state.fleet=12; }
+      sfx("bless"); gainXp(50);
+      addMemory("十二艘船满帆离开特洛伊的海岸——全作从这里开始", 4, "any");
+      scene = "world";
+      boat.x = 30*WTS+WTS/2; boat.y = 6*WTS+WTS+30;
+      showChapter("concept-art/01-序章漂流.jpg","出 海","十 二 艘 船","启航之地 · 船队整帆","十二艘船同时离岸。桅杆挤着桅杆，像一片移动的林子。\n这一程的尽头没有人知道——但今晚，船是满的。");
+      renderHUD(); save(); return;
+    }
     scene = "world"; save(); sfx("pick");
     toast("船头调向外海——岛的影子在船尾慢慢合上。");
     return;
@@ -983,8 +1181,71 @@ function drawPrologue(et){
                   } break;
         case "_": ctx.fillStyle="#7a5c38"; ctx.fillRect(x,y+10,ATS,6); break;
         case ",": ctx.fillStyle="rgba(220,200,160,.18)"; ctx.fillRect(x+ATS/2-2,y,4,ATS); break;
+        /* —— 特洛伊专属 tiles —— */
+        case "G": ctx.fillStyle="#4a3826"; ctx.fillRect(x,y,ATS,ATS);           /* 城门洞深影 */
+                  ctx.fillStyle="#6a5236"; ctx.fillRect(x+2,y+2,ATS-4,10); break;
+        case "F": { const fl = 0.5+0.5*Math.sin(et/240+cx*1.7);                 /* 焚城余烬：暗红闪烁 */
+                  ctx.fillStyle="#241a14"; ctx.fillRect(x,y,ATS,ATS);
+                  ctx.fillStyle=`rgba(255,110,40,${0.35+fl*0.45})`;
+                  ctx.beginPath(); ctx.arc(x+ATS/2,y+ATS/2,4+fl*2,0,7); ctx.fill(); break; }
+        case "P": ctx.fillStyle="#8a7248"; ctx.beginPath();                     /* 盾牌堆 */
+                  ctx.ellipse(x+ATS/2,y+ATS/2+3,9,7,0,0,7); ctx.fill();
+                  ctx.strokeStyle="#5f4d33"; ctx.lineWidth=2;
+                  ctx.beginPath(); ctx.arc(x+ATS/2,y+ATS/2+3,4,0,7); ctx.stroke(); break;
+        case "H": break;   /* 木马单独绘制（马成前画木料堆，成后画巨马） */
         default:  ctx.fillStyle="rgba(120,140,110,.16)"; ctx.fillRect(x,y,ATS,ATS); break;
       }
+    }
+  }
+  /* —— 特洛伊实体层：木马（阶段化）/ 卫兵 / 厄佩俄斯 —— */
+  if (scene==="troy"){
+    const hx=8*ATS+ATS/2, hy=5*ATS+ATS/2;
+    if (state.troyStage<2){                      /* 木料堆 → 马基座 */
+      ctx.fillStyle="#6b4a2f"; ctx.beginPath(); ctx.ellipse(hx,hy+8,16,8,0,0,7); ctx.fill();
+      ctx.fillStyle="#8a6a44";
+      for (let i=0;i<3;i++) ctx.fillRect(hx-14+i*10, hy-4+i*3, 16, 5);
+    } else {                                     /* 巨木马：马身+头颈+鬃+梯 */
+      const sway=Math.sin(et/900)*0.6;
+      ctx.fillStyle="rgba(20,35,50,.28)"; ctx.beginPath(); ctx.ellipse(hx+10,hy+26,26,8,0,0,7); ctx.fill();
+      ctx.fillStyle="#7a5a38"; ctx.beginPath(); ctx.ellipse(hx,hy+6,24,14,sway*0.05,0,7); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(hx-16,hy-8); ctx.quadraticCurveTo(hx-10,hy-34,hx+8,hy-38+sway);
+      ctx.lineTo(hx+18,hy-30+sway); ctx.quadraticCurveTo(hx-2,hy-24,hx-4,hy-2); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle="#5a3f26"; ctx.lineWidth=3;
+      for (let i=0;i<5;i++){ ctx.beginPath(); ctx.moveTo(hx-12+i*6,hy-28+i*1.5);
+        ctx.lineTo(hx-14+i*6,hy-40+i*2); ctx.stroke(); }
+      ctx.fillStyle="#3d2c1c";
+      for (const s of [[-14,18],[8,20]]) ctx.fillRect(hx+s[0],hy+16,5,12);
+      ctx.fillStyle="#241a12"; ctx.beginPath(); ctx.arc(hx+14,hy-32+sway,2,0,7); ctx.fill();
+      if (state.troyStage>=3){                   /* 已入城：门内火光下的马剪影感 */
+        ctx.fillStyle="rgba(255,110,40,.08)"; ctx.beginPath(); ctx.arc(hx,hy,60,0,7); ctx.fill();
+      }
+    }
+    /* 卫兵：铜甲剪影 + 受击抖动 + 血条 */
+    TROY_GUARDS.forEach(gd=>{
+      if (!gd.alive || state.troyStage!==3) return;
+      const sh=(performance.now()-gd.hitAt<260)?Math.sin(performance.now()/22)*3:0;
+      const x=gd.x+sh, y=gd.y;
+      ctx.fillStyle="rgba(20,35,50,.3)"; ctx.beginPath(); ctx.ellipse(x+3,y+12,12,4,0,0,7); ctx.fill();
+      ctx.fillStyle="#9a7a4a"; ctx.fillRect(x-8,y-2,16,12);            /* 铜甲身 */
+      ctx.fillStyle="#c9a06a"; ctx.beginPath(); ctx.arc(x,y-10,5.5,0,7); ctx.fill();  /* 头盔 */
+      ctx.fillStyle="#7a5c36"; ctx.fillRect(x-2,y-17,4,8);            /* 盔缨 */
+      ctx.strokeStyle="#e8b04b"; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(x+9,y-6); ctx.lineTo(x+15,y+8); ctx.stroke();       /* 矛 */
+      ctx.fillStyle="#241a12"; ctx.beginPath(); ctx.arc(x-2,y-11,1.4,0,7); ctx.fill();
+      if (gd.hp<gd.max){
+        ctx.fillStyle="rgba(10,16,24,.7)"; ctx.fillRect(x-16,y-22,32,5);
+        ctx.fillStyle="#e05252"; ctx.fillRect(x-15,y-21,30*(gd.hp/gd.max),3);
+      }
+    });
+    /* 厄佩俄斯：造马师（stage<3 白天在场；夜袭后已登船） */
+    if (state.troyStage<3){
+      const ex=7*ATS+ATS/2, ey=6*ATS+ATS/2, bob=Math.sin(et/600)*1.2;
+      ctx.fillStyle="rgba(20,35,50,.3)"; ctx.beginPath(); ctx.ellipse(ex+3,ey+12,11,4,0,0,7); ctx.fill();
+      ctx.fillStyle="#8a6a4a"; ctx.fillRect(ex-7,ey-4+bob,14,14);
+      ctx.fillStyle="#d8b88a"; ctx.beginPath(); ctx.arc(ex,ey-10+bob,5.5,0,7); ctx.fill();
+      ctx.fillStyle="#5f4d33"; ctx.fillRect(ex-7,ey-13+bob,14,4);
+      ctx.strokeStyle="#8a6a44"; ctx.lineWidth=2.5;
+      ctx.beginPath(); ctx.moveTo(ex+8,ey-14+bob); ctx.lineTo(ex+8,ey+10+bob); ctx.stroke();  /* 刨子杆 */
     }
   }
   const px=aiaPlayer.x, py=aiaPlayer.y;
@@ -1023,6 +1284,13 @@ let state = {
   memory: [],                    /* NPC 记忆流 [{t,imp,who,text}]（Generative Agents） */
   quests: {},                    /* 多任务账本 {id:{id,name,have,need,done,who}} */
   windFreed: [false,false,false,false],  /* 风神岛四风牢笼释放状态 */
+  /* —— 特洛伊战役 + 船队（17h：玩家=奥德修斯，原著 12 艘船）—— */
+  fleet: 0,               /* 船队艘数 0..12（特洛伊出海点亮 12；逐站折损） */
+  troyStage: 0,           /* 0登陆 1献策 2马成 3夜袭中 4卫兵肃清 5屠城抉择毕 */
+  troyWood: 0,            /* 造马木料 0..5 */
+  troyBurned: false,      /* 屠城（原著） */
+  troySpared: false,      /* 放下火把（改写） */
+  troyDone: false,        /* 特洛伊战役完成（出海） */
   /* —— 第三章·声之海峡（strait）—— */
   straitStage: 0,        /* 0未选听歌方式 1已选 2已过斯库拉 3已出峡 */
   waxEars: false,        /* 蜡封耳：放弃记忆（歌词缺页） */
@@ -1135,6 +1403,10 @@ function ensureState(){
   if (state.prophecy===undefined) state.prophecy=null;
   if (state.sunStage===undefined) state.sunStage=null;
   if (state.freeSail===undefined) state.freeSail=false;
+  /* 自由航行·海遇字段：旧档补默认值 */
+  if (state.seaEncCount===undefined) state.seaEncCount=0;
+  if (!state.seaEncDone) state.seaEncDone={};
+  if (state.seaThreshold===undefined) state.seaThreshold=300;
   if (state.epilogueDone===undefined) state.epilogueDone=false;
   /* 第五/六章 + 终章字段：旧档补默认值 */
   if (state.calypsoStage===undefined) state.calypsoStage=0;
@@ -1159,6 +1431,12 @@ function ensureState(){
   if (!state.legs) state.legs={};
   if (state.maleaDone===undefined) state.maleaDone=false;
   if (state.ismarosSpared===undefined) state.ismarosSpared=false;
+  if (state.fleet===undefined) state.fleet=0;
+  if (state.troyStage===undefined) state.troyStage=0;
+  if (state.troyWood===undefined) state.troyWood=0;
+  if (state.troyBurned===undefined) state.troyBurned=false;
+  if (state.troySpared===undefined) state.troySpared=false;
+  if (state.troyDone===undefined) state.troyDone=false;
   if (state.tookWine===undefined) state.tookWine=false;
   if (state.targetHits===undefined) state.targetHits=0;
   if (state.lotusAte===undefined) state.lotusAte=false;
@@ -1266,6 +1544,7 @@ const ASPOTS = [
   {type:"spring", x:16*ATS+ATS, y:6*ATS+ATS/2, r:70, label:"灌满水囊"},
   {type:"altar",  x:15*ATS+ATS/2, y:8*ATS+ATS/2, r:75, label:"查看石碑"},
   {type:"fire",   x:16*ATS+ATS/2, y:8*ATS+ATS/2+26, r:62, label:"篝火（烤肉）"},
+  {type:"cauldron", x:12*ATS+ATS/2, y:3*ATS+ATS/2, r:70, label:"坩埚（炼药合成）"},
   {type:"dock",   x:3*ATS+ATS/2, y:10*ATS+ATS/2, r:70, label:"扬帆出海"},
 ];
 const BOAR_MOOD = {idle:"游荡", aggro:"锁定你", windup:"蓄力中", dash:"冲撞", tired:"喘气(弱点)"};
@@ -1435,6 +1714,7 @@ function drawDaylight(et){
   if (du > 0){ ctx.fillStyle = `rgba(232,168,74,${0.10*du*k})`; ctx.fillRect(vx,vy,vw,vh); }
   if (n > 0){
     ctx.fillStyle = `rgba(10,16,44,${0.38*n*k})`; ctx.fillRect(vx,vy,vw,vh);
+    if (scene==="world") drawStars(et,n);
     /* 光源开洞 */
     const lights = scene==="world"
       ? [[boat.x, boat.y, 60, "255,200,110", 0.55]]
@@ -1574,6 +1854,9 @@ const ACHIV = [
   { id:"wax_ears",   name:"听不见的代价",  desc:"你用蜡封住了耳朵——塞壬的歌与你无关了。原版你绑在桅杆上听完", cond:()=>!!state.waxEars, dev:"你放弃了塞壬的歌" },
   { id:"sun_wrath",  name:"闷雷记仇",      desc:"圣牛的血染了草场——太阳记恨了。原版的雷劈船队你逃过了，但天变了", cond:()=>!!state.sunWrath, dev:"太阳记恨在心" },
   { id:"short_path", name:"捷径的灰",      desc:"冥界你选了捷径——荣耀与速亡。原版你选了长路", cond:()=>state.prophecy==="short", dev:"你把长路换成了捷径" },
+  /* —— 特洛伊战役（17h）—— */
+  { id:"trojan_mind", name:"木马之父",     desc:"特洛伊——空心木马藏勇士，夜袭破城，烧尽十年围城之仇。荷马第 8 卷唱的就是这一夜", cond:()=>state.troyStage>=5 && state.troyBurned, canon:true },
+  { id:"troy_mercy", name:"放下火把的人",  desc:"屠城之夜你收了火——平民走门，你只带走战争。荷马没写仁慈这一页", cond:()=>state.troyStage>=5 && state.troySpared, dev:"你在屠城之夜放了人" },
 ];
 function achivTick(){
   for (const a of ACHIV){
@@ -1748,6 +2031,115 @@ const WALKERS = [
   { o:calypso,  bx:calypso.x,  by:calypso.y,  amp:24, sp:0.26, ph:3.1 },   /* 卡吕普索洞前 */
   { o:nausicaa, bx:nausicaa.x, by:nausicaa.y, amp:28, sp:0.34, ph:4.4 },   /* 瑙西亚娅宫前草场 */
 ];
+/* ==================== 坩埚炼药（survival-crafting：采集→合成收束；女巫的锅=制作台） ==================== */
+const RECIPES = {
+  "治疗药膏": {out:"治疗药膏", need:{玛草:2,淡水:1}, desc:"玛草×2 + 淡水×1，你亲手熬的伤药。使用：清伤势，+30 血。"},
+  "提神茶":   {out:"提神茶",   need:{蜂蜜:1,莲子干:1}, desc:"蜂蜜×莲子，女巫的偏方。使用：+12 饱食，士气振奋。"},
+};
+let craftUI = null;
+function ensureCraftUI(){
+  if (craftUI) return;
+  craftUI = document.createElement("div"); craftUI.id = "craftOverlay";
+  craftUI.innerHTML = `<div class="craftPanel">
+    <div class="craftHead"><span>坩埚 · 炼药台</span><button class="craftX" id="craftX">×</button></div>
+    <div class="craftSub">女巫的绿泡坩埚。把手边的材料丢进去，能炖出点正经东西。</div>
+    <div id="craftList"></div></div>`;
+  document.body.appendChild(craftUI);
+  craftUI.addEventListener("click", e => { if (e.target === craftUI) closeCraft(); });
+  const x = document.getElementById("craftX"); if (x) x.onclick = closeCraft;
+  document.addEventListener("keydown", ev => { if (ev.key === "Escape") closeCraft(); });
+  const list = document.getElementById("craftList");
+  list.addEventListener("click", e => { const b = e.target.closest(".craftBtn"); if (b) craftOne(b.dataset.craft); });
+}
+function craftOptions(){
+  return Object.keys(RECIPES).map(k => { const r = RECIPES[k];
+    return k + "（" + Object.entries(r.need).map(([a,q]) => a + "×" + q).join("+") + "）"; }).join("；");
+}
+function openCraft(){
+  if (dlgOpen || titleOn || chapterOn || mapOpen) return;
+  ensureCraftUI();
+  const list = document.getElementById("craftList"); list.innerHTML = "";
+  for (const [name, r] of Object.entries(RECIPES)){
+    const can = Object.entries(r.need).every(([a,q]) => (state.backpack[a]||0) >= q);
+    const row = document.createElement("div"); row.className = "craftRow" + (can ? "" : " off");
+    row.innerHTML = `<div><div class="craftName">${name}</div><div class="craftDesc">${r.desc}</div></div>` +
+      `<button class="craftBtn" data-craft="${name}"${can ? "" : " disabled"}>${can ? "炼" : "缺材料"}</button>`;
+    list.appendChild(row);
+  }
+  craftUI.style.display = "flex";
+}
+function closeCraft(){ if (craftUI) craftUI.style.display = "none"; }
+function craftOne(name){
+  const r = RECIPES[name]; if (!r) return;
+  for (const [a,q] of Object.entries(r.need)) if ((state.backpack[a]||0) < q){ sfx("warn"); toast("材料不够——锅可不肯煮空气。"); return; }
+  for (const [a,q] of Object.entries(r.need)) delItem(a, q);
+  addItem(r.out); sfx("cook"); gainXp(8);
+  addMemory("旅人在女巫的坩埚边炼出了 " + r.out, 1);
+  toast("锅里的绿泡翻了个泡——你炼出了 " + r.out + "。");
+  renderHUD(); save(); openCraft();
+}
+
+/* ==================== Agent 情绪可视化（dialogue-systems：回复情绪分色 + NPC 头顶关怀徽章，零模型） ==================== */
+function moodFor(text){
+  const t = String(text||"");
+  if (/(暖|药|伤|疼|吃|喝|饿|睡|守着|等你|陪着|别怕|放心|保重|小心)/.test(t)) return "care";
+  if (/(危险|会死|烧|恨|记仇|誓|代价|硬闯|丢掉|别去|吃定|拦不住)/.test(t)) return "warn";
+  if (/(走吧|可以|好|嗯|知道|明白|算了|罢了|行)/.test(t)) return "calm";
+  if (/(呵呵|哼|冷笑|就这|没救|居然)/.test(t)) return "cold";
+  return "";
+}
+const SCENE_NPC = { aia:witch, hades:seer, aeolia:aeolus, oggggia:calypso, scheria:nausicaa };
+function careBadgeFor(){
+  const p = [];
+  if (state.hunger <= 30) p.push("🍚");
+  if (state.thirst <= 22) p.push("💧");
+  if (state.hp <= 35) p.push("🩸");
+  if (isNight()) p.push("🌙");
+  return p;
+}
+function drawCareBadge(et){
+  if (dlgOpen || titleOn || chapterOn || mapOpen) return;
+  const npc = SCENE_NPC[scene]; if (!npc) return;
+  const badges = careBadgeFor(); if (!badges.length) return;
+  const dx = npc.x - aiaPlayer.x, dy = npc.y - aiaPlayer.y;
+  if (Math.hypot(dx, dy) > 210) return;
+  const p = w2s(npc.x, npc.y - 56);
+  ctx.save(); ctx.textAlign = "center"; ctx.font = "13px sans-serif";
+  badges.forEach((b, idx) => {
+    const bob = Math.sin(et*2 + idx) * 2;
+    ctx.fillStyle = "rgba(8,14,26,.55)"; ctx.beginPath(); ctx.arc(p[0]+idx*16, p[1]+bob, 9.5, 0, 7); ctx.fill();
+    ctx.fillText(b, p[0]+idx*16, p[1]+bob+4);
+  });
+  ctx.restore();
+}
+/* 胶片颗粒（odyssey-visual.md 第三节「材质噪点」实装：半透明噪点破色块拼图感） */
+let _grainPat = null;
+function drawGrain(){
+  if (!_grainPat){
+    const g = document.createElement("canvas"); g.width = g.height = 160;
+    const gc = g.getContext("2d");
+    for (let i=0;i<220;i++){ gc.fillStyle = Math.random()<0.5 ? "rgba(255,255,255,.045)" : "rgba(0,0,0,.04)";
+      gc.fillRect(Math.random()*160, Math.random()*160, 1+Math.random()*2, 1+Math.random()*2); }
+    _grainPat = ctx.createPattern(g, "repeat");
+  }
+  const vx=cam.x-60, vy=cam.y-60, vw=VIEW_W/cam.zoom+120, vh=VIEW_H/cam.zoom+120;
+  ctx.save(); ctx.globalAlpha = 0.5; ctx.fillStyle = _grainPat; ctx.fillRect(vx,vy,vw,vh); ctx.restore();
+}
+/* 夜间星空（只在世界图：海上夜空最该有星星） */
+const STARS = (() => { let s=54321; const rnd=()=>{ s=(s*16807)%2147483647; return s/2147483647; };
+  const a=[]; for (let i=0;i<70;i++) a.push({x:rnd()*100, y:rnd()*58, r:0.9+rnd()*1.5, p:rnd()*6.28}); return a; })();
+function drawStars(et, n){
+  if (scene !== "world" || n <= 0) return;
+  const vx=cam.x-60, vy=cam.y-60, vw=VIEW_W/cam.zoom+120, vh=VIEW_H/cam.zoom+120;
+  ctx.save();
+  for (const s of STARS){
+    const tw = 0.5 + 0.5*Math.sin(et*1.6 + s.p);
+    ctx.globalAlpha = n*(0.5 + 0.5*tw);
+    ctx.fillStyle = "#f2fbff"; ctx.beginPath(); ctx.arc(vx+s.x/100*vw, vy+s.y/58*vh*0.72, s.r*1.5, 0, 7); ctx.fill();
+  }
+  ctx.restore();
+}
+
 function npcWalkTick(et){
   for (const w of WALKERS){
     w.o.x = w.bx + Math.sin(et*w.sp + w.ph) * w.amp;
@@ -2176,7 +2568,7 @@ const GATES = {
             hint:"雾还没散——先在斯克里岛把故事讲完。（费埃克斯人不送没被看见的人）" },
 };
 function islandOpen(is){
-  if (typeof is.scene!=="string") return !!is.open;   /* 无场景的远岛（西西里/伊萨卡/特洛伊）维持待开放 */
+  if (typeof is.scene!=="string") return !!is.open;   /* 无场景的远岛（西西里）维持待开放；特洛伊 17h 起已开放（scene:"troy"） */
   if (state.freeSail) return true;                    /* 终章后自由漂流 */
   const g=GATES[is.scene];
   return g ? !!g.cond() : !!is.open;
@@ -2249,6 +2641,12 @@ function showFinale(mode, way, name){
     paras.push("🔮【改写命运的人】"+fate.devGot.map(d=>d.dev).join("；")+"。荷马没写这一页——从今往后，歌手们得自己学这首新歌。");
   else if (fate.canonGot.length)
     paras.push(`命运锚点：你守住了 ${fate.canonGot.length}/6 处原著分岔${fate.canonGot.length>=4?"——史诗认得你的脚印":"——有几页，你写岔了"}。`);
+  /* 船队判词（17h 原著 12 艘）：从特洛伊带回几艘，史诗就记几艘 */
+  paras.push(state.fleet>=12
+    ? "十二艘船，一根桅杆都没少——从特洛伊的火光到伊萨卡的雾，满帆走完全程。荷马没敢写这一页。"
+    : state.fleet>0
+    ? `船队还剩 ${state.fleet} 艘。少掉的每一艘，海都记得是在哪个浪里没的——史诗也记得。`
+    : "你的船队一艘不剩。你是踩着一根漂木回来的——荷马写下的，正是这一种。");
   paras.push(stay ? "锁没有锁眼。它锁的从来不是门——是「回家」这两个字的发音。"
     : bpath ? "船头没有调向西，也没有调向东。你想去哪儿，哪儿就是船头。"
     : "船头调向西的时候，你认下了自己的名字——这一回，它是你的了。");
@@ -2798,6 +3196,7 @@ function interact(){
       : "青铜祭坛上刻着十二道风的纹路，全都黯淡着。宫门口那位似乎有话跟你讲。");
     return;
   }
+  if (s.type==="cauldron") return openCraft();
   if (s.type==="grass"){
     addItem("玛草");
     questEvent("collect", {item:"玛草"});
@@ -4502,6 +4901,15 @@ function renderHUD(){
   tb.style.width = Math.max(0,Math.min(100,state.thirst))+"%"; tb.style.background = state.thirst>40?"#3f8fae":"#e05252";
   document.getElementById("hudLv").textContent = state.level;
   document.getElementById("hudXpBar").style.width = Math.min(100, state.xp/xpToNext(state.level)*100)+"%";
+  /* 船队（17h）：特洛伊出海后点亮 12 艘，折损肉眼可见 */
+  const hClockEl = document.getElementById("hudClock");
+  if (state.fleet>0 && !hClockEl.dataset.fleetPill){
+    const pill=document.createElement("span"); pill.className="pill"; pill.id="hudFleet";
+    hClockEl.parentNode.insertBefore(pill, hClockEl);
+    hClockEl.dataset.fleetPill="1";
+  }
+  const fPill=document.getElementById("hudFleet");
+  if (fPill){ fPill.innerHTML = `⛵ 船队 <b>${state.fleet}</b>/12`; fPill.style.display = state.fleet>0 ? "" : "none"; }
   const hh=Math.floor(hourNow()), mm=Math.floor(state.clock%60);
   document.getElementById("hudClock").textContent = `${clockName()} ${String(hh).padStart(2,"0")}:${String(mm).padStart(2,"0")}`;
   /* 多任务账本：进行中的全部展示，全完成则示「委托已完成」 */
@@ -4826,6 +5234,8 @@ function handle(category, args){
     if(item==="治疗草药"){state.status["伤势"]="无";fx="（药力渗进伤口，刺痛褪去——伤势痊愈了。）";}
     else if(item==="烤野猪肉"){state.status["伤势"]="无"; state.hp=Math.min(derived().maxHp,state.hp+40); fx="（油脂混着炭火气，伤势痊愈、血量 +40；肚子里也踏实了。）";}
     else if(item==="玛草"){state.status["士气"]="振奋";fx="（苦得舌根发麻，精神却一振。她憋着笑。）";}
+    else if(item==="治疗药膏"){state.status["伤势"]="无"; state.hp=Math.min(derived().maxHp,state.hp+30); fx="（药膏贴上伤口，烫得人一激灵——伤势好了，血也补上来些。）";}
+    else if(item==="提神茶"){state.status["士气"]="振奋"; state.hunger=Math.min(100,state.hunger+12); fx="（茶是温的，甜里带苦。坐直了，精神一振。）";}
     else if(item==="金露"){state.hp=derived().maxHp; state.status["伤势"]="无"; state.hunger=Math.min(100,state.hunger+25); state.thirst=Math.min(100,state.thirst+25); fx="（一滴金露落在舌尖——暖流瞬间淌遍四肢百骸，伤势全消，浑身是劲。只有她托付的人，才有这份。）";}
     else if(f||dr){fx=f?"（下肚，肚子里踏实了。）":"（溪水般的凉意，口渴全消。）";}
     else {fx=`（${item}下肚，说不上好吃，但踏实了些。）`;}
@@ -5462,9 +5872,17 @@ const NPCS = {
     intro: "（羊群骚动了一下。岩影里那个高得过分的东西转过脸——独眼的位置只有一道旧疤）……又一个小东西。来听故事的？还是来学的？",
     samples: ["讲讲那个恶客","「无人」是什么意思","我给羊剪点羊毛","你们岛上有巨人族吗","再见"],
   },
+  epeius: {
+    name: "造马师 · 厄佩俄斯",
+    sub: "特洛伊 #0 · 木马之计 · 意图：Xing4.0 · 台词：TeleChat3",
+    portrait: null,
+    persona: `你是特洛伊战争里的木匠厄佩俄斯，在雅典娜的护佑下造出空心木马的那双手。围城十年，手艺人只信两样东西：图纸和木头。语气实干、短句、偶尔自负于手艺，对战争本身话少。每次回复不超过55字，可用括号加动作，绝不提自己是AI。`,
+    intro: "（他刨着一块松板，木花卷到脚边，头也不抬）……十年了，箭射不进的城，得让木头进。有什么事，直说。",
+    samples: ["这马怎么造","雅典娜帮你了吗","围城十年是什么样子","你会造船吗","再见"],
+  },
 };
 let currentNPC = "witch";
-let history = { witch: [], seer: [], aeolus: [], siren: [], cattle: [], calypso: [], nausicaa: [], rebuilder: [], lotusman: [], polyphemus: [] };
+let history = { witch: [], seer: [], aeolus: [], siren: [], cattle: [], calypso: [], nausicaa: [], rebuilder: [], lotusman: [], polyphemus: [], epeius: [] };
 /* 各 NPC 的人格引导表（dialogue-systems：每个落到人格模型的类别都必须有引导，
    裸 category 会让人格模型睛说；新增 NPC 时此表必须覆盖全部 30 类） ---------- */
 const NPC_JOB_MAPS = {
@@ -5859,6 +6277,7 @@ function addMsg(role,text,chips,instant,memo){
   const col=document.createElement("div"); col.className="col";
   const who=document.createElement("div"); who.className="who"; who.textContent=role==="user"?"你":NPCS[currentNPC].name;
   const bb=document.createElement("div"); bb.className="bubble "+(role==="user"?"me":"witch");
+  const mm=moodFor(text); if (role!=="user"&&mm) bb.classList.add("mood-"+mm);
   col.appendChild(who); col.appendChild(bb);
   /* 记忆可视化：NPC 回复命中玩家过去记忆 → 气泡侧加标签 + 边框高亮 */
   if (memo && role!=="user"){
@@ -6039,8 +6458,11 @@ function loop(t){
   drawDaylight(et);
   drawFloatTexts();
   drawParts();
+  drawGrain();
+  drawCareBadge(et);
   ctx.restore();
   if (scene!=="world") markLeg(scene);
+  seaEncounterTick();
   maleaTick();
   updateHintDOM();
   renderAmbient();
@@ -6076,7 +6498,10 @@ window.__game={state, scene, boat, player:aiaPlayer, witch, seer, aeolus, boar, 
   straitInfo:()=>({stage:state.straitStage, wax:state.waxEars, mast:state.mastTied, msg:state.circeMessage, paid:state.scyllaDebtPaid, cleared:state.straitCleared, sunlit:state.sunlit}),
   /* 第四章：太阳岛 */
   SUNSPOTS, memoryGreeting,
-  sunInfo:()=>({wrath:state.sunWrath, blessed:state.sunBlessed, name:state.sunName, debt:state.sunDebt, warn:state.slaughterWarn})};
+  sunInfo:()=>({wrath:state.sunWrath, blessed:state.sunBlessed, name:state.sunName, debt:state.sunDebt, warn:state.slaughterWarn}),
+  /* 自由航行·海遇 */
+  SEA_ENCOUNTS, seaEncounterTick, doSeaEncounter,
+  seaEncInfo:function(){ return {count:state.seaEncCount||0, done:Object.assign({}, state.seaEncDone), threshold:state.seaThreshold||300}; }};
 </script>
 <script type="module" src="./world3d.js?v=14"></script>
 </body>
