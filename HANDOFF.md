@@ -441,6 +441,21 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 
 ---
 
+### 17j. 自由航行·海面随机遭遇（freeSail 后，roguelike 里程节 + 种子化，零模型）（11-08 本会话，用户"玩法·自由航遇随机事件"）
+
+- **背景**：核实 §17 大量已落地后，唯一冷场在**自由航线**——终章「自由的海」（state.freeSail）开启后海面除了 马里阿角 一个事件外无事发生。对照技能库取 `roguelike`（里程节 + 种子化）+ `level-design`（节奏点）增量：**开阔海航行随机遭遇**。
+- **设计（先证伪 E 键方案）**：最初想把遭遇做成"按 E 探看"，实测密集岛图下 `islandNear()`（半径 90）恒先命中，E 永远被贴岛抢走、海遇成空转。改 **maleaTick 同款自动触发**：`seaEncounterTick()` 在 `scene==="world" && state.freeSail && 开海水格` 时按船的实际位移累积 `_seaAcc`，`_seaAcc ≥ state.seaThreshold` 即 `doSeaEncounter()`。无 E、无定位冲突、不碰贴岛。
+- **遭遇池 `SEA_ENCOUNTS`（3 种，种子化可复现）**：由 `(船位瓦片 sx^sy) ^ (遭遇次数)` XOR hash（`>>>0`）选遭遇，`seaLastEnc` 排除同类型连发（确定性 + 轮换不重）；每次触发 `seaThreshold` 上调 `min(420, +40)`，**间隔随次数拉长**（不密不烦）。
+  - **风暴**：血 -6 · 口渴 -12 · 历练 +8（"海认得你的船头"）
+  - **商船**：≥6 金币 → -6 + 治疗草药×1；否则 +4 金币（"海记得送过人的人"）
+  - **海鸟**：治疗草药×1 · 口渴 +10（橄榄枝引路彩蛋，对应史诗"海鸟引光"）
+- **接线**：`SEA_ENCOUNTS`/`seaEncounterTick`/`doSeaEncounter` 定义插在 `prologueSpot` 前；主循环 `seaEncounterTick()`（maleaTick 前一行）；`ensureState` 补 `seaEncCount/seaEncDone/seaThreshold` 三字段（旧档兜底）；`window.__game` 加 `SEA_ENCOUNTS, seaEncounterTick, doSeaEncounter, seaEncInfo()`。
+- **验收（独立端口 Playwright）**：node --check 内联脚本 exit=0 ✅；页面 0 error ✅；原子事务模拟 6 次航行 → 轮换 `seabird`（+治疗草药、口渴 50→60）→ `storm`（hp 50→44、口渴 60→48），**无同类连发、阈值 60→100→140 拉长** ✅；`seaEncInfo()` 全程一致 ✅。
+- **合入方式（特殊）**：本批次代码随**并行会话提交 `730d4ee`**（"三线补全：炼药台+情绪可视化+胶片颗粒/星空"）并入 HEAD——共享工作区、对方整体 `git add` 所致；故我的功能已安全在 HEAD，工作区已干净。
+- **坑（新）**：① `seaThreshold=0` 会被 `(state.seaThreshold||300)` 当 falsy 回退 300——阈值最小取 1，别用 0；② 真门控是**局部变量 `titleOn`**（非 `state.titleOn`），Playwright 设态要关局部 `titleOn` 才不 early-return；③ 并行会话频繁改共享 index——Edit 被"文件已修改"保护拦截过，改法＝"重读锚点→唯一小串→重试→每批 node --check"；④ `seaEncounterTick` 首守卫 `scene!=="world"`，测试要先 `scene="world"`。
+
+---
+
 ## 二、卡住的问题
 
 1. **（11-07 晚已大幅收敛）**：类别 **94.2%**（v2.4.1，257 条）✅、误触发 **3.3%** ✅、**完全正确 82.1% 已跨过 80% 线** ✅。剩：**multi 组 53.8%↔61.5% 交替、本轮摸到上限 61.5%**——一句话多意图拆分是模型能力短板，schema 描述已到头，考虑游戏侧引导玩家分句说；**"X在哪/怎么过X/住哪座岛"薄边界**还有 4 条稳定难点（boundary_07/confuse_10/confuse_19/boundary_18），收益递减，建议接受现状或游戏侧引导。
