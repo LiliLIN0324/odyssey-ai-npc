@@ -285,6 +285,21 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 - **坑**：dock 触发走 interact()，需先关 titleOn/chapterOn/mapOpen 才不拦截；触发过章节卡后要 skipChapter 清卡再测第二次 dock（否则场景被卡）。
 - **未做**：①全局"无名旅人→奥德修斯"身份锚定未做（用户选了"仅喀耳刻线对齐原著"为现阶段，全局推倒留后续；终章认名"无名旅人/旧名"选项仍保留）；②"刷好感"途径未新增（现有买+1/送+6/任务+15/杀野猪+8 已够攒到 85）。
 
+### 17f. 命运双轨系统（11-08 凌晨，本会话；用户拍板"游戏身份=奥德修斯：可体验纯正版，也可改变获连锁反应+成就"）
+
+- **用户设定（拍板）**：游戏身份**就是奥德修斯**。玩家可走**纯正原著线**，也可**改写命运**——偏离要给连锁反应和成就。
+- **核心洞察**：现有每个关键选择本来就是"原著 vs 偏离"分岔（绑桅杆=第12卷原著/蜡封耳=改写；守誓=原著/宰牛=改写；长路=原著/捷径=改写；留灯=第10卷原著；救伤者=改写第9卷劫掠；"无人"=原著第9卷骗术），只缺锚点标记+成就系统。
+- **落地**：
+  - `ACHIV[]` 十项成就：**6 canon**（no_one「无人」之名/siren_mast 桅杆上的听众/sun_keep 一头都没动/hades_long 长路/circe_lamp 留灯的人/truth_ship 不接谎的船）+ **4 dev**（spare_enemy 放下矛的人/wax_ears 听不见的代价/sun_wrath 闷雷记仇/short_path 捷径的灰）。全部**复用既有 flag**（polNameGiven/lyricFragment/sunBlessed/prophecy/circeLeft/talesTold/ismarosSpared/waxEars/sunWrath），零改动挂载。
+  - `achivTick()` 轮询解锁（主循环 2s 节流，`achTimer`）：解锁→🏆 toast+desc+sfx/feedback+记忆（"奥德修斯的命运锚点…他走的和荷马写的一样/他改写了荷马没写的路"）+存档。**零侵入不漏发**。
+  - `fateSummary()` 终章双轨判定；showFinale 判词新增三档段：全 6 canon→**🏆【荷马之线】**"你不是在重走史诗：你就是史诗本身"；有 dev→**🔮【改写命运的人】**列出每条偏离+"荷马没写这一页——歌手们得自己学这首新歌"；中间态→"守住了 X/6 处原著分岔"。
+  - 结局卡新增统计行：**命运锚点 X/6 · 改写 Y**。
+  - 身份锚定（用户拍板"游戏身份=奥德修斯"）：<title> 与标题屏 tsSub 改"奥德修斯的返乡航程 · 按原著走，或亲手改写命运"。
+  - state 加 `achiv:[]` + migrate 兜底。
+- **验收（8766 隔离源 Playwright）**：node --check exit=0 ✅；页面 0 error、标题已变 ✅；模拟 6 canon 全设 → achivTick 一轮全解锁（6/6）+ allCanon=true ✅；showFinale → 判词"🏆【荷马之线】"+结局卡"命运锚点 6/6" ✅；改写线（waxEars+sunWrath+short）→ "🔮【改写命运的人】你放弃了塞壬的歌；太阳记恨在心；你把长路换成了捷径"+结局卡"命运锚点 0/6 · 改写 3" ✅。控制台 0 error。index.html 现 **6074 行**。
+- **坑**：①evaluate 设 polNameGiven 后触发过独眼巨人名字考试的 prompt dialog（Playwright modal state 拦截 evaluate）——测终章前先 handle_dialog 或重载页；②showFinale 里 `.re` 按钮的 confirm（清档确认）被误触一次——evaluate 别碰 endingCard 按钮区；③页面加载会恢复上轮测试存档（伊萨卡终章状态），测前先 titleOn=false。
+- **未做**：成就 HUD 常驻入口（现在解锁 toast+结局卡展示）；ACHIV 未挂 sunWrath/short_path 之外的更多改写（如风袋贪开）；序章组"遗址"文案未按"你就是奥德修斯"反写（伊斯玛洛斯救伤者成就已兼容双读：后来者视角=善举、奥德修斯视角=改写劫掠）。
+
 ---
 
 ## 二、卡住的问题

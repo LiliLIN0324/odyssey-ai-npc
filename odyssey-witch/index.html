@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>奥德赛 · 地中海 — 无名旅人的航程</title>
+<title>奥德赛 · 地中海 — 奥德修斯的航程</title>
 <link rel="icon" type="image/png" sizes="256x256" href="concept-art/brand/favicon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="concept-art/brand/favicon-32.png">
 <link rel="apple-touch-icon" href="concept-art/brand/favicon.png">
@@ -389,7 +389,7 @@
     <div class="tsBody">
       <div class="tsKicker">荷马史诗 · 空间探索</div>
       <h1>奥德赛<span>地中海</span></h1>
-      <div class="tsSub">无名旅人的返乡航程</div>
+      <div class="tsSub">奥德修斯的返乡航程 · 按原著走，或亲手改写命运</div>
       <div class="tsBtns">
         <button id="tsGo">启航</button>
         <button id="tsNew" style="display:none">从头开始</button>
@@ -1040,6 +1040,7 @@ let state = {
   slaughterWarn: false,  /* 宰牛二段确认（E 两次，防误触） */
   memGreeted: [],        /* 已用作开场问候的记忆 t 列表（memoryGreeting 去重） */
   circeLeft: false,      /* 喀耳刻好感托付线：她留你过冬（原著留宿一年·生忒勒戈斯的前奏） */
+  achiv: [],             /* 命运双轨成就 id 列表（原著锚点 canon + 改写 dev） */
   /* —— 第五章·奥吉吉亚（ogggia）—— */
   calypsoStage: 0,       /* 0 初见 1 第一天 2 第二天 3 问正题 4 已选择 */
   calypsoChoice: null,   /* "stay" 滞留 / "raft" 造筏 */
@@ -1129,6 +1130,7 @@ function ensureState(){
   if (state.slaughterWarn===undefined) state.slaughterWarn=false;
   if (!Array.isArray(state.memGreeted)) state.memGreeted=[];
   if (state.circeLeft===undefined) state.circeLeft=false;
+  if (!Array.isArray(state.achiv)) state.achiv=[];
   /* 航程闭环字段：旧档补默认值 */
   if (state.prophecy===undefined) state.prophecy=null;
   if (state.sunStage===undefined) state.sunStage=null;
@@ -1556,6 +1558,44 @@ function affinityProgress(){
   return affinityTier()+" · 距「"+next.name+"」还差 "+Math.max(0,Math.ceil(next.at-a))+" 好感 · 已解锁 "+unlocked+"/"+AFF_UNLOCKS.length;
 }
 
+/* ==================== 命运双轨：原著锚点 + 成就系统（玩家=奥德修斯）
+   纯正版：按原著走的锚点（canon）；改写版：偏离原著的选择也拿成就（dev）。
+   锚点全部复用既有 flag，轮询解锁零侵入，绝不漏发。 ==================== */
+const ACHIV = [
+  /* —— 原著锚点（canon：荷马之线） —— */
+  { id:"no_one",     name:"「无人」之名",  desc:"独眼巨人处自称「无人」——原版第9卷的骗术你原样用了一遍", cond:()=>/无人|no\s*one/i.test(state.polNameGiven||""), canon:true },
+  { id:"siren_mast", name:"桅杆上的听众",  desc:"绑在桅杆上听完了塞壬的整首歌——原版第12卷", cond:()=>!!state.lyricFragment, canon:true },
+  { id:"sun_keep",   name:"一头都没动",    desc:"太阳岛守住了誓言，圣牛一头未宰——原版第12卷", cond:()=>!!state.sunBlessed, canon:true },
+  { id:"hades_long", name:"长路",          desc:"冥界你选了长路——困顿与归乡，原版第11卷", cond:()=>state.prophecy==="long", canon:true },
+  { id:"circe_lamp", name:"留灯的人",      desc:"喀耳刻留你过冬，炉火一夜没熄——原版第10卷的留宿", cond:()=>!!state.circeLeft, canon:true },
+  { id:"truth_ship", name:"不接谎的船",    desc:"斯克里岛篝火边，你把一路如实讲完了", cond:()=>state.talesTold.length>=5, canon:true },
+  /* —— 改写线（dev：偏离原著的连锁反应，也值得被记住） —— */
+  { id:"spare_enemy",name:"放下矛的人",    desc:"伊斯玛洛斯——你救了这座城的伤者。原版里，你洗劫了它", cond:()=>!!state.ismarosSpared, dev:"劫掠之城你选择了救治" },
+  { id:"wax_ears",   name:"听不见的代价",  desc:"你用蜡封住了耳朵——塞壬的歌与你无关了。原版你绑在桅杆上听完", cond:()=>!!state.waxEars, dev:"你放弃了塞壬的歌" },
+  { id:"sun_wrath",  name:"闷雷记仇",      desc:"圣牛的血染了草场——太阳记恨了。原版的雷劈船队你逃过了，但天变了", cond:()=>!!state.sunWrath, dev:"太阳记恨在心" },
+  { id:"short_path", name:"捷径的灰",      desc:"冥界你选了捷径——荣耀与速亡。原版你选了长路", cond:()=>state.prophecy==="short", dev:"你把长路换成了捷径" },
+];
+function achivTick(){
+  for (const a of ACHIV){
+    if ((state.achiv||[]).includes(a.id)) continue;
+    let ok=false; try{ ok=a.cond(); }catch(e){}
+    if (ok){
+      state.achiv=[...(state.achiv||[]), a.id];
+      sfx("bless"); feedback("medium");
+      toast(`🏆 成就达成 ·「${a.name}」——${a.desc}`);
+      addMemory(`奥德修斯的命运锚点：${a.name}——${a.canon?"他走的和荷马写的一样":"他改写了荷马没写的路"}`, 3);
+      renderHUD(); save();
+    }
+  }
+}
+/* 终章命运总结：荷马之线 / 改写命运（canon 全达成 vs 有偏离） */
+function fateSummary(){
+  const got=state.achiv||[];
+  const canonGot=ACHIV.filter(a=>a.canon&&got.includes(a.id));
+  const devGot=ACHIV.filter(a=>a.dev&&got.includes(a.id));
+  return { canonGot, devGot, allCanon: canonGot.length===ACHIV.filter(a=>a.canon).length };
+}
+
 /* ==================== NPC 主动性（game-ai/utility：本地打分，零模型调用）
    玩家靠近且未对话时，NPC 按 时间/好感/任务/记忆 门控主动开口——权重优先 + 每句 90s 冷却防复读。
    与 witchUtilityTick（行为层）互补：那里管"做什么"，这里管"说什么"。 ==================== */
@@ -1664,6 +1704,7 @@ function ambientAnchor(npc){
   return null;
 }
 let ambTimer=0, ambUntil=0, ambAnchor=null, ambText="", ambActive=null;
+let achTimer = 0;   /* 成就轮询节流（命运双轨：2s 扫一次 ACHIV） */
 const ambientCooldown = {};
 function npcAmbientTick(dt){
   ambTimer += dt;
@@ -2200,6 +2241,14 @@ function showFinale(mode, way, name){
   const windLeft=state.backpack["风袋"]||0;
   if (windLeft) tails.push(`风袋里还剩 ${windLeft} 阵风。贪念那次，放过了你。`);
   if (tails.length) paras.push(tails.join(" "));
+  /* 命运双轨总结（玩家=奥德修斯：荷马之线 / 改写命运）——原著锚点全达成 vs 偏离被记住 */
+  const fate = fateSummary();
+  if (fate.allCanon && fate.canonGot.length)
+    paras.push("🏆【荷马之线】六处原著锚点你一处没改——「无人」之名、桅杆上的歌、未动的圣牛、长路、留灯、不接谎的船。你不是在重走史诗：你就是史诗本身。");
+  else if (fate.devGot.length)
+    paras.push("🔮【改写命运的人】"+fate.devGot.map(d=>d.dev).join("；")+"。荷马没写这一页——从今往后，歌手们得自己学这首新歌。");
+  else if (fate.canonGot.length)
+    paras.push(`命运锚点：你守住了 ${fate.canonGot.length}/6 处原著分岔${fate.canonGot.length>=4?"——史诗认得你的脚印":"——有几页，你写岔了"}。`);
   paras.push(stay ? "锁没有锁眼。它锁的从来不是门——是「回家」这两个字的发音。"
     : bpath ? "船头没有调向西，也没有调向东。你想去哪儿，哪儿就是船头。"
     : "船头调向西的时候，你认下了自己的名字——这一回，它是你的了。");
@@ -2213,6 +2262,7 @@ function showFinale(mode, way, name){
     `<span class="stx">历练 <b>${state.xp}</b></span>`+
     `<span class="stx">钱袋 <b>${state.coins}</b> 德拉克马</span>`+
     `<span class="stx">被记得的事 <b>${mem}</b> 件</span>`+
+    `<span class="stx">命运锚点 <b>${fate.canonGot.length}/6</b>${fate.devGot.length?` · 改写 <b>${fate.devGot.length}</b>`:""}</span>`+
     (windLeft?`<span class="stx">风袋 <b>×${windLeft}</b></span>`:"");
   ec.classList.add("show"); sfx("bless");
   const finalName = (mode==="a" && way==="old") ? "旧 名" : (mode==="a" ? (name||"无名旅人") : null);
@@ -5961,6 +6011,7 @@ setInterval(()=>{
     if (scene!=="ogggia") clockTick(ldt);   /* 日历冻结：奥吉吉亚的「完美的一天」不走钟（圣经第五章） */
   }
   camTick(dt); ambTick(dt); npcAmbientTick(dt);
+  achTimer += dt; if (achTimer >= 2){ achTimer = 0; achivTick(); }   /* 命运锚点轮询：2s 扫一次成就（零侵入不漏发） */
   if (scene==="hades"||scene==="aeolia"||scene==="ogggia"||scene==="scheria") npcWalkTick(dt);
 }, 20);
 function loop(t){
