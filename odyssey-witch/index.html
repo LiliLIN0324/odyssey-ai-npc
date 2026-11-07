@@ -3073,8 +3073,8 @@ function updateHintDOM(){
     if (is && !dlgOpen){
       hintEl.style.display="block";
       hintEl.innerHTML = `<b>E</b> · ${islandOpen(is)?"登陆":"了望"} ${is.name}`;
-      const [hx,hy]=w2s(is.gx*WTS+WTS/2, is.gy*WTS);
-      hintEl.style.left=(hx*100)+"%"; hintEl.style.top=(hy*100)+"%";
+      if (window.W3D && W3D.ready && !W3D.failed){ hintEl.style.left="50%"; hintEl.style.top="74%"; }   /* 3D 世界图：2D 投影坐标不适用，固定底部居中 */
+      else { const [hx,hy]=w2s(is.gx*WTS+WTS/2, is.gy*WTS); hintEl.style.left=(hx*100)+"%"; hintEl.style.top=(hy*100)+"%"; }
     } else hintEl.style.display="none";
     ambEl.style.display="none";
     return;
@@ -4235,6 +4235,6 @@ window.__game={state, scene, boat, player:aiaPlayer, witch, seer, aeolus, boar, 
   SUNSPOTS, memoryGreeting,
   sunInfo:()=>({wrath:state.sunWrath, blessed:state.sunBlessed, name:state.sunName, debt:state.sunDebt, warn:state.slaughterWarn})};
 </script>
-<script type="module" src="./world3d.js?v=7"></script>
+<script type="module" src="./world3d.js?v=12"></script>
 </body>
 </html>

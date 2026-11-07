@@ -10,7 +10,7 @@ import * as THREE from './vendor/three.module.min.js';
 
 /* ---------- 色板（唯一来源 odyssey-visual.md，与 3d/app/src/palette.js 同源） ---------- */
 const PAL = {
-  oceanDeep: 0x123c58, oceanMid: 0x2f6590, oceanShore: 0x4f8fb5,
+  oceanDeep: 0x17618f, oceanMid: 0x2e96c4, oceanShore: 0x59c8dc,
   cliffLight: 0xe0bd84, cliffDark: 0x7c5c38,
   grassMain: 0xa8cf8e, grassDeep: 0x7d9c66,
   duskGold: 0xe8a84a, nightBase: 0x0c1018,
@@ -60,16 +60,16 @@ const px2z = (px) => px * SCALE - OZ;
 
 /* ---------- 岛屿视觉定义（与 ISLANDS 顺序一一对应，运行时按 scene 名匹配） ---------- */
 const ISLE_LOOK = {
-  aia:     { r: 3.4, grass: 0xa8cf8e, grassDeep: 0x7d9c66, seed: 20261107 },
-  hades:   { r: 2.5, grass: 0x8a9a8c, grassDeep: 0x5d6f66, seed: 20261108, ash: true },
-  aeolia:  { r: 2.7, grass: 0xe8ecef, grassDeep: 0xc3d2da, seed: 20261109, floatY: 3.4, cloud: true },
-  strait:  { r: 2.9, grass: 0x5d6b74, grassDeep: 0x3e4a52, seed: 20261110, spires: true },
-  sun:     { r: 2.7, grass: 0xd8bd76, grassDeep: 0xb09250, seed: 20261111, gold: true },
+  aia:     { r: 3.4, grass: 0xa8cf8e, grassDeep: 0x7d9c66, seed: 20261107, mh: 1.15 },
+  hades:   { r: 2.5, grass: 0x8a9a8c, grassDeep: 0x5d6f66, seed: 20261108, ash: true, mh: 0.9 },
+  aeolia:  { r: 2.7, grass: 0xe8ecef, grassDeep: 0xc3d2da, seed: 20261109, floatY: 3.4, cloud: true, mh: 1.0 },
+  strait:  { r: 2.9, grass: 0x5d6b74, grassDeep: 0x3e4a52, seed: 20261110, spires: true, mh: 1.1 },
+  sun:     { r: 2.7, grass: 0xd8bd76, grassDeep: 0xb09250, seed: 20261111, gold: true, mh: 0.75 },
 };
 const LOCKED_LOOK = { r: 1.3, grass: 0x93a3ad, grassDeep: 0x6d7d88, seed: 20261112, mist: true };
 
 let renderer, scene3, camera3, waterU, boatG, sailMesh, isleList = [];
-let yawCur = 0; let ready = false; let failed = false;
+let yawCur = 0; let ready = false; let failed = false; let lastEt = -1;
 
 /* ---------- 岛屿网格（顶点色 + flatShading，P1 同款风格） ---------- */
 function buildIsle(cfg) {
@@ -81,22 +81,32 @@ function buildIsle(cfg) {
   const cGrass = new THREE.Color(cfg.grass), cGrassD = new THREE.Color(cfg.grassDeep);
   const cSand = new THREE.Color(PAL.cliffLight), cCliffL = new THREE.Color(PAL.cliffLight);
   const cCliffD = new THREE.Color(PAL.cliffDark), cOcean = new THREE.Color(PAL.oceanMid);
-  const maxH = 0.34 * r + 0.75;
+  const maxH = (0.62 * r + 1.15) * (cfg.mh || 1);
   const eps = 0.25;
   const hAt = (x, z) => {
     const n = Math.hypot(x, z) / r;
     const detail = fbm(x * 0.5, z * 0.5, seed, 4);
     const fine = fbm(x * 1.3 + 7.3, z * 1.3 - 4.1, seed + 999, 3);
-    if (n < 0.55) return maxH * (Math.pow(1 - n / 0.55, 1.5) * 0.8 + 0.35) + detail * 0.35 + fine * 0.12;
-    if (n < 0.9) return THREE.MathUtils.lerp(maxH * 0.45, 0.28, sstep((n - 0.55) / 0.35, 0, 1)) * (1 + detail * 0.3);
-    if (n < 1.0) return THREE.MathUtils.lerp(0.28, -0.42, sstep((n - 0.9) / 0.1, 0, 1));
-    return THREE.MathUtils.lerp(-0.42, -1.25, sstep(Math.min((n - 1.0) / 0.32, 1), 0, 1));
+    if (n < 1.0) {
+      /* 自然锥体 + 噪声起伏：消灭“石盘上放山”的割裂感 */
+      const cone = Math.max(0.08, maxH * (1 - n) * (0.8 + fbm(x * 0.9, z * 0.9, seed + 55, 3) * 0.45));
+      return cone + fine * 0.18;
+    }
+    if (n < 1.12) return THREE.MathUtils.lerp(0.08, -0.55, sstep((n - 1.0) / 0.12, 0, 1));
+    return THREE.MathUtils.lerp(-0.55, -1.5, sstep(Math.min((n - 1.12) / 0.26, 1), 0, 1));
   };
   const c = new THREE.Color();
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i), z = pos.getZ(i);
     const h = hAt(x, z);
     pos.setY(i, h);
+    /* 浮岛：裙边向内收锥+岩石色，消除方形悬空底板（穿模 bug 根治） */
+    if (h < -0.55 && cfg.floatY) {
+      const t = Math.min((-h - 0.55) / 0.95, 1) * (0.72 + fbm(x * 2.1, z * 2.1, seed + 31, 2) * 0.28);
+      pos.setX(i, x * (1 - t * 0.42));
+      pos.setZ(i, z * (1 - t * 0.42));
+      pos.setY(i, -0.42 - t * 1.1);
+    }
     const gx = (hAt(x + eps, z) - hAt(x - eps, z)) / (2 * eps);
     const gz = (hAt(x, z + eps) - hAt(x, z - eps)) / (2 * eps);
     const detail = fbm(x * 1.1 + 3.7, z * 1.1 - 2.9, seed + 77, 3);
@@ -185,8 +195,9 @@ function buildWater() {
       uniform float uTime;
       void main() {
         vec3 pos = position;
-        pos.y += sin(pos.x * 0.14 + uTime * 0.9) * 0.05
-               + cos(pos.z * 0.11 + uTime * 0.7) * 0.05;
+        pos.y += sin(pos.x * 0.14 + uTime * 0.9) * 0.085
+               + cos(pos.z * 0.11 + uTime * 0.7) * 0.085
+               + sin((pos.x + pos.z) * 0.23 + uTime * 1.3) * 0.04;
         vec4 worldPos = modelMatrix * vec4(pos, 1.0);
         vWorld = worldPos.xyz;
         vec4 mvPosition = viewMatrix * worldPos;
@@ -218,17 +229,20 @@ function buildWater() {
           float d = length(vWorld.xz - uIsle[i].xy) - uIsle[i].z;
           dmin = min(dmin, d);
         }
-        vec3 col = mix(uShore, uMid, smoothstep(0.0, 2.6, dmin));
-        col = mix(col, uDeep, smoothstep(2.6, 12.0, dmin));
+        vec3 col = mix(uShore, uMid, smoothstep(0.0, 5.0, dmin));
+        col = mix(col, uDeep, smoothstep(5.0, 22.0, dmin));
+        /* 大尺度海色起伏 + 近岸透亮浅色层（地中海的“看得到沙底”感） */
+        col = mix(col, uMid, 0.09 * vnoise(vWorld.xz * 0.045 + vec2(3.1, 7.7)));
+        col = mix(col, vec3(0.55, 0.85, 0.88), (1.0 - smoothstep(0.0, 2.6, dmin)) * 0.22);
         /* 朝太阳方向的金色光路（P1 同款） */
         float toSun = max(dot(normalize(vWorld.xz), normalize(uSunH)), 0.0);
-        col += uGold * (pow(toSun, 6.0) * 0.30 + pow(toSun, 16.0) * 0.12) * smoothstep(2.0, 14.0, dmin);
-        /* 贴岸碎沫 + 细碎波光 */
-        float band = smoothstep(-0.15, 0.05, dmin) * (1.0 - smoothstep(0.12, 0.55, dmin));
+        col += uGold * (pow(toSun, 6.0) * 0.24 + pow(toSun, 16.0) * 0.10) * smoothstep(2.0, 14.0, dmin);
+        /* 贴岸碎沫（加宽加清） + 细碎波光（提频去白块感） */
+        float band = smoothstep(-0.12, 0.06, dmin) * (1.0 - smoothstep(0.10, 0.75, dmin));
         float foam = band * (0.3 + 0.7 * vnoise(vWorld.xz * 1.4 + vec2(uTime * 0.22, -uTime * 0.16)));
-        col = mix(col, vec3(0.94, 0.97, 1.0), foam * 0.7);
-        float sparkle = vnoise(vWorld.xz * 0.5 + vec2(uTime * 0.1, -uTime * 0.08));
-        col += vec3(0.05, 0.05, 0.045) * smoothstep(0.7, 0.95, sparkle);
+        col = mix(col, vec3(0.94, 0.97, 1.0), foam * 0.85);
+        float sparkle = vnoise(vWorld.xz * 1.6 + vec2(uTime * 0.1, -uTime * 0.08));
+        col += vec3(0.05, 0.05, 0.045) * smoothstep(0.78, 0.96, sparkle) * 0.7;
         float alpha = 1.0;   /* 不透明海面：岛体方形裙边不再透出（根治黑方块伪影） */
         gl_FragColor = vec4(col, alpha);
         #include <fog_fragment>
@@ -245,7 +259,7 @@ function buildWater() {
 function buildSky() {
   const uniforms = {
     uHorizon: { value: new THREE.Color(PAL.oceanMid) },
-    uZenith: { value: new THREE.Color(PAL.oceanMid).lerp(new THREE.Color(PAL.nightBase), 0.45) },
+    uZenith: { value: new THREE.Color(0x4a9fd8) },
     uSunColor: { value: new THREE.Color(PAL.duskGold) },
     uSunDir: { value: SUN_DIRECTION.clone().normalize() },
   };
@@ -316,10 +330,10 @@ function buildBoat() {
   );
   mast.position.set(0, 0.82, 0.1);
   g.add(mast);
-  /* 帆：三角形，双面；随时间段微微鼓起由顶点在 frame 里做太贵，固定微弯即可 */
+  /* 横桁帆：始终正对南方相机，任何航向都看得见帆（背桅帆侧对镜头会消失） */
   const sailGeo = new THREE.BufferGeometry();
   sailGeo.setAttribute('position', new THREE.Float32BufferAttribute([
-    0, 0.28, 0.02,  0, 1.36, 0.02,  0.0, 0.34, 0.62,
+    -0.55, 0.30, 0.06,  0.55, 0.30, 0.06,  0.0, 1.38, 0.06,
   ], 3));
   sailGeo.computeVertexNormals();
   const sail = new THREE.Mesh(sailGeo, new THREE.MeshBasicMaterial({ color: 0xf5eeda, side: THREE.DoubleSide }));  /* 无光照恒亮：背光面不发暗 */
@@ -346,7 +360,7 @@ function init() {
   const hemi = new THREE.HemisphereLight(PAL.oceanShore, PAL.cliffLight, 0.65);
   scene3.add(hemi);
   const sun = new THREE.DirectionalLight(
-    new THREE.Color(PAL.duskGold).lerp(new THREE.Color(0xffffff), 0.4), 1.2
+    new THREE.Color(PAL.duskGold).lerp(new THREE.Color(0xffffff), 0.4), 1.35
   );
   sun.position.copy(SUN_DIRECTION).multiplyScalar(90);
   scene3.add(sun);
@@ -384,9 +398,10 @@ function frame(et) {
   boatG.rotation.y = yawCur;
   boatG.rotation.z = Math.sin(et * 1.7) * 0.03;
   waterU.uTime.value = et;
-  /* 相机跟随：斜俯视角，保住"看得清门控/点位"的可读性 */
+  /* 相机跟随：帧率无关指数缓动（低帧下也不拖泥带水） */
+  const dt = lastEt < 0 ? 0.016 : Math.min(Math.max(et - lastEt, 0.001), 0.12); lastEt = et;
   const camTarget = new THREE.Vector3(bx, 14, bz + 17);
-  camera3.position.lerp(camTarget, 0.08);
+  camera3.position.lerp(camTarget, 1 - Math.exp(-4 * dt));
   camera3.lookAt(bx, 0.8, bz - 2.5);
   renderer.render(scene3, camera3);
 }
