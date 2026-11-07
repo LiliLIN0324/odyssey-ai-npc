@@ -456,6 +456,20 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 
 ---
 
+### 17k. 抢救编码损坏 + 特洛伊战役收尾：F2 守船战/护航船队/厄佩俄斯 Agent 三件套（11-08 凌晨，本会话；用户再提"按本地 skills 补全视觉/玩法/agent"）
+
+- **⚠️ 数据抢救（本批最要紧的一笔）**：接手时工作区 `index.html`（6450 行）**全局编码损坏**——全部中文被以"UTF-8 字节按 GBK 误读再存"的方式毁掉（标题成 `濂ュ痉璧?路`），属有损损坏（U+FFFD 顶替）不可完全还原。逐项核实：troy/fleet 特洛伊+船队功能**已随 730d4ee 整体提交入库且 HEAD 中文完好**（troyStage×25/TROY_GUARDS×6/epeius×6/成就/舰队判词逐项计数相等）；工作区唯一 HEAD 没有的增量只有"木料 ≤5 封顶"两行小改进 + `window.ISLANDS` 挂载一行。处置：损坏文件备份 `.temp/index-corrupted-encoding-backup-20261108.html` → `git restore` 还原 → 重放两处增量。
+- **连带修复（还原暴露的配对 bug）**：并行会话未提交的 `world3d.js` 改读 `window.ISLANDS`（ES 模块读不到经典脚本顶层 const），但配套的 `window.ISLANDS = ISLANDS` 挂载在被还原的 index.html 里——缺它 → 岛屿 0 装配 + 水体 shader `uniform vec3 uIsle[0]` **编译失败**（控制台 1 error + 181 条 useProgram 警告，3D 海面全黑）。补回挂载行后 **0 error 0 warning、isles 13 全装配**。
+- **玩法（F2 忒勒皮洛斯守船战，船队折损接线）**：§17h 折损表第一站落地——telepylos 新交互点「船队锚地」，E 开战：10 波崖顶巨石，锁定船 0.9s 红圈预警 → 玩家跑到船边（46px）拖下水=救回，否则砸碎；站落点旁吃 -6 血。终局 `state.fleet = max(1, saved)`（旗舰永不沉=原著"仅剩一艘"），写记忆+航序 #6+存档；`state.fleetGuard` 防重打，旧档 ensureState 兜底。原著两档成就入 ACHIV：`eleven_lost`（canon，fleet≤2）/`fleet_keeper`（dev，fleet≥8）。守船战期间 dock/其它交互点拦截（"石头还在落"）。终章舰队判词（12/1..11/0 三档）与 HUD「⛵ 船队 x/12」此前已入库，本轮接线后首次真正可变。
+- **玩法修复（卡死级）**：**telepylos/troy 的 spawn 落在 solid 水格**（对照 ismaros/lotus 的可走规律：忒勒皮洛斯沙滩比食莲岛高一排、特洛伊比伊斯玛洛斯高一排，spawn 照抄旧值）→ 玩家出生在"~"里四向全堵。修为 telepylos `[3,5.5]`、troy `[3,8.5]`（row6 ",," 路径/row9 "_" 栈板），实机行走验证 97px/32.5px ✓。
+- **视觉（船队折损肉眼可见）**：①2D 世界图——`boatTrail` 尾迹环（移动 >2.2px 才推样，240 上限），`drawEscortFleet()` 沿真实航迹排 min(fleet-1,11) 艘深浅两色剪影小船，停船保持编队不塌；②3D（world3d.js）——`buildEscortFleet()` 11 艘 Box 艏+三角帆小船，**航向取运动方向**（指数平滑，与模型朝向/yaw 约定解耦），V 字跟航+相位错浪起伏，`frameTroy` 时隐藏。实测 fleet=12 尾随 ~8-11 艘可见、fleet=2 只剩 1 艘 ✓（视觉模型双确认）。
+- **Agent（厄佩俄斯三件套 + 审计清零）**：①`AMBIENT.epeius` 6 条情境台词（plan/wood/build/night/burn/sail，cond 全门控 troyStage）+ 场景映射链补 `troy→epeius` + ambientAnchor 走 spots 定位 + 守船战期间 ambient 静默；②`NPC_JOB_MAPS.epeius` 30 类人格引导全表（造马师口吻）；③`HANDLED.epeius:[]` 注册入审计。**顺手把审计清零**：rebuilder/lotusman/polyphemus 三序章 NPC 既有 59 条缺口（20/20/19，此前裸落人格模型且 HANDLED 无键漏审）按各自人声补满 30 类 → `auditHandlers()` **30 类 × 11 NPC = 0 缺口**，启动控制台 0 警告。
+- **守船战 HUD 教训**：计数文字最初画在 drawPrologue 内（相机空间）随镜头漂移甚至出画；改 `drawFleetHud()` 在 `ctx.restore()` **之后**以屏幕坐标画（顶部居中），像素验证 (340-660,24-50) 区间 561 亮像素 + 实拍可读。
+- **验收（8768 隔离源 Playwright 全绿，控制台全程 0 error）**：canon 线 fleet=12 开战不救 → wave10/lost10/**fleet=1**+`eleven_lost` ✓；dev 线逐波贴船 → saved10/**fleet=10**+`fleet_keeper` ✓；AFK 实时跑完 saved1→fleet=1（下限逻辑）✓；滩头 12 船排渲染（视觉模型确认 ~10 艘）✓；预警红圈+HUD 计数实拍 ✓；护航队 12→2 折损可视化 ✓；epeius AMBIENT 实机开口（"木料 0/5…"）✓；audit 0 缺口 ✓；node --check 双文件绿；8768 服务已停。截图 `shots/2d-telepylos-beach-fleet.png`、`2d-fleet-defense-battle.png`、`2d-fleet-escort-world3d.png`、`2d-fleet-escort-pair.png`；根目录两幅 troy 散图归位 `shots/`。
+- **坑（复现+新）**：①**multiedit 吞块第 3 次复现**（§17b/§17i 同款）：给 JOB_MAPS 三个 NPC 补 30 类时，polyphemus 的补齐块把先前已插入的 epeius 30 类表整体吞掉（audit 复跑 30 缺口才暴露）——**multiedit 后必须 grep 键名在场 + 复跑审计**，本轮靠 audit 兜住；②标题屏主按钮文案随存档存在与否切换（启航↔继续航程），E2E 用 `getElementById("tsGo")` 点，别按文案找按钮（".re" 结局卡里还有个隐藏的"从头开始"同文案按钮会误命中）；③截图坐标≠画布坐标：#cv 在视口内有偏移且 CSS 缩放，视觉模型看全页截图会受 DOM 遮罩误导——canvas 级验证用 `getContext('2d').getImageData` + rAF 后采样，或 `locator('#cv').screenshot()`；④任务安排：v0.2.0 tag 判据已 GREEN 仍未打（留给按 §六 流程的专门会话）；太阳岛"放任船员→雷劈清零"（P1.3）未接，fleet=0 判词分支暂为死代码，属 17g 后续步。
+
+---
+
 ## 二、卡住的问题
 
 1. **（11-07 晚已大幅收敛）**：类别 **94.2%**（v2.4.1，257 条）✅、误触发 **3.3%** ✅、**完全正确 82.1% 已跨过 80% 线** ✅。剩：**multi 组 53.8%↔61.5% 交替、本轮摸到上限 61.5%**——一句话多意图拆分是模型能力短板，schema 描述已到头，考虑游戏侧引导玩家分句说；**"X在哪/怎么过X/住哪座岛"薄边界**还有 4 条稳定难点（boundary_07/confuse_10/confuse_19/boundary_18），收益递减，建议接受现状或游戏侧引导。

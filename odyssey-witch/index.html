@@ -468,6 +468,7 @@ const ISLANDS = [
   {gx:21, gy:9,  name:"声之海峡",  note:"塞壬的歌 · 斯库拉的六头 · 代价",  open:true, scene:"strait",    leg:9,  mp:[30,64]},
   {gx:26, gy:9,  name:"太阳岛",    note:"赫利俄斯的圣牛 · 饥饿与誓言",     open:true, scene:"sun",       leg:11, mp:[47,60]},
 ];
+window.ISLANDS = ISLANDS;   /* 挂载给 world3d.js：ES 模块读不到经典脚本顶层 const（缺它 → 岛屿不装配 + 水体 shader uIsle[0] 编译失败） */
 const SEAS = [
   {x:23,y:2,label:"欧洲"}, {x:4,y:16,label:"非洲"}, {x:40,y:8,label:"黎凡特海"},
   {x:5,y:12,label:"第勒尼安海"}, {x:14,y:16,label:"爱奥尼亚海"},
@@ -817,7 +818,7 @@ const PROLOGUE_SITES = {
     ],
   },
   telepylos: {
-    name:"忒勒皮洛斯", zone:"忒勒皮洛斯 · 悬崖之城", tint:"#5c6470", npc:null, spawn:[3,7.5],
+    name:"忒勒皮洛斯", zone:"忒勒皮洛斯 · 悬崖之城", tint:"#5c6470", npc:null, spawn:[3,5.5],
     chapterImg:"concept-art/prologue/p6-忒勒皮洛斯.jpg",
     kicker:"序 章 组 · 其 六", chapterSub:"悬崖之城 · 十一艘船只剩一艘",
     quote:"「十一个人里，只有他记得打这个结。」",
@@ -839,13 +840,15 @@ const PROLOGUE_SITES = {
     spots:()=>[
       {type:"cliff",  x:8*ATS+ATS/2,  y:3*ATS+ATS/2, r:75, label:"崖下险道（巨影在崖顶）"},
       {type:"wreck",  x:12*ATS+ATS/2, y:4*ATS+ATS/2, r:80, label:"最后一艘船的残骸"},
+      {type:"fleetguard", x:7*ATS+ATS/2, y:5*ATS+ATS/2, r:85,
+        label: state.fleetGuard==="done" ? "船队锚地（浪里的残骸）" : (state.fleet>0 ? "船队锚地（守住你的船队）" : "船队锚地（空的）")},
       {type:"dock",   x:4*ATS+ATS/2,  y:4*ATS+ATS/2, r:70, label:"解缆离岛"},
     ],
   },
   /* —— 特洛伊（#0 启航之地 · 木马之夜 · 2026-11-08 用户拍板开放为开篇战役）——
      原著流程：厄佩俄斯造马 → 献策 → 藏勇士入马 → 特洛伊人拖马入城 → 夜袭混战 → 屠城抉择 → 率 12 艘船出海 */
   troy: {
-    name:"特洛伊", zone:"特洛伊平原 · 十年围城", tint:"#54453a", npc:"epeius", spawn:[3,9.5],
+    name:"特洛伊", zone:"特洛伊平原 · 十年围城", tint:"#54453a", npc:"epeius", spawn:[3,8.5],
     chapterImg:null,
     kicker:"序 章 · 战 争", chapterSub:"木马之夜 · 你的成名之计",
     quote:"「这匹马是献给雅典娜的赔礼——把它拖进城去。」",
@@ -888,6 +891,65 @@ const TROY_GUARDS = [
   {x:15*ATS+ATS/2, y:4*ATS+ATS/2, hp:30, max:30, alive:true,  hitAt:0},
 ];
 function resetTroyGuards(){ TROY_GUARDS.forEach(g=>{ g.hp=g.max; g.alive=true; g.hitAt=0; }); }
+/* ==================== F2 忒勒皮洛斯守船战（17h 船队折损接线，game-feel 快反） ====================
+   原著第 9 卷：崖顶巨石一夜砸碎 11 艘仅剩 1。玩法：石头锁定哪艘船（0.9s 红圈预警），跑到它旁边
+   把船拖下水——救回几艘算几艘（state.fleet=救回数，旗舰永不沉 → 下限 1）。守不住=原著 canon，
+   守住大半=改写。接 HUD「⛵ 船队 x/12」与终章船队判词（判词已支持 12/1..11/0 三档）。 */
+const FD = { on:false, t:0, wave:0, saved:0, lost:0, boats:[], target:null, phase:"idle", pt:0, done:false };
+const FD_WAVES = 10, FD_WARN = 1.0;
+function fdBoatRow(){
+  const y = 6*ATS + ATS*0.42, arr = [];
+  for (let i=0;i<12;i++){
+    let x = (2.1 + i*1.28)*ATS;
+    if (x > 10.4*ATS && x < 13.2*ATS) x += 1.7*ATS;   /* 避开船骸残片区（W 瓦片） */
+    arr.push({x, y, st:"alive"});                     /* st: alive / saved / wreck */
+  }
+  return arr;
+}
+function startFleetDefense(){
+  if (scene!=="telepylos" || FD.on) return;
+  if (state.fleetGuard==="done"){ toast(`船骸在浪里排成一排——那一夜你带回了 ${state.fleet} 艘。海记得每一艘。`); return; }
+  if (!(state.fleet>0)){ toast("锚地空空——你的十二艘船还在特洛伊的海湾里。先去 #0 特洛伊把它们带出来。"); return; }
+  FD.on=true; FD.t=0; FD.wave=0; FD.saved=0; FD.lost=0; FD.done=false;
+  FD.boats=fdBoatRow(); FD.target=null; FD.phase="idle"; FD.pt=0;
+  sfx("warn"); feedback("medium");
+  toast("崖顶的巨影直起身来——石头要落了。石头锁定哪艘船，就跑到它身边把它拖下水！（跑得越快，带回的船越多）");
+}
+function fleetDefenseTick(dt){
+  if (!FD.on) return;
+  FD.t += dt; FD.pt += dt;
+  if (FD.phase==="idle"){
+    if (FD.wave >= FD_WAVES || !FD.boats.some(b=>b.st==="alive")){ fdFinish(); return; }
+    const alive = FD.boats.filter(b=>b.st==="alive");
+    FD.target = alive[(FD.wave*7+3) % alive.length];
+    FD.phase="warn"; FD.pt=0; sfx("alert");
+  } else if (FD.phase==="warn"){
+    if (FD.pt >= FD_WARN){
+      FD.phase="idle"; FD.pt=0;
+      const b=FD.target, d=Math.hypot(aiaPlayer.x-b.x, aiaPlayer.y-b.y);
+      burst(b.x, b.y-6, "#7d94a8", 14, 90, 2.6);
+      if (d < 46){ b.st="saved"; FD.saved++; sfx("pick"); popText(b.x, b.y-24, "拖下水了！", "#7fd0a0"); }
+      else { b.st="wreck"; FD.lost++; sfx("die"); popText(b.x, b.y-24, "碎了", "#e08080"); }
+      if (d >= 46 && d < 30+16){ state.hp = Math.max(1, state.hp-6); addTrauma(0.1); popText(aiaPlayer.x, aiaPlayer.y-30, "-6", "#e08080"); }
+      FD.wave++; renderHUD();
+    }
+  }
+}
+function fdFinish(){
+  FD.on=false; FD.done=true;
+  state.fleet = Math.max(1, FD.saved);
+  state.fleetGuard = "done";
+  const canon = state.fleet<=2;
+  gainXp(canon?30:45);
+  addMemory(canon
+    ? `忒勒皮洛斯一夜，崖顶的巨石砸碎了大半船队——只剩 ${state.fleet} 艘。同伴的名字沉在水里`
+    : `忒勒皮洛斯一夜，你从巨石的雨里拖回了 ${state.fleet} 艘船——荷马没敢写这一页`, 4, "telepylos");
+  sfx(canon?"die":"bless"); feedback("large");
+  toast(canon
+    ? `天亮了。滩上只剩 ${state.fleet} 艘船——和荷马写的一样：十一艘的债。（航序 #6 · 历练 +30）`
+    : `天亮了。滩上立着 ${state.fleet} 艘船——巨石的雨没能砸碎你的航程。（改写 · 航序 #6 · 历练 +45）`);
+  renderHUD(); save();
+}
 function proTile(s,cx,cy){ const m=PROLOGUE_SITES[s].map; return (cy<0||cy>=m.length||cx<0||cx>=m[cy].length)?"~":m[cy][cx]; }
 function tryMovePrologue(nx,ny){
   const hw=aiaPlayer.w/2, hh=aiaPlayer.h/2;
@@ -981,6 +1043,7 @@ function doSeaEncounter(){
 }
 function prologueSpot(s){
   const P = PROLOGUE_SITES[scene];
+  if (scene==="telepylos" && FD.on && s.type!=="fleetguard"){ toast("石头还在落——先守住船队！"); return; }
   switch(s.type){
   /* —— 伊斯玛洛斯 —— */
   case "rebuild": return openDlg("rebuilder");
@@ -1049,6 +1112,7 @@ function prologueSpot(s){
     addMemory("旅人在忒勒皮洛斯拾了幸存者的绳结——十一个人里只有他记得打这个结", 3, "telepylos");
     toast("碎船骸间有一根系船的旧绳。你照着残结比划——十一个人里只有他记得打这个结。（获得 幸存者的绳结 · 历练 +20 · 航序 #6）");
     renderHUD(); save(); return;
+  case "fleetguard": startFleetDefense(); return;
   /* —— 特洛伊（#0 木马之夜：献策→造马→入马→夜袭混战→屠城抉择→船队出海）—— */
   case "epeius": {
     if (state.troyStage===0){
@@ -1065,7 +1129,8 @@ function prologueSpot(s){
   case "wood":
     if (state.troyStage<1) return toast("先与厄佩俄斯把话定下来——造什么、为谁造。");
     if (state.troyStage>1) return toast("木料够了。马肚里闻得见松脂香。");
-    state.troyWood=(state.troyWood||0)+1; sfx("chop"); feedback("small");
+    if ((state.troyWood||0)>=5) return toast("木料已经够了——第五根落过地了。去木马处开工造马。");
+    state.troyWood=Math.min(5,(state.troyWood||0)+1); sfx("chop"); feedback("small");
     burst(4*ATS+ATS/2, 5*ATS+ATS/2, "#c9a06a", 8, 60, 2.4);
     gainXp(4);
     if (state.troyWood>=5) toast("第五根木料落地——够了。（去木马处：开工造马）");
@@ -1246,6 +1311,29 @@ function drawPrologue(et){
       ctx.fillStyle="#5f4d33"; ctx.fillRect(ex-7,ey-13+bob,14,4);
       ctx.strokeStyle="#8a6a44"; ctx.lineWidth=2.5;
       ctx.beginPath(); ctx.moveTo(ex+8,ey-14+bob); ctx.lineTo(ex+8,ey+10+bob); ctx.stroke();  /* 刨子杆 */
+    }
+  }
+  /* —— 忒勒皮洛斯实体层：滩头船队（F2 守船战：预警红圈/拖回绿帆/碎石残骸）—— */
+  if (scene==="telepylos"){
+    const boats = (FD.on||FD.done) ? FD.boats : (state.fleet>0 && !state.fleetGuard ? fdBoatRow() : null);
+    if (boats) for (const b of boats){
+      if (b.st==="wreck"){ ctx.fillStyle="#3a3f45"; ctx.fillRect(b.x-12,b.y-3,24,5);
+        ctx.fillStyle="#59616b"; ctx.fillRect(b.x-8,b.y-7,10,4); continue; }
+      const rock=Math.sin(et*1.6+b.x)*1.5, sv=b.st==="saved";
+      ctx.fillStyle="rgba(0,0,0,.22)"; ctx.beginPath(); ctx.ellipse(b.x,b.y+7,11,4,0,0,7); ctx.fill();
+      ctx.fillStyle=sv?"#4a7a5a":"#6d4a2b"; ctx.beginPath();
+      ctx.moveTo(b.x-11,b.y+2+rock); ctx.quadraticCurveTo(b.x,b.y+6+rock,b.x+11,b.y+2+rock);
+      ctx.lineTo(b.x+8,b.y-1+rock); ctx.lineTo(b.x-8,b.y-1+rock); ctx.closePath(); ctx.fill();
+      ctx.fillStyle=sv?"#7fd0a0":"#a97a4d"; ctx.fillRect(b.x-1,b.y-10+rock,2,9);
+      ctx.fillStyle=sv?"rgba(200,240,215,.85)":"rgba(235,230,215,.8)"; ctx.beginPath();
+      ctx.moveTo(b.x+1,b.y-9+rock); ctx.quadraticCurveTo(b.x+7,b.y-4+rock,b.x+1,b.y-1+rock); ctx.closePath(); ctx.fill();
+      if (FD.on && FD.target===b && FD.phase==="warn"){
+        const k=Math.min(1,FD.pt/FD_WARN), r=10+k*26;
+        ctx.fillStyle=`rgba(224,90,70,${0.10+k*0.14})`;
+        ctx.beginPath(); ctx.ellipse(b.x,b.y+2,r,r*0.42,0,0,7); ctx.fill();
+        ctx.strokeStyle=`rgba(224,90,70,${0.35+k*0.5})`; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.ellipse(b.x,b.y+2,r,r*0.42,0,0,7); ctx.stroke();
+      }
     }
   }
   const px=aiaPlayer.x, py=aiaPlayer.y;
@@ -1437,6 +1525,7 @@ function ensureState(){
   if (state.troyBurned===undefined) state.troyBurned=false;
   if (state.troySpared===undefined) state.troySpared=false;
   if (state.troyDone===undefined) state.troyDone=false;
+  if (state.fleetGuard===undefined) state.fleetGuard=null;
   if (state.tookWine===undefined) state.tookWine=false;
   if (state.targetHits===undefined) state.targetHits=0;
   if (state.lotusAte===undefined) state.lotusAte=false;
@@ -1857,6 +1946,9 @@ const ACHIV = [
   /* —— 特洛伊战役（17h）—— */
   { id:"trojan_mind", name:"木马之父",     desc:"特洛伊——空心木马藏勇士，夜袭破城，烧尽十年围城之仇。荷马第 8 卷唱的就是这一夜", cond:()=>state.troyStage>=5 && state.troyBurned, canon:true },
   { id:"troy_mercy", name:"放下火把的人",  desc:"屠城之夜你收了火——平民走门，你只带走战争。荷马没写仁慈这一页", cond:()=>state.troyStage>=5 && state.troySpared, dev:"你在屠城之夜放了人" },
+  /* —— 船队折损（F2 守船战：原著十一艘只剩一艘）—— */
+  { id:"eleven_lost", name:"十一艘的债",    desc:"忒勒皮洛斯——崖顶巨石砸碎了大半船队，你只带回了最后一艘。荷马写的就是这一夜", cond:()=>state.fleetGuard==="done" && (state.fleet||0)<=2, canon:true },
+  { id:"fleet_keeper", name:"守住船队的人",  desc:"巨石的雨里你把大半船队拖下了水——荷马没敢写这一页", cond:()=>state.fleetGuard==="done" && (state.fleet||0)>=8, dev:"你救下了大半船队" },
 ];
 function achivTick(){
   for (const a of ACHIV){
@@ -1976,6 +2068,21 @@ line:()=>"你醒的时候，海把你的船推上了我们的滩——别怕，�
     {id:"bye",    w:0.8, cond:()=>state.scheriaStage>=3,
                   line:()=>"（她朝码头挥手，很久才放下）船备好了。……别回头念这座岛的名字。"},
   ],
+  epeius: [
+    /* 特洛伊 #0（17h）：造马师的情境台词，cond 全部门控在 troyStage 上（game-ai 情境优先级） */
+    {id:"plan",  w:1.0, cond:()=>state.troyStage===0,
+                 line:()=>"（他敲着图纸，头也不抬）十年了。箭射不进的城——除非有人给我一张能让歌记住的图样。"},
+    {id:"wood",  w:0.9, cond:()=>state.troyStage===1,
+                 line:()=>`木料 ${state.troyWood||0}/5。平原上的松树都认得你的斧子——备齐了来开工。`},
+    {id:"build", w:0.9, cond:()=>state.troyStage===2,
+                 line:()=>"（他拍着马腹，声音发闪）肚子里空着。夜里，你和勇士们从这儿进去。"},
+    {id:"night", w:1.0, cond:()=>state.troyStage===3,
+                 line:()=>"（他压低声音）城门开了。每个火把底下都站着人——别恋战，天亮前解决。"},
+    {id:"burn",  w:0.8, cond:()=>state.troyStage>=4&&!state.troyDone,
+                 line:()=>"（他把火把递过来，眼睛看着别处）城是你的了。烧，还是不烧——你说了算。"},
+    {id:"sail",  w:0.6, cond:()=>!!state.troyDone,
+                 line:()=>"（他望向锚地）十二艘船整帆了。回家的风，比打仗的风硬。"},
+  ],
 };
 function ambientAnchor(npc){
   if (npc==="witch") return witch;
@@ -1984,6 +2091,7 @@ function ambientAnchor(npc){
   if (npc==="siren"){ const s=SSPOTS.find(p=>p.type==="siren"); return s?{x:s.x,y:s.y}:null; }
   if (npc==="calypso") return calypso;
   if (npc==="nausicaa") return nausicaa;
+  if (npc==="epeius" && scene==="troy"){ const s=PROLOGUE_SPOTS().find(p=>p.type==="epeius"); return s?{x:s.x,y:s.y}:null; }
   return null;
 }
 let ambTimer=0, ambUntil=0, ambAnchor=null, ambText="", ambActive=null;
@@ -1993,8 +2101,8 @@ function npcAmbientTick(dt){
   ambTimer += dt;
   if (ambTimer < 1.2) return;                /* 决策步 1.2s 一次，非每帧 */
   ambTimer = 0;
-  if (dlgOpen||titleOn||chapterOn||mapOpen||scene==="world"){ ambActive=null; return; }
-  const npc = scene==="aia"?"witch":scene==="hades"?"seer":scene==="aeolia"?"aeolus":scene==="strait"?"siren":scene==="sun"?"cattle":scene==="ogggia"?"calypso":scene==="scheria"?"nausicaa":scene==="ismaros"?"rebuilder":scene==="lotus"?"lotusman":scene==="cyclops"?"polyphemus":null;
+  if (dlgOpen||titleOn||chapterOn||mapOpen||scene==="world"||(scene==="telepylos"&&FD.on)){ ambActive=null; return; }
+  const npc = scene==="aia"?"witch":scene==="hades"?"seer":scene==="aeolia"?"aeolus":scene==="strait"?"siren":scene==="sun"?"cattle":scene==="ogggia"?"calypso":scene==="scheria"?"nausicaa":scene==="ismaros"?"rebuilder":scene==="lotus"?"lotusman":scene==="cyclops"?"polyphemus":scene==="troy"?"epeius":null;
   if (!npc){ ambActive=null; return; }
   const anchor = ambientAnchor(npc);
   if (!anchor){ ambActive=null; return; }
@@ -3383,7 +3491,40 @@ function drawWorldClouds(et){
     ctx.beginPath(); ctx.ellipse(x+7, c.y+6, c.r*0.9, c.r*0.36, 0, 0, 7); ctx.fill();
   }
 }
+/* ---------- 护航船队（17h 船队折损可视化：主船尾迹上的深浅两色剪影，船队折损肉眼可见） ---------- */
+const boatTrail = []; let _trailLast = null;
+function drawEscortFleet(et){
+  const n = Math.max(0, Math.min(11, (state.fleet||0)-1));
+  if (!n || !boatTrail.length) return;
+  for (let i=0;i<n;i++){
+    const p = boatTrail[Math.max(0, boatTrail.length-1-(i+1)*14)];
+    if (!p) break;
+    const rock=Math.sin(et*1.9+i*1.3)*1.2;
+    ctx.fillStyle="rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(p.x,p.y+6,9,3.4,0,0,7); ctx.fill();
+    ctx.fillStyle = i%2 ? "#5d3f24" : "#77522f";   /* 深浅两色剪影，前后可辨 */
+    ctx.beginPath(); ctx.moveTo(p.x-9,p.y+2+rock); ctx.quadraticCurveTo(p.x,p.y+5+rock,p.x+9,p.y+2+rock);
+    ctx.lineTo(p.x+6.5,p.y-0.5+rock); ctx.lineTo(p.x-6.5,p.y-0.5+rock); ctx.closePath(); ctx.fill();
+    ctx.fillStyle="rgba(238,232,216,.72)"; ctx.beginPath();
+    ctx.moveTo(p.x+0.8,p.y-7+rock); ctx.quadraticCurveTo(p.x+5.5,p.y-3+rock,p.x+0.8,p.y-0.5+rock); ctx.closePath(); ctx.fill();
+  }
+}
+/* 守船战 HUD（屏幕空间：ctx.restore 之后画，顶部居中，不随镜头漂移） */
+function drawFleetHud(){
+  if (scene!=="telepylos" || !FD.on) return;
+  ctx.font="600 14px 'Segoe UI','Microsoft YaHei'"; ctx.textAlign="center";
+  const t = `守船 ${FD.wave}/${FD_WAVES} · 拖回 ${FD.saved} · 碎 ${FD.lost}`;
+  ctx.fillStyle="rgba(0,0,0,.5)"; ctx.fillText(t, 501, 41);
+  ctx.fillStyle="#f4efe4"; ctx.fillText(t, 500, 40);
+}
 function drawBoat(et){
+  /* 尾迹采样：移动才推入，护航队沿真实航迹排布（停船时保持编队不塌） */
+  if (scene==="world"){
+    if (!_trailLast || Math.hypot(boat.x-_trailLast.x, boat.y-_trailLast.y) > 2.2){
+      boatTrail.push({x:boat.x, y:boat.y}); _trailLast={x:boat.x, y:boat.y};
+      if (boatTrail.length>240) boatTrail.shift();
+    }
+  }
+  drawEscortFleet(et);
   const x=boat.x, y=boat.y, rock=Math.sin(et*1.6)*1.5;
   const tw = performance.now() < (state.tailwindUntil||0);   /* 顺风中：尾迹加速线 */
   if (tw){
@@ -6036,6 +6177,26 @@ const NPC_JOB_MAPS = {
     "查询环境状况":"风大，适合出港",
     "其他意图":"锤声替他回答",
     "告别":"走好，船别装太满",
+    "购买物品":"摆手：城里只有重建，没有买卖",
+    "卖出物品":"摇头：抢过我们一次的东西，不收第二次",
+    "查询价格":"这座城不识价——只识帐",
+    "查询库存":"报重建的料：木料、石堆、绷布——都要用在城里",
+    "查询背包":"扫一眼行囊：像清点运进城的货物",
+    "丢弃物品":"看着落地的东西：扔吧，这座城见过更狼藉的",
+    "装备物品":"看他握矛，说：这次别留在庆功宴上",
+    "卸下装备":"点头：修城的人不提矛",
+    "使用消耗品":"看他吃喝，提醒一句：庆功酒害过这座城两次",
+    "查询自身状态":"报他的状态，附一句：伤药留给伤者",
+    "获取物资":"指残果堆：拿吧——别拿祭品",
+    "营地准备":"指城墙根：背风，但夜里别生大灯",
+    "导航到地点":"报方向，附一句：崖边石头松，别倚",
+    "查询附近目标":"报木靶/伤者/酒瓶的方向与距离",
+    "船只操作":"指栈桥：船系在那儿——别再载满抢来的酒",
+    "查询任务进度":"望一眼伤者的腿：药敷上了，就是进度",
+    "查询任务线索":"伤者在药堆旁——他的腿比话多",
+    "提交任务":"接下，手会抖一下：谢的人不是我",
+    "放弃任务":"不挽留：这座城不怪走的人",
+    "威胁或攻击":"放下锤子站着不动：我们反过一次夜袭的人"
   },
   lotusman: {
     "闲聊":"温和干净，把滞留说成到家",
@@ -6048,6 +6209,26 @@ const NPC_JOB_MAPS = {
     "威胁或攻击":"眨眨眼笑，石头都是软的",
     "其他意图":"望着花出神",
     "告别":"首次给莲子干；之后挥手说明天见",
+    "购买物品":"笑：这岛上没有买卖——果子管够",
+    "卖出物品":"摇头：没什么可卖，也不缺什么",
+    "查询价格":"价？花儿开谢都不算钱",
+    "查询库存":"报满滩的莲子：要多少摘多少",
+    "查询背包":"看一眼行囊：装这么多，还走得动吗",
+    "丢弃物品":"看花瓣落地：丢了的东西，花会替你记着",
+    "装备物品":"看他握矛：拿着吧，这儿的矛都生了花",
+    "卸下装备":"轻声说：放下就不想了——真的",
+    "查询自身状态":"打量他：你瘦了，先吃颗莲子吧",
+    "获取物资":"指花丛：弯腰就能摘，不用谢",
+    "营地准备":"指花田边：睡这儿，梦是甜的",
+    "导航到地点":"指方向，但要先睡一觉再走",
+    "查询附近目标":"报莲花滩/断桨/幸存者的位置，慢慢说",
+    "查询环境状况":"风是甜的，水是甜的——都慢悠悠",
+    "船只操作":"指栈桥：船在那儿——退潮不急，日子也不急",
+    "接取任务":"歪头：活儿？这儿没有活儿，只有日子",
+    "查询任务进度":"进度？花儿今天开得跟昨天一样",
+    "查询任务线索":"线索都开在滩上——闻着甜味走就对了",
+    "提交任务":"接下，笑：做完啦？那再坐一会儿",
+    "放弃任务":"笑得更开了：不做了？那正好，陪我晒太阳"
   },
   polyphemus: {
     "闲聊":"先试名字考试（polyNameExam），否则侧耳听",
@@ -6061,7 +6242,58 @@ const NPC_JOB_MAPS = {
     "查询自身状态":"活着就好，名字比血难保",
     "其他意图":"先试名字考试（polyNameExam）",
     "告别":"首次要求报名；报过则复述并警告海记账",
+    "购买物品":"轰笑：山洞里不识字，也不识价",
+    "卖出物品":"拒：羊是我的，眼睛是你欠的",
+    "查询价格":"用羊换：一只羊问一个问题",
+    "查询库存":"报洞里的存粮：奶酪、羊奶、和旧船的残板",
+    "查询背包":"闻一眼行囊：有海的味，有酒气",
+    "丢弃物品":"听声辨物：扔了吧，石头堆里什么都有",
+    "装备物品":"冷笑：那晚有比矛更利的东西——名字",
+    "卸下装备":"点头：放下铁器，羊不怕你",
+    "使用消耗品":"看着他吃喝：吃完就走，别睡在洞里",
+    "营地准备":"指洞外：洞里是我的，滩上随你",
+    "导航到地点":"报方向：崖边别走，我不二次提醒",
+    "查询附近目标":"报羊栏/山洞/船骸，鼻子朝风一嗅就知道",
+    "查询环境状况":"风里有海的咸味——潮要变了",
+    "船只操作":"指滩上残板：能浮的都碎了，剩下的会唱歌",
+    "接取任务":"拒：巨人不帮小东西干活",
+    "查询任务进度":"进度？羊吃草就是进度",
+    "查询任务线索":"线索在羊栏：白天丢的，夜里都回来",
+    "提交任务":"接下东西不道谢：小东西守约，少见",
+    "放弃任务":"哼一声：早说了，小东西办不成事"
   },
+  epeius: {
+    "闲聊":"顺着木头与手艺的话头接，短句，偶尔自负于手艺",
+    "请求帮助":"手艺人只帮手艺的忙：给你指工具或图纸",
+    "查询神谕":"我不信预言——我只信刨子刨出来的直线",
+    "查询生物情报":"讲讲围城十年里骡马比人可靠，短句",
+    "查询地点信息":"报特洛伊平原/城门/船队锚地的位置，30字内",
+    "查询自身状态":"像验一批木料一样报他的状态：还结实",
+    "查询背包":"扫一眼行囊，点评哪件工具该换了",
+    "丢弃物品":"木料不讲情面：丢了就是丢了，别弯腰",
+    "装备物品":"矛是好矛——可这城里的矛十年没赢过",
+    "卸下装备":"点头：干活的人不带铁器，是对的",
+    "使用消耗品":"看他吃喝，提醒一句：吃饱了才抡得动斧子",
+    "购买物品":"摆手：木匠不识价——城破前什么都不卖",
+    "卖出物品":"摇头：图纸和工具不卖，命都可以留下",
+    "查询价格":"这里没有市集，只有战利品和命",
+    "查询库存":"报他的料：松木、麻绳、兽皮胶——都锁着",
+    "给予物品":"木料麻绳收下，其余婉拒：仗用不上",
+    "获取物资":"指平原上的松林：斧子借你，木料归木马",
+    "营地准备":"指营火边：匠人睡料堆旁，火别灭",
+    "导航到地点":"报方向加一句：别走崖下，石头不认人",
+    "查询附近目标":"报船队锚地/木马/城门的方向与距离",
+    "查询环境状况":"风从海上带来咸味——适合出港，不适合攻城",
+    "船只操作":"十二艘船在锚地——出海那晚风最顺",
+    "接取任务":"活儿只有一件：把木料凑齐，其它的我来",
+    "查询任务进度":"看一眼马身就知道缺几根料——别虚报进度",
+    "查询任务线索":"木料在平原上，马图在我脑子里",
+    "提交任务":"验收他的活儿，像验收一批榫头",
+    "放弃任务":"不劝：半途的料堆在那儿，也是债",
+    "威胁或攻击":"放下刨子看他一眼：手艺人的手不接架，但也不怕",
+    "其他意图":"锤声替他回答，或一句「木头不聊这些」",
+    "告别":"走好——城破那晚别站在门洞里"
+  }
 };
 function npcJobFor(npc, category){
   const m = NPC_JOB_MAPS[npc];
@@ -6089,6 +6321,7 @@ const HANDLED = {
   rebuilder: ["查询地点信息","查询生物情报","接取任务","请求帮助","给予物品","查询神谕","查询环境状况","告别"],
   lotusman: ["查询地点信息","查询生物情报","使用消耗品","给予物品","请求帮助","威胁或攻击","告别"],
   polyphemus: ["查询地点信息","查询生物情报","给予物品","获取物资","威胁或攻击","查询自身状态","闲聊","其他意图","请求帮助","告别"],
+  epeius: [],   /* 特洛伊造马师：无本地 handler，全部靠 NPC_JOB_MAPS 人格引导兑底（audit 30 类） */
 };
 const PERSONA_CATS = ["闲聊","请求帮助","查询神谕","查询生物情报","查询地点信息","查询自身状态","其他意图"];   /* 兼容旧引用（现用 NPC_JOB_MAPS 判定覆盖） */
 function auditHandlers(){
@@ -6432,6 +6665,7 @@ setInterval(()=>{
   camTick(dt); ambTick(dt); npcAmbientTick(dt);
   achTimer += dt; if (achTimer >= 2){ achTimer = 0; achivTick(); }   /* 命运锚点轮询：2s 扫一次成就（零侵入不漏发） */
   if (scene==="hades"||scene==="aeolia"||scene==="ogggia"||scene==="scheria") npcWalkTick(dt);
+  if (scene==="telepylos") fleetDefenseTick(dt);   /* F2 守船战：波次/预警/结算（对话打开时暂停在 tickMove 同层） */
 }, 20);
 function loop(t){
   const et=(t-T0)/1000;
@@ -6461,6 +6695,7 @@ function loop(t){
   drawGrain();
   drawCareBadge(et);
   ctx.restore();
+  drawFleetHud();   /* 守船战计数（屏幕空间 HUD，restore 后画不随镜头漂移） */
   if (scene!=="world") markLeg(scene);
   seaEncounterTick();
   maleaTick();
@@ -6501,7 +6736,13 @@ window.__game={state, scene, boat, player:aiaPlayer, witch, seer, aeolus, boar, 
   sunInfo:()=>({wrath:state.sunWrath, blessed:state.sunBlessed, name:state.sunName, debt:state.sunDebt, warn:state.slaughterWarn}),
   /* 自由航行·海遇 */
   SEA_ENCOUNTS, seaEncounterTick, doSeaEncounter,
-  seaEncInfo:function(){ return {count:state.seaEncCount||0, done:Object.assign({}, state.seaEncDone), threshold:state.seaThreshold||300}; }};
+  seaEncInfo:function(){ return {count:state.seaEncCount||0, done:Object.assign({}, state.seaEncDone), threshold:state.seaThreshold||300}; },
+  /* F2 守船战 + 船队折损（17h） */
+  FD:()=>FD, startFleetDefense, fleetDefenseTick, fdBoatRow,
+  fdInfo:function(){ return {on:FD.on, wave:FD.wave, saved:FD.saved, lost:FD.lost, done:FD.done, fleet:state.fleet||0, guard:state.fleetGuard}; },
+  /* 护航船队（17h 视觉）+ ambient 观测 */
+  boatTrail:()=>boatTrail, drawEscortFleet,
+  ambInfo:function(){ return {active:ambActive, text:ambText, npc:typeof currentNPC!=="undefined"?currentNPC:null}; }};
 </script>
 <script type="module" src="./world3d.js?v=14"></script>
 </body>

@@ -69,10 +69,14 @@ const ISLE_LOOK = {
   ogggia:  { r: 2.4, grass: 0xb08890, grassDeep: 0x8a6878, seed: 20261113, mh: 0.8 },
   scheria: { r: 2.6, grass: 0xc8d8a8, grassDeep: 0x9ab088, seed: 20261114, mh: 0.7 },
   ithaca:  { r: 2.8, grass: 0x8a9a88, grassDeep: 0x6a7a68, seed: 20261115, mh: 1.0 },
+  /* 特洛伊（17h）：战火余烬——焦土黄褐 + 灰烬 */
+  troy:    { r: 2.6, grass: 0xb09870, grassDeep: 0x8a7250, seed: 20261116, ash: true, mh: 0.9 },
 };
 const LOCKED_LOOK = { r: 1.3, grass: 0x93a3ad, grassDeep: 0x6d7d88, seed: 20261112, mist: true };
 
 let renderer, scene3, camera3, waterU, boatG, sailMesh, isleList = [];
+let escortG = null, escortBoats = [], escPrev = null, escHead = { x: 0, z: -1 };
+let worldGroup = null, waterMesh = null, skyGroup = null, cloudGroup = null, troyGroup = null;
 let yawCur = 0; let ready = false; let failed = false; let lastEt = -1;
 
 /* ---------- 岛屿网格（顶点色 + flatShading，P1 同款风格） ---------- */
@@ -133,10 +137,12 @@ function buildIsle(cfg) {
   return mesh;
 }
 
-/* ---------- 岛屿装配（读全局 ISLANDS——经典脚本顶层 const，模块可读） ---------- */
+/* ---------- 岛屿装配（读 window.ISLANDS——主脚本显式挂载；实测 ES 模块读不到经典脚本顶层 const） ---------- */
 function buildIslands() {
   const group = new THREE.Group();
-  for (const is of ISLANDS) {
+  const ISLES = window.ISLANDS || [];
+  if (!ISLES.length) console.warn("[W3D] window.ISLANDS 缺失：岛屿未装配（index.html 主脚本是否执行到位？）");
+  for (const is of ISLES) {
     const look = is.scene ? (ISLE_LOOK[is.scene] || LOCKED_LOOK) : { ...LOCKED_LOOK, r: 1.3, seed: 20261112 + is.gx };
     const x3 = px2x(is.gx * 20 + 10), z3 = px2z(is.gy * 20 + 10);
     const mesh = buildIsle(look);
@@ -346,6 +352,64 @@ function buildBoat() {
   return g;
 }
 
+
+/* ---------- 护航船队（17h 船队折损可视化：V 字跟航，随 state.fleet 折损增减；航向用运动方向，与模型朝向约定解耦） ---------- */
+function buildEscortFleet() {
+  const g = new THREE.Group();
+  escortBoats = [];
+  const hullMat = new THREE.MeshStandardMaterial({ color: 0x6d4a2b, roughness: 1, flatShading: true });
+  const sailMat = new THREE.MeshBasicMaterial({ color: 0xe8e0cc, side: THREE.DoubleSide });
+  for (let i = 0; i < 11; i++) {
+    const b = new THREE.Group();
+    const hull = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.24, 1.3), hullMat);
+    hull.position.y = 0.12; b.add(hull);
+    const sailGeo = new THREE.BufferGeometry();
+    sailGeo.setAttribute('position', new THREE.Float32BufferAttribute([
+      -0.34, 0.24, 0.04,  0.34, 0.24, 0.04,  0.0, 0.98, 0.04,
+    ], 3));
+    sailGeo.computeVertexNormals();
+    b.add(new THREE.Mesh(sailGeo, sailMat));
+    b.visible = false; g.add(b); escortBoats.push(b);
+  }
+  g.visible = false;
+  return g;
+}
+
+
+/* ---------- 特洛伊 3D 战场（首个岛内 3D 样板：地面/城墙/巨木马/营火，2D 层只叠玩家与战斗实体） ---------- */
+function buildTroy() {
+  const g = new THREE.Group();
+  /* 平原沙地 */
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(30, 22, 1, 1),
+    new THREE.MeshStandardMaterial({ color: 0x8a6a4f, roughness: 1, flatShading: true })
+  );
+  ground.rotation.x = -Math.PI / 2; g.add(ground);
+  /* 三面城墙 + 门楼（东侧城门洞，西/北墙） */
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0x9a8a70, roughness: 1, flatShading: true });
+  const gate = new THREE.Mesh(new THREE.BoxGeometry(5.0, 3.6, 0.7), wallMat); gate.position.set(0, 1.9, -9); g.add(gate);
+  const gatePost = new THREE.Mesh(new THREE.BoxGeometry(0.8, 4.2, 0.7), wallMat); gatePost.position.set(-2.6, 2.1, -9); g.add(gatePost);
+  const gatePost2 = new THREE.Mesh(new THREE.BoxGeometry(0.8, 4.2, 0.7), wallMat); gatePost2.position.set(2.6, 2.1, -9); g.add(gatePost2);
+  for (const [sx, h] of [[-4, 2.4], [3, 2.4], [-5.4, 1.6], [5.4, 1.6]]) {
+    const w = new THREE.Mesh(new THREE.BoxGeometry(1.2, h, 0.7), wallMat); w.position.set(sx, h / 2, -7); g.add(w);
+  }
+  const back = new THREE.Mesh(new THREE.BoxGeometry(18, 1.6, 0.5), wallMat); back.position.set(0, 0.8, 7); g.add(back);
+  for (const [sx] of [[-7.4], [7.4]]) {
+    const side = new THREE.Mesh(new THREE.BoxGeometry(0.5, 2.2, 12), wallMat); side.position.set(sx, 1.1, 0); g.add(side);
+  }
+  /* 营火 + 火把点（暖光粒子氛围，闪烁）；木马/卫兵/玩家由 2D 实体层承载（避免双木马） */
+  const fireMat = new THREE.MeshBasicMaterial({ color: 0xff8a3a });
+  for (const [fx, fz] of [[-4.2, 2.6], [4.4, -3.4]]) {
+    const f = new THREE.Mesh(new THREE.SphereGeometry(0.55, 8, 6), fireMat); f.position.set(fx, 0.3, fz); g.add(f);
+  }
+  for (let i = 0; i < 8; i++) {
+    const a = i / 8 * Math.PI * 2;
+    const t = new THREE.Mesh(new THREE.SphereGeometry(0.16, 6, 4), fireMat); t.position.set(Math.cos(a) * 6.2, 0.35, Math.sin(a) * 6.2); g.add(t);
+  }
+  const pl = new THREE.PointLight(0xff9a4a, 1.2, 20); pl.position.set(0, 5, 0); g.add(pl);
+  return g;
+}
+
 /* ---------- 初始化 ---------- */
 function init() {
   try {
@@ -369,13 +433,18 @@ function init() {
   sun.position.copy(SUN_DIRECTION).multiplyScalar(90);
   scene3.add(sun);
 
-  scene3.add(buildSky());
-  scene3.add(buildIslands());   /* 先建岛：水 shader 的 uIsle 岸线数组依赖 isleList */
-  scene3.add(buildWater());
-  scene3.add(buildClouds());
+  skyGroup = buildSky(); scene3.add(skyGroup);
+  worldGroup = new THREE.Group();
+  worldGroup.add(buildIslands());   /* 先建岛：水 shader 的 uIsle 岸线数组依赖 isleList */
+  scene3.add(worldGroup);
+  waterMesh = buildWater(); scene3.add(waterMesh);
+  cloudGroup = buildClouds(); scene3.add(cloudGroup);
   boatG = buildBoat();
   boatG.scale.setScalar(1.8);
   scene3.add(boatG);
+  escortG = buildEscortFleet();
+  scene3.add(escortG);
+  troyGroup = buildTroy(); troyGroup.visible = false; scene3.add(troyGroup);
 
   const cv = renderer.domElement;
   cv.id = "cv3d";
@@ -401,11 +470,18 @@ function init() {
 /* ---------- 每帧 ---------- */
 function frame(et) {
   if (!ready) return;
-  const bx = px2x(boat.x), bz = px2z(boat.y);
+  /* 经典脚本顶层 let/const 模块读不到（实测 ReferenceError），统一走主脚本挂载的 __game 接口 */
+  const G = window.__game;
+  const sc = (G && G.getScene) ? G.getScene() : "world";
+  if (sc === "troy") return frameTroy(et);
+  /* 恢复世界图可见（特洛伊→世界 切换用） */
+  if (troyGroup && !troyGroup.visible){ worldGroup.visible=true; waterMesh.visible=true; boatG.visible=true; cloudGroup.visible=true; troyGroup.visible=false; }
+  const b = (G && G.boat) || { x: 460, y: 180, face: "up" };
+  const bx = px2x(b.x), bz = px2z(b.y);
   const bob = Math.sin(et * 2.1) * 0.05 + Math.cos(et * 1.4) * 0.03;
   boatG.position.set(bx, bob, bz);
   /* 航向：face(up/down/left/right) → 目标 yaw，平滑转向 */
-  const yawT = boat.face === "right" ? Math.PI / 2 : boat.face === "down" ? Math.PI : boat.face === "left" ? -Math.PI / 2 : 0;
+  const yawT = b.face === "right" ? Math.PI / 2 : b.face === "down" ? Math.PI : b.face === "left" ? -Math.PI / 2 : 0;
   let dy = yawT - yawCur;
   while (dy > Math.PI) dy -= Math.PI * 2;
   while (dy < -Math.PI) dy += Math.PI * 2;
@@ -415,9 +491,47 @@ function frame(et) {
   waterU.uTime.value = et;
   /* 相机跟随：帧率无关指数缓动（低帧下也不拖泥带水） */
   const dt = lastEt < 0 ? 0.016 : Math.min(Math.max(et - lastEt, 0.001), 0.12); lastEt = et;
+  /* 护航船队：航向取运动方向（指数平滑），V 字编队挂在主船尾迹上；折损后队列缩短 */
+  if (escPrev) {
+    const dxh = bx - escPrev.x, dzh = bz - escPrev.z, dl = Math.hypot(dxh, dzh);
+    if (dl > 0.02) {
+      const k = 1 - Math.exp(-3 * dt);
+      escHead.x += (dxh / dl - escHead.x) * k; escHead.z += (dzh / dl - escHead.z) * k;
+      const hl = Math.hypot(escHead.x, escHead.z) || 1; escHead.x /= hl; escHead.z /= hl;
+    }
+  }
+  escPrev = { x: bx, z: bz };
+  if (escortG) {
+    const fl = Math.max(0, Math.min(12, (G && G.state && G.state.fleet) || 0));
+    const n = Math.max(0, fl - 1);
+    escortG.visible = n > 0;
+    const pxh = -escHead.z, pzh = escHead.x;   /* 航向左手垂直向 */
+    for (let i = 0; i < escortBoats.length; i++) {
+      const eb = escortBoats[i];
+      if (i >= n) { eb.visible = false; continue; }
+      eb.visible = true;
+      const back = 2.2 + i * 1.35, side = (i % 2 ? 1 : -1) * (0.9 + Math.floor(i / 2) * 0.8);
+      eb.position.set(bx - escHead.x * back + pxh * side,
+                      Math.sin(et * 2.1 + i * 1.7) * 0.05,
+                      bz - escHead.z * back + pzh * side);
+      eb.rotation.y = Math.atan2(-escHead.x, -escHead.z);
+      eb.rotation.z = Math.sin(et * 1.7 + i) * 0.03;
+    }
+  }
   const camTarget = new THREE.Vector3(bx, 14, bz + 17);
   camera3.position.lerp(camTarget, 1 - Math.exp(-4 * dt));
   camera3.lookAt(bx, 0.8, bz - 2.5);
+  renderer.render(scene3, camera3);
+}
+
+/* 特洛伊 3D 战场渲染（固定相机俯视 + 火光闪烁；木马/卫兵/玩家由 2D 层叠加） */
+let troyCamInit = false;
+function frameTroy(et) {
+  if (troyGroup) { worldGroup.visible = false; waterMesh.visible = false; boatG.visible = false; cloudGroup.visible = false; if (escortG) escortG.visible = false; troyGroup.visible = true; }
+  const flick = 0.85 + 0.3 * Math.sin(et * 3.1) * Math.sin(et * 2.3);
+  if (!troyCamInit) { camera3.position.set(0, 8.5, 13); troyCamInit = true; }
+  camera3.lookAt(0, 1.2, 0);
+  const amb = 0.55 + 0.18 * Math.sin(et * 1.7);
   renderer.render(scene3, camera3);
 }
 
