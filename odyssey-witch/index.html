@@ -37,6 +37,16 @@
     line-height:1.5; pointer-events:none; box-shadow:0 4px 14px rgba(0,0,0,.22); display:none;}
   #toast{position:absolute; bottom:18%; left:50%; transform:translateX(-50%); background:rgba(20,32,48,.9);
     color:#fff; padding:8px 18px; border-radius:20px; font-size:13px; opacity:0; transition:opacity .25s; pointer-events:none;}
+  /* ---- 船员折损横幅（P1.1：减员必须被看见——结构性悲剧的重量；降级见 reduced-motion） ---- */
+  #crewBanner{position:absolute; top:58px; left:50%; transform:translate(-50%,-14px); z-index:4;
+    background:linear-gradient(90deg, rgba(88,20,24,0), rgba(88,20,24,.93) 16%, rgba(88,20,24,.93) 84%, rgba(88,20,24,0));
+    color:#ffe3e3; padding:9px 30px; font-size:12.5px; letter-spacing:.5px; text-align:center;
+    opacity:0; pointer-events:none; transition:opacity .55s ease, transform .55s ease;
+    box-shadow:0 6px 26px rgba(88,20,24,.35);}
+  #crewBanner b{display:block; font-size:15px; color:#ffb4b4; letter-spacing:2.5px; margin-bottom:3px;}
+  #crewBanner.show{opacity:1; transform:translate(-50%,0);}
+  @keyframes crewPulse{0%,100%{filter:brightness(1);}50%{filter:brightness(1.4);}}
+  #crewBanner.show b{animation:crewPulse 1.5s ease-in-out infinite;}
   #bagPanel{position:absolute; top:52px; right:12px; width:230px; background:var(--panel);
     border:1px solid var(--line); border-radius:12px; padding:12px 14px; display:none;
     box-shadow:0 10px 30px rgba(0,0,0,.3); z-index:5;}
@@ -302,6 +312,7 @@
   @media (prefers-reduced-motion: reduce){
     #dlg.open, #dlg .bubble{animation:none;}
     #dlgPortrait, #chapterCard.show{animation:none;}
+    #crewBanner.show b{animation:none;}
     *{transition-duration:.01ms !important;}
   }
 </style>
@@ -975,6 +986,39 @@ function markLeg(k){
   save();
 }
 function legsVisitedCount(){ return Object.keys(state.legs).filter(k=>LEG_SEQ[k]!==undefined && state.legs[k]).length; }
+/* ==================== P1.1 船员账本（17g 原著对齐：状态/HUD/横幅/记忆四件套的唯一入口） ====================
+   语义：crew=旗舰班底 12 人（特洛伊出海点亮）。沉船折算进船队账（fleet），班底随旗舰走——
+   原著减员三挂点：独眼巨人 -6 → 斯库拉 -6 → 太阳岛雷劈清零；终章判词「你带回来 N 个人」。 */
+function crewLedgerLight(){
+  if (state.crewLit) return;
+  state.crewLit = true;
+  let c = 12;
+  if (state.crewCyclops) c -= 6;                             /* 出海前已走过独眼巨人的旧账 */
+  if (state.crewScylla) c -= 6;                              /* 出海前已硬闯海峡的旧账 */
+  if (state.sunWrath) c = 0;                                 /* 雷劈清零 */
+  state.crew = Math.max(0, c);
+}
+function loseCrew(n, why){
+  const before = state.crew||0;
+  const lost = Math.min(before, n);
+  if (lost<=0) return 0;
+  state.crew = before - lost;
+  sfx("die");
+  showCrewBanner(lost, why);
+  addMemory(`${why}——${lost} 名船员没能回来（船员 ${state.crew}/12）`, 5, "crew");
+  renderHUD(); save();
+  return lost;
+}
+let crewBannerTimer=null;
+function showCrewBanner(lost, why){
+  let el=document.getElementById("crewBanner");
+  if (!el){ el=document.createElement("div"); el.id="crewBanner"; document.getElementById("stage").appendChild(el); }
+  el.innerHTML = `<b>⚑ 折损 · 船员 −${lost}</b><span>${why}</span>`;
+  el.classList.remove("show"); void el.offsetWidth;          /* 重启动画 */
+  el.classList.add("show");
+  clearTimeout(crewBannerTimer);
+  crewBannerTimer=setTimeout(()=>el.classList.remove("show"), 4600);
+}
 function enterPrologue(key){
   const p=PROLOGUE_SITES[key];
   scene = key;
@@ -1203,11 +1247,12 @@ function prologueSpot(s){
     if (scene==="troy"){
       state.troyDone=true;
       if (!state.fleet){ state.fleet=12; }
+      crewLedgerLight();
       sfx("bless"); gainXp(50);
-      addMemory("十二艘船满帆离开特洛伊的海岸——全作从这里开始", 4, "any");
+      addMemory("十二艘船满帆离开特洛伊的海岸——十二个名字都在甲板上，全作从这里开始", 4, "any");
       scene = "world";
       boat.x = 30*WTS+WTS/2; boat.y = 6*WTS+WTS+30;
-      showChapter("concept-art/01-序章漂流.jpg","出 海","十 二 艘 船","启航之地 · 船队整帆","十二艘船同时离岸。桅杆挤着桅杆，像一片移动的林子。\n这一程的尽头没有人知道——但今晚，船是满的。");
+      showChapter("concept-art/01-序章漂流.jpg","出 海","十 二 艘 船","启航之地 · 船队整帆","十二艘船同时离岸。桅杆挤着桅杆，像一片移动的林子。\n这一程的尽头没有人知道——但今晚，船是满的，人是齐的。");
       renderHUD(); save(); return;
     }
     scene = "world"; save(); sfx("pick");
@@ -1380,6 +1425,12 @@ let state = {
   windFreed: [false,false,false,false],  /* 风神岛四风牢笼释放状态 */
   /* —— 特洛伊战役 + 船队（17h：玩家=奥德修斯，原著 12 艘船）—— */
   fleet: 0,               /* 船队艘数 0..12（特洛伊出海点亮 12；逐站折损） */
+  /* —— P1.1 船员账本（17g 原著对齐）：旗舰班底 12 人，与船队双账并行（沉船不折算班底——保 P1.3 鼓噪/P2.4 猪变回人前提）—— */
+  crew: 0,                /* 船员 0..12（特洛伊出海点亮；独眼 -6 / 斯库拉 -6 / 太阳岛清零） */
+  crewLit: false,         /* 账本已点亮（出海时结算此前已触发的挂点债务） */
+  crewCyclops: false,     /* 挂点①独眼巨人 -6 已触发 */
+  crewScylla: false,      /* 挂点②斯库拉 -6 已触发 */
+  crewSun: false,         /* 挂点③太阳岛清零已触发 */
   troyStage: 0,           /* 0登陆 1献策 2马成 3夜袭中 4卫兵肃清 5屠城抉择毕 */
   troyWood: 0,            /* 造马木料 0..5 */
   troyBurned: false,      /* 屠城（原著） */
@@ -1532,6 +1583,15 @@ function ensureState(){
   if (state.troySpared===undefined) state.troySpared=false;
   if (state.troyDone===undefined) state.troyDone=false;
   if (state.fleetGuard===undefined) state.fleetGuard=null;
+  if (!state.backpack) state.backpack={};   /* 背包兜底（极简合成档/半损坏档防 renderHUD 读空） */
+  if (!state.status) state.status={};       /* 状态文案兜底（tickNeeds 每帧写入，缺了会每帧报错） */
+  /* P1.1 船员账本：旧档回补——挂点 flag 由既有进度推导，账本未点亮则静默入账（无横幅无 toast） */
+  if (state.crew===undefined) state.crew=0;
+  if (state.crewLit===undefined) state.crewLit=false;
+  if (state.crewCyclops===undefined) state.crewCyclops=!!state.polHeard;
+  if (state.crewScylla===undefined) state.crewScylla=!!(state.straitStage>=2&&!state.scyllaDebtPaid);
+  if (state.crewSun===undefined) state.crewSun=!!state.sunWrath;
+  crewLedgerLight();
   if (state.tookWine===undefined) state.tookWine=false;
   if (state.targetHits===undefined) state.targetHits=0;
   if (state.lotusAte===undefined) state.lotusAte=false;
@@ -2004,6 +2064,8 @@ const AMBIENT = {
     {id:"gift",   w:0.6, cond:()=>state.affinity>=85&&!state.backpack["蜂蜜"],
                   line:()=>"灶台边有蜜，拿去——别说是我给的。"},
     {id:"sunlit", w:0.8, cond:()=>state.sunlit, line:()=>"晨光不错。今天的药比哪天都香。"},
+    {id:"care_crew", w:0.8, cond:()=>state.crewLit&&(state.crew||0)>0&&(state.crew||0)<12,
+                   line:()=>`（她朝你身后看了一眼）你的人比风声里的少。${(state.crew||0)<=6?"……坐吧，火边暖和。":"让他们在林子边歇歇——埃阿亚不吃人。"}`},
     {id:"idle",   w:0.15, cond:()=>true, line:()=>"来了就进来，别杄在风口。"},
   ],
 seer: [
@@ -2017,8 +2079,10 @@ seer: [
                   line:()=>"（杖尖转向你）祭血入沟了。问吧——问你要走的路。"},
     {id:"long",   w:0.6, cond:()=>state.prophecy==="long",
                   line:()=>"……长路上的人，脚步声都是稳的。"},
-    {id:"short",  w:0.6, cond:()=>state.prophecy==="short",
+    {id:"short",   w:0.6, cond:()=>state.prophecy==="short",
                   line:()=>"……选了捷径的人，影子先一步到了浪头。"},
+    {id:"care_crew", w:0.7, cond:()=>state.crewLit&&(state.crew||0)>0&&(state.crew||0)<12,
+                  line:()=>`（他的杖尖朝你的船偏了偏）你的船比来时轻。海收账，不挑名字——${(state.crew||0)<=6?"守住誓言，才留得住剩下的。":"往前每一站，都是一杆秤。"}`},
   ],
 aeolus: [
     {id:"care_hurt",  w:0.9, cond:()=>state.hp<=35&&state.hp>0,
@@ -2039,6 +2103,8 @@ aeolus: [
                    line:()=>"（歌声顿了顿）你带着伤过海……这里的雾，会往伤口里钻。"},
     {id:"choose", w:1.0, cond:()=>state.straitStage===0,
                   line:()=>"（歌声漫过船舷）蜡罐，或栈杆——小水手，选一样。"},
+    {id:"crew_hear", w:0.7, cond:()=>state.crewLit&&(state.crew||0)>0&&state.straitStage<2,
+                  line:()=>`（歌声绕着桅杆数心跳）…${state.crew}颗——不止你一个。歌，要唱给谁听呢？`},
     {id:"listened", w:0.8, cond:()=>state.mastTied&&state.straitStage<2,
                   line:()=>"（三姐妹轻声地）你听完了整首歌……那页歌词，收好。"},
     {id:"silent", w:0.8, cond:()=>state.waxEars&&state.straitStage<2,
@@ -2061,12 +2127,16 @@ aeolus: [
                   line:()=>"木料要三根。斧头在你手里——你一路学的东西，用得上了。"},
     {id:"stay",   w:0.7, cond:()=>state.calypsoChoice==="stay",
                   line:()=>"（她把门开着）夜里的海声，就当是摇篮曲。想走的时候，筏台没拆。"},
+    {id:"alone",  w:0.9, cond:()=>state.crewLit&&(state.crew||0)===0,
+                  line:()=>"（她看了看你身后的空滩）只有你一个人上岸。……海把其他人都留在浪里了？"},
   ],
   nausicaa: [
     {id:"care_hungry", w:0.9, cond:()=>state.hunger<=30,
                    line:()=>"（她递来一块烙饼）宫里有的是。饿着肚子讲故事，故事会短一截。"},
     {id:"washed", w:1.0, cond:()=>state.scheriaStage===0,
 line:()=>"你醒的时候，海把你的船推上了我们的滩——别怕，费埃克斯人不问来历。"},
+    {id:"alone",  w:0.9, cond:()=>state.crewLit&&(state.crew||0)===0,
+                  line:()=>"（她轻声问身边的侍女）他真的是一个人漂来的？……整条船，一个人都没有剩下吗？"},
     {id:"tale",   w:0.9, cond:()=>state.scheriaStage<2,
                   line:()=>"篝火在等你的故事。德摩多科斯的琴，也等着。"},
     {id:"song",   w:0.6, cond:()=>state.scheriaStage>=2,
@@ -2761,6 +2831,15 @@ function showFinale(mode, way, name){
     : state.fleet>0
     ? `船队还剩 ${state.fleet} 艘。少掉的每一艘，海都记得是在哪个浪里没的——史诗也记得。`
     : "你的船队一艘不剩。你是踩着一根漂木回来的——荷马写下的，正是这一种。");
+  /* 船员判词（P1.1 原著对齐）：「你带回来 N 个人」——从满船到「最后一人」，史诗各有一句 */
+  const crewN = state.crew||0;
+  paras.push(crewN<=0
+    ? "船员一栏，你带回来的只有你自己。十二个名字留在了路上——每一个，海都记得是在哪片浪里没的。荷马数过一遍：他没有数错。（原著 · 最后一人）"
+    : crewN>=12
+    ? "十二个人，一个不少——你把整班人马带回了家门口的雾里。荷马没敢写这一页。"
+    : crewN>=7
+    ? `你带回来 ${crewN} 个人。甲板空了一半，但活着回家的每一个，都会把死者的名字唱下去。`
+    : `你带回来 ${crewN} 个人。${crewN===1?"那一个名字跟着你走过了火与浪——他比十二个都重。":"他们和你一样，在怪物中间学会了活着回家。"}`);
   paras.push(stay ? "锁没有锁眼。它锁的从来不是门——是「回家」这两个字的发音。"
     : bpath ? "船头没有调向西，也没有调向东。你想去哪儿，哪儿就是船头。"
     : "船头调向西的时候，你认下了自己的名字——这一回，它是你的了。");
@@ -2962,10 +3041,16 @@ function interact(){
       showChapter("concept-art/03-斯库拉海峡.jpg","第 三 章","海 峡 让 水","……她也放不下的那个人，是你吗？","她久久沉默，沉入海底。中间的静水亮了——「替我看着她。她不会对自己手下留情。」");
       renderHUD(); save(); return;
     }
-    showChapter("concept-art/characters/08-斯库拉.jpg","第 三 章","六 头 · 付 价","硬闯海峡的代价","六条颈子同时垂下来——不咬你，咬你的行囊。");
-    const lost = takeShine(6);
+    /* P1.1 挂点②：斯库拉 -6（原著第12卷：六头各叼走一名船员；账本未点亮时保留旧版物品代价兜底） */
+    if ((state.crew||0)>0){
+      showChapter("concept-art/characters/08-斯库拉.jpg","第 三 章","六 头 · 付 价","硬闯海峡的代价","六条颈子同时垂下来——每一条，都叼走了一名水手。船上安静得可怕。");
+      state.crewScylla=true; loseCrew(6, "斯库拉的六张嘴各叼走了一名水手");
+    } else {
+      showChapter("concept-art/characters/08-斯库拉.jpg","第 三 章","六 头 · 付 价","硬闯海峡的代价","六条颈子同时垂下来——不咬你，咬你的行囊。");
+      const lost = takeShine(6);
+      addMemory("旅人硬闯斯库拉海峡，六头怪吃走了他最亮的东西："+(lost.join("、")||"（行囊空空，咬的是他）"), 3);
+    }
     state.straitStage=2;
-    addMemory("旅人硬闯斯库拉海峡，六头怪吃走了他最亮的东西："+(lost.join("、")||"（行囊空空，咬的是他）"), 3);
     renderHUD(); save(); return;
   }
   if (s.type==="vortex"){
@@ -3007,6 +3092,8 @@ function interact(){
     addItem("牛肉",2);
     sfx("die"); feedback("large");
     addMemory("旅人宰了太阳岛的一头圣牛——饥饿赢了誓言", 4, "any");
+    /* P1.1 挂点③：太阳岛雷劈清零（原著第12卷末；P1.3 将倒置为「船员鼓噪」抉择，本挂点届时并入放任分支） */
+    state.crewSun=true; loseCrew(state.crew||0, "宙斯的雷从阴云里追落——整船人没能跟你看到下一片海");
     toast("血腥味漫开的那一刻，天上的光暗了一分。你吃饱了——胃里是满的，心里是空的。（饱食回满 · 世界 flag「太阳记恨」：此后天色常阴）（获得 牛肉×2）");
     renderHUD(); save(); return;
   }
@@ -5061,6 +5148,15 @@ function renderHUD(){
   }
   const fPill=document.getElementById("hudFleet");
   if (fPill){ fPill.innerHTML = `⛵ 船队 <b>${state.fleet}</b>/12`; fPill.style.display = state.fleet>0 ? "" : "none"; }
+  /* 船员 pill（P1.1）：账本点亮后常驻——清零也留着，「最后一人」的重量肉眼可见 */
+  if (state.crewLit && !hClockEl.dataset.crewPill){
+    const cP=document.createElement("span"); cP.className="pill"; cP.id="hudCrew";
+    hClockEl.parentNode.insertBefore(cP, hClockEl);
+    hClockEl.dataset.crewPill="1";
+  }
+  const crewPill=document.getElementById("hudCrew");
+  if (crewPill){ crewPill.innerHTML = `⚑ 船员 <b>${state.crew||0}</b>/12`; crewPill.style.display = state.crewLit ? "" : "none";
+    crewPill.style.color = (state.crew||0)<=6 ? "#8a3038" : ""; }
   const hh=Math.floor(hourNow()), mm=Math.floor(state.clock%60);
   document.getElementById("hudClock").textContent = `${clockName()} ${String(hh).padStart(2,"0")}:${String(mm).padStart(2,"0")}`;
   /* 多任务账本：进行中的全部展示，全完成则示「委托已完成」 */
@@ -5821,7 +5917,9 @@ function handlePolyphemus(category, args){
   const g=k=>(a[k]!==undefined&&a[k]!==null&&String(a[k]).trim()!=="")?String(a[k]).trim():null;
   switch(category){
   case "查询地点信息":
-    if (!state.polHeard){ state.polHeard=true; state.namesHeard=true; save();
+    if (!state.polHeard){ state.polHeard=true; state.namesHeard=true;
+      /* P1.1 挂点①：独眼巨人 -6（原著第9卷：六名同伴被生吞——旧路重访时这笔旧账入册） */
+      state.crewCyclops=true; loseCrew(6, "独眼巨人的洞里，六个人没能跟着羊群走出影子"); save();
       addMemory("旅人听盲眼巨人讲完了「无人」的账——那个假名和那声真名", 4, "polyphemus");
       return {text:"（他摸着羊背，声音像岩缝里的风）那年来了条船。领头的小东西给我酒喝，说他的名字叫『无人』。夜里他们戳了我的眼睛。我喊：『没有人』伤害我！——神明也没听懂我的祈祷。他逃出洞，朝海喊了自己的真名。（他顿了很久）从那天起，海开始替所有人记账。"}; }
     return {text:"故事讲完了。名字的事，你自己掂量。"};
@@ -6762,6 +6860,9 @@ window.__game={state, scene, boat, player:aiaPlayer, witch, seer, aeolus, boar, 
   /* F2 守船战 + 船队折损（17h） */
   FD:()=>FD, startFleetDefense, fleetDefenseTick, fdBoatRow,
   fdInfo:function(){ return {on:FD.on, wave:FD.wave, saved:FD.saved, lost:FD.lost, done:FD.done, fleet:state.fleet||0, guard:state.fleetGuard}; },
+  /* P1.1 船员账本（17g） */
+  loseCrew, crewLedgerLight, showCrewBanner,
+  crewInfo:function(){ return {crew:state.crew||0, lit:!!state.crewLit, cyclops:!!state.crewCyclops, scylla:!!state.crewScylla, sun:!!state.crewSun}; },
   /* 护航船队（17h 视觉）+ ambient 观测 */
   boatTrail:()=>boatTrail, drawEscortFleet,
   ambInfo:function(){ return {active:ambActive, text:ambText, npc:typeof currentNPC!=="undefined"?currentNPC:null}; }};
