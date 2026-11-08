@@ -181,6 +181,32 @@
   .ccSub{margin-top:10px; font-size:13px; color:rgba(255,255,255,.85); letter-spacing:2px;}
   .ccQuote{margin-top:16px; font-size:12px; color:rgba(255,255,255,.62); letter-spacing:1px;}
   .ccSkip{position:absolute; right:14px; bottom:10px; z-index:2; font-size:11px; color:rgba(255,255,255,.5);}
+  /* ---- P1.2 选择卡（showAsk：毛玻璃弹窗，复用章节卡视觉语言；等待选择不自动跳过） ---- */
+  #askCard{position:absolute; inset:0; z-index:19; display:none; align-items:center; justify-content:center;
+    background:rgba(4,10,20,.45); backdrop-filter:blur(4px); border-radius:14px;}
+  #askCard.show{display:flex; animation:askIn .3s ease-out;}
+  @keyframes askIn{from{opacity:0; transform:scale(.97);} to{opacity:1; transform:scale(1);}}
+  .askBox{width:76%; max-width:640px; padding:22px 26px 18px; border-radius:14px;
+    background:linear-gradient(180deg, rgba(10,20,36,.92), rgba(7,14,26,.96));
+    border:1px solid rgba(120,160,210,.28); box-shadow:0 18px 50px rgba(0,0,0,.5);
+    color:#fff; text-shadow:0 2px 8px rgba(0,0,0,.55);}
+  .askBox .ccKicker{margin-bottom:6px;}
+  .askBox .ccTitle{font-size:24px; letter-spacing:5px;}
+  .askBox .ccSub{font-size:12px; color:rgba(255,255,255,.82); white-space:pre-line; line-height:1.75; text-align:left; margin-top:12px;}
+  .askBox .ccQuote{font-size:11px; white-space:pre-line; line-height:1.7; text-align:left;}
+  .askOpts{display:flex; flex-direction:column; gap:8px; margin-top:16px;}
+  .askBtn{display:flex; align-items:baseline; gap:9px; text-align:left; cursor:pointer;
+    padding:9px 12px; border-radius:9px; font-size:12.5px; color:#fff;
+    background:rgba(59,130,246,.10); border:1px solid rgba(120,160,210,.30);
+    transition:background .16s, border-color .16s, transform .16s; font-family:inherit;}
+  .askBtn:hover{background:rgba(59,130,246,.24); border-color:rgba(160,200,255,.55); transform:translateX(2px);}
+  .askBtn .abKey{flex:none; width:16px; height:16px; line-height:16px; text-align:center; font-size:10px;
+    border-radius:4px; background:rgba(255,255,255,.14); color:rgba(255,255,255,.85);}
+  .askBtn .abHint{font-size:10.5px; color:rgba(255,255,255,.5); margin-left:auto;}
+  #pigFog{position:fixed; inset:0; z-index:60; pointer-events:none;
+    background:radial-gradient(circle at 50% 55%, rgba(90,160,90,.55), rgba(30,70,40,.8) 70%);
+    animation:pigFogIn 1.9s ease-in-out both;}
+  @keyframes pigFogIn{0%{opacity:0;} 35%{opacity:1;} 75%{opacity:1;} 100%{opacity:0;}}
   /* ---- 海图浮层（M 键 · 仿古羊皮纸世界海图 + 船位/岛屿状态叠加） ---- */
   #mapOverlay{position:absolute; inset:0; z-index:15; border-radius:14px; display:none;
     background:rgba(6,12,22,.72); backdrop-filter:blur(3px);}
@@ -393,6 +419,15 @@
       <div class="ccQuote"></div>
     </div>
     <div class="ccSkip">点击任意处跳过</div>
+  </div>
+  <div id="askCard">
+    <div class="askBox">
+      <div class="ccKicker"></div>
+      <div class="ccTitle"></div>
+      <div class="ccSub"></div>
+      <div class="ccQuote"></div>
+      <div class="askOpts"></div>
+    </div>
   </div>
   <div id="endingCard">
     <div class="ecBody">
@@ -1453,6 +1488,12 @@ let state = {
   slaughterWarn: false,  /* 宰牛二段确认（E 两次，防误触） */
   memGreeted: [],        /* 已用作开场问候的记忆 t 列表（memoryGreeting 去重） */
   circeLeft: false,      /* 喀耳刻好感托付线：她留你过冬（原著留宿一年·生忒勒戈斯的前奏） */
+  /* —— P1.2 埃亚岛三件套（17g 原著对齐第10卷）：魔草-蜜酒-立誓 —— */
+  hermesMet: false,      /* 赫尔墨斯赠魔草已触发（埃亚岛林间金杖少年，一次性） */
+  meadHeld: false,       /* 蜜酒事件曾挂起（拒饮——「酒还温着」，回头可再触） */
+  circeSworn: false,     /* 拔剑对峙后她立誓（原著破局点；P2.4 水手恢复人形的前提） */
+  pigged: false,         /* 无魔草饮蜜酒 → 猪化 BadEnd 已发生（dev 成就） */
+  crewmenSeen: false,    /* 见过恢复人形的水手（P2.4 一次性） */
   achiv: [],             /* 命运双轨成就 id 列表（原著锚点 canon + 改写 dev） */
   /* —— 第五章·奥吉吉亚（ogggia）—— */
   calypsoStage: 0,       /* 0 初见 1 第一天 2 第二天 3 问正题 4 已选择 */
@@ -1543,6 +1584,12 @@ function ensureState(){
   if (state.slaughterWarn===undefined) state.slaughterWarn=false;
   if (!Array.isArray(state.memGreeted)) state.memGreeted=[];
   if (state.circeLeft===undefined) state.circeLeft=false;
+  /* P1.2 三件套字段：旧档补默认值 */
+  if (state.hermesMet===undefined) state.hermesMet=false;
+  if (state.meadHeld===undefined) state.meadHeld=false;
+  if (state.circeSworn===undefined) state.circeSworn=false;
+  if (state.pigged===undefined) state.pigged=false;
+  if (state.crewmenSeen===undefined) state.crewmenSeen=false;
   if (!Array.isArray(state.achiv)) state.achiv=[];
   /* 航程闭环字段：旧档补默认值 */
   if (state.prophecy===undefined) state.prophecy=null;
@@ -1700,6 +1747,8 @@ const ASPOTS = [
   {type:"altar",  x:15*ATS+ATS/2, y:8*ATS+ATS/2, r:75, label:"查看石碑"},
   {type:"fire",   x:16*ATS+ATS/2, y:8*ATS+ATS/2+26, r:62, label:"篝火（烤肉）"},
   {type:"cauldron", x:12*ATS+ATS/2, y:3*ATS+ATS/2, r:70, label:"坩埚（炼药合成）"},
+  {type:"hermes",  x:6*ATS+ATS/2,  y:7*ATS+ATS/2, r:75, label:"林间的金光（看个究竟）"},
+  {type:"crewmen", x:11*ATS+ATS/2, y:6*ATS+ATS/2, r:78, label:"泥里打滚的影子"},
   {type:"dock",   x:3*ATS+ATS/2, y:10*ATS+ATS/2, r:70, label:"扬帆出海"},
 ];
 const BOAR_MOOD = {idle:"游荡", aggro:"锁定你", windup:"蓄力中", dash:"冲撞", tired:"喘气(弱点)"};
@@ -2015,6 +2064,9 @@ const ACHIV = [
   /* —— 船队折损（F2 守船战：原著十一艘只剩一艘）—— */
   { id:"eleven_lost", name:"十一艘的债",    desc:"忒勒皮洛斯——崖顶巨石砸碎了大半船队，你只带回了最后一艘。荷马写的就是这一夜", cond:()=>state.fleetGuard==="done" && (state.fleet||0)<=2, canon:true },
   { id:"fleet_keeper", name:"守住船队的人",  desc:"巨石的雨里你把大半船队拖下了水——荷马没敢写这一页", cond:()=>state.fleetGuard==="done" && (state.fleet||0)>=8, dev:"你救下了大半船队" },
+  /* —— P1.2 埃亚岛三件套（17g 原著第 10 卷）—— */
+  { id:"moly_rescue", name:"魔草破咒",      desc:"握着黑根银花的魔草，喝下了她的蜜酒——咒语在你身上失效。原版第10卷：赫尔墨斯的馈赠与你的拔剑", cond:()=>state.circeSworn, canon:true },
+  { id:"pigged", name:"岛上的猪都有你的眼睛", desc:"没拿魔草就喝了那杯酒——你在泥里拱了好几天才想起来自己是谁。原版里，这没发生在奥德修斯身上", cond:()=>state.pigged, dev:"你把原著没写的失手演了一遍" },
 ];
 function achivTick(){
   for (const a of ACHIV){
@@ -2066,6 +2118,12 @@ const AMBIENT = {
     {id:"sunlit", w:0.8, cond:()=>state.sunlit, line:()=>"晨光不错。今天的药比哪天都香。"},
     {id:"care_crew", w:0.8, cond:()=>state.crewLit&&(state.crew||0)>0&&(state.crew||0)<12,
                    line:()=>`（她朝你身后看了一眼）你的人比风声里的少。${(state.crew||0)<=6?"……坐吧，火边暖和。":"让他们在林子边歇歇——埃阿亚不吃人。"}`},
+    {id:"moly_seen", w:0.7, cond:()=>!state.circeSworn&&!!state.backpack["魔草"],
+                   line:()=>"（她瞥了一眼你的行囊，搅药的手没停）……金杖那小子多嘴。草你留着——想喝的时候，酒还温着。"},
+    {id:"mead_hold", w:0.8, cond:()=>state.meadHeld&&!state.circeSworn,
+                   line:()=>"酒还温着。什么时候想通，什么时候来。"},
+    {id:"sworn_after", w:0.8, cond:()=>state.circeSworn,
+                   line:()=>"（她朝猪栏那边抬了抬下巴）他们身上还有猪的影子——洗过澡就好了，慢慢来。"},
     {id:"idle",   w:0.15, cond:()=>true, line:()=>"来了就进来，别杄在风口。"},
   ],
 seer: [
@@ -2371,8 +2429,14 @@ let dlgOpen = false;
 let eBufAt = 0;   /* 交互预按时间戳（input-systems 输入缓冲） */
 /* 标题屏 / 章节过场开关：开着时不响应移动与互动 */
 let titleOn = true, chapterOn = false, chTimer = null;
+let askOn = false, askOpts = [];   /* P1.2 选择卡（showAsk）：开着时锁移动/交互，数字键或点击选择 */
 /* 捕获阶段监听：输入框打字不误触移动/E，但 Esc 任何时候都能关对话 */
 addEventListener("keydown", e=>{
+  if (askOn){
+    const n = parseInt(e.key,10);
+    if (n>=1 && n<=askOpts.length){ e.preventDefault(); pickAsk(n-1); }
+    return;   /* 必须选一个——不提供白嫖退出 */
+  }
   if (titleOn || chapterOn){ if (chapterOn && e.key==="Escape") skipChapter(); return; }
   const inInput = e.target && e.target.id === "inp";
   if (dlgOpen){
@@ -2548,6 +2612,7 @@ const SFX_CFG = {
   level:  [520, 1040, 0.35, "triangle", 0.14],
   warn:   [330,  220, 0.22, "square",   0.07],
   bless:  [440,  880, 0.50, "sine",     0.10],
+  oink:   [190,  85,  0.30, "sawtooth", 0.18],   /* P1.2 猪化：低频鼻息滑音 */
 };
 function audioInit(){
   if (AC) return AC;
@@ -3004,7 +3069,11 @@ function interact(){
   const s = aiaNear();
   if (!s) return;
   if (PROLOGUE_SITES[scene]) return prologueSpot(s);
-  if (s.type==="witch") return openDlg("witch");
+  if (s.type==="witch"){
+    /* P1.2 蜜酒事件：立誓前与她照面，先走原著第10卷的「她请你喝一杯」（拒饮挂起后可回头再触） */
+    if (!state.circeSworn) return meadEvent();
+    return openDlg("witch");
+  }
   if (s.type==="seer") return openDlg("seer");
   /* ---------- 声之海峡（第三章）交互 ---------- */
   if (s.type==="mast"){
@@ -3402,6 +3471,28 @@ function interact(){
     return;
   }
   if (s.type==="cauldron") return openCraft();
+  if (s.type==="hermes"){
+    /* P1.2 前置：赫尔墨斯（金杖少年）赠魔草 Moly——原著第10卷，破咒的唯一钥匙（一次性） */
+    if (state.hermesMet){ toast("林间只剩一圈淡淡的金光，和杖尖挑起的一缕风。少年不在了——魔草在你行囊里。"); return; }
+    state.hermesMet = true;
+    addItem("魔草"); sfx("bless"); feedback("medium");
+    gainXp(20); addAffinity(5);
+    addMemory("赫尔墨斯（金杖少年）把一株黑根银花的魔草塞进旅人手里：「她的杯里不只是酒。」", 4, "any");
+    toast("一个金斗篷的少年从林影里走出，双蛇杖上缠着风。「她请的酒，别空着手喝。」——他把一株黑根银花的草按进你掌心。（获得 魔草×1 · 历练 +20 · 好感 +5）");
+    renderHUD(); save(); return;
+  }
+  if (s.type==="crewmen"){
+    /* P2.4：立誓前=猪栏伏笔（眼睛太像人）；立誓后=恢复人形的水手（原著第10卷末） */
+    if (state.circeSworn){
+      if (state.crewmenSeen){ toast("水手们在溪边搓洗胳膊，谁也不看谁。有个人小声数着：「……还有十一个。」"); return; }
+      state.crewmenSeen = true; gainXp(25); sfx("bless"); feedback("medium");
+      addMemory("咒解了——猪栏里拱出来一队刚恢复人形的水手，浑身泥浆，见面先敬了个歪歪扭扭的礼", 4, "any");
+      showChapter("concept-art/02-女巫小屋.jpg","第 一 章 · 幕 间","猪 栏 · 解 咒","他们身上还有猪的影子","咒声落处，泥里拱出来的不再全是猪——十几个人影扶着栏杆站起来，浑身泥浆，见了你先愣住，然后一个个红了眼眶。「……头儿，」为首的哑着嗓子，「我们做了场好长的梦。」\n（船员记起你了。这批班底会跟着你走完剩下的海——前提是，剩下的海别再吃人。）");
+      renderHUD(); save(); return;
+    }
+    toast("猪栏里几头猪在泥里打滚。最老的那头抬头看了你一眼——那双眼睛，清醒得不像牲口。（先去和女巫把话说清）");
+    return;
+  }
   if (s.type==="grass"){
     addItem("玛草");
     questEvent("collect", {item:"玛草"});
@@ -3475,7 +3566,7 @@ function interact(){
 /* ==================== 标题屏 / 章节过场（概念图接入） ==================== */
 function showChapter(img,kicker,title,sub,quote){
   const c=document.getElementById("chapterCard");
-  if (img) c.style.backgroundImage=`url('${img}')`;
+  if (img) c.style.backgroundImage = img.startsWith("linear-gradient") ? img : `url('${img}')`;
   else c.style.backgroundImage="linear-gradient(175deg,#e8eef7 0%,#9db4cd 34%,#3f5f82 68%,#16283e 100%)";
   c.querySelector(".ccKicker").textContent=kicker;
   c.querySelector(".ccTitle").textContent=title;
@@ -3485,11 +3576,99 @@ function showChapter(img,kicker,title,sub,quote){
   clearTimeout(chTimer); chTimer=setTimeout(skipChapter, 3000);
 }
 function skipChapter(){
+  if (askOn) return;   /* 选择卡复用 chapterOn 门控，但不许章节卡的跳过通道把它关掉 */
   clearTimeout(chTimer);
   document.getElementById("chapterCard").classList.remove("show");
   chapterOn=false;
 }
 document.getElementById("chapterCard").onclick = skipChapter;
+
+/* ==================== P1.2 通用选择卡 + 蜜酒事件 + 猪化演出（17g 原著第 10 卷） ====================
+   showAsk：毛玻璃选择弹窗（askCard），复用 chapterCard 视觉语言；等待选择、Esc 不放行，
+   数字键 1..n / 点击二选一。后续 P1.3 鼓噪抉择、P1.5 认/不认 均复用此卡。 ==================== */
+function showAsk(kicker,title,sub,quote,options){
+  askOpts = options;
+  const c = document.getElementById("askCard");
+  c.querySelector(".ccKicker").textContent = kicker;
+  c.querySelector(".ccTitle").textContent = title;
+  c.querySelector(".ccSub").textContent = sub||"";
+  c.querySelector(".ccQuote").textContent = quote||"";
+  const bar = c.querySelector(".askOpts"); bar.innerHTML = "";
+  options.forEach((o,i)=>{
+    const b = document.createElement("button");
+    b.className = "askBtn";
+    b.innerHTML = `<span class="abKey">${i+1}</span><span>${o.label}</span>` + (o.hint?`<span class="abHint">${o.hint}</span>`:"");
+    b.onclick = ()=>pickAsk(i);
+    bar.appendChild(b);
+  });
+  c.classList.add("show");
+  askOn = true; chapterOn = true;   /* 复用全局门控（移动/交互/海图全锁） */
+}
+function pickAsk(i){
+  const o = askOpts[i];
+  hideAsk();
+  if (o && o.fn) o.fn();
+}
+function hideAsk(){
+  askOn = false; chapterOn = false;
+  document.getElementById("askCard").classList.remove("show");
+}
+/* 蜜酒事件：立誓前与喀耳刻照面必触发（interact 门控）。有魔草=两路破局；无魔草=饮下猪化 / 推杯挂起。 */
+function meadEvent(){
+  const hasMoly = !!state.backpack["魔草"];
+  sfx("cook");
+  const ask = "小屋里药香被蜜香压住了。她背对你搅着什么，头也不回：「站着做什么？喝一杯再说话。」";
+  if (hasMoly){
+    showAsk("第 一 章 · 蜜 酒","她 请 你 喝 一 杯",
+      ask+"\n杯里琥珀色，甜得过分——你掌心的魔草贴着皮肤，黑根银花，凉得像一句提醒。", null, [
+      {label:"握着魔草，把酒喝干", hint:"原著第10卷 · 赫尔墨斯教的", fn:()=>swornScene("sword")},
+      {label:"把魔草摊在桌面上",   hint:"不演了——让她看见",        fn:()=>swornScene("table")},
+    ]);
+  } else {
+    showAsk("第 一 章 · 蜜 酒","她 请 你 喝 一 杯",
+      ask+"\n杯里琥珀色，甜得过分。金杖少年那句「别空着手喝」，你一时想不起来了。", null, [
+      {label:"把酒一口饮尽", hint:"……应该没什么吧", fn:()=>pigFall()},
+      {label:"把杯子推回去", hint:"先去林子里转转", fn:()=>{
+        state.meadHeld = true; sfx("warn");
+        addMemory("她递来蜜酒，旅人把杯子推了回去——酒还温着，林间好像有什么在等", 3);
+        toast("「随你。」她没回头，「酒又不会跑。」——林间深处，似乎有什么在发光。");
+        renderHUD(); save();
+      }},
+    ]);
+  }
+}
+/* 破局：她立誓（原著第10卷：拔剑相向→她立誓→爱上他→留宿一年的前奏）。握草拔剑=canon 主路。 */
+function swornScene(mode){
+  state.circeSworn = true;
+  sfx("attack"); feedback("large");
+  const sword = mode==="sword";
+  setTimeout(()=>sfx("bless"), 420);
+  addAffinity(sword?35:28); gainXp(40);
+  addMemory(sword
+    ? "旅人握着魔草喝干蜜酒，随即拔剑抵住她的喉咙——她笑了，当着他的面立了誓"
+    : "旅人把魔草摊在桌上，喝干蜜酒——她盯着那株草看了很久，笑着立了誓", 5, "any");
+  showChapter("concept-art/02-女巫小屋.jpg","第 一 章 · 幕 间","她 立 了 誓","咒语在你身上失效的那一刻，她看你的眼神变了",
+    sword
+    ? "蜜酒下肚，什么都没发生。她转过身来——你的剑已经抵在她喉咙前。「魔草。」她盯着剑刃笑了，「金杖那小子，手还是这么快。」\n「对船员立誓：不再下咒，不再说谎。」她举手起誓，火光把两个人的影子钉在墙上。放下剑的时候，她的指尖在你手背上停了一瞬。\n（原著第10卷：拔剑相向，她立誓。好感大幅上升——猪栏那边，该去看看了。）"
+    : "你把魔草摊在桌面上，把酒一口喝干。她盯着那株黑根银花看了很久，忽然笑出声——「不空手赴约的人，值得一句实话。」\n她举手起誓：不再下咒，不再说谎。炉火把两个人的影子钉在墙上，谁也没先说话。\n（原著里你拔了剑，你只是把草摆在了光下。好感大幅上升——猪栏那边，该去看看了。）");
+  renderHUD(); save();
+}
+/* BadEnd 彩蛋：无魔草饮下蜜酒 → 猪化 → 被抛回海滩重来（原著里这没发生在奥德修斯身上=改写线 dev） */
+function pigFall(){
+  sfx("oink"); feedback("large");
+  const fog = document.createElement("div");
+  fog.id = "pigFog";
+  document.body.appendChild(fog);
+  setTimeout(()=>fog.remove(), 1900);
+  state.pigged = true;
+  state.hp = Math.max(20, Math.floor(state.hp*0.5));
+  aiaPlayer.x = 3*ATS+ATS/2; aiaPlayer.y = 10*ATS+ATS/2;
+  addMemory("旅人没拿魔草就喝了她的蜜酒——在猪圈里拱了好几天。岛上的猪都有一双他的眼睛", 5, "any");
+  showChapter("linear-gradient(175deg,#dfe9d8 0%,#8fae8a 34%,#3e5f43 68%,#101d14 100%)",
+    "第 一 章 · 坏 结 局","猪 哼 声","你想喊，喉咙里滚出来的是一声哼",
+    "杯沿碰到嘴唇的一瞬，世界歪了——墙壁长出毛，烛火变成一双双猪的眼睛。\n——你在泥里拱了很久。等到「人」的念头重新浮上来，你趴在栈桥上，浑身是泥，血量折半。\n林间那圈金光还在。去把那株草拿回来——这次，别空着手喝。");
+  renderHUD(); save();
+}
 
 (function titleInit(){
   const hasSave = !!localStorage.getItem(SAVE_KEY);
@@ -3927,6 +4106,61 @@ function drawAia(et){
     if (witchAI.mode==="pace" && Math.hypot(witch.x-witchAI.tx, witch.y-witchAI.ty)>3){ /* 踱步时裙摆微摆 */
       ctx.strokeStyle="rgba(91,74,138,.5)"; ctx.lineWidth=2;
       ctx.beginPath(); ctx.moveTo(x-10,y+10); ctx.lineTo(x-14-Math.sin(et*6)*3,y+14); ctx.stroke();
+    }
+  }});
+  /* P1.2 赫尔墨斯：金杖少年（赠魔草后只留一圈淡金残光——game-feel：光晕呼吸+双蛇杖微缠） */
+  ents.push({y:7*ATS+ATS/2+14, draw(){
+    const x=6*ATS+ATS/2, y=7*ATS+ATS/2, met=state.hermesMet;
+    const bob = met?0:Math.sin(et*2.4)*2;
+    const glow = met ? 0.16 : 0.30+Math.sin(et*1.2)*0.10;
+    const rg = ctx.createRadialGradient(x,y-8,2, x,y-8,34);
+    rg.addColorStop(0,`rgba(255,214,107,${glow})`); rg.addColorStop(1,"rgba(255,214,107,0)");
+    ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(x,y-8,34,0,7); ctx.fill();
+    if (met) return;
+    ctx.fillStyle="rgba(20,35,50,.3)"; ctx.beginPath(); ctx.ellipse(x+4,y+13,11,4,0,0,7); ctx.fill();
+    ctx.fillStyle="#e8c766"; ctx.beginPath(); ctx.moveTo(x-9,y+11); ctx.lineTo(x+9,y+11); ctx.lineTo(x,y-7-bob); ctx.closePath(); ctx.fill();
+    ctx.fillStyle="#f1d9b8"; ctx.beginPath(); ctx.arc(x,y-11-bob,6,0,7); ctx.fill();
+    ctx.fillStyle="#caa14e"; ctx.beginPath(); ctx.arc(x,y-14-bob,6.5,Math.PI,0); ctx.fill();
+    /* 双蛇杖：细杖 + 两条相向缠绕的 sin 蛇（信使/医杖） */
+    ctx.strokeStyle="#caa14e"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x+7,y+9-bob); ctx.lineTo(x+7,y-20-bob); ctx.stroke();
+    for (const s of [-1,1]){
+      ctx.strokeStyle = s<0 ? "#7bc389" : "#e08f5c"; ctx.lineWidth=1.6; ctx.beginPath();
+      for (let t=0;t<=1;t+=0.12){
+        const wy = y-19-bob+t*12, wx = x+7+Math.sin(t*Math.PI*3+et*2)*2.4*s;
+        t===0 ? ctx.moveTo(wx,wy) : ctx.lineTo(wx,wy);
+      }
+      ctx.stroke();
+    }
+  }});
+  /* P2.4 猪栏：立誓前=猪群伏笔（最老那头眼睛清醒得不像牲口）；立誓后=恢复人形的水手在搓洗 */
+  ents.push({y:6*ATS+ATS/2+12, draw(){
+    const x=11*ATS+ATS/2, y=6*ATS+ATS/2;
+    ctx.fillStyle="rgba(90,68,44,.4)"; ctx.beginPath(); ctx.ellipse(x,y+6,34,10,0,0,7); ctx.fill();
+    ctx.strokeStyle="#7a5c38"; ctx.lineWidth=3; ctx.lineCap="round";
+    ctx.beginPath(); ctx.moveTo(x-40,y-6); ctx.lineTo(x+40,y-6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x-40,y+2); ctx.lineTo(x+40,y+2); ctx.stroke();
+    if (!state.circeSworn){
+      for (const [dx,dy,ph,old] of [[-16,3,0,false],[10,-2,2.1,false],[26,6,4.2,true]]){
+        const bx=x+dx, by=y+dy+Math.sin(et*1.5+ph)*1.2;
+        ctx.fillStyle= old ? "#d9a08a" : "#e6b8a4";
+        ctx.beginPath(); ctx.ellipse(bx,by,10,6.5,0,0,7); ctx.fill();
+        ctx.beginPath(); ctx.arc(bx+9,by-3,4.5,0,7); ctx.fill();
+        ctx.fillStyle="#b87f6e"; ctx.beginPath(); ctx.ellipse(bx+13,by-3,2,1.6,0,0,7); ctx.fill();
+        if (old){ ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(bx+9,by-4,1.4,0,7); ctx.arc(bx+11.5,by-4.6,1.4,0,7); ctx.fill();
+          ctx.fillStyle="#1c2b3a"; ctx.beginPath(); ctx.arc(bx+9,by-4,.7,0,7); ctx.arc(bx+11.5,by-4.6,.7,0,7); ctx.fill(); }
+        ctx.strokeStyle="#e6b8a4"; ctx.lineWidth=1.5;
+        ctx.beginPath(); ctx.arc(bx-11,by-1,3,Math.PI*0.2,Math.PI*1.4); ctx.stroke();
+      }
+    } else {
+      for (const [dx,dy,ph] of [[-16,4,0],[8,0,1.4],[26,6,2.8]]){
+        const px=x+dx, py=y+dy+Math.sin(et*1.2+ph)*0.8;
+        ctx.fillStyle="rgba(20,35,50,.25)"; ctx.beginPath(); ctx.ellipse(px,py+9,9,3.5,0,0,7); ctx.fill();
+        ctx.fillStyle="#4a5a6e"; ctx.beginPath(); ctx.ellipse(px,py+2,7,9,0,0,7); ctx.fill();
+        ctx.fillStyle="#f1c9a5"; ctx.beginPath(); ctx.arc(px,py-10,5.5,0,7); ctx.fill();
+        ctx.fillStyle="#5a4632"; ctx.beginPath(); ctx.arc(px,py-13,5.5,Math.PI,0); ctx.fill();
+        ctx.strokeStyle="#4a5a6e"; ctx.lineWidth=3;
+        ctx.beginPath(); ctx.moveTo(px+5,py-2); ctx.lineTo(px+9,py-5+Math.sin(et*3+ph)*1.5); ctx.stroke();
+      }
     }
   }});
   pushPlayerEnt(ents);
@@ -6000,6 +6234,7 @@ args 中每个对象表示一组相关参数实例,多组独立实例分别放�
 {user_input}`;
 const PERSONA_WITCH = `你是《奥德赛》世界里的女巫喀耳刻，住在埃亚岛的林间小屋，精通药草、魔药与预言。
 性格：神秘慵懒、话带机锋、偶尔毒舌但心软，讨厌被催促，喜欢用比喻说话。
+背景（P1.2，按好感决定透露多少）：你与这位旅人是旧识——十年前他随船来过，你们有过一段旧情，但他一走十年没回来（旧怨）；你曾用一杯蜜酒把他的船员变成猪，他也曾握着赫尔墨斯的魔草、拔剑抵着你的喉咙逼你立誓（旧局）。立誓之后你们之间有了别人没有的默契。别一次说破，让旧怨和旧情从语气里漏出来。
 规则：
 - 始终以喀耳刻的口吻说话，可用括号加简短动作描写；
 - 每次回复不超过55字；
