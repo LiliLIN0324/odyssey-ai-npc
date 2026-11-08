@@ -216,6 +216,12 @@
   @keyframes zeusFlashIn{
     0%{opacity:0;} 6%{opacity:1;} 13%{opacity:.25;} 19%{opacity:1;}
     55%{opacity:.72;} 100%{opacity:0;}}
+  /* ---- P1.6 波塞冬掀筏：全屏暗浪罩（game-feel：环境战多通道——暗浪罩+浪声+屏震；animate：reduced-motion 降级） ---- */
+  #raftStormFx{position:fixed; inset:0; z-index:59; pointer-events:none; opacity:0; transition:opacity .6s ease;
+    background:radial-gradient(circle at 50% 62%, rgba(16,34,54,.40), rgba(6,14,26,.76) 72%),
+               linear-gradient(180deg, rgba(20,40,60,.30), rgba(8,18,32,.52));}
+  #raftStormFx.show{opacity:1; animation:stormBreath 2.8s ease-in-out infinite;}
+  @keyframes stormBreath{0%,100%{filter:brightness(1);}50%{filter:brightness(1.28);}}
   /* ---- 海图浮层（M 键 · 仿古羊皮纸世界海图 + 船位/岛屿状态叠加） ---- */
   #mapOverlay{position:absolute; inset:0; z-index:15; border-radius:14px; display:none;
     background:rgba(6,12,22,.72); backdrop-filter:blur(3px);}
@@ -349,6 +355,7 @@
     #dlgPortrait, #chapterCard.show{animation:none;}
     #crewBanner.show b{animation:none;}
     #zeusFlash{animation:none; opacity:0;}
+    #raftStormFx.show{animation:none;}
     *{transition-duration:.01ms !important;}
   }
 </style>
@@ -1136,6 +1143,170 @@ function doSeaEncounter(){
   toast((fresh?e.name:(e.name+"（又遇）")) + " · " + r);
   sfx(e.id==="storm"?"warn":"alert"); renderHUD(); save();
 }
+/* ==================== P1.6 波塞冬掀筏+获救（17g 原著第 5 卷 · F7「波塞冬的浪」Boss 环境战） ====================
+   出湾后开阔海，波塞冬从独眼巨人山归来发现你——三连浪＝读风考试（malea 教学收束：暗线③「最后一程只能
+   自己吹一口气」）。筏散是必然（原著）；分水岭在面纱：白手圣母伊诺两次赠纱，先疑（原著第一次拒绝）→
+   灰眼睛促收（P2.1 灰袍引路人·掀筏念白落地）→ 收＝canon 游三天漂到斯克里近海；两次都拒＝沉海 dev，
+   海把你推回奥吉吉亚重新造筏（卡吕普索：「我说过，海记你的账」）。风暴未渡过前每次出湾都会再遇。 ==================== */
+const OGGIA_EXIT = {x:29*WTS+WTS/2, y:12*WTS+WTS/2};   /* 奥吉吉亚岛心＝出湾推筏起点 */
+let _raftStormT = 0;
+function raftStormTick(dt){
+  if (scene!=="world" || !state.ogygiaLeft || state.raftStormDone){ _raftStormT = 0; return; }
+  if (dlgOpen || titleOn || chapterOn || mapOpen) return;   /* 界面全清才蓄力（海遇/malea 同款门控） */
+  const ch = worldTile(Math.floor(boat.x/WTS), Math.floor(boat.y/WTS));
+  if (ch==="#"||ch==="X"||ch==="G") return;                 /* 陆地/贴岛不触发 */
+  if (Math.hypot(boat.x-OGGIA_EXIT.x, boat.y-OGGIA_EXIT.y) < 170) return;
+  _raftStormT += dt;
+  if (_raftStormT >= 1.2){ _raftStormT = 0; doRaftStorm(); }
+}
+function raftFx(on){
+  let el = document.getElementById("raftStormFx");
+  if (!el){ el=document.createElement("div"); el.id="raftStormFx"; document.getElementById("stage").appendChild(el); }
+  el.classList.toggle("show", !!on);
+}
+function doRaftStorm(){
+  waveSfx(); addTrauma(0.55); raftFx(true);
+  addMemory("海变了脸——三面的浪同时立起来。波塞冬从独眼巨人的山路上回来，看见了你的筏", 4, "poseidon");
+  showAsk("第 五 章 · 波 塞 冬 的 浪","第 一 道 浪",
+    "浪墙从左舷立起来，比桅杆还高。风向纹在西——马里阿角教过你：贴着风，把船头咬进浪缝。",
+    "「躲得过大石，躲不过海。」有人在浪底冷冷地说。", [
+    {label:"满舵迎浪，船头咬进浪缝", hint:"读风 · 马里阿角学的", fn:()=>{
+      sfx("attack"); addTrauma(0.45); waveTwo(); }},
+    {label:"侧身让开浪头", hint:"……筏太轻了", fn:()=>{
+      state.hp=Math.max(1,state.hp-8); sfx("hurt"); addTrauma(0.7); feedback("large"); renderHUD();
+      toast("侧舷受浪——整张筏斜起来，半边被浪舌舔走。（血 -8）");
+      waveTwo(); }},
+  ]);
+}
+function waveTwo(){
+  showAsk("第 五 章 · 波 塞 冬 的 浪","第 二 道 浪",
+    "第二道浪叠着第一道的脊背。你亲手捆的筏——绳结吃水越深，咬得越牢。",
+    null, [
+    {label:"把储粮推到筏心压舱，人坐低", hint:"自己捆的绳结，认得", fn:()=>{
+      sfx("attack"); addTrauma(0.45); waveThree(); }},
+    {label:"卸下一根木料减重", hint:"让它浮得更高", fn:()=>{
+      state.hp=Math.max(1,state.hp-8); sfx("hurt"); addTrauma(0.7); feedback("large"); renderHUD();
+      toast("筏身一轻就被浪掀了半转——柴是柴，不是压舱石。（血 -8）");
+      waveThree(); }},
+  ]);
+}
+function waveThree(){
+  showAsk("第 五 章 · 波 塞 冬 的 浪","第 三 道 浪",
+    "第三道浪比前两道都高——高到遮住了天。风袋在你包里，是空的：这一程，没有神替你吹风。",
+    "（暗线③的收束：袋空了，只能你自己吹一口气——那才是你的风。）", [
+    {label:"对着浪，你自己吹一口气", hint:"你的风 · 暗线③收束", fn:()=>{
+      sfx("bless"); addTrauma(0.5); raftBreak(); }},
+    {label:"把空风袋扔进海里祭浪", hint:"……它不欠你了", fn:()=>{
+      state.hp=Math.max(1,state.hp-8); sfx("hurt"); addTrauma(0.8); feedback("large"); renderHUD();
+      toast("浪把风袋卷走的同一瞬，也掀了筏角。（血 -8）");
+      raftBreak(); }},
+  ]);
+}
+function raftBreak(){
+  waveSfx(); addTrauma(0.9); feedback("large"); sfx("attack");
+  showAsk("第 五 章 · 波 塞 冬 的 浪","筏　散　了",
+    "一记从天而降的巨浪把筏拆成了柴。你呛进水里——咸的，黑的，一直往下坠。",
+    "「你掀了独眼巨人的账——现在，海来收利息。」", [
+    {label:"伸手——水里有一只白手，递来面纱", hint:"白手圣母伊诺 · 原著第5卷", fn:()=>takeVeil("first")},
+    {label:"神的礼物，别碰", hint:"原著：你第一次拒绝了", fn:()=>{
+      state.hp=Math.max(1,state.hp-10); sfx("hurt"); addTrauma(0.8); renderHUD();
+      toast("白手缩回浪里。你往下沉，咸水灌进耳朵——雾里，有什么东西在看你。");
+      veilSecond(); }},
+  ]);
+}
+function veilSecond(){
+  showAsk("第 五 章 · 波 塞 冬 的 浪","灰 眼 睛 · 再 一 次",
+    "沉得更深了。雾里，一双灰眼睛静静看了你一眼——那只白手又一次递到面前：纱在水里张开着，像一小片不沉的天。",
+    "（原著第 5 卷：第二次，你收下了它。）", [
+    {label:"收下面纱，系上手腕", hint:"这一次，你没有再疑", fn:()=>takeVeil("second")},
+    {label:"仍然不肯——自己的命自己扛", hint:"……", fn:()=>raftLost()},
+  ]);
+}
+function takeVeil(mode){
+  state.raftVeilTaken = true; state.raftStormDone = true;
+  raftFx(false); gainXp(50); sfx("bless"); feedback("large");
+  addMemory(mode==="second"
+    ? "灰眼睛看了你一眼，你收下了白手圣母的面纱——三天两夜，浪把你交还给费埃克斯人的滩"
+    : "白手圣母的面纱兜住了你——你没有等第二次。三天两夜，浪把你交还给海岸", 5, "leukothea");
+  boat.x = 17*WTS+WTS/2+95; boat.y = 13*WTS+WTS/2-15;    /* 斯克里岛东侧近海（原著：浪把你交还给费埃克斯人的滩） */
+  renderHUD(); save();
+  showChapter("concept-art/08-斯克里岛.jpg","第 五 章","游　三　天","毁筏的人游了三天——面纱兜住了他",
+    (mode==="second"
+      ? "灰眼睛在雾里看了你一眼，你收下了纱。"
+      : "你没有等第二次——面纱系上了手腕。")
+    + "三天两夜，咸水咬着伤口。第三夜，浪把你推上一片陌生的白滩：上游有歌声，和一群洗衣服的姑娘。（历练 +50 · 斯克里岛就在眼前）");
+}
+function raftLost(){
+  state.raftStormFail = true;
+  raftFx(false); sfx("hurt"); addTrauma(1); feedback("large");
+  state.hp = Math.max(10, state.hp-30);
+  state.raft.wood = 0;                                   /* 重新造筏（原著：筏没了就得再造）；时辰/储粮保留——考过的不必重考 */
+  scene = "world"; state.ogygiaLeft = false;             /* 回岛重来：须再次出筏台 */
+  boat.x = 29*WTS+WTS/2+40; boat.y = 12*WTS+WTS/2+30;    /* 出湾同款落点 */
+  gainXp(10);
+  addMemory("你把面纱推回去过一次——浪收走了你的筏，海把你推回奥吉吉亚的滩。卡吕普索说：我说过，海记你的账", 5, "poseidon");
+  renderHUD(); save();
+  showChapter("concept-art/06-奥吉吉亚-卡吕普索.jpg","第 五 章","海　记　了　账","毁筏的人把面纱推了回去",
+    "浪把你的名字按进水里，又把你整个人推回奥吉吉亚的滩。岛上的日历还是昨天——卡吕普索在栈桥上，像从没等你走成过：「我说过，海记你的账。」（重新造筏：木料 ×3；时辰与储粮仍算数 · 历练 +10）");
+}
+/* ==================== F5 斯库拉六头快反战（17g 原著第 12 卷 · §17h F5：船舷反应战） ====================
+   带话/静水＝改写出口（scyllaDebtPaid 静默放行，不扣船员）；硬闯＝原著——六头轮探，每头 0.6s 窗口
+   按 E 砍/拉救回：救回＝改写（dev six_saved 从六张嘴里抢回的人），错过＝该头叼走 1 名船员（接 P1.1
+   crew 账本）。六头全救回 crew 不折损＝「你比荷马多救回六个人」；全错过＝原著 6 人全失。 */
+const SC_HEADS = 6, SC_WINDOW = 0.6, SC_WARN = 0.45, SC_RET = 0.4;
+const SC = { on:false, t:0, head:0, phase:"idle", pt:0, saved:0, lost:0, done:false };
+function startScyllaCombat(){
+  if (scene!=="strait" || SC.on) return;
+  if ((state.crew||0)<=0) return;                       /* 无船员可救 → 不触发（走原物品代价兜底） */
+  SC.on=true; SC.t=0; SC.head=0; SC.phase="idle"; SC.pt=0; SC.saved=0; SC.lost=0; SC.done=false;
+  sfx("alert"); addTrauma(0.3); feedback("medium");
+  addMemory("六根颈子同时从雾里垂下来——硬闯声之海峡，是要从斯库拉嘴里把船员抢回来的。每一头，你都只有一瞬", 4, "strait");
+  toast("六根颈子同时垂到船侧——每头探出时有一瞬（0.6s）按 E 砍/拉：救回一头船员。快反战开始！");
+  renderHUD();
+}
+function scyllaCombatTick(dt){
+  if (!SC.on) return;
+  if (dlgOpen||titleOn||chapterOn||mapOpen) return;       /* 界面打开冻结窗口（防海图/章节卡空转） */
+  SC.t += dt; SC.pt += dt;
+  if (SC.phase==="idle"){
+    if (SC.pt >= SC_WARN){ SC.phase="strike"; SC.pt=0; sfx("attack"); }
+  } else if (SC.phase==="strike"){
+    if (SC.pt >= SC_WINDOW){ scyllaMiss(); }            /* 窗口错过 → 该头叼走 1 名船员 */
+  } else if (SC.phase==="return"){
+    if (SC.pt >= SC_RET){ scyllaNext(); }
+  }
+}
+function scyllaStrike(){                                 /* E 键命中：砍/拉救回当前头 */
+  if (!SC.on || SC.phase!=="strike") return;
+  SC.saved++; SC.phase="return"; SC.pt=0;
+  sfx("pick"); popText(aiaPlayer.x, aiaPlayer.y-30, "抢回一个！", "#7fd0a0"); addTrauma(0.1);
+  if (SC.saved >= SC_HEADS){ scyllaEnd(); }
+}
+function scyllaMiss(){
+  SC.lost++; SC.phase="return"; SC.pt=0;
+  sfx("die"); popText(aiaPlayer.x, aiaPlayer.y-30, "叼走一个…", "#e08080"); addTrauma(0.3);
+  if (SC.lost>=SC_HEADS){ scyllaEnd(); }
+}
+function scyllaNext(){
+  SC.head++;
+  if (SC.head>=SC_HEADS){ scyllaEnd(); return; }
+  SC.phase="idle"; SC.pt=0;
+}
+function scyllaEnd(){
+  SC.on=false; SC.done=true;
+  if (SC.lost>0) loseCrew(SC.lost, "斯库拉的嘴各叼走了一名水手（六头快反战）");
+  const all = SC.lost===0;
+  if (all) state.scSixSaved = true;                       /* F5 全救回＝改写（ACHIV six_saved 判定） */
+  state.straitStage=2;
+  gainXp(all?40:20); sfx(all?"bless":"die"); feedback("large");
+  addMemory(all
+    ? "你从斯库的六张嘴里抢回了六个人——一头不落。海沉默了一会儿，像是没料到这一页"
+    : `你抢回了 ${SC.saved} 个人，被叼走 ${SC.lost} 个。海峡静下来，雾在你身后合拢`, all?5:3, "scylla");
+  toast(all
+    ? "六头全被你砍回——船上一个人也没少。荷马第 12 卷写的是六人全失；你比荷马多救回六个人。"
+    : (SC.lost===0?"":"六头归位，雾在船后合拢。被叼走的人，名字沉进浪里。") + (SC.saved>0?`你抢回了 ${SC.saved} 个人。`:""));
+  renderHUD(); save();
+}
 function prologueSpot(s){
   const P = PROLOGUE_SITES[scene];
   if (scene==="telepylos" && FD.on && s.type!=="fleetguard"){ toast("石头还在落——先守住船队！"); return; }
@@ -1656,6 +1827,11 @@ function ensureState(){
   if (state.crewNoiseDone===undefined) state.crewNoiseDone=false;
   if (state.crewSaved===undefined) state.crewSaved=false;
   if (state.zeusStruck===undefined) state.zeusStruck=false;
+  /* P1.6 掀筏：旧档补默认值（旧档无此三字段＝未触发过，行为与旧版一致） */
+  if (state.raftStormDone===undefined) state.raftStormDone=false;
+  if (state.raftStormFail===undefined) state.raftStormFail=false;
+  if (state.raftVeilTaken===undefined) state.raftVeilTaken=false;
+  if (state.scSixSaved===undefined) state.scSixSaved=false;   /* F5 斯库拉全救回（改写）flag */
   crewLedgerLight();
   if (state.tookWine===undefined) state.tookWine=false;
   if (state.targetHits===undefined) state.targetHits=0;
@@ -2088,6 +2264,11 @@ const ACHIV = [
   /* —— P1.3 太阳岛结构倒置（17g 原著第12卷：船员鼓噪）—— */
   { id:"zeus_survived", name:"最后一人", desc:"你睡着时他们宰了牛，宙斯的雷把船和人一起收走了——九天后，浪把你一个人推上了奥吉吉亚。荷马写的就是这一个", cond:()=>state.zeusStruck, canon:true },
   { id:"crew_saved", name:"拦住船员的人", desc:"他们饿得眼睛发绿，你按住了刀——他们活着，但恨了你很久。荷马写的是你睡着", cond:()=>state.crewSaved, dev:"原著里你没能拦住他们" },
+  /* —— P1.6 波塞冬掀筏（17g 原著第 5 卷：毁筏·面纱·三天）—— */
+  { id:"raft_survived", name:"毁筏的人游了三天", desc:"波塞冬掀翻了你自己造的筏——白手圣母的面纱兜住你，三天两夜后，浪把你交还给海岸。荷马第 5 卷写的就是这一段", cond:()=>state.raftVeilTaken, canon:true },
+  { id:"lost_to_poseidon", name:"海记了你的账", desc:"你把面纱推回去过一次——浪收走了筏，海把你推回奥吉吉亚。卡吕普索说：我说过，海记你的账", cond:()=>state.raftStormFail, dev:"原著里你最终收下了面纱" },
+  /* —— F5 斯库拉六头快反战（17h F5 · 原著第12卷：六头各叼走一名船员）—— */
+  { id:"six_saved", name:"从六张嘴里抢回的人", desc:"声之海峡——六头轮探，你一头不落全抢了回来。荷马第 12 卷写的是六人全失；你比荷马多救回六个人", cond:()=>!!state.scSixSaved, dev:"原著六人全失，你把他们都救了回来" },
 ];
 function achivTick(){
   for (const a of ACHIV){
@@ -2210,6 +2391,10 @@ aeolus: [
                   line:()=>"（她把门开着）夜里的海声，就当是摇篮曲。想走的时候，筏台没拆。"},
     {id:"alone",  w:0.9, cond:()=>state.crewLit&&(state.crew||0)===0,
                   line:()=>"（她看了看你身后的空滩）只有你一个人上岸。……海把其他人都留在浪里了？"},
+    {id:"debt",  w:1.0, cond:()=>state.raftStormFail&&!state.raftStormDone,
+                 line:()=>"（她头也不抬，梭子没停）我说过——海记你的账。木料在筏台边等着，时辰没变，海也不会变。"},
+    {id:"veil_told", w:0.6, cond:()=>state.raftStormDone&&state.raftVeilTaken,
+                 line:()=>"（她看了一眼你的手腕）白手圣母的面纱。……她从她的海里捞过很多人——捞你的那一下，最用力。"},
   ],
   nausicaa: [
     {id:"care_hungry", w:0.9, cond:()=>state.hunger<=30,
@@ -2481,6 +2666,8 @@ addEventListener("keydown", e=>{
   if (["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(k)){ keys.add(k); e.preventDefault(); }
   if (k==="e"){
     e.preventDefault();
+    /* F5 斯库拉快反战：strike 窗口内 E=砍/拉救回，不进普通交互 */
+    if (SC.on && SC.phase==="strike"){ scyllaStrike(); return; }
     /* 预按：当前无可交互目标才进缓冲，避免双触发 */
     const has = scene==="world" ? !!islandNear() : !!aiaNear();
     if (!has) eBufAt = performance.now();
@@ -2690,6 +2877,27 @@ function thunderSfx(){
     g.gain.exponentialRampToValueAtTime(0.001, t+1.8);
     n.connect(f); f.connect(g); g.connect(sfxGain||AC.destination);
     n.start(t); n.stop(t+1.9);
+  }catch(e){}
+}
+/* P1.6 浪墙（audio-design：浪＝低频噪声涌浪 swell-decay，非单振荡器；与 thunderSfx 同源复用噪声缓冲） */
+function waveSfx(){
+  if (!sndOn) return;
+  try{
+    audioInit(); if (!AC) return;
+    if (AC.state === "suspended") AC.resume();
+    const t = AC.currentTime;
+    const n = AC.createBufferSource(); n.buffer = getNoise(); n.loop = true;
+    const f = AC.createBiquadFilter(); f.type = "lowpass";
+    f.frequency.setValueAtTime(240, t);
+    f.frequency.exponentialRampToValueAtTime(40, t+2.2);
+    const g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.5, t+0.35);    /* 涌起 */
+    g.gain.exponentialRampToValueAtTime(0.18, t+1.1);
+    g.gain.exponentialRampToValueAtTime(0.38, t+1.5);    /* 砸落 */
+    g.gain.exponentialRampToValueAtTime(0.001, t+2.4);
+    n.connect(f); f.connect(g); g.connect(sfxGain||AC.destination);
+    n.start(t); n.stop(t+2.5);
   }catch(e){}
 }
 function sndToggle(){
@@ -2959,6 +3167,11 @@ function showFinale(mode, way, name){
     : crewN>=7
     ? `你带回来 ${crewN} 个人。甲板空了一半，但活着回家的每一个，都会把死者的名字唱下去。`
     : `你带回来 ${crewN} 个人。${crewN===1?"那一个名字跟着你走过了火与浪——他比十二个都重。":"他们和你一样，在怪物中间学会了活着回家。"}`);
+  /* 掀筏判词（P1.6 原著第 5 卷）：波塞冬的那一记，史诗也记一笔 */
+  if (state.raftStormDone) paras.push(state.raftStormFail
+    ? "波塞冬掀翻过你的筏——你曾把面纱推回去一次，海收了筏，没收你；第二次，白手圣母的手接住了下沉的人。（原著 · 毁筏的人游了三天）"
+    : "波塞冬掀翻了你自己造的筏——白手圣母的面纱兜住了你，三天两夜，浪把你交还给海岸。（原著 · 毁筏的人游了三天）");
+  else if (state.raftStormFail) paras.push("你把面纱推回去过一次，海把你推回奥吉吉亚——后来的事，歌里还没唱到。");
   paras.push(stay ? "锁没有锁眼。它锁的从来不是门——是「回家」这两个字的发音。"
     : bpath ? "船头没有调向西，也没有调向东。你想去哪儿，哪儿就是船头。"
     : "船头调向西的时候，你认下了自己的名字——这一回，它是你的了。");
@@ -3164,14 +3377,15 @@ function interact(){
       showChapter("concept-art/03-斯库拉海峡.jpg","第 三 章","海 峡 让 水","……她也放不下的那个人，是你吗？","她久久沉默，沉入海底。中间的静水亮了——「替我看着她。她不会对自己手下留情。」");
       renderHUD(); save(); return;
     }
-    /* P1.1 挂点②：斯库拉 -6（原著第12卷：六头各叼走一名船员；账本未点亮时保留旧版物品代价兜底） */
+    /* P1.1 挂点② + F5 斯库拉六头快反战（原著第12卷：六头各被叼走；有船员→进快反战，可救回改写） */
     if ((state.crew||0)>0){
+      if (!SC.done) return startScyllaCombat();           /* 六头轮探：每头 0.6s 窗口按 E 砍/拉救回（改写机会） */
       showChapter("concept-art/characters/08-斯库拉.jpg","第 三 章","六 头 · 付 价","硬闯海峡的代价","六条颈子同时垂下来——每一条，都叼走了一名水手。船上安静得可怕。");
-      state.crewScylla=true; loseCrew(6, "斯库拉的六张嘴各叼走了一名水手");
+      state.crewScylla=true; loseCrew(6, "斯库拉的六根嘴各叼走了一名水手");
     } else {
       showChapter("concept-art/characters/08-斯库拉.jpg","第 三 章","六 头 · 付 价","硬闯海峡的代价","六条颈子同时垂下来——不咬你，咬你的行囊。");
       const lost = takeShine(6);
-      addMemory("旅人硬闯斯库拉海峡，六头怪吃走了他最亮的东西："+(lost.join("、")||"（行囊空空，咬的是他）"), 3);
+      addMemory("旅人硬闯斯库拉海峡，六头怪叼走了他最亮的东西："+(lost.join("、")||"（行囊空空，咬的是他）"), 3);
     }
     state.straitStage=2;
     renderHUD(); save(); return;
@@ -3906,6 +4120,22 @@ function drawFleetHud(){
   const t = `守船 ${FD.wave}/${FD_WAVES} · 拖回 ${FD.saved} · 碎 ${FD.lost}`;
   ctx.fillStyle="rgba(0,0,0,.5)"; ctx.fillText(t, 501, 41);
   ctx.fillStyle="#f4efe4"; ctx.fillText(t, 500, 40);
+}
+/* F5 斯库拉快反战 HUD（屏幕空间：六头轮探计数 + 当前头窗口条） */
+function drawScyllaHud(){
+  if (scene!=="strait" || !SC.on) return;
+  ctx.textAlign="center";
+  const t = `斯库拉六头 ${Math.min(SC.head+ (SC.phase==="return"||SC.phase==="idle"?1:0), SC_HEADS)}/${SC_HEADS} · 救回 ${SC.saved} · 被叼 ${SC.lost}`;
+  ctx.font="600 14px 'Segoe UI','Microsoft YaHei'";
+  ctx.fillStyle="rgba(0,0,0,.5)"; ctx.fillText(t, 501, 41);
+  ctx.fillStyle="#e8eef4"; ctx.fillText(t, 500, 40);
+  if (SC.phase==="strike"){                              /* 窗口提示条（0.6s 倒计时） */
+    const r = Math.max(0, SC.pt/SC_WINDOW);
+    ctx.fillStyle="rgba(30,60,80,.6)"; ctx.fillRect(380,56,240,10);
+    ctx.fillStyle= r>0.6 ? "#ffd66b" : "#ff7a6b"; ctx.fillRect(382,58,236*r,6);
+    ctx.font="600 12px 'Segoe UI'"; ctx.fillStyle="#ffd66b";
+    ctx.fillText("按 E 砍/拉——救回这头船员！", 500, 84);
+  }
 }
 function drawBoat(et){
   /* 尾迹采样：移动才推入，护航队沿真实航迹排布（停船时保持编队不塌） */
@@ -7153,7 +7383,9 @@ setInterval(()=>{
   achTimer += dt; if (achTimer >= 2){ achTimer = 0; achivTick(); }   /* 命运锚点轮询：2s 扫一次成就（零侵入不漏发） */
   if (scene==="hades"||scene==="aeolia"||scene==="ogggia"||scene==="scheria") npcWalkTick(dt);
   if (scene==="telepylos") fleetDefenseTick(dt);   /* F2 守船战：波次/预警/结算（对话打开时暂停在 tickMove 同层） */
+  if (scene==="strait") scyllaCombatTick(dt);      /* F5 斯库拉快反战：六头轮探窗口（被界面门控跳过） */
   sunNoiseTick(dt);   /* P1.3 太阳岛船员鼓噪：界面全清后 2.4s 触发抉择 */
+  raftStormTick(dt);   /* P1.6 波塞冬掀筏：出湾后开阔海 1.2s 蓄力触发（未渡过风暴前每次出湾都会再遇） */
 }, 20);
 function loop(t){
   const et=(t-T0)/1000;
@@ -7184,6 +7416,7 @@ function loop(t){
   drawCareBadge(et);
   ctx.restore();
   drawFleetHud();   /* 守船战计数（屏幕空间 HUD，restore 后画不随镜头漂移） */
+  drawScyllaHud();  /* F5 斯库拉快反战 HUD：六头计数 + 窗口条 */
   if (scene!=="world") markLeg(scene);
   seaEncounterTick();
   maleaTick();
@@ -7219,6 +7452,9 @@ window.__game={state, scene, boat, player:aiaPlayer, witch, seer, aeolus, boar, 
   /* 第三章：声之海峡 */
   showLyric, closeLyric, buildLyric, takeShine, gambleVortex,
   straitInfo:()=>({stage:state.straitStage, wax:state.waxEars, mast:state.mastTied, msg:state.circeMessage, paid:state.scyllaDebtPaid, cleared:state.straitCleared, sunlit:state.sunlit}),
+  /* F5 斯库拉快反战（17h） */
+  SC:()=>SC, startScyllaCombat, scyllaCombatTick, scyllaStrike,
+  scInfo:function(){ return {on:SC.on, head:SC.head, phase:SC.phase, saved:SC.saved, lost:SC.lost, done:SC.done, sixSaved:!!state.scSixSaved}; },
   /* 第四章：太阳岛 */
   SUNSPOTS, memoryGreeting,
   sunInfo:()=>({wrath:state.sunWrath, blessed:state.sunBlessed, name:state.sunName, debt:state.sunDebt, warn:state.slaughterWarn}),
@@ -7234,6 +7470,9 @@ window.__game={state, scene, boat, player:aiaPlayer, witch, seer, aeolus, boar, 
   /* P1.3 太阳岛鼓噪抉择（17g） */
   sunNoiseTick, crewNoiseEvent, crewHeld, crewSlept, thunderSfx,
   sunNoiseInfo:function(){ return {wait:+sunNoiseT.toFixed(2), done:!!state.crewNoiseDone, saved:!!state.crewSaved, struck:!!state.zeusStruck, crew:state.crew||0, fleet:state.fleet||0}; },
+  /* P1.6 波塞冬掀筏（17g 原著第 5 卷） */
+  raftStormTick, doRaftStorm, waveSfx, takeVeil, raftLost,
+  raftStormInfo:function(){ return {done:!!state.raftStormDone, fail:!!state.raftStormFail, veil:!!state.raftVeilTaken, left:!!state.ogygiaLeft}; },
   /* 护航船队（17h 视觉）+ ambient 观测 */
   boatTrail:()=>boatTrail, drawEscortFleet,
   ambInfo:function(){ return {active:ambActive, text:ambText, npc:typeof currentNPC!=="undefined"?currentNPC:null}; }};
