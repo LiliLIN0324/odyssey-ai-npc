@@ -207,6 +207,15 @@
     background:radial-gradient(circle at 50% 55%, rgba(90,160,90,.55), rgba(30,70,40,.8) 70%);
     animation:pigFogIn 1.9s ease-in-out both;}
   @keyframes pigFogIn{0%{opacity:0;} 35%{opacity:1;} 75%{opacity:1;} 100%{opacity:0;}}
+  /* ---- P1.3 宙斯雷劈（game-feel：一次打击叠多通道——白闪+闪电锯齿+屏震+雷声；animate：prefers-reduced-motion 降级） ---- */
+  #zeusFlash{position:fixed; inset:0; z-index:60; pointer-events:none;
+    background:radial-gradient(circle at 50% 42%, rgba(255,255,240,.96), rgba(255,236,150,.72) 34%, rgba(40,52,80,.66) 100%);
+    animation:zeusFlashIn 2.6s ease-out both;}
+  #zeusFlash svg{position:absolute; inset:0; width:100%; height:100%;}
+  #zeusFlash polyline{filter:drop-shadow(0 0 14px rgba(255,244,180,.95));}
+  @keyframes zeusFlashIn{
+    0%{opacity:0;} 6%{opacity:1;} 13%{opacity:.25;} 19%{opacity:1;}
+    55%{opacity:.72;} 100%{opacity:0;}}
   /* ---- 海图浮层（M 键 · 仿古羊皮纸世界海图 + 船位/岛屿状态叠加） ---- */
   #mapOverlay{position:absolute; inset:0; z-index:15; border-radius:14px; display:none;
     background:rgba(6,12,22,.72); backdrop-filter:blur(3px);}
@@ -339,6 +348,7 @@
     #dlg.open, #dlg .bubble{animation:none;}
     #dlgPortrait, #chapterCard.show{animation:none;}
     #crewBanner.show b{animation:none;}
+    #zeusFlash{animation:none; opacity:0;}
     *{transition-duration:.01ms !important;}
   }
 </style>
@@ -1486,6 +1496,10 @@ let state = {
   sunName: null,         /* 报给太阳神的名字（终章「认名」锚点之一） */
   sunDebt: null,         /* 借牛记录 {pledge}（以名字作保，判词留白） */
   slaughterWarn: false,  /* 宰牛二段确认（E 两次，防误触） */
+  /* —— P1.3 太阳岛结构倒置（17g 原著第12卷）：船员鼓噪抉择 —— */
+  crewNoiseDone: false,  /* 鼓噪事件已触发过（一次性；拦住/睡着都算结） */
+  crewSaved: false,      /* 拦住船员的手（改写·dev：原著你睡着了）——船员免死但恨你 */
+  zeusStruck: false,     /* 睡着放任 → 宙斯雷劈（原著·canon：全船覆灭只剩你，漂九天到奥吉吉亚） */
   memGreeted: [],        /* 已用作开场问候的记忆 t 列表（memoryGreeting 去重） */
   circeLeft: false,      /* 喀耳刻好感托付线：她留你过冬（原著留宿一年·生忒勒戈斯的前奏） */
   /* —— P1.2 埃亚岛三件套（17g 原著对齐第10卷）：魔草-蜜酒-立誓 —— */
@@ -1638,6 +1652,10 @@ function ensureState(){
   if (state.crewCyclops===undefined) state.crewCyclops=!!state.polHeard;
   if (state.crewScylla===undefined) state.crewScylla=!!(state.straitStage>=2&&!state.scyllaDebtPaid);
   if (state.crewSun===undefined) state.crewSun=!!state.sunWrath;
+  /* P1.3 鼓噪抉择：旧档补默认值（旧档无此三字段＝未触发过，行为与旧版一致） */
+  if (state.crewNoiseDone===undefined) state.crewNoiseDone=false;
+  if (state.crewSaved===undefined) state.crewSaved=false;
+  if (state.zeusStruck===undefined) state.zeusStruck=false;
   crewLedgerLight();
   if (state.tookWine===undefined) state.tookWine=false;
   if (state.targetHits===undefined) state.targetHits=0;
@@ -2067,6 +2085,9 @@ const ACHIV = [
   /* —— P1.2 埃亚岛三件套（17g 原著第 10 卷）—— */
   { id:"moly_rescue", name:"魔草破咒",      desc:"握着黑根银花的魔草，喝下了她的蜜酒——咒语在你身上失效。原版第10卷：赫尔墨斯的馈赠与你的拔剑", cond:()=>state.circeSworn, canon:true },
   { id:"pigged", name:"岛上的猪都有你的眼睛", desc:"没拿魔草就喝了那杯酒——你在泥里拱了好几天才想起来自己是谁。原版里，这没发生在奥德修斯身上", cond:()=>state.pigged, dev:"你把原著没写的失手演了一遍" },
+  /* —— P1.3 太阳岛结构倒置（17g 原著第12卷：船员鼓噪）—— */
+  { id:"zeus_survived", name:"最后一人", desc:"你睡着时他们宰了牛，宙斯的雷把船和人一起收走了——九天后，浪把你一个人推上了奥吉吉亚。荷马写的就是这一个", cond:()=>state.zeusStruck, canon:true },
+  { id:"crew_saved", name:"拦住船员的人", desc:"他们饿得眼睛发绿，你按住了刀——他们活着，但恨了你很久。荷马写的是你睡着", cond:()=>state.crewSaved, dev:"原著里你没能拦住他们" },
 ];
 function achivTick(){
   for (const a of ACHIV){
@@ -2124,6 +2145,8 @@ const AMBIENT = {
                    line:()=>"酒还温着。什么时候想通，什么时候来。"},
     {id:"sworn_after", w:0.8, cond:()=>state.circeSworn,
                    line:()=>"（她朝猪栏那边抬了抬下巴）他们身上还有猪的影子——洗过澡就好了，慢慢来。"},
+    {id:"sun_warn", w:0.7, cond:()=>state.crewLit&&(state.crew||0)>0&&!state.sunWrath&&!state.sunBlessed&&!!state.prophecy,
+                   line:()=>"（她头也不抬）太阳岛——牛是神的。跟他们讲清楚，饿了先钓鱼。"},
     {id:"idle",   w:0.15, cond:()=>true, line:()=>"来了就进来，别杄在风口。"},
   ],
 seer: [
@@ -2217,6 +2240,13 @@ line:()=>"你醒的时候，海把你的船推上了我们的滩——别怕，�
     {id:"sail",  w:0.6, cond:()=>!!state.troyDone,
                  line:()=>"（他望向锚地）十二艘船整帆了。回家的风，比打仗的风硬。"},
   ],
+  /* P1.3 圣牛群 AMBIENT（dialogue-systems：对船员的感知——不恐吓不劝宰，只陈述；红线不动） */
+  cattle: [
+    {id:"crew_noise", w:1.0, cond:()=>state.crewLit&&(state.crew||0)>0&&!state.sunWrath&&!state.sunBlessed,
+     line:()=>`（金褐的眸子转向你身后那群影子）他们看我们的眼神，和狼看羊是一样的。头儿——${(state.crew||0)<=6?"你在海峡拦不住浪，这个拦得住。":"管住你的船员。"}`},
+    {id:"after_storm", w:1.0, cond:()=>!!state.zeusStruck,
+     line:()=>"（牛群远远站成半圆，谁也不低头）雷落下来那天，你睡着了。这片草场多了一百个影子——他们还是你的船员，只是不再说话。"},
+  ],
 };
 function ambientAnchor(npc){
   if (npc==="witch") return witch;
@@ -2226,6 +2256,7 @@ function ambientAnchor(npc){
   if (npc==="calypso") return calypso;
   if (npc==="nausicaa") return nausicaa;
   if (npc==="epeius" && scene==="troy"){ const s=PROLOGUE_SPOTS().find(p=>p.type==="epeius"); return s?{x:s.x,y:s.y}:null; }
+  if (npc==="cattle"){ const s=SUNSPOTS.find(p=>p.type==="cattle"); return s?{x:s.x,y:s.y}:null; }   /* P1.3 圣牛锚点 */
   return null;
 }
 let ambTimer=0, ambUntil=0, ambAnchor=null, ambText="", ambActive=null;
@@ -2640,6 +2671,27 @@ function sfx(kind){
     o.start(t); o.stop(t+c[2]+0.02);
   }catch(e){}
 }
+/* P1.3 雷声（audio-design：雷＝滤波噪声双脉冲，非单振荡器；复用环境层噪声缓冲） */
+function thunderSfx(){
+  if (!sndOn) return;
+  try{
+    audioInit(); if (!AC) return;
+    if (AC.state === "suspended") AC.resume();
+    const t = AC.currentTime;
+    const n = AC.createBufferSource(); n.buffer = getNoise(); n.loop = true;
+    const f = AC.createBiquadFilter(); f.type = "lowpass";
+    f.frequency.setValueAtTime(420, t);
+    f.frequency.exponentialRampToValueAtTime(60, t+1.6);
+    const g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.55, t+0.05);   /* 首劈 */
+    g.gain.exponentialRampToValueAtTime(0.12, t+0.45);
+    g.gain.exponentialRampToValueAtTime(0.42, t+0.62);   /* 回响第二击 */
+    g.gain.exponentialRampToValueAtTime(0.001, t+1.8);
+    n.connect(f); f.connect(g); g.connect(sfxGain||AC.destination);
+    n.start(t); n.stop(t+1.9);
+  }catch(e){}
+}
 function sndToggle(){
   sndOn = !sndOn;
   document.getElementById("sndBtn").textContent = sndOn ? "🔊 音效" : "🔇 音效";
@@ -2857,6 +2909,8 @@ function showFinale(mode, way, name){
   paras.push(state.sunBlessed
     ? ("太阳岛上你守住了誓言。"+(state.sunName?`「${state.sunName}」——他记住了这个名字。`:"")+"一缕走得过黑暗的光，此刻正在你包里。")
     : "圣牛的血漫过草场。你吃饱了——胃是满的，天是阴的；往后每一阵风里都有闷雷。");
+  if (state.crewSaved) paras.push("那一天你按住了船员的手——荷马写的是你睡着，可你醒着。他们恨了你一阵子，后来在伊萨卡的雾里，全都明白了。");
+  if (state.zeusStruck && !stay && !guest && !bpath) paras.push("九天的漂流你一个人数完了——十二个名字沉在太阳岛的浪里，没有一个怪你，因为雷落下来时，你也在睡梦里。");
   if (stay){
     paras.push("你留在了奥吉吉亚。永生的锁合上，日历重新开始走——第一件要数清的，是你为了什么留下来。没有归乡，只有滞留。她不提这件事，她也什么都不提。");
   } else if (guest){
@@ -3161,8 +3215,12 @@ function interact(){
     addItem("牛肉",2);
     sfx("die"); feedback("large");
     addMemory("旅人宰了太阳岛的一头圣牛——饥饿赢了誓言", 4, "any");
-    /* P1.1 挂点③：太阳岛雷劈清零（原著第12卷末；P1.3 将倒置为「船员鼓噪」抉择，本挂点届时并入放任分支） */
-    state.crewSun=true; loseCrew(state.crew||0, "宙斯的雷从阴云里追落——整船人没能跟你看到下一片海");
+    /* P1.1 挂点③/P1.3：鼓噪抉择已倒置（crewNoiseEvent），此处是玩家拦过之后（或旧档无船员时）仍硬宰的路径——
+       挂点④并入硬宰分支；why 按是否拦过区分；此路不置 zeusStruck（canon「最后一人」只给睡着放任路径） */
+    state.crewNoiseDone = true;
+    state.crewSun=true; loseCrew(state.crew||0, state.crewSaved
+      ? "你亲手举了刀——按住过的那双手，终究没能拦住你自己"
+      : "宙斯的雷从阴云里追落——整船人没能跟你看到下一片海");
     toast("血腥味漫开的那一刻，天上的光暗了一分。你吃饱了——胃里是满的，心里是空的。（饱食回满 · 世界 flag「太阳记恨」：此后天色常阴）（获得 牛肉×2）");
     renderHUD(); save(); return;
   }
@@ -3668,6 +3726,63 @@ function pigFall(){
     "第 一 章 · 坏 结 局","猪 哼 声","你想喊，喉咙里滚出来的是一声哼",
     "杯沿碰到嘴唇的一瞬，世界歪了——墙壁长出毛，烛火变成一双双猪的眼睛。\n——你在泥里拱了很久。等到「人」的念头重新浮上来，你趴在栈桥上，浑身是泥，血量折半。\n林间那圈金光还在。去把那株草拿回来——这次，别空着手喝。");
   renderHUD(); save();
+}
+/* ==================== P1.3 太阳岛结构倒置：船员鼓噪（17g 原著第12卷） ====================
+   原著：船员趁奥德修斯睡着宰牛，他本人没吃；宙斯雷劈→全船覆灭只剩你，漂九天到奥吉吉亚。
+   倒置：不再是玩家自己宰牛背锅——船员饿极鼓噪，玩家抉择：拦住=改写（dev crew_saved），
+   睡着放任=原著（canon zeus_survived + 雷劈 + crew/fleet 清零 + 漂到奥吉吉亚）。
+   showAsk 底座复用（P1.2）；触发节拍 sunNoiseTick（等章节卡/对话/海图全清）。 ==================== */
+let sunNoiseT = 0;   /* 进 sun 场景后的鼓噪等待（离开场景即清零） */
+function sunNoiseTick(dt){
+  if (scene!=="sun"){ sunNoiseT=0; return; }
+  if (state.crewNoiseDone || !state.crewLit || !(state.crew>0) || state.sunWrath || state.sunBlessed) return;
+  if (chapterOn || askOn || dlgOpen || mapOpen || titleOn) return;   /* 界面都清了才开口 */
+  sunNoiseT += dt;
+  if (sunNoiseT >= 2.4){ sunNoiseT = 0; crewNoiseEvent(); }
+}
+function crewNoiseEvent(){
+  sfx("warn"); feedback("small");
+  showAsk("第 四 章 · 鼓 噪","船 员 饿 了",
+    "九天风暴，海峡又折了人。船员们把刀攥在手里，围着圣牛群，眼睛发绿——\n「头儿，就一头。神的牛，又不是你的牛。你已经很多天没合过眼了。」",
+    null, [
+    {label:"按住他们的手", hint:"改写 · 原著里你睡着了", fn:()=>crewHeld()},
+    {label:"你太累了——先眯一会", hint:"原著第12卷 · 你睡着了", fn:()=>crewSlept()},
+  ]);
+}
+/* 拦住（dev=crew_saved）：船员免死但恨你；波塞冬不记、天色正常。守誓得光保留为「拦住+自己也没吃」的加强版 */
+function crewHeld(){
+  state.crewNoiseDone = true; state.crewSaved = true;
+  sfx("attack"); feedback("medium"); gainXp(25);
+  addMemory("船员饿极了要宰圣牛——你按住了他们的手。他们看了你很久，没人说话", 4, "any");
+  toast("你把刀一把攥住。牛群安静了，船员的眼睛也暗了——他们活着，但今晚没人跟你说话。（改写 · 原著里你睡着了 · 历练 +25）");
+  renderHUD(); save();
+}
+/* 睡着（canon=zeus_survived）：雷劈演出 → crew/fleet 清零 → 九天漂流到奥吉吉亚近海（原著名场面） */
+function crewSlept(){
+  state.crewNoiseDone = true;
+  addMemory("风暴之后你太累了——在太阳岛的金色草场上，你闭上了眼", 3);
+  thunderSfx(); addTrauma(0.9); feedback("large");
+  const flash = document.createElement("div");
+  flash.id = "zeusFlash";
+  flash.innerHTML = '<svg viewBox="0 0 1000 600" preserveAspectRatio="none">'+
+    '<polyline points="620,-10 560,190 610,195 500,420 540,428 420,610" fill="none" stroke="rgba(255,250,220,.95)" stroke-width="5"/>'+ 
+    '<polyline points="300,-10 345,150 305,155 390,330 350,338 460,610" fill="none" stroke="rgba(255,240,190,.8)" stroke-width="3.5"/></svg>';
+  document.body.appendChild(flash);
+  setTimeout(()=>flash.remove(), 2600);
+  setTimeout(()=>{
+    state.sunWrath = true; state.slaughterWarn = false;
+    state.crewSun = true; state.zeusStruck = true;
+    state.hunger = 100; state.thirst = Math.min(100, state.thirst+30);
+    addItem("牛肉",2);
+    state.fleet = 0;   /* 雷劈最后一艘（17h 折损表第三站；护航船队随 fleet=0 自然消失） */
+    loseCrew(state.crew||0, "宙斯的雷劈碎了最后一艘船——你睡着时他们宰了牛，雷把整船人收走了");
+    scene = "world";
+    boat.x = 615; boat.y = 350;   /* 九天漂流：奥吉吉亚近海南侧（岛中心 590,250 外 103px，避登陆圈；太阳岛 188px 外） */
+    showChapter("linear-gradient(175deg,#f5f2e8 0%,#9aa4b8 30%,#2c3550 64%,#0a0f1e 100%)",
+      "第 四 章 · 幕 间","雷　火","九天漂流 · 最后一人",
+      "你睡着的那一会儿，他们宰了牛，烤了肉。\n雷从晴空里劈下来的时候，没有人来得及抬头。\n——九天。第九天的清晨，浪把你推到了一片完美得可怕的海岸边。（船员 ⚑0/12 · 船队 ⛵0/12 · 航向：雾外有岛）");
+    renderHUD(); save();
+  }, 1200);
 }
 
 (function titleInit(){
@@ -4946,6 +5061,23 @@ function drawSun(et){
       }
     }});
   });
+  /* P1.3 船员剪影（game-ai 空间感：鼓噪前原著张力——瘦削弯腰的人影围在牛群旁，微晃；抉择后消失） */
+  if (state.crewLit && (state.crew||0)>0 && !state.sunWrath && !state.sunBlessed){
+    const NOISE_MEN = [{x:13.6,y:4.9},{x:15.2,y:6.3},{x:16.4,y:4.6},{x:14.3,y:6.6}];
+    NOISE_MEN.forEach((m,i)=>{
+      const px=m.x*ATS, py=m.y*ATS;
+      ents.push({y:py+8, draw(){
+        const sway = Math.sin(et*1.9+i*2.4)*1.6;
+        ctx.fillStyle="rgba(20,16,10,.40)";
+        ctx.beginPath(); ctx.ellipse(px+sway*0.4,py+9,7,2.4,0,0,7); ctx.fill();
+        ctx.fillStyle="#241a12";
+        ctx.beginPath(); ctx.ellipse(px+sway*0.5,py,3.2,7.5,0,0,7); ctx.fill();
+        ctx.beginPath(); ctx.arc(px+sway*0.5,py-8.5,2.6,0,7); ctx.fill();
+        ctx.strokeStyle="#241a12"; ctx.lineWidth=1.6;
+        ctx.beginPath(); ctx.moveTo(px+sway*0.5,py-4); ctx.lineTo(px+3.4+sway,py+1.5); ctx.stroke();
+      }});
+    });
+  }
   /* 海藻（西滩） */
   ents.push({y:8*ATS+ATS*0.9, draw(){
     const x=2*ATS, y=8*ATS+ATS*0.9;
@@ -7021,6 +7153,7 @@ setInterval(()=>{
   achTimer += dt; if (achTimer >= 2){ achTimer = 0; achivTick(); }   /* 命运锚点轮询：2s 扫一次成就（零侵入不漏发） */
   if (scene==="hades"||scene==="aeolia"||scene==="ogggia"||scene==="scheria") npcWalkTick(dt);
   if (scene==="telepylos") fleetDefenseTick(dt);   /* F2 守船战：波次/预警/结算（对话打开时暂停在 tickMove 同层） */
+  sunNoiseTick(dt);   /* P1.3 太阳岛船员鼓噪：界面全清后 2.4s 触发抉择 */
 }, 20);
 function loop(t){
   const et=(t-T0)/1000;
@@ -7098,6 +7231,9 @@ window.__game={state, scene, boat, player:aiaPlayer, witch, seer, aeolus, boar, 
   /* P1.1 船员账本（17g） */
   loseCrew, crewLedgerLight, showCrewBanner,
   crewInfo:function(){ return {crew:state.crew||0, lit:!!state.crewLit, cyclops:!!state.crewCyclops, scylla:!!state.crewScylla, sun:!!state.crewSun}; },
+  /* P1.3 太阳岛鼓噪抉择（17g） */
+  sunNoiseTick, crewNoiseEvent, crewHeld, crewSlept, thunderSfx,
+  sunNoiseInfo:function(){ return {wait:+sunNoiseT.toFixed(2), done:!!state.crewNoiseDone, saved:!!state.crewSaved, struck:!!state.zeusStruck, crew:state.crew||0, fleet:state.fleet||0}; },
   /* 护航船队（17h 视觉）+ ambient 观测 */
   boatTrail:()=>boatTrail, drawEscortFleet,
   ambInfo:function(){ return {active:ambActive, text:ambText, npc:typeof currentNPC!=="undefined"?currentNPC:null}; }};
