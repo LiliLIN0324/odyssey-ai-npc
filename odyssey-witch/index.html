@@ -831,6 +831,8 @@ const PROLOGUE_SITES = {
       {type:"wounded", x:9*ATS+ATS/2,  y:4*ATS+ATS/2, r:70, label:"给伤者上药"},
       {type:"target",  x:13*ATS+ATS/2, y:6*ATS+ATS/2, r:70, label:"木靶练手"},
       {type:"wine",    x:16*ATS+ATS/2, y:4*ATS+ATS/2, r:70, label:"战利品堆旁的酒瓶"},
+      {type:"campfire",x:7*ATS+ATS/2,  y:8*ATS+ATS/2, r:70,
+        label: state.campHeld ? "营火（已守过那一夜）" : "营火（夜里会有人来抢酒）"},
       {type:"dock",    x:4*ATS+ATS/2,  y:10*ATS+ATS/2, r:70, label:"扬帆出海"},
     ],
   },
@@ -885,6 +887,8 @@ const PROLOGUE_SITES = {
       {type:"cave",   x:10*ATS+ATS/2, y:3*ATS+ATS/2, r:85, label:"山洞口（熏黑的巨灶）"},
       {type:"poly",   x:5*ATS+ATS/2,  y:5*ATS+ATS/2, r:95, label:"走近牧羊巨人"},
       {type:"sheep",  x:14*ATS+ATS,   y:6*ATS+ATS/2, r:75, label:"羊群（剪一把羊毛）"},
+      {type:"ramhide",x:16*ATS+ATS/2, y:5*ATS+ATS/2, r:75,
+        label: state.ramHide ? "洞口的羊道（你从这混出过）" : (state.polHeard ? "羊腹之下（绑上羊肚混出洞）" : "羊群（巨人还醒着）")},
       {type:"dock",   x:4*ATS+ATS/2,  y:6*ATS+ATS/2, r:70, label:"解缆离岛"},
     ],
   },
@@ -1415,6 +1419,112 @@ function endSuitorCombat(fled){
     : "最后一个求婚者倒了。有几句呼救，你没看清是谁的箭放的——总有一只灰眼睛替你挡了最重的那一下。（大厅肃清 ✓ · 历练 +40）", 4800);
   achivTick(); renderHUD(); save();
 }
+/* ==================== F3 伊斯玛洛斯夜袭守营战（17h · 原著第9卷：船员贪酒庆功，城民夜反扑折损人手） ====================
+   守营火：城民夜袭波×3（守卫）——fireAttack 状态机（SC/SU 同款）。守满3波=改写 dev camp_held
+   「酒后仍醒着的人」；失守=折损重来（可再触发，胜利才算数）。触发：营火 campfire spot。 */
+const CAMP_N = 3, CAMP_WARN = 0.55, CAMP_WINDOW = 0.6, CAMP_RETREAT = 0.5;
+const CAMP = { on:false, phase:"idle", pt:0, wave:0, hit:0 };
+function startCampDefense(){
+  if (scene!=="ismaros" || CAMP.on) return;
+  if (state.campHeld){ toast("营火还亮着——那一夜你守住了，城民都知道。"); return; }
+  CAMP.on=true; CAMP.phase="idle"; CAMP.pt=0; CAMP.wave=0; CAMP.hit=0;
+  sfx("alert"); addTrauma(0.3); feedback("medium");
+  addMemory("伊斯玛洛斯的一夜——城民提着火把围过来时，你正攥着那瓶酒。火影越过你冲向营帐里的呼吸声", 4, "ismaros");
+  toast("城民举着火把围上来——醉后醒着的那个也得自己守营火！连挡3波火把（出火瞬间0.6s按E拍开）。挡不住＝城民抢走酒，你得重守。");
+  renderHUD();
+}
+function campDefenseTick(dt){
+  if (!CAMP.on) return;
+  if (dlgOpen||titleOn||chapterOn||mapOpen) return;
+  CAMP.pt += dt;
+  if (CAMP.phase==="idle"){ if (CAMP.pt>=CAMP_WARN){ CAMP.phase="strike"; CAMP.pt=0; sfx("attack"); } }
+  else if (CAMP.phase==="strike"){ if (CAMP.pt>=CAMP_WINDOW){ campMiss(); } }
+  else if (CAMP.phase==="retreat"){ if (CAMP.pt>=CAMP_RETREAT){ campNext(); } }
+}
+function campStrike(){                                /* E 键命中：拍开当前火把波 */
+  if (!CAMP.on || CAMP.phase!=="strike") return;
+  CAMP.wave++; CAMP.phase="retreat"; CAMP.pt=0;
+  sfx("pick"); popText(aiaPlayer.x, aiaPlayer.y-30, "火把拍开！", "#7fd0a0"); addTrauma(0.1);
+  burst(aiaPlayer.x, aiaPlayer.y+4, "#ff9d5c", 10, 70, 2.4);   /* 打击反馈：火星粒子 */
+  if (CAMP.wave>=CAMP_N){ campEnd(); }
+}
+function campMiss(){
+  CAMP.hit++; CAMP.phase="retreat"; CAMP.pt=0;
+  sfx("die"); popText(aiaPlayer.x, aiaPlayer.y-30, "被火燎到…", "#e08080"); addTrauma(0.3);
+  state.hp = Math.max(1, state.hp - 10); renderHUD();
+  if (CAMP.hit >= CAMP_N){ campEnd(); }            /* 失误满三波＝失守（城民抢走酒，重守） */
+}
+function campNext(){
+  if (CAMP.wave>=CAMP_N){ campEnd(); return; }
+  CAMP.phase="idle"; CAMP.pt=0;
+}
+function campEnd(){
+  CAMP.on=false;
+  const cleared = CAMP.hit<CAMP_N;   /* 三波内只要没被撩倒净重守（hit 小都算）——实际按 wave==3 且完成 */
+  if (CAMP.wave>=CAMP_N){
+    state.campHeld = true;
+    gainXp(30); sfx("bless"); feedback("large");
+    addMemory("伊斯玛洛斯的夜，你一口气守住了三波火把——酒还烫着，城没破，你也还醒着", 4, "ismaros");
+    toast("火把在地上烧成几丛，城民退进雾里——你守住了营火，也守住了自己。（守营 ✓ · dev 成就 · 历练 +30）");
+    achivTick(); renderHUD(); save();
+  } else {
+    addMemory("伊斯玛洛斯的夜，城民的酒疯把你的人带走了几个——这回你没能守住", 3, "ismaros");
+    toast("火把落进酒桶，营火塌了半边——你没守住这一夜。（再点营火，重新守）");
+    renderHUD(); save();
+  }
+}
+/* ==================== F4 独眼巨人羊腹潜行战（17h · 原著第9卷：绑羊腹下、巨人逐只摸羊查人） ====================
+   时机潜行战（红线：不可攻击巨人）。巨人逐只摸羊（WARM→strike 窗口按 E 低头躲）：躲满 6 只 = canon
+   under_the_raid「羊腹之下」成功混出；被抓 3 次 = 受伤重来。用 SC 同款状态机 HIDE。 */
+const HIDE_N = 6, HIDE_WARN = 0.55, HIDE_WINDOW = 0.6, HIDE_RET = 0.45, HIDE_MAX_CAUGHT = 3;
+const HIDE = { on:false, n:0, phase:"idle", pt:0, caught:0 };
+function startRamHide(){
+  if (scene!=="cyclops" || HIDE.on) return;
+  if (state.ramUnder){ toast("洞口的羊排成一列——你已经在羊腹下出过洞了。"); return; }
+  if (!state.polHeard){ toast("巨人还没睡着——先听他把「无人」的账讲完，再谈溜出去。"); return; }
+  HIDE.on=true; HIDE.n=0; HIDE.phase="idle"; HIDE.pt=0; HIDE.caught=0;
+  sfx("warn"); addTrauma(0.3); feedback("medium");
+  addMemory("你把自己绑进羊腹下的羊毛里——巨人逐只摸羊，每一只都有一瞬的空当", 4, "polyphemus");
+  toast("你缩进羊腹下。巨人逐只摸羊——他的手扫过来时（0.6s）按 E 屏息低头躲开！摸到6只=溜出洞。被抓3次=伤势，重来！");
+  renderHUD();
+}
+function ramHideTick(dt){
+  if (!HIDE.on) return;
+  if (dlgOpen||titleOn||chapterOn||mapOpen) return;
+  HIDE.pt += dt;
+  if (HIDE.phase==="idle"){ if (HIDE.pt>=HIDE_WARN){ HIDE.phase="strike"; HIDE.pt=0; sfx("attack"); } }
+  else if (HIDE.phase==="strike"){ if (HIDE.pt>=HIDE_WINDOW){ ramCaught(); } }
+  else if (HIDE.phase==="ret"){ if (HIDE.pt>=HIDE_RET){ ramNext(); } }
+}
+function ramDuck(){                                  /* E 键命中：躲过当前摸羊 */
+  if (!HIDE.on || HIDE.phase!=="strike") return;
+  HIDE.n++; HIDE.phase="ret"; HIDE.pt=0;
+  sfx("pick"); popText(aiaPlayer.x, aiaPlayer.y-30, "躲过了！", "#7fd0a0"); addTrauma(0.08);
+  if (HIDE.n>=HIDE_N){ ramEnd(); }
+}
+function ramCaught(){
+  HIDE.caught++; HIDE.phase="ret"; HIDE.pt=0;
+  sfx("die"); popText(aiaPlayer.x, aiaPlayer.y-30, "被抓住了…", "#e08080"); addTrauma(0.35);
+  state.hp = Math.max(5, state.hp-12); renderHUD();
+  if (HIDE.caught>=HIDE_MAX_CAUGHT){ ramEnd(true); }
+}
+function ramNext(){
+  if (HIDE.n>=HIDE_N){ ramEnd(); return; }
+  HIDE.phase="idle"; HIDE.pt=0;
+}
+function ramEnd(fail){
+  HIDE.on=false;
+  if (fail){
+    addMemory("羊腹下的潜行失败了——巨人攥住了你的手腕，你被提回羊栏边", 3, "polyphemus");
+    toast("巨人抓住了你，一把把你从羊肚下拎出来——「敢在洞这头算计我？滚回去剪你的毛！」（伤势 · 想好再来）");
+    renderHUD(); save(); return;
+  }
+  state.ramHide = true;
+  gainXp(40); sfx("bless"); feedback("large");
+  addMemory("你在羊肚皮下躲过了六次摸索——洞口的光透过羊角，你就是那只混出去的羊", 5, "polyphemus");
+  toast("第6只羊过你的时候，你从它肚子下一滚身混出了洞——盲眼巨人一只都没摸出来。（潜出洞 ✓ · canon · 历练 +40）");
+  achivTick(); renderHUD(); save();
+}
 function prologueSpot(s){
   const P = PROLOGUE_SITES[scene];
   if (scene==="telepylos" && FD.on && s.type!=="fleetguard"){ toast("石头还在落——先守住船队！"); return; }
@@ -1446,6 +1556,7 @@ function prologueSpot(s){
     addMemory("旅人拾走了战利品堆旁的喀科恩酒——瓶上刻着：赢家不该在输家的城里睡", 2, "ismaros");
     toast("你捡起酒瓶。瓶底刻着一行小字：「赢家不该在输家的城里睡。」——当年有人没把这句话当回事。（获得 喀科恩酒）");
     renderHUD(); save(); return;
+  case "campfire": startCampDefense(); return;
   /* —— 食莲岛 —— */
   case "lotusman": return openDlg("lotusman");
   case "lotusEat":
@@ -1482,6 +1593,7 @@ function prologueSpot(s){
     addMemory("旅人得了盲眼巨人允许的一把羊毛——披风比想象中暖", 3, "polyphemus");
     toast("巨羊安静地站着，任你剪下一捧羊毛。远处巨人没回头——「一人一件。」他说。（获得 羊毛披风 · 历练 +15）");
     renderHUD(); save(); return;
+  case "ramhide": startRamHide(); return;
   /* —— 忒勒皮洛斯 —— */
   case "cliff":
     if (!state.cliffWarn){ state.cliffWarn=true; sfx("alert"); save();
@@ -1837,6 +1949,9 @@ let state = {
   lotusDragged: false,     /* 强拖过幸存者（得断桨） */
   sheared: false,          /* 剪过羊毛（羊毛披风） */
   polHeard: false,         /* 听完「无人」故事全本（洞内独眼微光随之熄灭） */
+  campHeld: false,         /* F3 伊斯玛洛斯守营战：三波火把守满（dev 成就 camp_held） */
+  ramHide: false,         /* F4 独眼巨人羊腹潜行：躲满六只混出洞（canon 成就） */
+  paidMem: [],             /* P1.4 记忆支付：已「付给亡者」的记忆 text 列表（塞壬不再唱） */
   polNameGiven: null,      /* 自报名字（名字考试） */
   namesHeard: false,       /* 「被留下的名」解锁（“无人”——终章认名候选预埋） */
    ropeTaken: false,        /* 忒勒皮洛斯：幸存者的绳结 */
@@ -1982,6 +2097,10 @@ function ensureState(){
    if (state.telMet===undefined) state.telMet=false;
    if (state.telRevealed===undefined) state.telRevealed=false;
    if (state.suitorsSwept===undefined) state.suitorsSwept=false;
+   /* F3/F4 序章战斗 + P1.4 记忆支付：旧档补默认值（无此字段＝未打/未支付，行为与旧版一致） */
+   if (state.campHeld===undefined) state.campHeld=false;
+   if (state.ramHide===undefined) state.ramHide=false;
+   if (!Array.isArray(state.paidMem)) state.paidMem=[];
   crewLedgerLight();
   if (state.tookWine===undefined) state.tookWine=false;
   if (state.targetHits===undefined) state.targetHits=0;
@@ -2363,6 +2482,22 @@ function recallMemories(k, who){
     .sort((a,b)=>(b.imp-a.imp)||(b.t-a.t)).slice(0, k||5)
     .sort((a,b)=>a.t-b.t).map(m=>m.text);
 }
+/* P1.4 记忆支付（story 设计：对亡者讲一段真的过去，他们能"活"一炷香；讲过的记忆碎片标记"已支付"，三章塞壬唱不出这段）：
+   从记忆流里挑一条真实的记忆（imp>=3），讲给亡母——该记忆进入 state.paidMem（"已支付"），
+   塞壬之歌 buildLyric 不再引用它。返回 true=支付了一笔 / false=没有可支付的记忆。 */
+function payMemoryToDead(){
+  if (!state.paidMem) state.paidMem=[];
+  const cand = state.memory.filter(m=>m&&m.text && m.imp>=3 && !state.paidMem.includes(m.text));
+  if (!cand.length){ return false; }
+  /* 取最新一条（imp 最高优先，同则最新） */
+  const pick = cand.slice().sort((a,b)=>(b.imp-a.imp)||(b.t-a.t))[0];
+  state.paidMem.push(pick.text);
+  sfx("bless"); feedback("small"); gainXp(12);
+  addMemory("旅人把一段真的过去讲给了亡者——她终于能「活」一炷香。那段记忆就此定住，塞壬再也唱不出它了", 4, "any");
+  toast("「……那一年，」你把一段真的过去讲给她听。雾里的影子静了很久——然后她抬手，像要给你拢一件衣裳，又放下了。（记忆已支付 · 历练 +12 · 塞壬之歌将缺这一页）");
+  renderHUD(); save();
+  return true;
+}
 
 /* ==================== 好感度（dialogue-systems：关系变量影响台词分支 + 里程碑解锁玩法） ==================== */
 function affinityTier(){ return state.affinity<30?"冷淡":state.affinity<60?"熟络":state.affinity<85?"信任":"托付"; }
@@ -2446,8 +2581,12 @@ const ACHIV = [
   { id:"lotus_drag", name:"强拖回船的人", desc:"食莲滩上你没有听任甜——用幸存者的绳结把他绑上凳，带回船上。他一路望着海，一句话也没说。荷马第 9 卷写的就是这一下", cond:()=>!!state.lotusDraggedOk, canon:true },
   /* —— P1.9 忒勒玛科斯（17g 原著第 16 卷：父子相认）—— */
   { id:"father_son", name:"父子相认", desc:"他问你有没有见过奥德修斯——你说：我就是。看我手上的疤，看我眼下的纹。荷马第 16 卷写这一幕用了整整两卷", cond:()=>!!state.telRevealed, canon:true },
-  /* —— F6 大厅肃清战（17h · 原著第 22 卷：杀 108 求婚者）—— */
+/* —— F6 大厅肃清战（17h · 原著第 22 卷：杀 108 求婚者）—— */
   { id:"hall_swept", name:"扫净大厅的人", desc:"弓弦的余音里他们拔了刀——一百零八支矛，你一一放平。荷马第 22 卷：这一场仗没有第二名", cond:()=>!!state.suitorsSwept, canon:true },
+  /* —— F3 伊斯玛洛斯守营战（17h · 原著第9卷：船员贪酒庆功，城民夜反扑折损人手）—— */
+  { id:"camp_held", name:"酒后仍醒着的人", desc:"伊斯玛洛斯——城民提着火把来抢酒，你一口气挡下了三波。原版里，他们喝醉睡沉了，被反扑折了人手", cond:()=>!!state.campHeld, dev:"原版那一夜你们睡沉了，你醒着" },
+  /* —— F4 独眼巨人羊腹潜行（17h · 原著第9卷：绑羊腹下、巨人逐只摸羊查人）—— */
+  { id:"under_the_ram", name:"羊腹之下", desc:"你把自己绑进羊腹下，躲过六次摸索混出洞——盲眼巨人一只都没摸出来。荷马第 9 卷写的就是这一出", cond:()=>!!state.ramHide, canon:true },
 ];
 function achivTick(){
   for (const a of ACHIV){
@@ -2482,6 +2621,7 @@ const CANON_GROUPS = [
   {n:"脚疤与婚床",     ids:["scar_proved"]},
   {n:"父子相认",       ids:["father_son"]},
   {n:"大厅肃清",       ids:["hall_swept"]},
+  {n:"羊腹之下",       ids:["under_the_ram"]},
 ];
 function fateSummary(){
   const got=state.achiv||[];
@@ -2550,6 +2690,9 @@ seer: [
     /* P1.4 亡母引路（原著第11卷）：献祭之后，先知听见了雾深处那个一直望岸的妇人 */
     {id:"mother_hint", w:0.8, cond:()=>!!state.offered&&!state.oldName,
                   line:()=>"（他忽然侧耳，杖尖转向雾深处）雾里有个妇人，一直望着岸边。她等的背影，眉眼和你很像——想开口的事，别留到下一站。"},
+    /* P1.4 记忆支付（故事设计）：亡者收下一段记忆后，先知提一句「付掉的再也唱不出来」 */
+    {id:"mem_paid", w:0.6, cond:()=>(state.paidMem||[]).length>=1,
+     line:()=>`（他朝雾里抬了抬杖）你付给她们的那段，她们"活"过一炷香。${(state.paidMem||[]).length>=2?"记得的，都锁在雾里了。":"往后哪一页少了个字，别回头找。"}`},
   ],
 aeolus: [
     {id:"care_hurt",  w:0.9, cond:()=>state.hp<=35&&state.hp>0,
@@ -2912,9 +3055,13 @@ addEventListener("keydown", e=>{
   if (k==="e"){
     e.preventDefault();
     /* F5 斯库拉快反战：strike 窗口内 E=砍/拉救回，不进普通交互 */
-    if (SC.on && SC.phase==="strike"){ scyllaStrike(); return; }
+if (SC.on && SC.phase==="strike"){ scyllaStrike(); return; }
     /* F6 求婚者肃清战：strike 窗口内 E=放箭击杀，不进普通交互 */
     if (SU.on && SU.phase==="strike"){ suitorStrike(); return; }
+    /* F3 伊斯玛洛斯守营战：strike 窗口内 E=拍开火把 */
+    if (CAMP.on && CAMP.phase==="strike"){ campStrike(); return; }
+    /* F4 独眼巨人羊腹潜行：strike 窗口内 E=屏息低头 */
+    if (HIDE.on && HIDE.phase==="strike"){ ramDuck(); return; }
     /* 预按：当前无可交互目标才进缓冲，避免双触发 */
     const has = scene==="world" ? !!islandNear() : !!aiaNear();
     if (!has) eBufAt = performance.now();
@@ -3362,7 +3509,9 @@ function showFinale(mode, way, name){
     ? "塞壬的歌你听完了。残页贴身放着——有些知识，是用来疼的。"
     : state.waxEars
     ? "你的故事里缺了一页歌。蜡还封在耳骨里——安全和空，原来是同一个味道。"
-    : "歌从海峡上空飘过去，没有落进你的故事。");
+    : (state.paidMem&&state.paidMem.length
+      ? `你付给亡者的那段记忆，塞壬唱到那里只剩空白——${state.paidMem.length} 页已定在冥界的雾里，谁也叫不回来。`
+      : "歌从海峡上空飘过去，没有落进你的故事。"));
   paras.push(state.sunBlessed
     ? ("太阳岛上你守住了誓言。"+(state.sunName?`「${state.sunName}」——他记住了这个名字。`:"")+"一缕走得过黑暗的光，此刻正在你包里。")
     : "圣牛的血漫过草场。你吃饱了——胃是满的，天是阴的；往后每一阵风里都有闷雷。");
@@ -4137,9 +4286,15 @@ function interact(){
     toast("你把蜂蜜酒、面包与淡水倒进沟里。黑暗深处传来低语，像无数人同时叹了口气——特瑞西阿斯显形了。（历练 +20）");
     renderHUD(); save(); return;
   }
-  if (s.type==="mother"){
+if (s.type==="mother"){
     /* P1.4 亡母安提克勒娅（原著第11卷）：三次想抱、三次抱空——第三次她先开口，叫你的旧名 */
-    if (state.oldName){ toast("她还站在雾里，还是抱不到。但她叫过的那个名字你带在身上——像多了一颗心。（旧名已进终章认名候选）"); return; }
+    if (state.oldName){
+      /* 记忆支付（P1.4 增补·待实装）：对亡者讲一段真的过去，他们能"活"一炷香；讲过的记忆变淡（碎片标记"已支付"，三章塞壬唱不出这段） */
+      const pay = payMemoryToDead();
+      if (pay) return;
+      toast("她还站在雾里，还是抱不到。但她叫过的那个名字你带在身上——像多了一颗心。（旧名已进终章认名候选）");
+      return;
+    }
     state.motherHug = (state.motherHug||0)+1;
     if (state.motherHug===1){
       sfx("dash");
@@ -4156,7 +4311,7 @@ function interact(){
     state.motherHug = 3; state.oldName = "奥德修斯";
     sfx("bless"); feedback("large"); gainXp(25);
     addMemory("第三次，旅人没有再抱——她先开了口，声音像从很远的水面漂来：「奥德修斯」。她说她是一天天听着这个名字空下去的", 5);
-    toast("第三次，你没再伸手。她先开了口：「奥德修斯……我没能等到你。你的家还有人守着，你的儿子已经出海去找你了。」\n（历练 +25 · 亡母替你记住的名字，进了终章认名候选）", 5200);
+    toast("第三次，你没再伸手。她先开了口：「奥德修斯……我没能等到你。你的家还有人守着，你的儿子已经出海去找你了。」\n（历练 +25 · 亡母替你记住的名字，进了终章认领候选）", 5200);
     achivTick(); renderHUD(); save(); return;
   }
   if (s.type==="achilles"){
@@ -4627,6 +4782,38 @@ function drawSuitorHud(){
     ctx.fillText("按 E 放箭——别让他近身！", 500, 84);
     ctx.fillStyle="rgba(240,220,190,.9)";
     ctx.fillText("「"+SU_NAMES[(SU.kills+SU.missed)%SU_NAMES.length]+"」扑上来了", 500, 102);
+  }
+}
+/* F3 伊斯玛洛斯守营战 HUD（屏幕空间：火把波计数 + 窗口条） */
+function drawCampHud(){
+  if (scene!=="ismaros" || !CAMP.on) return;
+  ctx.textAlign="center";
+  const t = `守营 · 火把波 ${Math.min(CAMP.wave+ (CAMP.phase==="retreat"?1:0), CAMP_N)}/${CAMP_N}`;
+  ctx.font="600 14px 'Segoe UI','Microsoft YaHei'";
+  ctx.fillStyle="rgba(0,0,0,.5)"; ctx.fillText(t, 501, 41);
+  ctx.fillStyle="#ffd9b8"; ctx.fillText(t, 500, 40);
+  if (CAMP.phase==="strike"){
+    const r = Math.max(0, CAMP.pt/CAMP_WINDOW);
+    ctx.fillStyle="rgba(80,35,15,.6)"; ctx.fillRect(380,56,240,10);
+    ctx.fillStyle= r>0.6 ? "#ffd66b" : "#ff7a6b"; ctx.fillRect(382,58,236*r,6);
+    ctx.font="600 12px 'Segoe UI'"; ctx.fillStyle="#ffd66b";
+    ctx.fillText("火把扫过来——按 E 拍开！", 500, 84);
+  }
+}
+/* F4 独眼巨人羊腹潜行 HUD（屏幕空间：摸羊计数 + 被抓数 + 窗口条） */
+function drawRamHud(){
+  if (scene!=="cyclops" || !HIDE.on) return;
+  ctx.textAlign="center";
+  const t = `羊腹之下 ${Math.min(HIDE.n+(HIDE.phase==="ret"?1:0), HIDE_N)}/${HIDE_N} · 被抓 ${HIDE.caught}/${HIDE_MAX_CAUGHT}`;
+  ctx.font="600 14px 'Segoe UI','Microsoft YaHei'";
+  ctx.fillStyle="rgba(0,0,0,.5)"; ctx.fillText(t, 501, 41);
+  ctx.fillStyle="#efe7d8"; ctx.fillText(t, 500, 40);
+  if (HIDE.phase==="strike"){
+    const r = Math.max(0, HIDE.pt/HIDE_WINDOW);
+    ctx.fillStyle="rgba(40,25,15,.6)"; ctx.fillRect(380,56,240,10);
+    ctx.fillStyle= r>0.6 ? "#ffd66b" : "#ff7a6b"; ctx.fillRect(382,58,236*r,6);
+    ctx.font="600 12px 'Segoe UI'"; ctx.fillStyle="#ffd66b";
+    ctx.fillText("巨人的手扫过来——屏息低头（E）！", 500, 84);
   }
 }
 function drawBoat(et){
@@ -6452,7 +6639,8 @@ document.getElementById("mapClose").onclick = closeMap;
 /* ---------- 塞壬歌词卡（本地拼装：从记忆流唱出你的航程，不烧模型） ---------- */
 let lastLyric = "";
 function buildLyric(){
-  const mems = state.memory.slice(-8).filter(m=>m.text.length>4);
+  /* P1.4 记忆支付：已付给亡者的记忆不再被塞壬唱出（碎片"已支付"→缺页） */
+  const mems = state.memory.slice(-8).filter(m=>m.text.length>4 && !(state.paidMem||[]).includes(m.text));
   const uniq = [...new Set(mems.map(m=>m.text))];   /* 去重：同一句记忆不唱两遍 */
   const pick = (i) => uniq.length ? uniq[i % uniq.length].replace(/^旅人/,"").slice(0,14) : null;
   const m1 = pick(Math.floor(Math.random()*uniq.length)), m2 = pick(Math.floor(Math.random()*uniq.length)+1);
@@ -8006,6 +8194,8 @@ setInterval(()=>{
   if (scene==="telepylos") fleetDefenseTick(dt);   /* F2 守船战：波次/预警/结算（对话打开时暂停在 tickMove 同层） */
   if (scene==="strait") scyllaCombatTick(dt);      /* F5 斯库拉快反战：六头轮探窗口（被界面门控跳过） */
   if (scene==="ithaca") suitorCombatTick(dt);      /* F6 求婚者肃清战：轮番扑击窗口（被界面门控跳过） */
+  if (scene==="ismaros") campDefenseTick(dt);      /* F3 伊斯玛洛斯守营战：城民火把波（被界面门控跳过） */
+  if (scene==="cyclops") ramHideTick(dt);          /* F4 独眼巨人羊腹潜行：逐只摸羊窗口（被界面门控跳过） */
   sunNoiseTick(dt);   /* P1.3 太阳岛船员鼓噪：界面全清后 2.4s 触发抉择 */
   raftStormTick(dt);   /* P1.6 波塞冬掀筏：出湾后开阔海 1.2s 蓄力触发（未渡过风暴前每次出湾都会再遇） */
   pillarTick(dt);      /* P2.3 送客船石化：送行船驶远 300px 后 1.6s 触发回望抉择 */
@@ -8041,6 +8231,8 @@ function loop(t){
   drawFleetHud();   /* 守船战计数（屏幕空间 HUD，restore 后画不随镜头漂移） */
   drawScyllaHud();  /* F5 斯库拉快反战 HUD：六头计数 + 窗口条 */
   drawSuitorHud();  /* F6 求婚者肃清战 HUD：肃清计数 + 窗口条 */
+  drawCampHud();    /* F3 伊斯玛洛斯守营战 HUD：火把波 + 窗口条 */
+  drawRamHud();     /* F4 独眼巨人羊腹潜行 HUD：摸羊计数 + 窗口条 */
   if (scene!=="world") markLeg(scene);
   seaEncounterTick();
   maleaTick();
@@ -8110,7 +8302,12 @@ window.__game={state, scene, boat, player:aiaPlayer, witch, seer, aeolus, boar, 
   examInfo:function(){ return {asked:!!state.examAsked, scar:!!state.examScar, bed:!!state.examBed}; },
   /* 护航船队（17h 视觉）+ ambient 观测 */
   boatTrail:()=>boatTrail, drawEscortFleet,
-  ambInfo:function(){ return {active:ambActive, text:ambText, npc:typeof currentNPC!=="undefined"?currentNPC:null}; }};
+  ambInfo:function(){ return {active:ambActive, text:ambText, npc:typeof currentNPC!=="undefined"?currentNPC:null}; },
+  /* F3 伊斯玛洛斯守营战 + F4 独眼巨人羊腹潜行（17h 序章战斗批） */
+  CAMP:()=>CAMP, startCampDefense, campDefenseTick, campStrike, drawCampHud,
+  HIDE:()=>HIDE, startRamHide, ramHideTick, ramDuck, drawRamHud, payMemoryToDead,
+  campInfo:function(){ return {on:CAMP.on, wave:CAMP.wave, hit:CAMP.hit, held:!!state.campHeld}; },
+  ramInfo:function(){ return {on:HIDE.on, n:HIDE.n, caught:HIDE.caught, done:!!state.ramHide, paidMem:(state.paidMem||[]).length}; }};
 </script>
 <script type="module" src="./world3d.js?v=14"></script>
 </body>

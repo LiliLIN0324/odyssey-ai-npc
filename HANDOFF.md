@@ -619,6 +619,20 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 
 ---
 
+### 17u. F3 伊斯玛洛斯夜袭守营战 + F4 独眼巨人羊腹潜行战 + P1.4 记忆支付（11-09 晚，本会话；17h 战斗群七场收齐 + story 待实装清账，game-feel/rpg/dialogue-systems/game-ui-ux 方法论）
+
+- **接手背景**：用户确认"F3+F4 + P1.4 记忆账本"范围。核实 §17l~17t 全部在场（HEAD=e0744bb、§17g 八步 + P1.9/F6 已落地）；工作区仅 schema.json 并行评测补丁 + island3d.js 隔离实验（按 §17q 决议不动）。本轮按账本「未做」项开工：**F3 伊斯玛洛斯夜袭守营战 + F4 独眼巨人羊肚潜行战**（§17h 战斗群七场仅剩的两场，序章增强批）+ **P1.4 记忆支付**（story 待实装清单；喀耳刻托付已实装，不重复造）。零新意图词表（三线全走 E 键交互+反应战，不入 /api/parse），评测线 cases.jsonl 零改动。
+- **F3 伊斯玛洛斯夜袭守营战（CAMP 状态机，SC/SU 同款零新引擎）**：ispolys 场景新增 `campfire` spot（营火，坐标 (7,8) 逐格核过可走）——拾酒（`tookWine`）后守营火：城民提火把围营，连挡三波（approach 0.55s → strike 0.6s 窗口按 E 拍开 → retreat 0.5s，SC/SU 同款）。窗口 E=拍开（火星粒子 burst+浮字+屏震），错过=被火燎 -10（钳 1 血不死），**失误满 3 波＝失守**（`hit>=CAMP_N` 触发 `campEnd` 失守分支：折损记忆"你没守住这一夜"+重守；不漏发成就）。守满三波＝**dev 成就 `camp_held`「酒后仍醒着的人」**（+30 历练——原著里你们喝醉睡沉了被反扑折了人手，你醒着）。keydown E 前置拦截（CAMP 行在 SU 后）+ 主循环 ismaros tick + `drawCampHud` 屏幕空间 HUD（火把波计数+窗口条）。**这是最作第二场战斗（第一场特洛伊木马夜袭），补全"贪"的守成之题**。
+- **F4 独眼巨人羊腹潜行战（HIDE 状态机，SC 同款零新引擎）**：cyclops 场景新增 `ramhide` spot（羊腹之下，坐标 (16,5) 逐格核过可走）——`polHeard`（听全「无人」故事）后激活：把自己绑进羊腹，巨人逐只摸羊（WARN 0.55s → strike 0.6s 窗口按 E 屏息低头 → ret 0.45s）。躲满 6 只＝混出洞（**canon 成就 `under_the_ram`「羊腹之下」**+40 历练）；被抓 3 次＝伤势重来（`ramEnd(true)` 提回羊栏边）。**红线守住**：巨人不可被攻击，全程只躲不打（与支章四"红线"一致）。`drawRamHud` 屏幕空间 HUD（摸羊计数 + 被抓数 + 窗口条）；keydown E 拦截（HIDE 行）+ 主循环 cyclops tick。
+- **P1.4 记忆支付（dialogue-systems 记忆流深化，零模型）**：`payMemoryToDead()` —— 亡母三抱空（`oldName` 落地）后再点雾里的妇人，从记忆流挑一条真实记忆（imp≥3 且未支付）付给她：该记忆进入 `state.paidMem`（"已支付"）+12 历练+记忆；塞壬之歌 `buildLyric()` 过滤 paidMem（"付给亡者的那页，塞壬从那里只剩空白"）；终章判词新增 paid 段；先知 AMBIENT 新增 `mem_paid` 情境台词。story 设计"讲过的记忆变淡、塞壬唱不出"正式实装。
+- **ACHIV/CANON_GROUPS 合流**：canon `under_the_ram` 入 ACHIV + `CANON_GROUPS` 16→**17 站**（+羊腹之下——动态计数自动更新，无硬编码）；dev `camp_held` 入 ACHIV（dev 不算锚点站）。终验"纯正版一命通关集齐 canon" 锚点 +1。
+- **状态/旧档兜底**：`state.campHeld/ramHide/paidMem` 三字段（ensureState 补默认值——旧档无此字段＝未打/未支付，行为与旧版一致，实测旧档重载全 false/[] 正常）。
+- **验收（8778 隔离源，server.py + 环境 Playwright；全程控制台 0 error）**：S1 全函数注册（startCampDefense/startRamHide/payMemoryToDead/drawCampHud/drawRamHud）✓；S2 F3 三波守满（CAMP on→wave 3→campHeld + camp_held 入账）✓；S3 F3 失守路（miss×3→hit 3→campEnd 失守、不发成就）✓；S4 F4 六躲成功（HIDE n→6→ramHide + under_the_ram 入账）✓；S5 F4 被抓三（caught 3→战斗结束、不发成就）✓；S6 P1.4 支付（payMemoryToDead 选 imp 最高记忆→paidMem 入账→buildLyric 不再唱已支付记忆）✓；S7 旧档兜底（抹三字段→reload→false/[]）✓；S8 spot 真实 interact 链（campfire/ramhide/mother 三 spot 用 aiaNear 精确匹配+interact 触发 HIDE）✓；S9 两战斗 HUD 截图视觉复核（`shots/f3-camp-hud.png` 火把条逐字可读、`shots/f4-ram-hide-hud.png` 摸羊条+9 羊视觉达标）✓。node --check 绿（tools/check_inline_js.py）；story.md 三处同步（支章一 F3/支章四 F4/P1.4 记忆支付）。
+- **坑（新）**：①**Playwright 触发战斗要绕开 UI 门控**——`interact()` 开头 `if(titleOn||chapterOn||mapOpen) return`，直接 evaluate 调 `startCampDefense/startRamHide` 需先点标题启航（`tsGo`/`继续航程`）或设 `titleOn=false` 局部变量；单步 `campDefenseTick/ramHideTick` 也被同一门控短路（界面打开冻结窗口防海图空转）——自动化用"直调 start* + 函数级驱动 strike/duck"绕过 tick 门控，最终验证走真实 spot+interact。②`payMemoryToDead` 依赖 imp≥3 记忆，测试要先把 `state.memory` 造一条 imp≥3 再触发（无真实记忆时返回 false＝走原 toast，行为正确）。③dist=0 验证 spot 匹配（ATS=40，campfire=300,340 / ramhide=660,220 / mother=580,340）。④规避"multiedit 部分生效"坑：本次全用单点 edit + 每批 node --check。
+- **未做**：v0.2.0 打 tag（判据 GREEN，仍留专门会话）；island3d 实验保留未决；评测线不动（本批零新意图词表）。**§17h 战斗群七场至此全部收齐（F1 特洛伊/F2 忒勒皮洛斯/F3 伊斯玛洛斯/F4 独眼巨人/F5 斯库拉/F6 求婚者/F7 波塞冬浪）。**
+
+---
+
 ## 二、卡住的问题
 
 1. **（11-07 晚已大幅收敛）**：类别 **94.2%**（v2.4.1，257 条）✅、误触发 **3.3%** ✅、**完全正确 82.1% 已跨过 80% 线** ✅。剩：**multi 组 53.8%↔61.5% 交替、本轮摸到上限 61.5%**——一句话多意图拆分是模型能力短板，schema 描述已到头，考虑游戏侧引导玩家分句说；**"X在哪/怎么过X/住哪座岛"薄边界**还有 4 条稳定难点（boundary_07/confuse_10/confuse_19/boundary_18），收益递减，建议接受现状或游戏侧引导。
