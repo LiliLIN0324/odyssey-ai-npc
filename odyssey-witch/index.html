@@ -720,6 +720,7 @@ const OGSPOTS = [
   {type:"windstone",x:14*ATS+ATS/2,    y:5*ATS+ATS/2,     r:70, label:"听风石（选出海的时辰）"},
   {type:"raft",     x:12*ATS+ATS,      y:7*ATS+ATS/2,     r:85, label:"造筏台"},
   {type:"fire",     x:16*ATS+ATS/2,    y:8*ATS+ATS/2,     r:66, label:"篝火"},
+  {type:"gaze",     x:15*ATS+ATS/2,    y:10*ATS+ATS/2,    r:70, label:"望海（坐一会儿，什么也不做）"},
   {type:"ogDock",   x:3*ATS+ATS/2,     y:10*ATS+ATS/2,    r:70, label:"推筏出湾"},
 ];
 function ogTile(cx,cy){ return (cx<0||cy<0||cx>=ACOLS||cy>=AROWS)?"~":OGYGIA[cy][cx]; }
@@ -1204,6 +1205,8 @@ function waveThree(){
 }
 function raftBreak(){
   waveSfx(); addTrauma(0.9); feedback("large"); sfx("attack");
+  /* P2.8：掀筏入账（波塞冬三笔之二；重复掀筏只记一笔） */
+  if (!state.raftWrathMark){ state.raftWrathMark = true; state.poseidonWrath = (state.poseidonWrath||0)+1; }
   showAsk("第 五 章 · 波 塞 冬 的 浪","筏　散　了",
     "一记从天而降的巨浪把筏拆成了柴。你呛进水里——咸的，黑的，一直往下坠。",
     "「你掀了独眼巨人的账——现在，海来收利息。」", [
@@ -1248,6 +1251,45 @@ function raftLost(){
   renderHUD(); save();
   showChapter("concept-art/06-奥吉吉亚-卡吕普索.jpg","第 五 章","海　记　了　账","毁筏的人把面纱推了回去",
     "浪把你的名字按进水里，又把你整个人推回奥吉吉亚的滩。岛上的日历还是昨天——卡吕普索在栈桥上，像从没等你走成过：「我说过，海记你的账。」（重新造筏：木料 ×3；时辰与储粮仍算数 · 历练 +10）");
+}
+/* ==================== P2.3 费埃克斯送客船石化（17g 原著第 13 卷末 · 彩蛋零成本） ====================
+   送行船驶远后，波塞冬在回程海上把船变成石柱——惩罚护送奥德修斯的费埃克斯人。
+   回望＝亲眼看见（石柱永久立于世界图）；不回头＝只听见闷响。海神账第三笔，两路都记。 ==================== */
+const SCHERIA_EXIT = {x:17*WTS+WTS/2+40, y:7*WTS+WTS/2+30};   /* 斯克里送行船出发海面（离岛落点） */
+let _pillarT = 0;
+function pillarTick(dt){
+  if (scene!=="world" || !state.scheriaFarewell || state.stonePillarDone){ _pillarT=0; return; }
+  if (dlgOpen || titleOn || chapterOn || mapOpen || askOn) return;   /* 界面全清才蓄力（海遇/掀筏同款门控） */
+  if (Math.hypot(boat.x-SCHERIA_EXIT.x, boat.y-SCHERIA_EXIT.y) < 300){ _pillarT=0; return; }
+  _pillarT += dt;
+  if (_pillarT >= 1.6){ _pillarT = 0; stonePillarEvent(); }
+}
+function stonePillarEvent(){
+  sfx("warn"); feedback("small");
+  showAsk("第 六 章 · 尾 声","别 回 头",
+    "送行船的帆尖缩成一点白。水手的叮嘱还在耳边：别回头念出这座岛的名字。\n身后，海面忽然沉了一拍——像有什么东西正从浪底下顶上来。",
+    "「父神在收账。不关你的事——别看。」掌舵的水手声音发紧。", [
+    {label:"回头看一眼", hint:"原著第 13 卷 · 你知道这意味着什么", fn:()=>stonePillarLook()},
+    {label:"目视前方，不回头", hint:"守住那句叮嘱 · 耳朵是诚实的", fn:()=>stonePillarMiss()},
+  ]);
+}
+function stonePillarLook(){
+  if (state.stonePillarDone) return;   /* 防重入：石化只入账一次（杂散直调不重复记账） */
+  state.stonePillarDone = true; state.stonePillarSeen = true;
+  state.poseidonWrath = (state.poseidonWrath||0)+1;   /* P2.8：石化入账（第三笔） */
+  waveSfx(); addTrauma(0.5); feedback("large");
+  addMemory("旅人回望了一眼——海面升起一根白石柱，送他回家的船在那儿变成了石头（原著第 13 卷：波塞冬收账）", 5, "poseidon");
+  toast("你回头。海上立起一根石柱——送行船正在变成石头，浪在柱脚碎成白沫。波塞冬的账，从不挑收账的日子。（原著 · 石化的船 · 海神记账 +1）");
+  renderHUD(); save();
+}
+function stonePillarMiss(){
+  if (state.stonePillarDone) return;   /* 防重入：石化只入账一次 */
+  state.stonePillarDone = true; state.stonePillarSeen = false;
+  state.poseidonWrath = (state.poseidonWrath||0)+1;   /* P2.8：石化入账（第三笔） */
+  sfx("warn");
+  addMemory("旅人没有回头——身后传来一声很远的闷响，像海在关一扇门（原著第 13 卷：波塞冬收账）", 5, "poseidon");
+  toast("你没有回头。很远的身后，一声闷响滚过水面——像海在关一扇门。有些账，不听也能结。（原著 · 石化的船 · 海神记账 +1）");
+  renderHUD(); save();
 }
 /* ==================== F5 斯库拉六头快反战（17g 原著第 12 卷 · §17h F5：船舷反应战） ====================
    带话/静水＝改写出口（scyllaDebtPaid 静默放行，不扣船员）；硬闯＝原著——六头轮探，每头 0.6s 窗口
@@ -1348,7 +1390,17 @@ function prologueSpot(s){
     toast("莲子比蜜还甜。你愣了很久——刚才在想什么来着？……想不起来了。饿是真饱了，心是真轻了。（士气昂扬 · 饥饿缓解 · 某段记忆变淡了）");
     renderHUD(); save(); return;
   case "lotusDrag":
-    if (state.lotusDragged) return toast("断桨躺在沙上。他不肯走——你也不该再拖第二次。");
+    if (state.lotusDraggedOk) return toast("他坐在凳上望着海，不挣了。绳结是忒勒皮洛斯的打法——一结管一条命。");
+    /* P2.2（17g 原著第 9 卷）：纯正版出口——持「幸存者的绳结」强拖成功（绑上凳带回船），canon */
+    if (state.backpack["幸存者的绳结"]){
+      delItem("幸存者的绳结",1);
+      state.lotusDraggedOk=true; state.lotusDragged=true;
+      gainXp(25); sfx("bless"); feedback("medium"); achivTick();
+      addMemory("旅人用幸存者的绳结把食莲者绑上凳拖回船——这一次，他真的把人带走了（原著第 9 卷）", 4, "lotus");
+      toast("你抽出那根旧绳，照忒勒皮洛斯的打法套上他的手腕——「对不住，这一趟我说了算。」他不挣了，像突然想起怎么坐。船开时他望着海，一路没说话。（强拖回船 · 历练 +25 · 绳结已用）");
+      renderHUD(); save(); return;
+    }
+    if (state.lotusDragged) return toast("断桨躺在沙上。他不肯走——你也不该再拖第二次。（若有一根结实的绳……忒勒皮洛斯的碎船骸间兴许有）");
     state.lotusDragged=true; addItem("断桨"); gainXp(10);
     addMemory("旅人想强拖食莲者上船，只捞到一支断桨", 2, "lotus");
     toast("你抓住他的手腕往船拖——他挣开，笑得毫无恶意。你只捞到一支断桨。（获得 断桨 · 历练 +10）");
@@ -1466,9 +1518,11 @@ function prologueSpot(s){
       crewLedgerLight();
       sfx("bless"); gainXp(50);
       addMemory("十二艘船满帆离开特洛伊的海岸——十二个名字都在甲板上，全作从这里开始", 4, "any");
+      /* P2.1 灰眼睛护送（17g 原著第 3 卷收束·不做实体 NPC）：离岸时刻的环境诗行+记忆 */
+      addMemory("雾深处，一双灰眼睛看着船队转向家的方向——她没露面，只把风往船尾送了送（原著 · 雅典娜的护送）", 3, "any");
       scene = "world";
       boat.x = 30*WTS+WTS/2; boat.y = 6*WTS+WTS+30;
-      showChapter("concept-art/01-序章漂流.jpg","出 海","十 二 艘 船","启航之地 · 船队整帆","十二艘船同时离岸。桅杆挤着桅杆，像一片移动的林子。\n这一程的尽头没有人知道——但今晚，船是满的，人是齐的。");
+      showChapter("concept-art/01-序章漂流.jpg","出 海","十 二 艘 船","启航之地 · 船队整帆","十二艘船同时离岸。桅杆挤着桅杆，像一片移动的林子。\n雾深处，一双灰眼睛看着船队转向家的方向——她没露面，只把风往船尾送了送。\n这一程的尽头没有人知道——但今晚，船是满的，人是齐的。");
       renderHUD(); save(); return;
     }
     scene = "world"; save(); sfx("pick");
@@ -1719,8 +1773,15 @@ let state = {
   polHeard: false,         /* 听完「无人」故事全本（洞内独眼微光随之熄灭） */
   polNameGiven: null,      /* 自报名字（名字考试） */
   namesHeard: false,       /* 「被留下的名」解锁（“无人”——终章认名候选预埋） */
-  ropeTaken: false,        /* 忒勒皮洛斯：幸存者的绳结 */
-  cliffWarn: false,        /* 忒勒皮洛斯：崖下险道首次警告 */
+   ropeTaken: false,        /* 忒勒皮洛斯：幸存者的绳结 */
+   lotusDraggedOk: false,   /* P2.2：持绳强拖成功（canon：绑上凳带回船） */
+   gazeDone: false,         /* P2.7：奥吉吉亚望海（无用但真） */
+   stonePillarDone: false,  /* P2.3：费埃克斯送客船石化（石柱已升） */
+   stonePillarSeen: false,  /* P2.3：你是否回头看了一眼 */
+   poseidonWrath: 0,        /* P2.8：海神账上的笔数 0-3（诅咒/掀筏/石化） */
+   polWrathMark: false,     /* P2.8：诅咒入账标记（防重复记账） */
+   raftWrathMark: false,    /* P2.8：掀筏入账标记（多次掀筏只记一笔） */
+   cliffWarn: false,        /* 忒勒皮洛斯：崖下险道首次警告 */
 };
 
 /* ---------- 派生数值：从基础属性重算，绝不存为真值（rpg Pattern 1） ---------- */
@@ -1856,8 +1917,23 @@ function ensureState(){
   if (state.targetHits===undefined) state.targetHits=0;
   if (state.lotusAte===undefined) state.lotusAte=false;
   if (state.lotusGift===undefined) state.lotusGift=false;
-  if (state.lotusDragged===undefined) state.lotusDragged=false;
-  if (state.sheared===undefined) state.sheared=false;
+   if (state.lotusDragged===undefined) state.lotusDragged=false;
+   /* P2 批（17s）：旧档补默认值＝未触发过，行为与旧版一致 */
+   if (state.lotusDraggedOk===undefined) state.lotusDraggedOk=false;
+   if (state.gazeDone===undefined) state.gazeDone=false;
+   if (state.stonePillarDone===undefined) state.stonePillarDone=false;
+   if (state.stonePillarSeen===undefined) state.stonePillarSeen=false;
+   if (state.polWrathMark===undefined) state.polWrathMark=false;
+   if (state.raftWrathMark===undefined) state.raftWrathMark=false;
+   /* P2.8 波塞冬怒值：旧档按事件 flag 推导回补（诅咒 flag：真名已报入 polNameGiven） */
+   if (state.poseidonWrath===undefined){
+     let w=0;
+     if (state.polWrathMark || state.polNameGiven==="奥德修斯"){ state.polWrathMark=true; w++; }
+     if (state.raftWrathMark || state.raftStormDone || state.raftStormFail){ state.raftWrathMark=true; w++; }
+     if (state.stonePillarDone) w++;
+     state.poseidonWrath=w;
+   }
+   if (state.sheared===undefined) state.sheared=false;
   if (state.polHeard===undefined) state.polHeard=false;
   if (state.polNameGiven===undefined) state.polNameGiven=null;
   if (state.namesHeard===undefined) state.namesHeard=false;
@@ -2296,6 +2372,8 @@ const ACHIV = [
   { id:"tears_for_song", name:"听自己的歌落泪", desc:"德摩多科斯唱到木马，你在异国的火光里哭了——然后你当众说出了自己的名字。荷马第 8 卷：全书的转轴，系在这一哭上", cond:()=>!!state.selfRevealed, canon:true },
   /* —— P1.8 风神逐客（17g 原著第 10 卷：最冷的一句话）—— */
   { id:"banished", name:"被风神驱逐", desc:"风袋用光后你回到风神岛——埃俄罗斯说：连神明都憎恨的人，离开我的岛。荷马第 10 卷这句原话，落在了你头上", cond:()=>!!state.banishedFromAeolia, dev:"原著里他只是收回风袋——这回他把门关上了" },
+  /* —— P2.2 食莲岛强拖回船（17g 原著第 9 卷：绑上凳带回）—— */
+  { id:"lotus_drag", name:"强拖回船的人", desc:"食莲滩上你没有听任甜——用幸存者的绳结把他绑上凳，带回船上。他一路望着海，一句话也没说。荷马第 9 卷写的就是这一下", cond:()=>!!state.lotusDraggedOk, canon:true },
 ];
 function achivTick(){
   for (const a of ACHIV){
@@ -2310,12 +2388,33 @@ function achivTick(){
     }
   }
 }
-/* 终章命运总结：荷马之线 / 改写命运（canon 全达成 vs 有偏离） */
+/* 终章命运总结：荷马之线 / 改写命运（ACHIV 合流 · 17g 第 8 步）
+   命运锚点按「站」计：同一站的多枚 canon 成就（太阳岛的守誓/睡着）互斥也互认——
+   任一枚即点亮该站（原著两件事本就同时发生：他守了自己的誓，船员破了他们的）。 */
+const CANON_GROUPS = [
+  {n:"木马之夜",       ids:["trojan_mind"]},
+  {n:"十一艘的债",     ids:["eleven_lost"]},
+  {n:"食莲岛的绳结",   ids:["lotus_drag"]},
+  {n:"「无人」之名",   ids:["no_one"]},
+  {n:"魔草破咒",       ids:["moly_rescue"]},
+  {n:"留灯的人",       ids:["circe_lamp"]},
+  {n:"长路",           ids:["hades_long"]},
+  {n:"三次抱空",       ids:["mother_embrace"]},
+  {n:"桅杆上的听众",   ids:["siren_mast"]},
+  {n:"太阳岛的誓言",   ids:["sun_keep","zeus_survived"]},
+  {n:"毁筏游三天",     ids:["raft_survived"]},
+  {n:"听自己的歌落泪", ids:["tears_for_song"]},
+  {n:"不接谎的船",     ids:["truth_ship"]},
+  {n:"脚疤与婚床",     ids:["scar_proved"]},
+];
 function fateSummary(){
   const got=state.achiv||[];
   const canonGot=ACHIV.filter(a=>a.canon&&got.includes(a.id));
   const devGot=ACHIV.filter(a=>a.dev&&got.includes(a.id));
-  return { canonGot, devGot, allCanon: canonGot.length===ACHIV.filter(a=>a.canon).length };
+  const anchors=CANON_GROUPS.map(g=>({n:g.n, ok:g.ids.some(id=>got.includes(id))}));
+  return { canonGot, devGot, anchors,
+           anchorGot: anchors.filter(a=>a.ok).length, anchorTotal: anchors.length,
+           allCanon: anchors.every(a=>a.ok) };
 }
 
 /* ==================== NPC 主动性（game-ai/utility：本地打分，零模型调用）
@@ -2468,6 +2567,16 @@ line:()=>"你醒的时候，海把你的船推上了我们的滩——别怕，�
     {id:"after_storm", w:1.0, cond:()=>!!state.zeusStruck,
      line:()=>"（牛群远远站成半圆，谁也不低头）雷落下来那天，你睡着了。这片草场多了一百个影子——他们还是你的船员，只是不再说话。"},
   ],
+  /* P2.8 波塞冬怒值（17g）：盲眼巨人感知父亲的账——wrath>0 才开口 */
+  polyphemus: [
+    {id:"father_wrath", w:1.0, cond:()=>(state.poseidonWrath||0)>=1,
+     line:()=>`（他朝浪的方向偏了偏头）我爹的账翻到第 ${state.poseidonWrath||0} 笔了。他的账，向来用浪结。`},
+  ],
+  /* P2.6 佩涅洛佩织布拆布（17g 原著第 2 卷）：求婚者的怨语——零模型零成本 */
+  suitors: [
+    {id:"weaving", w:0.8, cond:()=>true,
+     line:()=>"（掷骰声里有人嘟囔）王后那架寿布，织了三年还没织完——白天织，夜里拆。谁家的新郎等得起这个？"},
+  ],
 };
 function ambientAnchor(npc){
   if (npc==="witch") return witch;
@@ -2478,6 +2587,8 @@ function ambientAnchor(npc){
   if (npc==="nausicaa") return nausicaa;
   if (npc==="epeius" && scene==="troy"){ const s=PROLOGUE_SPOTS().find(p=>p.type==="epeius"); return s?{x:s.x,y:s.y}:null; }
   if (npc==="cattle"){ const s=SUNSPOTS.find(p=>p.type==="cattle"); return s?{x:s.x,y:s.y}:null; }   /* P1.3 圣牛锚点 */
+  if (npc==="polyphemus"){ const s=PROLOGUE_SPOTS().find(p=>p.type==="poly"); return s?{x:s.x,y:s.y}:null; } /* P2.8 独眼锚点 */
+  if (npc==="suitors"){ const s=ITSPOTS.find(p=>p.type==="suitors"); return s?{x:s.x,y:s.y}:null; }           /* P2.6 求婚者锚点 */
   return null;
 }
 let ambTimer=0, ambUntil=0, ambAnchor=null, ambText="", ambActive=null;
@@ -2488,7 +2599,7 @@ function npcAmbientTick(dt){
   if (ambTimer < 1.2) return;                /* 决策步 1.2s 一次，非每帧 */
   ambTimer = 0;
   if (dlgOpen||titleOn||chapterOn||mapOpen||scene==="world"||(scene==="telepylos"&&FD.on)){ ambActive=null; return; }
-  const npc = scene==="aia"?"witch":scene==="hades"?"seer":scene==="aeolia"?"aeolus":scene==="strait"?"siren":scene==="sun"?"cattle":scene==="ogggia"?"calypso":scene==="scheria"?"nausicaa":scene==="ismaros"?"rebuilder":scene==="lotus"?"lotusman":scene==="cyclops"?"polyphemus":scene==="troy"?"epeius":null;
+  const npc = scene==="aia"?"witch":scene==="hades"?"seer":scene==="aeolia"?"aeolus":scene==="strait"?"siren":scene==="sun"?"cattle":scene==="ogggia"?"calypso":scene==="scheria"?"nausicaa":scene==="ismaros"?"rebuilder":scene==="lotus"?"lotusman":scene==="cyclops"?"polyphemus":scene==="troy"?"epeius":scene==="ithaca"?"suitors":null;
   if (!npc){ ambActive=null; return; }
   const anchor = ambientAnchor(npc);
   if (!anchor){ ambActive=null; return; }
@@ -3145,6 +3256,8 @@ function showFinale(mode, way, name){
     : state.prophecy==="short"
     ? "你选了捷径。荣耀的灰暖过一时——浪替你省下的年月，都记在别人的歌里了。"
     : "你没来得及问路。海替你挑了一条——它最擅长这个。");
+  /* P2.9（17g 原著第 10 卷末）：留灯线判词——两章因果用原著钉死 */
+  if (state.circeLeft) paras.push("埃阿亚岛留灯的那一夜，她把海图铺在灶边，替你把路指明白：先去冥界，问特瑞西阿斯。长路是你选的——可走到冥界岔口这件事本身，是她要你先去问死者的。（原著 · 喀耳刻的指路）");
   paras.push(state.lyricFragment
     ? "塞壬的歌你听完了。残页贴身放着——有些知识，是用来疼的。"
     : state.waxEars
@@ -3185,12 +3298,12 @@ function showFinale(mode, way, name){
   if (tails.length) paras.push(tails.join(" "));
   /* 命运双轨总结（玩家=奥德修斯：荷马之线 / 改写命运）——原著锚点全达成 vs 偏离被记住 */
   const fate = fateSummary();
-  if (fate.allCanon && fate.canonGot.length)
-    paras.push(`🏆【荷马之线】${fate.canonGot.length} 处原著锚点你一处没改——「无人」之名、桅杆上的歌、未动的圣牛、长路、留灯、不接谎的船，全都在。你不是在重走史诗：你就是史诗本身。`);
+  if (fate.allCanon)
+    paras.push(`🏆【荷马之线 · 全本】${fate.anchorGot} 处原著锚点你一处没改——${fate.anchors.map(a=>a.n).join("、")}，全都在。你不是在重走史诗：你就是史诗本身。`);
   else if (fate.devGot.length)
     paras.push("🔮【改写命运的人】"+fate.devGot.map(d=>d.dev).join("；")+"。荷马没写这一页——从今往后，歌手们得自己学这首新歌。");
-  else if (fate.canonGot.length)
-    paras.push(`命运锚点：你守住了 ${fate.canonGot.length}/${ACHIV.filter(a=>a.canon).length} 处原著分岔${fate.canonGot.length>=4?"——史诗认得你的脚印":"——有几页，你写岔了"}。`);
+  else if (fate.anchorGot>0)
+    paras.push(`命运锚点：你守住了 ${fate.anchorGot}/${fate.anchorTotal} 处原著分岔${fate.anchorGot>=8?"——史诗认得你的脚印":"——有几页，你写岔了"}。`);
   /* 船队判词（17h 原著 12 艘）：从特洛伊带回几艘，史诗就记几艘 */
   paras.push(state.fleet>=12
     ? "十二艘船，一根桅杆都没少——从特洛伊的火光到伊萨卡的雾，满帆走完全程。荷马没敢写这一页。"
@@ -3211,6 +3324,19 @@ function showFinale(mode, way, name){
     ? "波塞冬掀翻过你的筏——你曾把面纱推回去一次，海收了筏，没收你；第二次，白手圣母的手接住了下沉的人。（原著 · 毁筏的人游了三天）"
     : "波塞冬掀翻了你自己造的筏——白手圣母的面纱兜住了你，三天两夜，浪把你交还给海岸。（原著 · 毁筏的人游了三天）");
   else if (state.raftStormFail) paras.push("你把面纱推回去过一次，海把你推回奥吉吉亚——后来的事，歌里还没唱到。");
+  /* P2.1 灰眼睛留名（17g 原著第 22 卷末·雅典娜止战）：A 路走完时她最后看一眼——从不留名 */
+  if (mode==="a") paras.push("家门口的雾散时，一双灰眼睛在橄榄树影里看了你最后一眼——没留名。可十年里每一次逆风都绷着你的帆，每一次迷航都有人替你认过路。你朝雾里点了一下头：往后不用了——回家的路，我自己认得。（原著 · 灰眼睛的守护）");
+  /* P2.3 石化送客船（原著第 13 卷末）：你回头看的那一眼，把这一幕带进了史诗 */
+  if (state.stonePillarDone) paras.push(state.stonePillarSeen
+    ? "送行船回到港口那日，波塞冬在海上升起一根石柱——船成了石头，费埃克斯人从此不再载客。你回头看的那一眼，把这一幕带进了史诗。（原著 · 石化的船）"
+    : "你到底没有回头。身后那声闷响，后来在费埃克斯人的歌里有了答案：一根石柱立在海面，船成了石头。守住了叮嘱的人，耳朵替他记下了结局。（原著 · 石化的船）");
+  /* P2.7 哭海（原著第 5 卷）：七年里的黄昏，每天都做同一件无用的事 */
+  if (state.gazeDone) paras.push("奥吉吉亚的七年你数不清——但你记得那些坐在滩上望海的黄昏：什么也不做，只看海。她站在你身后，也看。有些等待不是不动，是每天都做同一件无用的事。（原著 · 哭海）");
+  /* P2.8 波塞冬怒值（17g）：你欠海神几笔账 */
+  const pw = state.poseidonWrath||0;
+  if (pw>=3) paras.push("海神的账上你欠了三笔：独眼巨人的诅咒、掀翻的筏、沉成石头的船。三笔都记着——你也活着回来了。史诗记得每一笔。（原著 · 波塞冬的账）");
+  else if (pw===2) paras.push("海神的账上你欠了两笔——独眼巨人的诅咒，和那场掀筏的浪。海的利息还没收完，只是不急。（原著 · 波塞冬的账）");
+  else if (pw===1) paras.push("海神的账上你欠了一笔——独眼巨人的诅咒。浪底下有人在等，不急。（原著 · 波塞冬的账）");
   paras.push(stay ? "锁没有锁眼。它锁的从来不是门——是「回家」这两个字的发音。"
     : bpath ? "船头没有调向西，也没有调向东。你想去哪儿，哪儿就是船头。"
     : "船头调向西的时候，你认下了自己的名字——这一回，它是你的了。");
@@ -3224,7 +3350,7 @@ function showFinale(mode, way, name){
     `<span class="stx">历练 <b>${state.xp}</b></span>`+
     `<span class="stx">钱袋 <b>${state.coins}</b> 德拉克马</span>`+
     `<span class="stx">被记得的事 <b>${mem}</b> 件</span>`+
-    `<span class="stx">命运锚点 <b>${fate.canonGot.length}/${ACHIV.filter(a=>a.canon).length}</b>${fate.devGot.length?` · 改写 <b>${fate.devGot.length}</b>`:""}</span>`+
+    `<span class="stx">命运锚点 <b>${fate.anchorGot}/${fate.anchorTotal}</b>${fate.devGot.length?` · 改写 <b>${fate.devGot.length}</b>`:""}</span>`+
     (windLeft?`<span class="stx">风袋 <b>×${windLeft}</b></span>`:"");
   ec.classList.add("show"); sfx("bless");
   const finalName = (mode==="a" && way==="old") ? "旧 名" : (mode==="a" ? (name||"无名旅人") : null);
@@ -3703,6 +3829,14 @@ function interact(){
   if (s.type==="fire" && scene==="ogggia"){
     toast("篝火每晚在同一时刻烧旺。她坐在火边织布——白天织开的那件，正在她手里拆掉。");
     return;
+  }
+  if (s.type==="gaze" && scene==="ogggia"){
+    /* P2.7（17g 原著第 5 卷）：奥吉吉亚七年，夜夜坐滩望海而泣——「无用但真」的动作 */
+    if (state.gazeDone){ toast("（你又在滩上坐了一会儿）海还是那片海。她也还站在你身后三步——谁都没说话。"); return; }
+    state.gazeDone = true; gainXp(10);
+    addMemory("旅人在奥吉吉亚的滩上望海——你望着海，她望着你", 4, "calypso");
+    toast("你在滩上坐下来，什么也不做，只看海。浪把日历冲得一动不动。\n——身后传来很轻的脚步：她也来了，站在你身后三步，不说话。你们望的是同一片海，想的不是同一件事。（原著 · 哭海 · 历练 +10）");
+    renderHUD(); save(); return;
   }
   if (s.type==="ogDock"){
     if (state.calypsoChoice!=="raft"){ toast("栈桥下，海水把同一个浪推上来又收回去了。完美得让人心慌。"); return; }
@@ -4254,6 +4388,7 @@ function drawWorld(et){
   }
   ctx.font="600 11px 'Segoe UI','Microsoft YaHei'";
   drawWorldClouds(et);   /* 视差云影（两层速度差 → 航行时的空间纵深） */
+  drawStonePillar(et);   /* P2.3 石化石柱（world 图层内，W3D 关闭时由 2D 承担） */
   drawBoat(et);
 }
 /* ---------- 世界图视差云影（procedural-gen：种子随机确定可复现） ---------- */
@@ -4288,6 +4423,17 @@ function drawEscortFleet(et){
     ctx.fillStyle="rgba(238,232,216,.72)"; ctx.beginPath();
     ctx.moveTo(p.x+0.8,p.y-7+rock); ctx.quadraticCurveTo(p.x+5.5,p.y-3+rock,p.x+0.8,p.y-0.5+rock); ctx.closePath(); ctx.fill();
   }
+}
+/* ---------- P2.3 石化送客船（2D 世界图：白石柱立于斯克里东南海面，stonePillarDone 后永久可见） ---------- */
+function drawStonePillar(et){
+  if (scene!=="world" || !state.stonePillarDone) return;
+  const px=SCHERIA_EXIT.x+92, py=SCHERIA_EXIT.y+58, sw=Math.sin(et*0.7)*1.2;
+  ctx.fillStyle="rgba(255,255,255,.30)"; ctx.beginPath(); ctx.ellipse(px,py+14,15+sw,4.5,0,0,7); ctx.fill();   /* 柱脚白沫 */
+  ctx.fillStyle="#9aa4ab"; ctx.fillRect(px+2,py-28+sw*.4,5,42);                                               /* 柱身暗侧 */
+  ctx.fillStyle="#cfd6da"; ctx.fillRect(px-6,py-28+sw*.4,9,42);                                               /* 柱身 */
+  ctx.fillStyle="#eef1f3"; ctx.fillRect(px-6,py-28+sw*.4,4,42);                                               /* 受光棱 */
+  ctx.fillStyle="#dde2e5"; ctx.fillRect(px-8,py-32+sw*.4,16,5);                                               /* 残檐 */
+  ctx.fillStyle="rgba(0,0,0,.20)"; ctx.beginPath(); ctx.ellipse(px+11,py+15,9,2.8,0,0,7); ctx.fill();         /* 投影 */
 }
 /* 守船战 HUD（屏幕空间：ctx.restore 之后画，顶部居中，不随镜头漂移） */
 function drawFleetHud(){
@@ -6761,7 +6907,7 @@ function handlePolyphemus(category, args){
       /* P1.1 挂点①：独眼巨人 -6（原著第9卷：六名同伴被生吞——旧路重访时这笔旧账入册） */
       state.crewCyclops=true; loseCrew(6, "独眼巨人的洞里，六个人没能跟着羊群走出影子"); save();
       addMemory("旅人听盲眼巨人讲完了「无人」的账——那个假名和那声真名", 4, "polyphemus");
-      return {text:"（他摸着羊背，声音像岩缝里的风）那年来了条船。领头的小东西给我酒喝，说他的名字叫『无人』。夜里他们戳了我的眼睛。我喊：『没有人』伤害我！——神明也没听懂我的祈祷。他逃出洞，朝海喊了自己的真名。（他顿了很久）从那天起，海开始替所有人记账。"}; }
+      return {text:"（他摸着羊背，声音像岩缝里的风）那年来了条船。领头的小东西给我酒喝，说他的名字叫『无人』。夜里他们戳了我的眼睛。我喊：『没有人』伤害我！——神明也没听懂我的祈祷。（他的手在羊毛上收紧）后来他把他们的人全绑在公羊肚皮底下，混出了洞——是我亲手把羊放出洞的，一只都没摸出来。从那天起，我数羊比数命还细。他逃出洞，朝海喊了自己的真名。（他顿了很久）从那天起，海开始替所有人记账。"}; }
     return {text:"故事讲完了。名字的事，你自己掂量。"};
   case "查询生物情报":
     return {text:"（他拍拍身边的巨羊）我的羊。不肥，但听话——听话，比聪明活得长。"};
@@ -6812,6 +6958,8 @@ function polyNameExam(raw){
   }
   if (/奥德修斯/.test(name)){
     /* P0.3（17g 原著对齐）canon 诅咒条款：真名喊给海听 */
+    /* P2.8：诅咒入账（波塞冬三笔之一；重复报名只记一笔） */
+    if (!state.polWrathMark){ state.polWrathMark = true; state.poseidonWrath = (state.poseidonWrath||0)+1; }
     addMemory("旅人向盲眼的巨人报出了真名「奥德修斯」——波塞冬在浪底下听见了", 5, "polyphemus");
     save();
     return {text:"（他猛地转向你，瞎眼的脸正对着你的声音）是你。十一年了……你的味道，和那年灌醉我的酒一样。你把名字喊给海听了——海替所有人记账，我爹也在听。（海神记下了这笔账）"};
@@ -7630,6 +7778,7 @@ setInterval(()=>{
   if (scene==="strait") scyllaCombatTick(dt);      /* F5 斯库拉快反战：六头轮探窗口（被界面门控跳过） */
   sunNoiseTick(dt);   /* P1.3 太阳岛船员鼓噪：界面全清后 2.4s 触发抉择 */
   raftStormTick(dt);   /* P1.6 波塞冬掀筏：出湾后开阔海 1.2s 蓄力触发（未渡过风暴前每次出湾都会再遇） */
+  pillarTick(dt);      /* P2.3 送客船石化：送行船驶远 300px 后 1.6s 触发回望抉择 */
 }, 20);
 function loop(t){
   const et=(t-T0)/1000;
@@ -7652,7 +7801,7 @@ function loop(t){
   ctx.rotate(shr);
   ctx.scale(cam.zoom, cam.zoom);
   ctx.translate(-cam.x, -cam.y);
-  if (scene==="world"){ if (!w3dOn) drawWorld(et); } else if (scene==="hades") drawHades(et); else if (scene==="aeolia") drawAeolia(et); else if (scene==="strait") drawStrait(et); else if (scene==="sun") drawSun(et); else if (scene==="ogggia") drawOggia(et); else if (scene==="scheria") drawScheria(et); else if (scene==="ithaca") drawIthaca(et); else if (PROLOGUE_SITES[scene]) drawPrologue(et); else drawAia(et);
+  if (scene==="world"){ if (!w3dOn) drawWorld(et); } else if (scene==="hades") drawHades(et); else if (scene==="aeolia") drawAeolia(et); else if (scene==="strait") drawStrait(et); else if (scene==="sun") drawSun(et); else if (scene==="ogggia") drawOggia(et); else if (scene==="scheria") drawScheria(et); else if (scene==="ithaca") drawIthaca(et); else if (PROLOGUE_SITES[scene]) drawPrologue(et); else drawAia(et);   /* P2.3 石柱由 drawWorld 内 drawStonePillar 承担（W3D 路径走 world3d.js 三维石柱） */
   drawDaylight(et);
   drawFloatTexts();
   drawParts();
@@ -7719,6 +7868,9 @@ window.__game={state, scene, boat, player:aiaPlayer, witch, seer, aeolus, boar, 
   /* P1.6 波塞冬掀筏（17g 原著第 5 卷） */
   raftStormTick, doRaftStorm, waveSfx, takeVeil, raftLost,
   raftStormInfo:function(){ return {done:!!state.raftStormDone, fail:!!state.raftStormFail, veil:!!state.raftVeilTaken, left:!!state.ogygiaLeft}; },
+  /* P2 批收官（17g 第 8 步）：石化链 / 波塞冬怒值 / ACHIV 合流 */
+  pillarTick, stonePillarEvent, stonePillarLook, stonePillarMiss, scheriaExit:SCHERIA_EXIT, fateSummary, CANON_GROUPS,
+  pillarInfo:function(){ return {done:!!state.stonePillarDone, seen:!!state.stonePillarSeen, wrath:state.poseidonWrath||0}; },
   /* P1.7 相认三问（17g 原著第 19/23 卷：佩涅洛佩的审判） */
   examStart, examScarOk, examBedOk, examMiss, pickAsk,
   examInfo:function(){ return {asked:!!state.examAsked, scar:!!state.examScar, bed:!!state.examBed}; },

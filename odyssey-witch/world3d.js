@@ -375,6 +375,23 @@ function buildEscortFleet() {
   return g;
 }
 
+/* ---------- P2.3 石化送客船：白石柱（17g 原著第 13 卷末；主脚本置 state.stonePillarDone 后显现） ---------- */
+let pillarG = null;
+function buildStonePillar() {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.62, 7.5, 7),
+    new THREE.MeshStandardMaterial({ color: 0xcfd6da, roughness: .92, flatShading: true }));
+  body.position.y = 2.6; g.add(body);
+  const cap = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.5, 1.8),
+    new THREE.MeshStandardMaterial({ color: 0xdde2e5, roughness: .9, flatShading: true }));
+  cap.position.y = 6.6; cap.rotation.y = 0.3; g.add(cap);
+  const foam = new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.2, 6, 18),
+    new THREE.MeshBasicMaterial({ color: 0xeef4f8, transparent: true, opacity: 0.5 }));
+  foam.rotation.x = Math.PI / 2; foam.position.y = 0.1; g.add(foam);
+  g.visible = false;
+  return g;
+}
+
 
 /* ---------- 特洛伊 3D 战场（首个岛内 3D 样板：地面/城墙/巨木马/营火，2D 层只叠玩家与战斗实体） ---------- */
 function buildTroy() {
@@ -517,6 +534,12 @@ function frame(et) {
       eb.rotation.y = Math.atan2(-escHead.x, -escHead.z);
       eb.rotation.z = Math.sin(et * 1.7 + i) * 0.03;
     }
+  }
+  /* P2.3 石柱：主脚本置 state.stonePillarDone 后显现（斯克里东南海面，SCHERIA_EXIT 经 __game 挂载） */
+  if (!pillarG){ pillarG = buildStonePillar(); scene3.add(pillarG); }
+  pillarG.visible = !!(G && G.state && G.state.stonePillarDone);
+  if (pillarG.visible && G.scheriaExit){
+    pillarG.position.set(px2x(G.scheriaExit.x + 92), 0, px2z(G.scheriaExit.y + 58));
   }
   const camTarget = new THREE.Vector3(bx, 14, bz + 17);
   camera3.position.lerp(camTarget, 1 - Math.exp(-4 * dt));

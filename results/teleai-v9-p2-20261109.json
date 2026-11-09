@@ -1,0 +1,190 @@
+{
+ "date": "20261109",
+ "group": "full (313)",
+ "schema": "v2.5.4",
+ "cases": 313,
+ "category_accuracy": 0.9297,
+ "args_f1": 0.8917,
+ "fully_correct_rate": 0.7444,
+ "false_trigger_rate": 0.0333,
+ "latency_ms": {
+  "p50": 922.4,
+  "p90": 1163.3,
+  "p99": 1446.1,
+  "mean": 942.5,
+  "max": 1680.1
+ },
+ "note": "P2 批回归（17g 第 8 步终验批，零意图词表变动）：类别 92.97% 较 v7 +0.64pp，红线 90% 通过；F1/误触发持平，完全正确 -0.32pp 采样方差；组级升 boundary/prologue/wind，降 confuse 1 条；0 error 无 429。result 原件 result-p2-regress-20261109.json（本机 gitignored）",
+ "by_group": {
+  "boundary": {
+   "n": 22,
+   "category_acc": 0.8636,
+   "args_f1": 0.9242,
+   "fully_correct": 0.7727
+  },
+  "ch3_oov": {
+   "n": 14,
+   "category_acc": 1.0,
+   "args_f1": 0.881,
+   "fully_correct": 0.6429
+  },
+  "ch5_oov": {
+   "n": 14,
+   "category_acc": 1.0,
+   "args_f1": 0.8143,
+   "fully_correct": 0.5714
+  },
+  "ch6_oov": {
+   "n": 14,
+   "category_acc": 0.9286,
+   "args_f1": 0.7738,
+   "fully_correct": 0.3571
+  },
+  "chitchat": {
+   "n": 14,
+   "category_acc": 1.0,
+   "args_f1": 0.7857,
+   "fully_correct": 0.7857
+  },
+  "clear": {
+   "n": 64,
+   "category_acc": 1.0,
+   "args_f1": 0.9578,
+   "fully_correct": 0.875
+  },
+  "confuse": {
+   "n": 24,
+   "category_acc": 0.875,
+   "args_f1": 0.7222,
+   "fully_correct": 0.5
+  },
+  "hades_oov": {
+   "n": 16,
+   "category_acc": 1.0,
+   "args_f1": 1.0,
+   "fully_correct": 1.0
+  },
+  "hostile": {
+   "n": 8,
+   "category_acc": 1.0,
+   "args_f1": 1.0,
+   "fully_correct": 1.0
+  },
+  "ithaca_oov": {
+   "n": 14,
+   "category_acc": 1.0,
+   "args_f1": 0.869,
+   "fully_correct": 0.6429
+  },
+  "multi": {
+   "n": 13,
+   "category_acc": 0.5385,
+   "args_f1": 0.75,
+   "fully_correct": 0.3846
+  },
+  "multiturn": {
+   "n": 12,
+   "category_acc": 0.75,
+   "args_f1": 0.8889,
+   "fully_correct": 0.6667
+  },
+  "negative": {
+   "n": 12,
+   "category_acc": 1.0,
+   "args_f1": 1.0,
+   "fully_correct": 1.0
+  },
+  "oov": {
+   "n": 14,
+   "category_acc": 0.9286,
+   "args_f1": 0.9762,
+   "fully_correct": 0.8571
+  },
+  "prologue_oov": {
+   "n": 14,
+   "category_acc": 0.9286,
+   "args_f1": 0.8214,
+   "fully_correct": 0.6429
+  },
+  "slot_missing": {
+   "n": 18,
+   "category_acc": 0.8333,
+   "args_f1": 1.0,
+   "fully_correct": 0.8333
+  },
+  "state_set": {
+   "n": 12,
+   "category_acc": 0.9167,
+   "args_f1": 0.9167,
+   "fully_correct": 0.9167
+  },
+  "wind_oov": {
+   "n": 14,
+   "category_acc": 1.0,
+   "args_f1": 0.8452,
+   "fully_correct": 0.7143
+  }
+ },
+ "top_confusions": [
+  [
+   "查询附近目标 -> 查询地点信息",
+   2
+  ],
+  [
+   "导航到地点 -> 查询地点信息",
+   2
+  ],
+  [
+   "使用消耗品 -> 其他意图",
+   1
+  ],
+  [
+   "获取物资 -> 其他意图",
+   1
+  ],
+  [
+   "查询地点信息 -> 查询生物情报",
+   1
+  ],
+  [
+   "闲聊 -> 查询附近目标",
+   1
+  ],
+  [
+   "购买物品 -> 闲聊",
+   1
+  ],
+  [
+   "闲聊 -> 其他意图",
+   1
+  ],
+  [
+   "查询附近目标/购买物品 -> 购买物品",
+   1
+  ],
+  [
+   "接取任务/查询任务线索 -> 接取任务",
+   1
+  ],
+  [
+   "告别/提交任务 -> 告别",
+   1
+  ],
+  [
+   "导航到地点/查询附近目标 -> 导航到地点",
+   1
+  ],
+  [
+   "查询神谕/查询附近目标 -> 查询神谕",
+   1
+  ],
+  [
+   "获取物资/营地准备 -> 使用消耗品/营地准备",
+   1
+  ],
+  [
+   "其他意图 -> 使用消耗品",
+   1
+  ]
+ ]
+}
