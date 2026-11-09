@@ -1616,6 +1616,10 @@ const HSPOTS = [
   {type:"seer",   x:seer.x, y:seer.y, r:85, label:"与特瑞西阿斯交谈"},
   {type:"trench", x:11*ATS+ATS/2, y:3*ATS+ATS/2, r:70, label:"献祭之沟（倒祭品）"},
   {type:"dock",   x:2*ATS+ATS/2, y:10*ATS+ATS/2, r:70, label:"返回生者的海"},
+  /* P1.4 冥界三影（17g 原著第11卷）：亡母安提克勒娅（三次抱空）+ 阿喀琉斯 + 阿伽门农两笔过河账 */
+  {type:"mother",   x:14*ATS+ATS/2, y:8*ATS+ATS/2,  r:70, label:"雾里的妇人"},
+  {type:"achilles", x:14*ATS+ATS/2, y:4*ATS+ATS/2,  r:70, label:"持矛的影子"},
+  {type:"agamemnon",x:13*ATS+ATS/2, y:10*ATS+ATS/2, r:70, label:"戴金面的王"},
 ];
 function hTile(cx,cy){ return (cx<0||cy<0||cx>=ACOLS||cy>=AROWS)?"~":HADES[cy][cx]; }
 
@@ -1832,6 +1836,17 @@ function ensureState(){
   if (state.raftStormFail===undefined) state.raftStormFail=false;
   if (state.raftVeilTaken===undefined) state.raftVeilTaken=false;
   if (state.scSixSaved===undefined) state.scSixSaved=false;   /* F5 斯库拉全救回（改写）flag */
+  /* P1.4/P1.5/P1.8 三站：旧档补默认值（旧档无此字段＝未触发过，行为与旧版一致） */
+  if (state.motherHug===undefined) state.motherHug=0;
+  if (state.oldName===undefined) state.oldName=null;
+  if (state.achillesHeard===undefined) state.achillesHeard=false;
+  if (state.agamemnonHeard===undefined) state.agamemnonHeard=false;
+  if (state.selfRevealed===undefined) state.selfRevealed=false;
+  if (state.troySongDone===undefined) state.troySongDone=false;
+  if (state.banishedFromAeolia===undefined) state.banishedFromAeolia=false;
+  /* P1.8 旧档回补：风袋是否用光过——按记忆流推导（useWind 用光时写过「用得一干二净」） */
+  if (state.windbagEmptied===undefined)
+    state.windbagEmptied = (state.memory||[]).some(m=>m&&m.text&&m.text.includes("用得一干二净"));
   /* P1.7 相认三问：旧档补默认值（旧档无此三字段＝未考过，行为与旧版一致） */
   if (state.examAsked===undefined) state.examAsked=false;
   if (state.examScar===undefined) state.examScar=false;
@@ -2275,6 +2290,12 @@ const ACHIV = [
   { id:"six_saved", name:"从六张嘴里抢回的人", desc:"声之海峡——六头轮探，你一头不落全抢了回来。荷马第 12 卷写的是六人全失；你比荷马多救回六个人", cond:()=>!!state.scSixSaved, dev:"原著六人全失，你把他们都救了回来" },
   /* —— P1.7 伊萨卡相认三问（17g 原著第 19/23 卷：佩涅洛佩的审判）—— */
   { id:"scar_proved", name:"脚疤与婚床", desc:"相认之前她先考你两问——脚疤的来历、婚床的根，一处都没答错。她不是等待者，是考官；第 19/23 卷写的就是这场考试", cond:()=>!!state.examScar&&!!state.examBed, canon:true },
+  /* —— P1.4 冥界亡母（17g 原著第 11 卷：三次抱空）—— */
+  { id:"mother_embrace", name:"三次抱空", desc:"冥界的雾里你想抱住母亲三次——第三次，她先开了口，叫了一个十年没变的名字。荷马第 11 卷写的就是这三下", cond:()=>!!state.oldName, canon:true },
+  /* —— P1.5 斯克里自白（17g 原著第 8 卷：听自己的歌落泪）—— */
+  { id:"tears_for_song", name:"听自己的歌落泪", desc:"德摩多科斯唱到木马，你在异国的火光里哭了——然后你当众说出了自己的名字。荷马第 8 卷：全书的转轴，系在这一哭上", cond:()=>!!state.selfRevealed, canon:true },
+  /* —— P1.8 风神逐客（17g 原著第 10 卷：最冷的一句话）—— */
+  { id:"banished", name:"被风神驱逐", desc:"风袋用光后你回到风神岛——埃俄罗斯说：连神明都憎恨的人，离开我的岛。荷马第 10 卷这句原话，落在了你头上", cond:()=>!!state.banishedFromAeolia, dev:"原著里他只是收回风袋——这回他把门关上了" },
 ];
 function achivTick(){
   for (const a of ACHIV){
@@ -2351,6 +2372,9 @@ seer: [
                   line:()=>"……选了捷径的人，影子先一步到了浪头。"},
     {id:"care_crew", w:0.7, cond:()=>state.crewLit&&(state.crew||0)>0&&(state.crew||0)<12,
                   line:()=>`（他的杖尖朝你的船偏了偏）你的船比来时轻。海收账，不挑名字——${(state.crew||0)<=6?"守住誓言，才留得住剩下的。":"往前每一站，都是一杆秤。"}`},
+    /* P1.4 亡母引路（原著第11卷）：献祭之后，先知听见了雾深处那个一直望岸的妇人 */
+    {id:"mother_hint", w:0.8, cond:()=>!!state.offered&&!state.oldName,
+                  line:()=>"（他忽然侧耳，杖尖转向雾深处）雾里有个妇人，一直望着岸边。她等的背影，眉眼和你很像——想开口的事，别留到下一站。"},
   ],
 aeolus: [
     {id:"care_hurt",  w:0.9, cond:()=>state.hp<=35&&state.hp>0,
@@ -2365,6 +2389,9 @@ aeolus: [
                   line:()=>"四风都归位了！回来领你的袋子。"},
     {id:"done",   w:0.5, cond:()=>{const q=getQuest("aeolia_winds"); return !!(q&&q.done);},
                   line:()=>"一次放一阵——贪念会把它们一次放光。"},
+    /* P1.8 二次求助被逐（原著第10卷最冷的一句话）：用光风袋后再上岛，风都绕着你走 */
+    {id:"banished", w:1.2, cond:()=>!!state.banishedFromAeolia,
+                  line:()=>"（袍子纹丝不动，风从你身边拐了个弯）走吧。连神明都憎恨的人——海会自己处置你。"},
   ],
   siren: [
     {id:"care_hurt",  w:0.9, cond:()=>state.hp<=35&&state.hp>0&&state.straitStage<2,
@@ -2413,6 +2440,9 @@ line:()=>"你醒的时候，海把你的船推上了我们的滩——别怕，�
                   line:()=>"篝火在等你的故事。德摩多科斯的琴，也等着。"},
     {id:"song",   w:0.6, cond:()=>state.scheriaStage>=2,
                   line:()=>"德摩多科斯今晚唱新歌——唱如实讲的那些段。吹牛的，他自动跳过。"},
+    /* P1.5 自白之后（原著第8卷）：她当众见证了你认名 */
+    {id:"revealed", w:1.0, cond:()=>state.selfRevealed,
+                  line:()=>"（她轻声，像收起一件东西）「奥德修斯。」……歌会重唱一遍——这一次，每个字都是你的。"},
     {id:"bye",    w:0.8, cond:()=>state.scheriaStage>=3,
                   line:()=>"（她朝码头挥手，很久才放下）船备好了。……别回头念这座岛的名字。"},
   ],
@@ -3260,7 +3290,8 @@ function examMiss(which){
 function showNameCard(){
   const c=document.getElementById("nameCard");
   const frags=[];
-  if (state.prophecy) frags.push({way:"old", label:"那个亡者替你记住的旧名", tip:"答旧名——被亡者认领的名字"});
+  if (state.oldName) frags.push({way:"old", label:`「${state.oldName}」`, tip:"亡母在雾里唤过的名字——她没等到你回来"});
+  else if (state.prophecy) frags.push({way:"old", label:"那个亡者替你记住的旧名", tip:"答旧名——被亡者认领的名字"});
   if (state.sunName) frags.push({way:"sun", label:`「${state.sunName}」`, tip:"太阳记过的名字"});
   if (state.calypsoName) frags.push({way:"calypso", label:`「${state.calypsoName}」`, tip:"你在永生面前报过的名字"});
   if (state.circeLeft) frags.push({way:"circe", label:"炉火旁的名字", tip:"你在埃阿亚岛留过冬——那夜她唤你的名，会一直暖到终章"});
@@ -3284,6 +3315,48 @@ document.addEventListener("DOMContentLoaded", ()=>{
   };
   document.getElementById("ncInp").addEventListener("keydown",e=>{ if(e.key==="Enter") document.getElementById("ncGo").click(); });
 });
+
+/* ---------- P1.5 特洛伊段（17g 原著第8卷：德摩多科斯唱木马→奥德修斯哭→自报家门） ----------
+   showAsk 第六次复用。认＝canon tears_for_song + P0.7《奥德修斯之歌》改名链 + 送行船答案锁定；
+   不认＝继续无名线照旧。旧档补场：talefire 复访触发。 */
+function trojanSongEvent(){
+  if (state.troySongDone){ continueScheriaNight(); return; }
+  showAsk("第 六 章 · 特 洛 伊 段","盲 歌 手 唱 到 木 马",
+    "德摩多科斯的手落回琴上——这一次唱特洛伊：十年围城，木马，黑夜。唱到勇士们从马腹里跳出来那一段，厅堂里人人举杯。\n\n没有人注意你。你在费埃克斯的火光里，用袖口按住了眼睛。\n（原著第 8 卷：他唱木马，奥德修斯哭了）",
+    null, [
+    {label:"「我是奥德修斯。」", hint:"当众自报家门 · 原著第8卷", fn:()=>selfReveal()},
+    {label:"把脸埋进袖子里", hint:"继续做无名旅人", fn:()=>stayNameless()},
+  ]);
+}
+function selfReveal(){
+  state.selfRevealed = true; state.troySongDone = true;
+  sfx("bless"); feedback("large"); gainXp(30);
+  addMemory("德摩多科斯唱到木马，旅人在异国的火光里哭了——然后他站起来，说出了自己的名字：奥德修斯。全厅安静", 5, "nausicaa");
+  toast("你站起来，抹了把脸：「我是奥德修斯。」——盲歌手停了琴，重新调弦：「那这支歌，得重唱一遍。」（历练 +30 · 无名旅人之歌 → 奥德修斯之歌）", 5200);
+  achivTick(); renderHUD(); save();
+  setTimeout(continueScheriaNight, 1400);
+}
+function stayNameless(){
+  state.troySongDone = true;
+  addMemory("歌到木马那一段，旅人把脸埋进了袖子里。没有人问——但瑙西亚娅看见了", 4, "nausicaa");
+  toast("你把脸埋进袖子里，等那段唱过去。她什么都没问，只是把炉火拨得更旺了些。（继续无名线）", 4200);
+  save();
+  setTimeout(continueScheriaNight, 1400);
+}
+function continueScheriaNight(){
+  setTimeout(()=>{
+    if (state.nausicaaAsk) return;
+    state.nausicaaAsk = true;
+    showChapter("concept-art/characters/06-瑙西亚娅.jpg","第 六 章","被 看 见 的 夜 晚","她是唯一愿意听你说完的人","「全希腊的故事都从我家的门廊过——但你是第一个，让我想留、而不只是想送的。留下来，做客人吧。」");
+    setTimeout(()=>{
+      const stay = confirm("瑙西亚娅的告白不是求婚，是请求：留下来，做客人。\n（确定 = 留下做客 · 客卿　|　取消 = 我要回家）");
+      if (stay){ state.guest = true; addMemory("旅人留在了斯克里岛——做费埃克斯的客人", 5); toast("「那就住下吧。」她说这话时没看你，耳根却红了。（客卿线 · 随时可去码头改主意）"); }
+      else { addMemory("旅人谢绝了瑙西亚娅——他说他还有一段海要走", 4); toast("她点点头，转身时很快：「那明天……我让人备船。」"); }
+      state.scheriaStage = 3; renderHUD(); save();
+      showSong2();   /* 德摩多科斯的歌：如实讲的段落才进歌（歌词卡第2张，可导出；P0.7 自白后改名） */
+    }, 600);
+  }, 800);
+}
 
 /* ==================== 互动 ==================== */
 function islandNear(){
@@ -3330,7 +3403,15 @@ function interact(){
       scene = "aeolia";
       aiaPlayer.x = 3*ATS+ATS/2; aiaPlayer.y = 10*ATS+ATS/2;
       save();
-      showChapter("concept-art/maps/04-风神岛图.jpg","插 章","风 神 岛","埃俄罗斯的浮岛 · 十二风在此听差","云在脚下，风在手里——贪念除外");
+      /* P1.8 二次求助被逐（原著第10卷）：风袋用光后再上岛——埃俄罗斯的逐客令 */
+      if (state.windbagEmptied && !state.banishedFromAeolia){
+        state.banishedFromAeolia = true;
+        addMemory("旅人把风袋用光后又回到风神岛。埃俄罗斯的袍子第一次没有猎猎作响：「连神明都憎恨的人——离开我的岛。」", 5, "aeolus");
+        achivTick(); renderHUD();
+        showChapter("concept-art/maps/04-风神岛图.jpg","插 章 · 二 次 求 助","逐 客","风神岛 · 门在你身后关上了","他站在宫门口，袍子纹丝不动：「我给过你四阵顺风——你把它们一次放光了。回去吧。连神明都憎恨的人——离开我的岛。」\n（原著第 10 卷最冷的一句话 · 它现在属于你）");
+        return;
+      }
+      showChapter("concept-art/maps/04-风神岛图.jpg","插 章","风 神 岛",state.banishedFromAeolia?"埃俄罗斯的浮岛 · 风都绕着你走":"埃俄罗斯的浮岛 · 十二风在此听差","云在脚下，风在手里——贪念除外");
       return;
     }
     if (is.scene==="strait"){
@@ -3645,7 +3726,11 @@ function interact(){
   /* ---------- 斯克里岛（第六章）交互：不接谎的船 + 回顾章 + 告白 + 送行 ---------- */
   if (s.type==="nausicaa"){ return openDlg("nausicaa"); }
   if (s.type==="talefire"){
-    if (state.scheriaStage>=2){ toast("火塘边的位置还空着——故事已经讲完了，歌也记下了。"); return; }
+    if (state.scheriaStage>=2){
+      /* P1.5 旧档补场：回顾讲完但没赶上特洛伊段的存档——德摩多科斯还在，琴还在 */
+      if (!state.troySongDone){ trojanSongEvent(); return; }
+      toast("火塘边的位置还空着——故事已经讲完了，歌也记下了。"); return;
+    }
     const CH = [
       ["witch","第一章 · 女巫的账","玛草、野猪，和一个把门留给你的女巫"],
       ["hades","第二章 · 亡者之言","献祭之沟，和两条路的预言"],
@@ -3665,23 +3750,15 @@ function interact(){
     addMemory(`旅人在篝火边讲完了这一路——如实讲的段落共 ${state.talesTold.length} 段`, 4, "nausicaa");
     toast(`故事讲完了。她安静了很久：「都记下了。」（如实讲的 ${state.talesTold.length}/5 段会进德摩多科斯的歌 · 历练 +30）`, 4200);
     renderHUD(); save();
-    setTimeout(()=>{
-      if (state.nausicaaAsk) return;
-      state.nausicaaAsk = true;
-      showChapter("concept-art/characters/06-瑙西亚娅.jpg","第 六 章","被 看 见 的 夜 晚","她是唯一愿意听你说完的人","「全希腊的故事都从我家的门廊过——但你是第一个，让我想留、而不只是想送的。留下来，做客人吧。」");
-      setTimeout(()=>{
-        const stay = confirm("瑙西亚娅的告白不是求婚，是请求：留下来，做客人。\n（确定 = 留下做客 · 客卿　|　取消 = 我要回家）");
-        if (stay){ state.guest = true; addMemory("旅人留在了斯克里岛——做费埃克斯的客人", 5); toast("「那就住下吧。」她说这话时没看你，耳根却红了。（客卿线 · 随时可去码头改主意）"); }
-        else { addMemory("旅人谢绝了瑙西亚娅——他说他还有一段海要走", 4); toast("她点点头，转身时很快：「那明天……我让人备船。」"); }
-        state.scheriaStage = 3; renderHUD(); save();
-        showSong2();   /* 德摩多科斯的歌：如实讲的段落才进歌（歌词卡第2张，可导出） */
-      }, 600);
-    }, 800);
+    setTimeout(trojanSongEvent, 900);   /* P1.5 特洛伊段：盲歌手唱到木马——你落泪（原著第8卷），插在回顾与告白之间 */
     return;
   }
   if (s.type==="ship"){
     if (state.scheriaStage<2){ toast("船缆系得整整齐齐，像在等一个还没被看见的人。（先去篝火，把你的故事讲完）"); return; }
-    const ans = prompt("送行的水手蹲在船头，头一次开口问：「旅人，家在哪？」\n（暗线①总考试——世界不接谎：说不出口，船不开；说一个假的地方，雾会把你送回原点）","");
+    const ans = prompt(state.selfRevealed
+      ? "送行的水手蹲在船头，按规矩再问一遍：「奥德修斯，家在哪？」\n（你当着全厅说过——答案已经定了，他只是要听你亲口再说一次）"
+      : "送行的水手蹲在船头，头一次开口问：「旅人，家在哪？」\n（暗线①总考试——世界不接谎：说不出口，船不开；说一个假的地方，雾会把你送回原点）",
+      state.selfRevealed ? "伊萨卡" : "");
     if (ans===null) return;
     const a = ans.trim();
     if (!a || /说不出|不知道|没有/.test(a)){ toast("船安静着。说不出口的话——去讲给篝火听，或者去见她。"); return; }
@@ -3772,6 +3849,44 @@ function interact(){
     popText(11*ATS+ATS/2, 3*ATS, "亡者开口了", "#9fd8cf", true);
     toast("你把蜂蜜酒、面包与淡水倒进沟里。黑暗深处传来低语，像无数人同时叹了口气——特瑞西阿斯显形了。（历练 +20）");
     renderHUD(); save(); return;
+  }
+  if (s.type==="mother"){
+    /* P1.4 亡母安提克勒娅（原著第11卷）：三次想抱、三次抱空——第三次她先开口，叫你的旧名 */
+    if (state.oldName){ toast("她还站在雾里，还是抱不到。但她叫过的那个名字你带在身上——像多了一颗心。（旧名已进终章认名候选）"); return; }
+    state.motherHug = (state.motherHug||0)+1;
+    if (state.motherHug===1){
+      sfx("dash");
+      addMemory("冥界的雾里，旅人想抱住一个女人——手臂穿了过去。她没有躲，只是退了半步", 3);
+      toast("你张开手臂——穿过了雾。她身上有十年前的灶灰味，和一句没说完的话。（再试一次）");
+      save(); return;
+    }
+    if (state.motherHug===2){
+      sfx("dash");
+      addMemory("第二次，旅人又抱空了。她的影子淡得像水底的月亮——可她在往你这边倾", 4);
+      toast("第二次抱空。她淡得像水底的月亮——但你看见她在往你这边倾。她剩下的话，只够说一件事。（最后一次）");
+      save(); return;
+    }
+    state.motherHug = 3; state.oldName = "奥德修斯";
+    sfx("bless"); feedback("large"); gainXp(25);
+    addMemory("第三次，旅人没有再抱——她先开了口，声音像从很远的水面漂来：「奥德修斯」。她说她是一天天听着这个名字空下去的", 5);
+    toast("第三次，你没再伸手。她先开了口：「奥德修斯……我没能等到你。你的家还有人守着，你的儿子已经出海去找你了。」\n（历练 +25 · 亡母替你记住的名字，进了终章认名候选）", 5200);
+    achivTick(); renderHUD(); save(); return;
+  }
+  if (s.type==="achilles"){
+    /* P1.4 阿喀琉斯的过河账（原著第11卷原话） */
+    if (state.achillesHeard){ toast("持矛的影子不再开口——他把话说尽了：活着做个雇工，强过在死人里称王。"); return; }
+    state.achillesHeard = true; sfx("warn");
+    addMemory("持矛的影子告诉旅人：他宁可活着给人扛活，也不愿在死者中间称王——荣耀的价钱，他付过了", 4);
+    toast("高个子的影子转过身，你认得那杆矛。「别羡慕我。」他说，「我宁可活在世上做个帮工，也不愿在死人中间称王。荣耀的价钱——我付过了。」\n（阿喀琉斯的话 · 记忆 +1）", 4800);
+    save(); return;
+  }
+  if (s.type==="agamemnon"){
+    /* P1.4 阿伽门农的过河账（原著第11卷）：他警告的正是终章的化名考场 */
+    if (state.agamemnonHeard){ toast("戴金面的王摇着头，只重复一件事：别信港口的迎接——先试家里的水。"); return; }
+    state.agamemnonHeard = true; sfx("warn");
+    addMemory("戴金面的王告诉旅人他的死法：欢迎他的宴席是一张网。他让旅人发誓——回家别信港口的迎接，先试家里的水", 4);
+    toast("戴金面的王开口，声音里有恨：「欢迎我的宴席是一张网——她亲手织的。」他盯着你，「回家那天，别信港口的迎接。先试家里的水，对谁都留一手。」\n（阿伽门农的账 · 终章的化名考场，有个死人在雾里替你垫过话）", 5400);
+    save(); return;
   }
   if (s.type==="dock" && scene==="hades"){
     scene = "world";
@@ -4727,6 +4842,46 @@ function drawHades(et){
       ctx.fillRect(x-8+((i*17)%12)+Math.sin(et*2+i)*3, y-4-p*22, 3, 3);
     }
     ctx.globalAlpha=1;
+  }});
+  /* P1.4 冥界三影（y-sort 实体）：亡母安提克勒娅 / 阿喀琉斯 / 阿伽门农 */
+  ents.push({y:8*ATS+ATS*0.9, draw(){
+    const x=14*ATS+ATS/2, y=8*ATS+ATS*0.9, sway=Math.sin(et*0.6)*1.2;
+    const a = state.oldName ? 0.50 : 0.42;   /* 幽灵感保留、但可读（原 0.34/0.26 偏淡） */
+    ctx.fillStyle="rgba(5,9,14,.5)"; ctx.beginPath(); ctx.ellipse(x,y+4,14,5,0,0,7); ctx.fill();
+    ctx.fillStyle=`rgba(210,224,232,${a})`;
+    ctx.beginPath(); ctx.moveTo(x-9,y+3); ctx.quadraticCurveTo(x-11+sway,y-22,x-4+sway,y-34);
+    ctx.quadraticCurveTo(x+sway,y-40,x+5+sway,y-33); ctx.quadraticCurveTo(x+11+sway,y-20,x+9,y+3); ctx.closePath(); ctx.fill();
+    ctx.fillStyle=`rgba(214,228,236,${a+0.08})`;
+    ctx.beginPath(); ctx.ellipse(x+sway*0.7,y-36,6,7,0,0,7); ctx.fill();
+    ctx.strokeStyle=`rgba(180,205,215,${a*0.8})`; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(x-4+sway*0.7,y-32); ctx.quadraticCurveTo(x-7+sway,y-20,x-5+sway,y-10); ctx.stroke();
+    const g=ctx.createRadialGradient(x,y-18,2,x,y-18,26);
+    g.addColorStop(0,`rgba(159,216,207,${0.10+(state.motherHug||0)*0.02})`); g.addColorStop(1,"rgba(159,216,207,0)");
+    ctx.fillStyle=g; ctx.fillRect(x-26,y-46,52,56);
+  }});
+  ents.push({y:4*ATS+ATS*0.9, draw(){
+    const x=14*ATS+ATS/2, y=4*ATS+ATS*0.9, sway=Math.sin(et*0.5+2)*1.0;
+    const a = state.achillesHeard ? 0.36 : 0.44;
+    ctx.fillStyle="rgba(5,9,14,.5)"; ctx.beginPath(); ctx.ellipse(x,y+4,15,5,0,0,7); ctx.fill();
+    ctx.fillStyle=`rgba(186,200,214,${a})`;
+    ctx.beginPath(); ctx.moveTo(x-8,y+3); ctx.lineTo(x-6+sway*0.4,y-30); ctx.lineTo(x+6+sway*0.4,y-30); ctx.lineTo(x+8,y+3); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(x+sway*0.4,y-36,6.5,7,0,0,7); ctx.fill();
+    ctx.strokeStyle=`rgba(140,160,180,${a+0.12})`; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(x+10,y+2); ctx.lineTo(x+16+sway,y-44); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x+13.5+sway,y-38); ctx.lineTo(x+19+sway,y-42); ctx.stroke();
+    ctx.fillStyle=`rgba(255,200,120,${0.10+Math.sin(et*1.3)*0.04})`; ctx.beginPath(); ctx.arc(x+sway*0.4,y-36,9,0,7); ctx.fill();
+  }});
+  ents.push({y:10*ATS+ATS*0.9, draw(){
+    const x=13*ATS+ATS/2, y=10*ATS+ATS*0.9, sway=Math.sin(et*0.45+4)*0.9;
+    const a = state.agamemnonHeard ? 0.36 : 0.44;
+    ctx.fillStyle="rgba(5,9,14,.5)"; ctx.beginPath(); ctx.ellipse(x,y+4,14,5,0,0,7); ctx.fill();
+    ctx.fillStyle=`rgba(198,188,170,${a})`;
+    ctx.beginPath(); ctx.moveTo(x-8,y+3); ctx.lineTo(x-7+sway*0.4,y-26); ctx.lineTo(x+7+sway*0.4,y-26); ctx.lineTo(x+8,y+3); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(x+sway*0.4,y-32,6,6.5,0,0,7); ctx.fill();
+    ctx.strokeStyle=`rgba(120,108,88,${a+0.14})`; ctx.lineWidth=2.2;
+    ctx.beginPath(); ctx.moveTo(x-11,y+3); ctx.lineTo(x-14+sway,y-28); ctx.stroke();
+    ctx.fillStyle=`rgba(230,190,90,${a+0.16})`;
+    ctx.fillRect(x-2+sway*0.4,y-34,1.6,1.6); ctx.fillRect(x+2.4+sway*0.4,y-34,1.6,1.6);
   }});
   /* 亡魂（游荡的半透明轮廓，纯装饰） */
   for (let gh of GHOSTS){
@@ -5868,6 +6023,7 @@ function useWind(){
   let t = `你解开袋口——一阵顺风轰然灌进帆里，船头像被一只大手推了一把。（航速倍增一小段${left?`，袋里还剩 ${left} 阵风`:""}）`;
   if (!left){
     t += "\n……袋瘪了。贪念把风用光了——埃俄罗斯的话应验了。";
+    state.windbagEmptied = true;   /* P1.8：用光后再上风神岛＝逐客（原著第10卷） */
     addMemory("旅人把风袋里的风用得一干二净", 2, "aeolus");
   }
   toast(t.replace("\n"," "));
@@ -5992,32 +6148,43 @@ function closeLyric(){ document.getElementById("lyricCard").classList.remove("op
 function buildSong2(){
   const CH = {witch:"女巫的账", hades:"亡者之言", aeolia:"风的账", strait:"声之海峡", sun:"太阳岛"};
   const told = state.talesTold.map(id=>`　${CH[id]||id}，是真的——他就是这样走过来的；`);
-  if (!told.length) return "……\n\n盲歌手拨了拨琴：\n「这位旅人的故事里，只有吹牛的部分。\n歌不唱牛——回去，把真的讲给篝火听。」";
+  if (!told.length && !state.selfRevealed) return "……\n\n盲歌手拨了拨琴：\n「这位旅人的故事里，只有吹牛的部分。\n歌不唱牛——回去，把真的讲给篝火听。」";
+  /* P0.7/P1.5：当众自白后，歌名与内容升级为《奥德修斯之歌》 */
+  const head = state.selfRevealed ? "　特洛伊是真的——木马是他自己想的；黑夜是他自己领的；" : null;
+  const nameLine = (state.chosenName||state.sunName||state.calypsoName)
+    ? `　唱到名字那一段——请安静：他叫「${state.chosenName||state.sunName||state.calypsoName}」。`
+    : state.selfRevealed
+      ? "　唱到名字那一段——请安静：他叫「奥德修斯」。当着全厅的火光，他自己说的。"
+      : "　唱到名字那一段——请安静：他还无名，或还未认。";
+  if (!told.length) return ["听吧，费埃克斯的厅堂——", head, nameLine, "歌完了。被唱出来的，就被记得。"].filter(Boolean).join("\n");
   return [
     "听吧，费埃克斯的厅堂——",
+    ...(head?[head]:[]),
     ...told,
     told.length<5 ? `　还有 ${5-told.length} 段，他笑着吹了牛——歌替他咽了回去；` : "　五段全是真的——琴弦都在发抖；",
     `　他${state.guest?"差点留下做客卿":"没留下做客卿"}，他${state.homeAnswer?`说要回「${state.homeAnswer}」`:"还没说出家在哪"}，`,
-    (state.chosenName||state.sunName||state.calypsoName)
-      ? `　唱到名字那一段——请安静：他叫「${state.chosenName||state.sunName||state.calypsoName}」。`
-      : "　唱到名字那一段——请安静：他还无名，或还未认。",
+    nameLine,
     "歌完了。被唱出来的，就被记得。"
   ].join("\n");
 }
 function showSong2(){
   lastLyric = buildSong2();
-  document.getElementById("lyricTitle").textContent = "无 名 旅 人 之 歌 · 德摩多科斯";
+  document.getElementById("lyricTitle").textContent = state.selfRevealed
+    ? "奥 德 修 斯 之 歌 · 德摩多科斯" : "无 名 旅 人 之 歌 · 德摩多科斯";
   document.getElementById("lyricText").textContent = lastLyric;
   document.getElementById("lyricCard").classList.add("open");
   sfx("bless");
 }
 function exportLyric(){
   try{
-    const isSong2 = (document.getElementById("lyricTitle").textContent||"").includes("无名");
-    const blob = new Blob(["《奥德赛》航程记 · 无名旅人\n\n" + lastLyric + "\n\n—— " + (isSong2?"德摩多科斯，唱于斯克里岛":"塞壬三姐妹，唱于声之海峡") + "\n"], {type:"text/plain;charset=utf-8"});
+    const ttl = (document.getElementById("lyricTitle").textContent||"");
+    const isOdysseus = ttl.includes("奥德修斯");            /* P0.7：自白后导出名变《奥德修斯之歌》 */
+    const isSong2 = isOdysseus || ttl.includes("无名");
+    const who = isOdysseus ? "奥德修斯" : "无名旅人";
+    const blob = new Blob(["《奥德赛》航程记 · " + who + "\n\n" + lastLyric + "\n\n—— " + (isSong2?"德摩多科斯，唱于斯克里岛":"塞壬三姐妹，唱于声之海峡") + "\n"], {type:"text/plain;charset=utf-8"});
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = isSong2 ? "无名旅人之歌.txt" : "塞壬之歌.txt";
+    a.download = isOdysseus ? "奥德修斯之歌.txt" : isSong2 ? "无名旅人之歌.txt" : "塞壬之歌.txt";
     a.click(); URL.revokeObjectURL(a.href);
   }catch(e){}
 }
@@ -6317,6 +6484,10 @@ function handleSeer(category, args){
 function handleAeolus(category, args){
   const a=args||{};
   const g=k=>(a[k]!==undefined&&a[k]!==null&&String(a[k]).trim()!=="")?String(a[k]).trim():null;
+  if (state.banishedFromAeolia){
+    /* P1.8 逐客之后（原著第10卷）：门已经关上——不再接任何差事与寒暄 */
+    return {text:"（袍子纹丝不动。他不再看你）连神明都憎恨的人——离开我的岛。"};
+  }
   switch(category){
   case "接取任务": {
     const q0 = getQuest("aeolia_winds");
@@ -7517,6 +7688,8 @@ window.__game={state, scene, boat, player:aiaPlayer, witch, seer, aeolus, boar, 
   GATES, islandOpen, nextObjective,
   /* 第五/六章 + 终章（圣经收官） */
   OGSPOTS, SCSPOTS, ITSPOTS, showFinale, showNameCard, showSong2, buildSong2,
+  /* P1.4/P1.5/P1.8 三站（17g 第 7 步） */
+  trojanSongEvent, selfReveal, stayNameless, continueScheriaNight, handleAeolus,
   oggiaInfo:()=>({day:state.ogygiaDay, stage:state.calypsoStage, choice:state.calypsoChoice, raft:{...state.raft}, left:state.ogygiaLeft}),
   scheriaInfo:()=>({stage:state.scheriaStage, told:[...state.talesTold], ask:state.nausicaaAsk, guest:state.guest, away:state.scheriaFarewell}),
   ithacaInfo:()=>({stage:state.ithacaStage, disguise:state.disguise, fooled:state.suitorsFooled, done:state.finaleDone, name:state.chosenName, way:state.nameWay}),
