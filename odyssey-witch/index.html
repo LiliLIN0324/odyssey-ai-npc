@@ -766,8 +766,8 @@ function tryMoveScheria(nx,ny){
 
 /* ==================== 伊萨卡地图（2.5D · 黎明青灰 · 终章） ====================
    ~水 T 橄榄 P 宴厅 X 斧阵 C 织机 H 乞丐斗篷 _ 码头 . 场地 , 小径
-   原版骨：化名乞丐→十二斧→肃清→相认（荷马史诗第 21-22 卷）
-   玩法：A 路（化名→求婚者考场→十二斧→佩涅洛佩「你是谁」认名）/ B 路（码头转身，把家安在别处） */
+   原版骨：化名乞丐→十二斧→肃清→相认（荷马史诗第 21-22 卷；第 19/23 卷佩涅洛佩先考脚疤与婚床）
+   玩法：A 路（化名→求婚者考场→十二斧→佩涅洛佩相认三问「疤/床/名」）/ B 路（码头转身，把家安在别处） */
 const ITHACA = [
   "~~~~~~~~~~~~~~~~~~~~",
   "~T..PPPPPPPP...TT..~",
@@ -1832,6 +1832,10 @@ function ensureState(){
   if (state.raftStormFail===undefined) state.raftStormFail=false;
   if (state.raftVeilTaken===undefined) state.raftVeilTaken=false;
   if (state.scSixSaved===undefined) state.scSixSaved=false;   /* F5 斯库拉全救回（改写）flag */
+  /* P1.7 相认三问：旧档补默认值（旧档无此三字段＝未考过，行为与旧版一致） */
+  if (state.examAsked===undefined) state.examAsked=false;
+  if (state.examScar===undefined) state.examScar=false;
+  if (state.examBed===undefined) state.examBed=false;
   crewLedgerLight();
   if (state.tookWine===undefined) state.tookWine=false;
   if (state.targetHits===undefined) state.targetHits=0;
@@ -2269,6 +2273,8 @@ const ACHIV = [
   { id:"lost_to_poseidon", name:"海记了你的账", desc:"你把面纱推回去过一次——浪收走了筏，海把你推回奥吉吉亚。卡吕普索说：我说过，海记你的账", cond:()=>state.raftStormFail, dev:"原著里你最终收下了面纱" },
   /* —— F5 斯库拉六头快反战（17h F5 · 原著第12卷：六头各叼走一名船员）—— */
   { id:"six_saved", name:"从六张嘴里抢回的人", desc:"声之海峡——六头轮探，你一头不落全抢了回来。荷马第 12 卷写的是六人全失；你比荷马多救回六个人", cond:()=>!!state.scSixSaved, dev:"原著六人全失，你把他们都救了回来" },
+  /* —— P1.7 伊萨卡相认三问（17g 原著第 19/23 卷：佩涅洛佩的审判）—— */
+  { id:"scar_proved", name:"脚疤与婚床", desc:"相认之前她先考你两问——脚疤的来历、婚床的根，一处都没答错。她不是等待者，是考官；第 19/23 卷写的就是这场考试", cond:()=>!!state.examScar&&!!state.examBed, canon:true },
 ];
 function achivTick(){
   for (const a of ACHIV){
@@ -3132,6 +3138,9 @@ function showFinale(mode, way, name){
     if (state.guest) paras.push("瑙西亚娅的白港你来过两回：一回被救，一回告别。客人的名字，歌里唱得比王还长。");
     else if (state.talesTold.length) paras.push(`斯克里岛的篝火边，你如实讲了 ${state.talesTold.length} 段——德摩多科斯的歌里从此有你。被唱出来，就是被记住。`);
     else paras.push("斯克里岛的歌里没有你的名字——故事被你讲成了牛，或者根本没讲。世界不接谎，歌也一样。");
+    if (state.examAsked) paras.push(state.examScar&&state.examBed
+      ? "相认之前，她先考了你两问：脚疤的来历、婚床的根——一处都没答错。她考的从来不是名字，是只有他知道的秘密。佩涅洛佩的审判，你通过了。（原著 · 脚疤与婚床）"
+      : "相认之前她考了你两问，你没能全答上。她记下了——可她还是听完了你最后报的名字。爱与不轻信，原来是同一件事。");
     if (way==="old") paras.push("相认的那一刻，你答了旧名——那个亡者替你记住的名字。它领你进门，像替别人开门。");
     else if (way==="sun" && name) paras.push(`相认时你说：「${name}。」——太阳记过的名字，王后也认。`);
     else if (way==="calypso" && name) paras.push(`相认时你说：「${name}。」——那是连永生都没能换走的名字。`);
@@ -3147,11 +3156,11 @@ function showFinale(mode, way, name){
   /* 命运双轨总结（玩家=奥德修斯：荷马之线 / 改写命运）——原著锚点全达成 vs 偏离被记住 */
   const fate = fateSummary();
   if (fate.allCanon && fate.canonGot.length)
-    paras.push("🏆【荷马之线】六处原著锚点你一处没改——「无人」之名、桅杆上的歌、未动的圣牛、长路、留灯、不接谎的船。你不是在重走史诗：你就是史诗本身。");
+    paras.push(`🏆【荷马之线】${fate.canonGot.length} 处原著锚点你一处没改——「无人」之名、桅杆上的歌、未动的圣牛、长路、留灯、不接谎的船，全都在。你不是在重走史诗：你就是史诗本身。`);
   else if (fate.devGot.length)
     paras.push("🔮【改写命运的人】"+fate.devGot.map(d=>d.dev).join("；")+"。荷马没写这一页——从今往后，歌手们得自己学这首新歌。");
   else if (fate.canonGot.length)
-    paras.push(`命运锚点：你守住了 ${fate.canonGot.length}/6 处原著分岔${fate.canonGot.length>=4?"——史诗认得你的脚印":"——有几页，你写岔了"}。`);
+    paras.push(`命运锚点：你守住了 ${fate.canonGot.length}/${ACHIV.filter(a=>a.canon).length} 处原著分岔${fate.canonGot.length>=4?"——史诗认得你的脚印":"——有几页，你写岔了"}。`);
   /* 船队判词（17h 原著 12 艘）：从特洛伊带回几艘，史诗就记几艘 */
   paras.push(state.fleet>=12
     ? "十二艘船，一根桅杆都没少——从特洛伊的火光到伊萨卡的雾，满帆走完全程。荷马没敢写这一页。"
@@ -3185,7 +3194,7 @@ function showFinale(mode, way, name){
     `<span class="stx">历练 <b>${state.xp}</b></span>`+
     `<span class="stx">钱袋 <b>${state.coins}</b> 德拉克马</span>`+
     `<span class="stx">被记得的事 <b>${mem}</b> 件</span>`+
-    `<span class="stx">命运锚点 <b>${fate.canonGot.length}/6</b>${fate.devGot.length?` · 改写 <b>${fate.devGot.length}</b>`:""}</span>`+
+    `<span class="stx">命运锚点 <b>${fate.canonGot.length}/${ACHIV.filter(a=>a.canon).length}</b>${fate.devGot.length?` · 改写 <b>${fate.devGot.length}</b>`:""}</span>`+
     (windLeft?`<span class="stx">风袋 <b>×${windLeft}</b></span>`:"");
   ec.classList.add("show"); sfx("bless");
   const finalName = (mode==="a" && way==="old") ? "旧 名" : (mode==="a" ? (name||"无名旅人") : null);
@@ -3195,6 +3204,57 @@ function showFinale(mode, way, name){
     if (finalName) setTimeout(()=> showChapter("concept-art/09-伊萨卡.jpg","终 章 · 认 名", finalName, "游戏最后一张章节卡 · 标题是你的名字", "雾散尽了。往后每一张海图，都以这个名字命名。"), 450);
   };
   ec.querySelector(".re").onclick = ()=>{ if(confirm("清空存档，从新的航程开始？")){ localStorage.removeItem(SAVE_KEY); location.reload(); } };
+}
+/* ==================== P1.7 相认三问（17g 原著第 19/23 卷：佩涅洛佩的审判） ====================
+   她不是等待者，是考官——名字是第三问，脚疤与婚床才是门槛（showAsk 第五次复用，零模型调用）。
+   两问全对＝canon 成就 scar_proved；答错也放行名字卡（判词记一笔）——审判，但不关门。 */
+function examStart(){
+  sfx("alert");
+  state.examAsked = true;
+  addMemory("佩涅洛佩从楼上下来了——「外乡人，先答我一件小事」。二十年不轻信的人，开始考试", 5);
+  showAsk("终 章 · 相 认 三 问","第 一 问 · 疤",
+    "她终于从楼上下来，隔着三步站定——不靠近，也不让开。烛光把两个人的影子钉在墙上。\n「乞讨的人，宫里我见得多；手上有旧疤的，我也见得多。——先答这件小事：你腿上那道疤，是怎么来的？」",
+    null, [
+    {label:"「幼年在外祖父的山上猎野猪——獠牙从腿根撕下去，留到今天。」", hint:"帕尔纳索斯山 · 原著第 19 卷", fn:examScarOk},
+    {label:"「从战马上摔的。」", fn:()=>examMiss("scar")},
+    {label:"「乞丐的旧伤多了，谁记得哪一道是哪块石头。」", fn:()=>examMiss("scar")},
+  ]);
+}
+function examScarOk(){
+  state.examScar=true; gainXp(20); sfx("bless"); feedback("medium");
+  addMemory(state.boarKilled
+    ? "第一问她答对了——野猪的獠牙。埃阿亚岛林子里那头拱玛草的，你亲手放倒过；这道疤认得它的同类"
+    : "第一问她答对了——幼年猎野猪留下的疤，二十年前的旧账，你一口答上", 5);
+  toast("她的梭子停在半空。「帕尔纳索斯……他总是说是那座山。」"+(state.boarKilled?"（第一章那头野猪——你亲手放倒过它的同类，这道疤不是编的。历练 +20）":"（二十年前的旧账，你一口答上。历练 +20）"));
+  renderHUD(); save();
+  examBedAsk();
+}
+function examBedAsk(){
+  showAsk("终 章 · 相 认 三 问","第 二 问 · 床",
+    "她抬眼看你——第一次正眼看你。\n「……答得像他。可『像』不算数。第二问：我这二十年守着的床——立在何处？」",
+    null, [
+    {label:"「一根活橄榄树——绕着树干建的寝殿，床腿生根在土里，谁也搬不走。」", hint:"原著第 23 卷 · 婚床之秘", fn:examBedOk},
+    {label:"「象牙雕花的王床，铺着紫毯。」", fn:()=>examMiss("bed")},
+    {label:"「我没进过你的寝殿——我一进大厅就被酒杯砸过。」", fn:()=>examMiss("bed")},
+  ]);
+}
+function examBedOk(){
+  state.examBed=true; gainXp(20); sfx("bless"); feedback("large");
+  addMemory("第二问她也答对了——婚床的腿是活橄榄树，根还扎在土里。她考的从来不是名字，是只有他知道的秘密", 5);
+  toast("她盯着你看了很久很久——眼泪先落了下来。「床腿的根……这话，只有两个人知道。」（历练 +20）");
+  renderHUD(); save(); achivTick();   /* 两问全对 → scar_proved 成就即时结算 */
+  showNameCard();
+}
+function examMiss(which){
+  if (which==="scar"){
+    addMemory("第一问她摇头——脚疤的来历，你答岔了", 4);
+    toast("她的眼睛暗了半分，没说话。梭子又动了起来：「……乞丐，是记不住自己的疤的。」");
+    save(); examBedAsk();
+  } else {
+    addMemory("第二问她摇头——婚床立在何处，你答岔了", 4);
+    toast("她摇头，声音很轻：「那棵树还在土里。你不是他——或者，还不是。」");
+    save(); showNameCard();
+  }
 }
 /* 相认之问（佩涅洛佩："你是谁？"）——认名系统：全程名字碎片 + 自由输入 */
 function showNameCard(){
@@ -3683,6 +3743,7 @@ function interact(){
   if (s.type==="penelope"){
     if (state.ithacaStage<3){ toast("织机声从楼上下来，不紧不慢。她还不知道大厅里发生了什么——或者，早就知道。"); return; }
     if (state.finaleDone){ toast("「我认得我认的名字。」她说。楼下的海，在等你的下一程。"); return; }
+    if (!state.examAsked){ examStart(); return; }   /* P1.7 相认三问：名字是第三问，先考疤与床 */
     showNameCard(); return;
   }
   if (s.type==="itDock"){
@@ -5655,15 +5716,27 @@ function drawIthaca(et){
     }
     if (state.ithacaStage<3){ ctx.fillStyle="rgba(220,228,238,.6)"; ctx.font="9px 'Segoe UI'"; ctx.textAlign="center"; ctx.fillText("（十二道斧环 · 无人拉开的弓）", bx+38, by-8); }
   }});
-  /* 佩涅洛佩的织机（楼窗下的那一架） */
+  /* 佩涅洛佩与织机（P1.7 视觉：考官在场——未考她在织，考过之后布停在同一处；审判通过后织机彻底停了） */
   ents.push({y:7*ATS+ATS*0.9, draw(){
     const bx=11*ATS+4, by=7*ATS+6;
     ctx.fillStyle="#5c5044"; ctx.fillRect(bx,by-24,4,34); ctx.fillRect(bx+30,by-24,4,34);
     ctx.fillStyle="#d8ccb8"; ctx.fillRect(bx+4,by-20,26,26);
     ctx.strokeStyle="rgba(120,80,60,.55)"; ctx.lineWidth=1;
     for(let i=0;i<4;i++){ ctx.beginPath(); ctx.moveTo(bx+7+i*7,by-20); ctx.lineTo(bx+7+i*7,by+6); ctx.stroke(); }
+    if (!state.examAsked && Math.sin(et*1.5)>0){ ctx.fillStyle="rgba(255,225,170,.32)"; ctx.fillRect(bx+4,by-9,26,6); }   /* 梭子来回的亮纬线（未考时） */
+    /* 佩涅洛佩本人：织机旁站定——考过之后抬眼，眼里有一点烛光 */
+    const px=bx+45, py=by+10;
+    ctx.fillStyle="rgba(50,55,45,.28)"; ctx.beginPath(); ctx.ellipse(px,py+7,8,3,0,0,7); ctx.fill();
+    ctx.fillStyle="#5a4a58"; ctx.beginPath(); ctx.moveTo(px-6,py-9); ctx.lineTo(px+6,py-9); ctx.lineTo(px+8,py+8); ctx.lineTo(px-8,py+8); ctx.closePath(); ctx.fill();
+    ctx.fillStyle="#d8c8b8"; ctx.beginPath(); ctx.arc(px,py-13,5,0,7); ctx.fill();
+    ctx.fillStyle="#3a2e26"; ctx.fillRect(px-6,py-18,12,5);
+    if (state.examAsked){ ctx.fillStyle="rgba(232,192,90,.9)"; ctx.fillRect(px-1,py-15,2,2); }
+    const plabel = state.finaleDone ? "她等你，很久了"
+      : !state.examAsked ? "织机声，不紧不慢"
+      : (state.examScar&&state.examBed) ? "织机停了——她在听"
+      : "她的眼神没离开过你";
     ctx.fillStyle="rgba(240,220,190,.85)"; ctx.font="9px 'Segoe UI'"; ctx.textAlign="center";
-    ctx.fillText("织机声，不紧不慢", bx+17, by-28);
+    ctx.fillText(plabel, bx+24, by-28);
   }});
   /* 乞丐斗篷（墙角：杖+斗篷） */
   ents.push({y:7*ATS+ATS*0.75, draw(){
@@ -7473,6 +7546,9 @@ window.__game={state, scene, boat, player:aiaPlayer, witch, seer, aeolus, boar, 
   /* P1.6 波塞冬掀筏（17g 原著第 5 卷） */
   raftStormTick, doRaftStorm, waveSfx, takeVeil, raftLost,
   raftStormInfo:function(){ return {done:!!state.raftStormDone, fail:!!state.raftStormFail, veil:!!state.raftVeilTaken, left:!!state.ogygiaLeft}; },
+  /* P1.7 相认三问（17g 原著第 19/23 卷：佩涅洛佩的审判） */
+  examStart, examScarOk, examBedOk, examMiss, pickAsk,
+  examInfo:function(){ return {asked:!!state.examAsked, scar:!!state.examScar, bed:!!state.examBed}; },
   /* 护航船队（17h 视觉）+ ambient 观测 */
   boatTrail:()=>boatTrail, drawEscortFleet,
   ambInfo:function(){ return {active:ambActive, text:ambText, npc:typeof currentNPC!=="undefined"?currentNPC:null}; }};

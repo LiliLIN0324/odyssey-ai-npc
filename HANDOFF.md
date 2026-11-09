@@ -380,7 +380,7 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 3. **P1.2 埃亚岛三件套**：赫尔墨斯事件+Moly+蜜酒对峙+猪变回人（P2.4 顺带） → 验收：好感<30 可触发、有魔草/无魔草两路、与留灯线衔接。（✅17n）
 4. **P1.3 太阳岛倒置**（依赖 2）：鼓噪事件+雷劈+只剩你 → 验收：拦住/放任两路、成就双发、船员清零联动。（✅17o）
 5. **P1.6 掀筏**（依赖 2/4 时机）：出湾风暴+面纱 → 验收：存活/失败两路、失败回岛重来。（✅17p，含 F5 斯库拉快反战一并落地）
-6. **P1.7 相认三问**（依赖 boarKilled 既有）：脚疤/婚床/名字 → 验收：三问 canon/dev 分流。
+6. **P1.7 相认三问**（依赖 boarKilled 既有）：脚疤/婚床/名字 → 验收：三问 canon/dev 分流。（✅17q）
 7. **P1.4 冥界亡母 + P1.5 斯克里自白 + P1.8 风神逐客**：三站文案+交互 → 验收：旧名进认名候选；《歌》改名链路。
 8. **P2 批 + ACHIV 合流 + 判词矩阵扩展** → 终验：**纯正版一命通关可在终章集齐【荷马之线·全本】全部 canon 锚点**；改写版可集齐全部 dev；313 条评测回归不降。
 每步：node --check + 8766 Playwright 冒烟 + HANDOFF 勾选 + 独立 commit；评测词表变动另走 OOV 流水线（§一.8 惯例）。
@@ -539,6 +539,19 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 - **验收（8773 隔离源，server.py 起服 + 环境 Playwright 驱动；全程控制台 0 error）**：P1.6——S1 tick 触发（开阔海 1.5s 蓄力→第一道浪卡+暗浪罩 show）✓；S2 收纱 canon 路（三浪链卡序 1→2→3→筏散→面纱→`takeVeil("first")`：done/veil 双 true+船落斯克里近海+「游三天」卡+fx 关闭）✓；S3 两拒 dev 路（拒一→「灰眼睛·再一次」→拒二→`raftLost`：fail=true/left=false/wood=0/船回奥吉吉亚/「海记了账」卡）✓；S4 成就三枚入账（raft_survived+lost_to_poseidon+six_saved）✓；S5 旧档兜底（删三字段→ensureState 回补全 false）✓；S6 AMBIENT calypso debt/veil_told 注册+cond 矩阵✓；S7 判词三态（canon/fail/悬置）✓；F5——全救路（saved=6/lost=0/crew 12 保持/scSixSaved=true/straitStage=2）✓；全失路（lost=6/crew 12→6）✓；真实交互入口（interact()→scylla 分支→startScyllaCombat）✓；E 键真实 dispatchEvent（strike 窗口按 E→saved++）✓；HUD 视觉（canvas 顶部计数像素+视觉模型逐字读出「斯库拉六头 2/6 · 救回 0 · 被叼 1」+六颈单眼怪头在场）✓；S8 audit 0 缺口+无 U+FFFD ✓。截图 `shots/p14-f5-scylla-hud.png`（F5 HUD 战中帧）、`p16-raft-storm-ask.png`（第一道浪选择卡+暗浪罩，视觉模型逐字复核文案）、`p16-raft-break-veil.png`（筏散白手面纱名场面，视觉模型逐字复核）。
 - **坑（新）**：①**工作区遗留未提交实现先复核再接**——P1.6 主体是并行会话写好未提交的（154 行全链+语法绿），本会话核依赖（waveSfx/getNoise/sfxGain/showAsk/showChapter/ensureState/主循环/挂载）确认闭环后直接验收，避免重复造或覆盖；②Playwright viewport 截图**标题屏 DOM 遮挡**（titleOn 局部变量改 false 只影响门控不隐藏 DOM）——验收截图前先 `document.getElementById('titleScreen').style.display='none'`，否则视觉模型读到的是标题屏+暗浪罩叠加；③canvas toDataURL 截图**不含 DOM 层选择卡**（askCard/raftStormFx 是 DOM 覆盖层）——纯 canvas 帧只验游戏画面+暗浪罩，选择卡验收用 viewport 截图或 DOM 断言；④raftStormTick 的 170px 岛心排斥圈+陆地瓦片门控（`#XG` 不触发）——测试放船要找 `~` 开阔海瓦片（(36,18) 起可用，WTS=20），落在 `#` 岛瓦片上 tick 静默 return 是最易踩的假阴性。
 - **未做**：P1.7 相认三问（§17g 第 6 步，依赖 boarKilled 既有 flag）；P1.4 冥界亡母+P1.5 斯克里自白+P1.8 风神逐客（第 7 步三站）；P2 批+ACHIV 合流+判词矩阵（第 8 步终验）；P0.7《歌》改名链路（依赖 P1.5）；评测线 cases.jsonl 不动（本批零新意图词表）；下一步按 §17g 顺序为 **P1.7 伊萨卡相认三问**。
+
+---
+
+### 17q. P1.7 伊萨卡相认三问：佩涅洛佩的审判（11-09 上午，本会话；按 §17g 实施顺序第 6 步执行，rpg/dialogue-systems/game-ui-ux 方法论）
+
+- **接手背景**：核实 §17l~17p 全部在场（HEAD=b9c3add）；**工作区有并行会话遗留的 island3d.js 实验**（岛内 3D 渲染器，注释 GBK 乱码、未提交、已接进 index.html 15 行）＋**两个 needs_human 会话阻塞在等用户确认同一范围问题**——两者均认定"P1.7 是账本既定下一步、无争议"。本会话按最新阻塞会话的推荐项处置：**隔离实验、主线开工**——接线 diff 备份 `.temp/island3d-wiring-backup-20261109.patch`，`git restore` index.html/server.py 回干净基线，island3d.js 与 8 张 i3d 截图原样保留未销毁；上会话 p14/p16 截图再生版噪声未混入本批。**两个阻塞会话若被确认会与本批撞车，建议关闭**（P1.7 已落）。
+- **玩法（rpg 考试事件化，showAsk 第五次复用，零模型）**：`examStart/examScarOk/examBedAsk/examBedOk/examMiss` 五函数链——penelope 交互点（`ithacaStage≥3 && !finaleDone && !examAsked`）触发：①**疤**（canon＝帕尔纳索斯山野猪獠牙；`boarKilled` 时记忆互证"埃阿亚岛那头你亲手放倒过——这道疤认得它的同类"＝第一章玩法变原著证据链）→ ②**床**（canon＝活橄榄树床腿生根，原著第 23 卷）→ ③名字（showNameCard 照旧）。**答错不关门**：examScar/examBed 记录、判词记 B 变体，名字卡照常放行——审判，但不关门。`examAsked` 在 examStart 置位（考试中途重载→直接进认名卡，已答题 flag 保留，无 XP 刷取路径）。两问各 XP+20（achivTick 直调即时结算，不等 2s 轮询）。
+- **成就**：canon `scar_proved`「脚疤与婚床」入 ACHIV（canon 总数 11→12）。
+- **判词（showFinale）**：A 路新增 examAsked 段双变体——全对＝"佩涅洛帕的审判，你通过了。（原著 · 脚疤与婚床）"；有失＝"你没能全答上……爱与不轻信，原来是同一件事"。**顺手修正判词硬编码漂移**：「命运锚点 X/6」两处与荷马之线"六处"改为动态 `${ACHIV.filter(a=>a.canon).length}`（canon 实为 12，硬编码 6 早已漂移）。**注**：sun_keep（守誓）与 zeus_survived（睡着放任）互斥 → 全满不可达是 §17g 设计内现象，【荷马之线·全本】口径留给第 8 步 ACHIV 合流统一处理。
+- **视觉（伊萨卡织机 ent 双态升级）**：新增**佩涅洛佩本体**立绘（织机右旁：深紫长裙+挽发+影子，考后抬眼加金烛光眼点）；未考时梭子亮纬线 sin shimmer；状态标签四档（织机声，不紧不慢→她的眼神没离开过你→织机停了——她在听→她等你，很久了）——考官在场可见，与 crewmen 双态同法。
+- **验收（8774 隔离源，server.py 起服 + Playwright 驱动；全程控制台 0 error 0 warning）**：S1 第一问卡（kicker/title/三选项/examAsked/记忆）✓；S2 疤对（flag+XP+第二问卡）✓；S3 床对（flag+scar_proved 入账+认名卡自动开+记忆两条）✓；S4 答错路（疤错→仍进第二问；床错→零 XP/零成就/名字卡放行）✓；S5 判词双变体（"佩涅洛帕的审判，你通过了" / "没能全答上"）+ 动态计数 1/12 ✓；S6 旧档兜底（抹三字段→重载→全 false→考试可重考，wrap 结构完好）✓；S7 真实 E 键 interact→考试卡 ✓；S8 auditHandlers **30 类×11 NPC 0 缺口** ✓；S9 三截图视觉复核达标（选择卡逐字可读无乱码/佩涅洛佩立绘在场/双态标签差异）。node --check 绿。
+- **坑（新）**：①story.md 表格行含全角引号，Edit 工具两次匹配失败（传输层把直引号规范化成弯引号）——**中文引号行的编辑用 Python 按行替换兜底**；②tsGo 点击后 titleScreen 是**移除**而非隐藏（§17p 坑②的 display:none 写法对已启航页面会 TypeError）——截图前置检查节点存在性；③gainXp 跨级归零会让 XP 断言看似 -20（Lv1→2 阈值恰好跨过）——升级曲线既有行为非 bug，断言用 xp+level 联合看。
+- **未做**：§17g 第 7 步三站（P1.4 冥界亡母/P1.5 斯克里自白/P1.8 风神逐客）；第 8 步 P2 批+ACHIV 合流+判词矩阵扩展；island3d 实验保留未决（接线备份在 .temp，等用户拍板 3D 岛内视觉是否继续）；评测线 cases.jsonl 不动（本批零新意图词表）。**下一步按 §17g 顺序为第 7 步三站。**
 
 ---
 
