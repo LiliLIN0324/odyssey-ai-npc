@@ -789,6 +789,7 @@ const ITSPOTS = [
   {type:"suitors",  x:6*ATS+ATS/2,     y:3*ATS+ATS*0.85,  r:95, label:"宴厅里的求婚者"},
   {type:"axes",     x:11*ATS+ATS/2,    y:5*ATS+ATS/2,     r:85, label:"十二斧阵"},
   {type:"penelope", x:penelopeSpot.x,  y:penelopeSpot.y,  r:80, label:"楼上织机旁的人"},
+  {type:"telemachus", x:15*ATS+ATS/2,  y:6*ATS+ATS/2,     r:80, label:"寻找父亲的年轻人"},
   {type:"cloak",    x:17*ATS+ATS/2,    y:7*ATS+ATS/2,     r:70, label:"乞丐的斗篷与杖"},
   {type:"itDock",   x:4*ATS+ATS/2,     y:10*ATS+ATS/2,    r:70, label:"码头（转身，或归乡）"},
 ];
@@ -1349,6 +1350,71 @@ function scyllaEnd(){
     : (SC.lost===0?"":"六头归位，雾在船后合拢。被叼走的人，名字沉进浪里。") + (SC.saved>0?`你抢回了 ${SC.saved} 个人。`:""));
   renderHUD(); save();
 }
+
+/* ==================== F6 求婚者大厅肃清战（17h · 原著第 22 卷：杀 108 求婚者） ====================
+   拉弓之后再去宴厅：求婚者发现弓开了，拔刀反扑（axes 的 toast「刀出鞘的声音」就是引导钩子）。
+   六名求婚者轮番扑上（approach 0.5s → strike 0.6s 窗口按 E 放箭 → retreat 0.45s，SC 状态机同款）：
+   窗口内按 E = 击杀该人；错过 = 被砍 -12（错 5 血不死，可撤退重试）；六人全灭 = canon hall_swept。
+   血量 <15 自动撤退（且战且退，可再触发）；未尽之箭叙事圆给雅典娜的灰眼睛（原著必胜的内核）。 */
+const SU_N = 6, SU_APPROACH = 0.5, SU_WINDOW = 0.6, SU_RETREAT = 0.45;
+const SU_NAMES = ["安提诺奥斯","欧律玛霍斯","克忒西波斯","阿伽埃诺尔","勒奥克里托斯","安菲诺摩斯"];
+const SU = { on:false, phase:"idle", pt:0, kills:0, missed:0 };
+function startSuitorCombat(){
+  if (scene!=="ithaca" || SU.on) return;
+  SU.on=true; SU.phase="idle"; SU.pt=0; SU.kills=0; SU.missed=0;
+  sfx("alert"); addTrauma(0.4); feedback("medium");
+  addMemory("弓弦的余音还没散，安提诺奥斯第一个拔了刀——大厅里的箭雨要来了。你只带了一把没人能拉开的弓", 4, "suitors");
+  toast("求婚者反扑了！他们轮番扑上来——出刀瞬间（0.6s）按 E 放箭：六人全灭才能肃清大厅。血太少会被迫撤退！");
+  renderHUD();
+}
+function suitorCombatTick(dt){
+  if (!SU.on) return;
+  if (dlgOpen||titleOn||chapterOn||mapOpen) return;       /* 界面打开冻结窗口（防海图/章节卡空转） */
+  SU.pt += dt;
+  if (SU.phase==="idle"){
+    if (SU.pt >= SU_APPROACH){ SU.phase="strike"; SU.pt=0; sfx("attack"); }
+  } else if (SU.phase==="strike"){
+    if (SU.pt >= SU_WINDOW){ suitorMiss(); }              /* 窗口错过 → 被砍一刀 */
+  } else if (SU.phase==="retreat"){
+    if (SU.pt >= SU_RETREAT){ suitorNext(); }
+  }
+}
+function suitorStrike(){                                  /* E 键命中：放箭击杀当前扑上来的求婚者 */
+  if (!SU.on || SU.phase!=="strike") return;
+  const nm = SU_NAMES[(SU.kills+SU.missed) % SU_NAMES.length];
+  SU.kills++; SU.phase="retreat"; SU.pt=0;
+  sfx("pick"); popText(aiaPlayer.x, aiaPlayer.y-30, nm+"倒了！", "#7fd0a0"); addTrauma(0.15);
+  burst(aiaPlayer.x, aiaPlayer.y+6, "#b04040", 8, 2.4, 2);   /* 打击反馈：粒子（game-feel 多通道） */
+  if (SU.kills >= SU_N){ endSuitorCombat(); }
+}
+function suitorMiss(){
+  SU.missed++; SU.phase="retreat"; SU.pt=0;
+  state.hp = Math.max(5, state.hp - 12); renderHUD();
+  sfx("die"); popText(aiaPlayer.x, aiaPlayer.y-30, "被砍中…", "#e08080"); addTrauma(0.35);
+  if (state.hp < 15){ endSuitorCombat(true); }
+}
+function suitorNext(){
+  if (SU.kills >= SU_N){ endSuitorCombat(); return; }
+  if (state.hp < 15){ endSuitorCombat(true); return; }
+  SU.phase="idle"; SU.pt=0;
+}
+function endSuitorCombat(fled){
+  SU.on=false;
+  if (fled){
+    addMemory("血糊了眼睛——你且战且退出了大厅。求婚者的刀还亮着：先去补点状态，再回来算账", 3);
+    toast("你且战且退出了大厅。刀还亮着，弓还在——先去补点状态，回来把账算完。（血量太低）");
+    sfx("die"); renderHUD(); save(); return;
+  }
+  state.suitorsSwept = true; state.ithacaStage = Math.max(state.ithacaStage, 4);
+  gainXp(40); sfx("bless"); feedback("large");
+  addMemory(state.telRevealed
+    ? "大厅肃清——父子两代并肩，一百零八支矛一一对过账。荷马第22卷写的就是这场"
+    : "大厅肃清——一百零八支矛对过了账。最后几箭没人看清是谁放的：总有一只手，替你挡过最重的那一下", 5);
+  toast(state.telRevealed
+    ? "最后一个求婚者倒了。大厅安静下来——你先抱了儿子，再赢回妻子。（大厅肃清 ✓ · 历练 +40）"
+    : "最后一个求婚者倒了。有几句呼救，你没看清是谁的箭放的——总有一只灰眼睛替你挡了最重的那一下。（大厅肃清 ✓ · 历练 +40）", 4800);
+  achivTick(); renderHUD(); save();
+}
 function prologueSpot(s){
   const P = PROLOGUE_SITES[scene];
   if (scene==="telepylos" && FD.on && s.type!=="fleetguard"){ toast("石头还在落——先守住船队！"); return; }
@@ -1908,10 +1974,14 @@ function ensureState(){
   /* P1.8 旧档回补：风袋是否用光过——按记忆流推导（useWind 用光时写过「用得一干二净」） */
   if (state.windbagEmptied===undefined)
     state.windbagEmptied = (state.memory||[]).some(m=>m&&m.text&&m.text.includes("用得一干二净"));
-  /* P1.7 相认三问：旧档补默认值（旧档无此三字段＝未考过，行为与旧版一致） */
-  if (state.examAsked===undefined) state.examAsked=false;
-  if (state.examScar===undefined) state.examScar=false;
-  if (state.examBed===undefined) state.examBed=false;
+   /* P1.7 相认三问：旧档补默认值（旧档无此三字段＝未考过，行为与旧版一致） */
+   if (state.examAsked===undefined) state.examAsked=false;
+   if (state.examScar===undefined) state.examScar=false;
+   if (state.examBed===undefined) state.examBed=false;
+   /* P1.9 忒勒玛科斯 + F6 大厅肃清：旧档补默认值（无此三字段＝未触发过，行为与旧版一致） */
+   if (state.telMet===undefined) state.telMet=false;
+   if (state.telRevealed===undefined) state.telRevealed=false;
+   if (state.suitorsSwept===undefined) state.suitorsSwept=false;
   crewLedgerLight();
   if (state.tookWine===undefined) state.tookWine=false;
   if (state.targetHits===undefined) state.targetHits=0;
@@ -2374,6 +2444,10 @@ const ACHIV = [
   { id:"banished", name:"被风神驱逐", desc:"风袋用光后你回到风神岛——埃俄罗斯说：连神明都憎恨的人，离开我的岛。荷马第 10 卷这句原话，落在了你头上", cond:()=>!!state.banishedFromAeolia, dev:"原著里他只是收回风袋——这回他把门关上了" },
   /* —— P2.2 食莲岛强拖回船（17g 原著第 9 卷：绑上凳带回）—— */
   { id:"lotus_drag", name:"强拖回船的人", desc:"食莲滩上你没有听任甜——用幸存者的绳结把他绑上凳，带回船上。他一路望着海，一句话也没说。荷马第 9 卷写的就是这一下", cond:()=>!!state.lotusDraggedOk, canon:true },
+  /* —— P1.9 忒勒玛科斯（17g 原著第 16 卷：父子相认）—— */
+  { id:"father_son", name:"父子相认", desc:"他问你有没有见过奥德修斯——你说：我就是。看我手上的疤，看我眼下的纹。荷马第 16 卷写这一幕用了整整两卷", cond:()=>!!state.telRevealed, canon:true },
+  /* —— F6 大厅肃清战（17h · 原著第 22 卷：杀 108 求婚者）—— */
+  { id:"hall_swept", name:"扫净大厅的人", desc:"弓弦的余音里他们拔了刀——一百零八支矛，你一一放平。荷马第 22 卷：这一场仗没有第二名", cond:()=>!!state.suitorsSwept, canon:true },
 ];
 function achivTick(){
   for (const a of ACHIV){
@@ -2406,6 +2480,8 @@ const CANON_GROUPS = [
   {n:"听自己的歌落泪", ids:["tears_for_song"]},
   {n:"不接谎的船",     ids:["truth_ship"]},
   {n:"脚疤与婚床",     ids:["scar_proved"]},
+  {n:"父子相认",       ids:["father_son"]},
+  {n:"大厅肃清",       ids:["hall_swept"]},
 ];
 function fateSummary(){
   const got=state.achiv||[];
@@ -2575,7 +2651,20 @@ line:()=>"你醒的时候，海把你的船推上了我们的滩——别怕，�
   /* P2.6 佩涅洛佩织布拆布（17g 原著第 2 卷）：求婚者的怨语——零模型零成本 */
   suitors: [
     {id:"weaving", w:0.8, cond:()=>true,
-     line:()=>"（掷骰声里有人嘟囔）王后那架寿布，织了三年还没织完——白天织，夜里拆。谁家的新郎等得起这个？"},
+     line:()=>"（掷骰声里有人哳哳）王后那架寿布，织了三年还没织完——白天织，夜里拆。谁家的新郎等得起这个？"},
+  ],
+  /* P1.9 忒勒玛科斯（17g 原著第 16 卷）：寻父十年归来的儿子——他的 AMBIENT 随相认进度换台词 */
+  telemachus: [
+    {id:"seeking", w:1.0, cond:()=>state.ithacaStage>=1&&!state.telRevealed,
+     line:()=>"（他望着西边的海）有没有见过一个高个子的男人？眼下有疤，说话像船帆——我是他儿子。"},
+    {id:"met_silent", w:1.2, cond:()=>state.telMet&&!state.telRevealed&&!state.finaleDone,
+     line:()=>"（他忽然回头看你一眼）那个乞丐说话的样子，像一个人。……可所有人都说，他死了。"},
+    {id:"revealed", w:1.2, cond:()=>state.telRevealed&&!state.suitorsSwept,
+     line:()=>"「父亲。」就这一个词——他练了二十年。「去见母亲。大厅里剩下的，我们一起算。」"},
+    {id:"after", w:1.0, cond:()=>state.suitorsSwept&&!state.finaleDone,
+     line:()=>"（他按着矛守在大厅口）母亲还在楼上织那架寿布——织了二十年，也拆了二十年。去告诉她，不用再拆了。"},
+    {id:"sail", w:0.7, cond:()=>state.finaleDone,
+     line:()=>"（他扶着新船的槇杆）判词写完了，父亲。下一程海很长——替我在每片海里都留下名字。"},
   ],
 };
 function ambientAnchor(npc){
@@ -2589,7 +2678,16 @@ function ambientAnchor(npc){
   if (npc==="cattle"){ const s=SUNSPOTS.find(p=>p.type==="cattle"); return s?{x:s.x,y:s.y}:null; }   /* P1.3 圣牛锚点 */
   if (npc==="polyphemus"){ const s=PROLOGUE_SPOTS().find(p=>p.type==="poly"); return s?{x:s.x,y:s.y}:null; } /* P2.8 独眼锚点 */
   if (npc==="suitors"){ const s=ITSPOTS.find(p=>p.type==="suitors"); return s?{x:s.x,y:s.y}:null; }           /* P2.6 求婚者锚点 */
+  if (npc==="telemachus"){ const s=ITSPOTS.find(p=>p.type==="telemachus"); return s?{x:s.x,y:s.y}:null; }  /* P1.9 忒勒玛科斯锚点 */
   return null;
+}
+/* P1.9：伊萨卡场景双 NPC 环境台词——按玩家到两个锚点的距离取近者（both ≥180px 门控在 tick 内） */
+function ithacaAmbientNpc(){
+  const tm=ambientAnchor("telemachus"); if(!tm) return "suitors";
+  const su=ambientAnchor("suitors");
+  const dtm=Math.hypot(aiaPlayer.x-tm.x,aiaPlayer.y-tm.y);
+  const dsu=su?Math.hypot(aiaPlayer.x-su.x,aiaPlayer.y-su.y):1e9;
+  return dtm<=dsu?"telemachus":"suitors";
 }
 let ambTimer=0, ambUntil=0, ambAnchor=null, ambText="", ambActive=null;
 let achTimer = 0;   /* 成就轮询节流（命运双轨：2s 扫一次 ACHIV） */
@@ -2599,7 +2697,7 @@ function npcAmbientTick(dt){
   if (ambTimer < 1.2) return;                /* 决策步 1.2s 一次，非每帧 */
   ambTimer = 0;
   if (dlgOpen||titleOn||chapterOn||mapOpen||scene==="world"||(scene==="telepylos"&&FD.on)){ ambActive=null; return; }
-  const npc = scene==="aia"?"witch":scene==="hades"?"seer":scene==="aeolia"?"aeolus":scene==="strait"?"siren":scene==="sun"?"cattle":scene==="ogggia"?"calypso":scene==="scheria"?"nausicaa":scene==="ismaros"?"rebuilder":scene==="lotus"?"lotusman":scene==="cyclops"?"polyphemus":scene==="troy"?"epeius":scene==="ithaca"?"suitors":null;
+  const npc = scene==="aia"?"witch":scene==="hades"?"seer":scene==="aeolia"?"aeolus":scene==="strait"?"siren":scene==="sun"?"cattle":scene==="ogggia"?"calypso":scene==="scheria"?"nausicaa":scene==="ismaros"?"rebuilder":scene==="lotus"?"lotusman":scene==="cyclops"?"polyphemus":scene==="troy"?"epeius":scene==="ithaca"?ithacaAmbientNpc():null;
   if (!npc){ ambActive=null; return; }
   const anchor = ambientAnchor(npc);
   if (!anchor){ ambActive=null; return; }
@@ -2815,6 +2913,8 @@ addEventListener("keydown", e=>{
     e.preventDefault();
     /* F5 斯库拉快反战：strike 窗口内 E=砍/拉救回，不进普通交互 */
     if (SC.on && SC.phase==="strike"){ scyllaStrike(); return; }
+    /* F6 求婚者肃清战：strike 窗口内 E=放箭击杀，不进普通交互 */
+    if (SU.on && SU.phase==="strike"){ suitorStrike(); return; }
     /* 预按：当前无可交互目标才进缓冲，避免双触发 */
     const has = scene==="world" ? !!islandNear() : !!aiaNear();
     if (!has) eBufAt = performance.now();
@@ -3281,6 +3381,13 @@ function showFinale(mode, way, name){
     if (state.guest) paras.push("瑙西亚娅的白港你来过两回：一回被救，一回告别。客人的名字，歌里唱得比王还长。");
     else if (state.talesTold.length) paras.push(`斯克里岛的篝火边，你如实讲了 ${state.talesTold.length} 段——德摩多科斯的歌里从此有你。被唱出来，就是被记住。`);
     else paras.push("斯克里岛的歌里没有你的名字——故事被你讲成了牛，或者根本没讲。世界不接谎，歌也一样。");
+    /* P1.9 忒勒玛科斯（17g 原著第 16 卷）：父子相认 / 雾里擦肩 */
+    if (state.telRevealed) paras.push("你先抱了儿子，再赢回妻子——荷马写这一段用了整整两卷：一个练了二十年的字，和一场并肩的仗。（原著 · 父子相认）");
+    else if (state.telMet) paras.push("你儿子问你有没有见过那个人，你说没有。你们在雾里擦肩——像两个守着同一个秘密的陌生人。（他还在等）");
+    /* F6 大厅肃清（17h 原著第 22 卷）：打没打、跟谁打，判词各有一句 */
+    if (state.suitorsSwept) paras.push(state.telRevealed
+      ? "大厅肃清：一百零八支矛，你们父子两代一一对账。荷马第 22 卷写的就是这场并肩的仗。（原著 · 大厅肃清）"
+      : "大厅肃清：一百零八支矛对过了账。有几箭没人看清——总有一只灰眼睛替你挡过最重的那一下。（原著 · 大厅肃清）");
     if (state.examAsked) paras.push(state.examScar&&state.examBed
       ? "相认之前，她先考了你两问：脚疤的来历、婚床的根——一处都没答错。她考的从来不是名字，是只有他知道的秘密。佩涅洛佩的审判，你通过了。（原著 · 脚疤与婚床）"
       : "相认之前她考了你两问，你没能全答上。她记下了——可她还是听完了你最后报的名字。爱与不轻信，原来是同一件事。");
@@ -3360,6 +3467,32 @@ function showFinale(mode, way, name){
     if (finalName) setTimeout(()=> showChapter("concept-art/09-伊萨卡.jpg","终 章 · 认 名", finalName, "游戏最后一张章节卡 · 标题是你的名字", "雾散尽了。往后每一张海图，都以这个名字命名。"), 450);
   };
   ec.querySelector(".re").onclick = ()=>{ if(confirm("清空存档，从新的航程开始？")){ localStorage.removeItem(SAVE_KEY); location.reload(); } };
+}
+/* ==================== P1.9 忒勒玛科斯（17g 原著第 16 卷：父子相认） ====================
+   伊萨卡另一个也在找他的人——他问你见没见过奥德修斯，你决定告不告诉他你是谁（showAsk 第七次复用，零模型）。
+   认＝canon father_son「父子相认」（判词「你先抱了儿子，再赢回妻子」+ F6 并肩变体）；不认＝继续无名线。
+   随时可触发（不阻塞主链，兼容旧档：stage>=1 即可遇）；finaleDone 后走完成态台词。 */
+function telemachusEvent(){
+  sfx("alert");
+  addMemory("码头边一个年轻人拦住你问：「有没有见过一个叫奥德修斯的人？」——他问遍了整片海，只搜到别人的故事", 4);
+  showAsk("终 章 · 另 一 个 找 他 的 人","有 人 问 起 你",
+    "码头边一个年轻人拦住你——短斗篷，手上一支小矛，眼角晒出了海的痕迹。\n「外乡人，抱歉拦你。我从皮洛斯回来——涅斯托耳的宫殿、墨涅拉俄斯的宴会，都问遍了。有没有见过一个叫奥德修斯的人？高个子，眼下有疤，说话像船帆。任何消息都行——十年的，什么都能算数。」",
+    null, [
+    {label:"「……我就是。你看我的手，看我眼下的纹——别眨眼，看仔细。」", hint:"原著第16卷 · 相认", fn:telYes},
+    {label:"「没见过。……不过，会有人替你留意。」", fn:telNo},
+  ]);
+}
+function telYes(){
+  state.telRevealed = true;
+  gainXp(30); sfx("bless"); feedback("large");
+  addMemory("你把名字告诉了那个年轻人——他愣了很久，然后抱住你哭出声。二十年的账，父子两代一次算清", 5);
+  toast("他盯着你的手、你的疤——然后像被抽走了骨头一样站不稳。「父亲。」他说，「这个字，我练了二十年。」\n（历练 +30 · 父子相认——你先抱了儿子，再赢回妻子）", 5200);
+  achivTick(); renderHUD(); save();
+}
+function telNo(){
+  addMemory("那个年轻人问你有没有见过奥德修斯——你说没有。你们在雾里擦肩，像两个守着同一个秘密的陌生人", 4);
+  toast("他的眼睛暗下去，又自己点着了：「没关系。至少今天又多问了一个。」\n他握了握矛，转身朝大厅去了。（你选择了继续无名——但记住他望你的那一眼）", 4800);
+  save();
 }
 /* ==================== P1.7 相认三问（17g 原著第 19/23 卷：佩涅洛佩的审判） ====================
    她不是等待者，是考官——名字是第三问，脚疤与婚床才是门槛（showAsk 第五次复用，零模型调用）。
@@ -3923,7 +4056,27 @@ function interact(){
     toast("斗篷一披，权杖一拄，你把自己叠进人群的影子。（化名入城 · A 路开启——宴厅里的求婚者没认出你）");
     renderHUD(); save(); return;
   }
+  if (s.type==="telemachus"){
+    /* P1.9 忒勒玛科斯：另一个也在找他的人——相认抉择（认＝canon father_son；不认＝无名线照旧） */
+    if (state.telRevealed){
+      if (state.finaleDone) toast("他按着矛守在船边。「判词写完了，父亲。下一程海很长——替我在每片海都留下名字。」");
+      else if (state.suitorsSwept) toast("「母亲还在楼上。」他说，眼睛亮得很，「去吧——告诉她，不用再拆那架布了。」");
+      else toast("「父亲。去见母亲——把名字亲口告诉她。大厅里剩下的一百多支矛，我们一起算。」");
+      return;
+    }
+    if (state.finaleDone){ toast("他望着海：「你说过没见过他。……可我总觉得，见过你的人有福了。」"); return; }
+    if (state.telMet){ toast("他还站在原地望着海。「又多问了一个。」他自嘲地笑笑，「有些相认，晚一点也比不认好——我是说，总会认的。」"); return; }
+    state.telMet = true;
+    telemachusEvent(); return;
+  }
   if (s.type==="suitors"){
+    /* F6 大厅肃清战（17h 原著第 22 卷）：拉弓后（stage>=3）再去宴厅＝求婚者发现弓开了，拔刀反扑。
+       不强制（penelope 考试门控 stage>=3 不动，老档零风险）；打过即 canon hall_swept。 */
+    if (state.ithacaStage>=3 && !state.suitorsSwept && !state.examAsked && !state.finaleDone){
+      if (!SU.on) startSuitorCombat();
+      return;
+    }
+    if (state.suitorsSwept){ toast(state.telRevealed?"大厅已经肃清。血渍擦干净之前，弓先挂在墙上。":"大厅已经肃清。最后几箭是谁放的——没人问，你也没说。"); return; }
     if (state.suitorsFooled){ toast("他们又输了一场掷骰，没人再看门口的乞丐一眼。"); return; }
     if (!state.disguise){ toast("宴厅的喧闹扑面而来。穿着自己的脸走进去？——先去墙角拿那件斗篷。"); return; }
     const nm = prompt("为首的斜着眼，用脚尖踢了踢你的瓦罐：「老叫花，叫什么名字？」\n（报一个化名——别报真名，更别报那个人的）","");
@@ -4457,6 +4610,23 @@ function drawScyllaHud(){
     ctx.fillStyle= r>0.6 ? "#ffd66b" : "#ff7a6b"; ctx.fillRect(382,58,236*r,6);
     ctx.font="600 12px 'Segoe UI'"; ctx.fillStyle="#ffd66b";
     ctx.fillText("按 E 砍/拉——救回这头船员！", 500, 84);
+  }
+}
+function drawSuitorHud(){
+  if (scene!=="ithaca" || !SU.on) return;
+  ctx.textAlign="center";
+  const t = `求婚者 ${SU.kills}/${SU_N} 已肃清 · 失手 ${SU.missed}`;
+  ctx.font="600 14px 'Segoe UI','Microsoft YaHei'";
+  ctx.fillStyle="rgba(0,0,0,.5)"; ctx.fillText(t, 501, 41);
+  ctx.fillStyle="#e8eef4"; ctx.fillText(t, 500, 40);
+  if (SU.phase==="strike"){
+    const r = Math.max(0, SU.pt/SU_WINDOW);
+    ctx.fillStyle="rgba(60,30,20,.6)"; ctx.fillRect(380,56,240,10);
+    ctx.fillStyle= r>0.6 ? "#ffd66b" : "#ff7a6b"; ctx.fillRect(382,58,236*r,6);
+    ctx.font="600 12px 'Segoe UI'"; ctx.fillStyle="#ffd66b";
+    ctx.fillText("按 E 放箭——别让他近身！", 500, 84);
+    ctx.fillStyle="rgba(240,220,190,.9)";
+    ctx.fillText("「"+SU_NAMES[(SU.kills+SU.missed)%SU_NAMES.length]+"」扑上来了", 500, 102);
   }
 }
 function drawBoat(et){
@@ -6039,6 +6209,23 @@ function drawIthaca(et){
     ctx.fillStyle="rgba(240,220,190,.85)"; ctx.font="9px 'Segoe UI'"; ctx.textAlign="center";
     ctx.fillText(plabel, bx+24, by-28);
   }});
+  /* 忒勒玛科斯（P1.9 · 原著第 16 卷）：寻父归来的年轻人——未认时望海数帆，认后站直 */
+  {
+    const tx=15*ATS+ATS/2, ty=6*ATS+ATS/2;
+    ents.push({y:ty+8, draw(){
+      ctx.fillStyle="rgba(50,55,45,.28)"; ctx.beginPath(); ctx.ellipse(tx,ty+6,8,3,0,0,7); ctx.fill();
+      ctx.fillStyle="#4a5a68"; ctx.beginPath(); ctx.moveTo(tx-6,ty-8); ctx.lineTo(tx+6,ty-8); ctx.lineTo(tx+7,ty+7); ctx.lineTo(tx-7,ty+7); ctx.closePath(); ctx.fill();
+      ctx.fillStyle="#e0c8a8"; ctx.beginPath(); ctx.arc(tx,ty-12,5,0,7); ctx.fill();
+      ctx.fillStyle="#2e2620"; ctx.fillRect(tx-5,ty-17,10,4);
+      ctx.strokeStyle="#8a9098"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(tx+9,ty+4); ctx.lineTo(tx+9,ty-16); ctx.stroke(); ctx.beginPath(); ctx.moveTo(tx+6,ty-16); ctx.lineTo(tx+12,ty-16); ctx.stroke();
+      if (state.telRevealed){ ctx.fillStyle="rgba(232,192,90,.9)"; ctx.fillRect(tx-2,ty-14,2,2); ctx.fillRect(tx+2,ty-14,2,2); }   /* 相认后的眼点 */
+      const tlabel = state.telRevealed ? (state.suitorsSwept?"他站直了——不用再找了":"「大厅里剩下的，我们一起算」")
+        : state.finaleDone ? "他守着大厅——也守着一句话"
+        : "他在数海上的帆";
+      ctx.fillStyle="rgba(240,220,190,.85)"; ctx.font="9px 'Segoe UI'"; ctx.textAlign="center";
+      ctx.fillText(tlabel, tx, ty-26);
+    }});
+  }
   /* 乞丐斗篷（墙角：杖+斗篷） */
   ents.push({y:7*ATS+ATS*0.75, draw(){
     const x=17*ATS+ATS/2, y=7*ATS+ATS/2;
@@ -7130,9 +7317,17 @@ const NPCS = {
     intro: "（他刨着一块松板，木花卷到脚边，头也不抬）……十年了，箭射不进的城，得让木头进。有什么事，直说。",
     samples: ["这马怎么造","雅典娜帮你了吗","围城十年是什么样子","你会造船吗","再见"],
   },
+  telemachus: {
+    name: "寻找父亲的年轻人",
+    sub: "伊萨卡 · 出海寻父归来 · 意图：Xing4.0 · 台词：TeleChat3",
+    portrait: "concept-art/characters/11-忒勒玛科斯.jpg",   /* 立绘已归档并接线（odyssey-visual.md §八） */
+    persona: `你是《奥德赛》里的忒勒玛科斯，二十岁，奥德修斯与佩涅洛佩之子。十年没见过父亲——你出海去皮洛斯、斯巴达打听他的下落，只带回别人的故事。求婚者占着王宫大厅，你暂时不敢进去。语气礼貌、急切、克制着希望；说到父亲时声音低半度。每次回复不超过55字，可用括号加动作，绝不提自己是AI。`,
+    intro: "（海风把短斗篷吹得贴在身上——刚下船的年轻人，矛尖还亮着）……外乡人，抱歉拦你。我在打听一个人：高个子，眼下有疤，说话像船帆。十年了——全海都问遍了。",
+    samples: ["你在找谁","皮洛斯打听到什么","求婚者的事你忍着？","这岛上还安全吗","再见"],
+  },
 };
 let currentNPC = "witch";
-let history = { witch: [], seer: [], aeolus: [], siren: [], cattle: [], calypso: [], nausicaa: [], rebuilder: [], lotusman: [], polyphemus: [], epeius: [] };
+let history = { witch: [], seer: [], aeolus: [], siren: [], cattle: [], calypso: [], nausicaa: [], rebuilder: [], lotusman: [], polyphemus: [], epeius: [], telemachus: [] };
 /* 各 NPC 的人格引导表（dialogue-systems：每个落到人格模型的类别都必须有引导，
    裸 category 会让人格模型睛说；新增 NPC 时此表必须覆盖全部 30 类） ---------- */
 const NPC_JOB_MAPS = {
@@ -7402,6 +7597,38 @@ const NPC_JOB_MAPS = {
     "威胁或攻击":"放下刨子看他一眼：手艺人的手不接架，但也不怕",
     "其他意图":"锤声替他回答，或一句「木头不聊这些」",
     "告别":"走好——城破那晚别站在门洞里"
+  },
+  telemachus: {
+    "闲聊":"顺着寻父的话头接，礼貌里压着急切",
+    "请求帮助":"委婉求助：替他留意任何消息，或护他一段",
+    "查询神谕":"把打听来的传闻当预兆讲：皮洛斯的老人说过一句没头没尾的话",
+    "查询生物情报":"讲讲寻父路上的海与人，短句克制",
+    "查询地点信息":"报伊萨卡/皮洛斯/斯巴达的位置与见闻，30字内",
+    "查询自身状态":"报他自己的状态：风尘仆仆，但撑得住",
+    "查询背包":"翻行囊：换洗衣物、一小袋皮洛斯的干粮、谁也没舍得扔的信物",
+    "丢弃物品":"摇头：母亲给的东西一样也不丢",
+    "装备物品":"按按矛：路上买的——这是我唯一带回来的东西",
+    "卸下装备":"摇头：矛不离手，大厅里没一个陌生人",
+    "使用消耗品":"看他吃喝，递一壶水：赶路的人先喝",
+    "购买物品":"摆手：钱要留着雇船——下一程还没着落",
+    "卖出物品":"拒：行囊里没一样是卖得掉的",
+    "查询价格":"不懂行情：海上买过一次粮，被宰了三倍",
+    "查询库存":"报皮洛斯带回的存粮：不多，省着吃",
+    "给予物品":"收下便郑重道谢：外乡人的善意，他记在心里",
+    "获取物资":"指港湾：小船上的补给随你取——但矛别碰",
+    "营地准备":"指码头边：他夜宿小船，火不敢生——怕引求婚者来",
+    "导航到地点":"报方向：大厅在北，织机在楼上，码头朝西",
+    "查询附近目标":"报斧阵/织机/宴厅的方向，压低声音说求婚者",
+    "查询环境状况":"清晨的海风很好——他望着西边出神",
+    "船只操作":"讲租来的小船：船况一般，靠一支桨一支矛",
+    "接取任务":"接：替他打听消息，或陪他守一夜码头",
+    "查询任务进度":"问得急：有消息吗？哪怕一个字的",
+    "查询任务线索":"线索在海：每片海都问过了，只搜到别人的故事",
+    "提交任务":"接过消息先愣住，再郑重道谢",
+    "放弃任务":"不怪你：十年都没消息，不差这一程",
+    "威胁或攻击":"按矛退半步：外乡人，我练过矛——但今天不想用",
+    "其他意图":"望着海不答，或一句「我在等一个人」",
+    "告别":"留步——若想起什么，码头找我"
   }
 };
 function npcJobFor(npc, category){
@@ -7431,6 +7658,7 @@ const HANDLED = {
   lotusman: ["查询地点信息","查询生物情报","使用消耗品","给予物品","请求帮助","威胁或攻击","告别"],
   polyphemus: ["查询地点信息","查询生物情报","给予物品","获取物资","威胁或攻击","查询自身状态","闲聊","其他意图","请求帮助","告别"],
   epeius: [],   /* 特洛伊造马师：无本地 handler，全部靠 NPC_JOB_MAPS 人格引导兑底（audit 30 类） */
+  telemachus: [],  /* P1.9 忒勒玛科斯：无本地 handler，全靠 NPC_JOB_MAPS 兑底（audit 30 类） */
 };
 const PERSONA_CATS = ["闲聊","请求帮助","查询神谕","查询生物情报","查询地点信息","查询自身状态","其他意图"];   /* 兼容旧引用（现用 NPC_JOB_MAPS 判定覆盖） */
 function auditHandlers(){
@@ -7462,6 +7690,7 @@ function memoryGreeting(){
     aeolus:`（一阵风打着旋落下）……${m.text}——风把它吹回来了。`,
     siren: `（歌声转了个调）……${m.text}。我们把这一段，也编进歌里了。`,
     cattle:`（母牛慢慢嚼着草）……${m.text}。牛的记性，比人长。`,
+    telemachus:`（他按了按矛，声音紧了半度）……${m.text}。这种事，我不敢忘。`,
   };
   return style[currentNPC]||null;
 }
@@ -7776,6 +8005,7 @@ setInterval(()=>{
   if (scene==="hades"||scene==="aeolia"||scene==="ogggia"||scene==="scheria") npcWalkTick(dt);
   if (scene==="telepylos") fleetDefenseTick(dt);   /* F2 守船战：波次/预警/结算（对话打开时暂停在 tickMove 同层） */
   if (scene==="strait") scyllaCombatTick(dt);      /* F5 斯库拉快反战：六头轮探窗口（被界面门控跳过） */
+  if (scene==="ithaca") suitorCombatTick(dt);      /* F6 求婚者肃清战：轮番扑击窗口（被界面门控跳过） */
   sunNoiseTick(dt);   /* P1.3 太阳岛船员鼓噪：界面全清后 2.4s 触发抉择 */
   raftStormTick(dt);   /* P1.6 波塞冬掀筏：出湾后开阔海 1.2s 蓄力触发（未渡过风暴前每次出湾都会再遇） */
   pillarTick(dt);      /* P2.3 送客船石化：送行船驶远 300px 后 1.6s 触发回望抉择 */
@@ -7810,6 +8040,7 @@ function loop(t){
   ctx.restore();
   drawFleetHud();   /* 守船战计数（屏幕空间 HUD，restore 后画不随镜头漂移） */
   drawScyllaHud();  /* F5 斯库拉快反战 HUD：六头计数 + 窗口条 */
+  drawSuitorHud();  /* F6 求婚者肃清战 HUD：肃清计数 + 窗口条 */
   if (scene!=="world") markLeg(scene);
   seaEncounterTick();
   maleaTick();
@@ -7850,6 +8081,9 @@ window.__game={state, scene, boat, player:aiaPlayer, witch, seer, aeolus, boar, 
   /* F5 斯库拉快反战（17h） */
   SC:()=>SC, startScyllaCombat, scyllaCombatTick, scyllaStrike,
   scInfo:function(){ return {on:SC.on, head:SC.head, phase:SC.phase, saved:SC.saved, lost:SC.lost, done:SC.done, sixSaved:!!state.scSixSaved}; },
+  /* P1.9 忒勒玛科斯 + F6 求婚者肃清战（17g/17h） */
+  SU:()=>SU, startSuitorCombat, suitorCombatTick, suitorStrike, telemachusEvent, telYes, telNo, ithacaAmbientNpc,
+  suInfo:function(){ return {on:SU.on, kills:SU.kills, missed:SU.missed, swept:!!state.suitorsSwept, met:!!state.telMet, revealed:!!state.telRevealed, stage:state.ithacaStage}; },
   /* 第四章：太阳岛 */
   SUNSPOTS, memoryGreeting,
   sunInfo:()=>({wrath:state.sunWrath, blessed:state.sunBlessed, name:state.sunName, debt:state.sunDebt, warn:state.slaughterWarn}),
