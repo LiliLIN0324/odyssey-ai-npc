@@ -38,6 +38,10 @@
     line-height:1.5; pointer-events:none; box-shadow:0 4px 14px rgba(0,0,0,.22); display:none;}
   #toast{position:absolute; bottom:18%; left:50%; transform:translateX(-50%); background:rgba(20,32,48,.9);
     color:#fff; padding:8px 18px; border-radius:20px; font-size:13px; opacity:0; transition:opacity .25s; pointer-events:none;}
+  /* 性能面板（F3 开关：弱机排查 fps / 画质状态） */
+  #perfBadge{position:absolute; right:10px; top:40px; z-index:6; display:none; pointer-events:none;
+    font:11px/1.6 Consolas,monospace; color:#9fd8ff; background:rgba(6,14,26,.6);
+    padding:3px 9px; border-radius:8px; letter-spacing:.5px;}
   /* ---- 船员折损横幅（P1.1：减员必须被看见——结构性悲剧的重量；降级见 reduced-motion） ---- */
   #crewBanner{position:absolute; top:58px; left:50%; transform:translate(-50%,-14px); z-index:4;
     background:linear-gradient(90deg, rgba(88,20,24,0), rgba(88,20,24,.93) 16%, rgba(88,20,24,.93) 84%, rgba(88,20,24,0));
@@ -425,6 +429,7 @@
     <span class="spacer"></span>
     <button id="sndBtn" onclick="sndToggle()">🔊 音效</button>
     <button id="audioCfgBtn" onclick="audioPanelToggle()" title="音量设置">音量</button>
+    <button id="qualBtn" onclick="qualityCycle()" title="画质：3D 海图 / 2D 海图（卡就切 2D）">画质</button>
     <button id="shotBtn" onclick="shareShot()" title="生成航迹分享卡片">📸 航迹</button>
     <button id="mapBtn">海图</button>
     <button id="questBtn">任务</button>
@@ -433,6 +438,7 @@
     <button onclick="hardReset()">重新开始</button>
   </div>
   <div id="hint"></div>
+  <div id="perfBadge"></div>
   <div id="ambient"></div>
   <div id="toast"></div>
   <div id="bagPanel"><h3>背包</h3><div id="bagList"></div></div>
@@ -3152,6 +3158,7 @@ let titleOn = true, chapterOn = false, chTimer = null;
 let askOn = false, askOpts = [];   /* P1.2 选择卡（showAsk）：开着时锁移动/交互，数字键或点击选择 */
 /* 捕获阶段监听：输入框打字不误触移动/E，但 Esc 任何时候都能关对话 */
 addEventListener("keydown", e=>{
+  if (e.key==="F3"){ e.preventDefault(); perfToggle(); return; }   /* 性能面板：fps/画质状态（弱机排查用） */
   if (askOn){
     const n = parseInt(e.key,10);
     if (n>=1 && n<=askOpts.length){ e.preventDefault(); pickAsk(n-1); }
@@ -3169,6 +3176,7 @@ addEventListener("keydown", e=>{
   const k = e.key.toLowerCase();
   if (["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(k)){ keys.add(k); e.preventDefault(); }
   if (k==="e"){ e.preventDefault(); pressE(); }
+  if (k==="f"){ e.preventDefault(); fishAction(); }   /* F：捕鱼/打捞专用键（E 让给岛屿交互，避免「按 E 没反应」的困惑） */
   /* M=海图（全场景）；P=俯瞰全岛（岛屿内） */
   if (k==="m" && !chapterOn){ e.preventDefault(); mapOpen ? closeMap() : openMap(); }
   if (k==="p" && scene!=="world" && !mapOpen){
@@ -3320,12 +3328,16 @@ function tryMoveWorld(nx,ny){
 }
 function tickMove(dt){
   if (titleOn||chapterOn||mapOpen) return;
-  if (FISH.on){ boat.moving=false; boat.vx=0; boat.vy=0; return; }   /* 钓鱼中抛锚：只许提竿不许航行 */
   let dx=0, dy=0;
   if (keys.has("a")||keys.has("arrowleft")) dx-=1;
   if (keys.has("d")||keys.has("arrowright")) dx+=1;
   if (keys.has("w")||keys.has("arrowup")) dy-=1;
   if (keys.has("s")||keys.has("arrowdown")) dy+=1;
+  /* 钓鱼中：移动 = 收线（不再强制锚船——玩家想走随时能走，消灭「按 E 抛竿后被锁 25s」的卡死感） */
+  if (FISH.on){
+    if (dx || dy){ endFishing(false, "收线——船一动，鱼群就散了。"); }
+    else { boat.moving=false; boat.vx=0; boat.vy=0; return; }
+  }
   const p = scene!=="world" ? aiaPlayer : boat;
   p.moving = !!(dx||dy);
   if (!dx&&!dy){ p.vx=0; p.vy=0; return; }   /* 速度清零：相机前瞻随之收回 */
@@ -3445,6 +3457,37 @@ function loadAudioPrefs(){
 }
 function saveAudioPrefs(){
   try{ localStorage.setItem(AUDIO_PREF_KEY, JSON.stringify({sndOn, ...audioPrefs})); }catch(e){}
+}
+/* ==================== 画质系统（性能批：3D 海图 / 2D 海图 + 自适应降级） ====================
+   弱机卡顿的现实解法：3D 渲染 DPR 上限 1.25；世界图内连续 2s 平均帧率过低 → 先降 DPR，再切 2D 海图；
+   手动偏好持久化（odyssey-quality-v1）。F3 开性能面板（fps/画质状态）。 */
+const QUALITY_KEY = "odyssey-quality-v1";
+let qualityMode = "auto";       /* auto | 3d | 2d（auto=3D 起步，低帧自动降级） */
+let qualityDegrade = 0;         /* 0 未降 / 1 已降 DPR / 2 已切 2D */
+let perfOn = false, perfAcc = 0, perfT = 0, perfFps = 0, lastLoopT = 0;
+function loadQualityPrefs(){
+  try{ const m = localStorage.getItem(QUALITY_KEY); if (m==="3d"||m==="2d"||m==="auto") qualityMode = m; }catch(e){}
+}
+function saveQualityPrefs(){ try{ localStorage.setItem(QUALITY_KEY, qualityMode); }catch(e){} }
+function w3dActive(){
+  return scene==="world" && qualityMode!=="2d" && !!(window.W3D && W3D.ready && !W3D.failed);
+}
+function applyQuality(silent){
+  const cv3 = document.getElementById("cv3d");
+  if (cv3) cv3.style.display = (qualityMode==="2d") ? "none" : "";
+  const qb = document.getElementById("qualBtn");
+  if (qb) qb.textContent = qualityMode==="2d" ? "画质·2D" : "画质·3D";
+  if (!silent) toast(qualityMode==="2d" ? "已切到 2D 海图——更流畅。" : "已切到 3D 海图。");
+}
+function qualityCycle(){
+  qualityMode = qualityMode==="2d" ? "3d" : "2d";
+  qualityDegrade = qualityMode==="2d" ? 2 : 0;
+  saveQualityPrefs(); applyQuality(false);
+}
+function perfToggle(){
+  perfOn = !perfOn;
+  const b = document.getElementById("perfBadge");
+  if (b) b.style.display = perfOn ? "block" : "none";
 }
 function applyVolumes(){
   if (sfxGain) sfxGain.gain.value = 0.5 * audioPrefs.volMaster * audioPrefs.volSfx;
@@ -5133,7 +5176,15 @@ function startFishing(){
   if (performance.now() < FISH.cdUntil){ toast("水花还没平——鱼群受了惊，往别处撒网吧。"); return; }
   Object.assign(FISH, {on:true, fish:0.5, fishDir:Math.random()<0.5?-1:1, fishSp:0.55, zone:0.4, zoneDir:1, hits:0, miss:0, tLeft:25});
   sfx("alert");
-  toast("抛竿——鱼影游进绿区时按 E 提竿！（三中得鱼 · 三失脱钩）");
+  toast("抛竿——鱼影游进绿区时按 E 提竿！（三中得鱼 · 三失脱钩 · F 也可提竿）");
+}
+/* F 键入口：海上一律可用（船只总在水上）——近漂流物先打捞，否则抛竿/提竿 */
+function fishAction(){
+  if (scene!=="world" || dlgOpen || mapOpen || titleOn || chapterOn) return;
+  if (FISH.on){ fishingStrike(); return; }
+  const d = driftNear();
+  if (d){ salvageDrift(d); return; }
+  startFishing();
 }
 function fishingTick(dt){
   if (!FISH.on) return;
@@ -5197,7 +5248,7 @@ function drawFishingHud(){
   /* 文案行 */
   ctx.textAlign="center"; ctx.font="600 12px 'Segoe UI','Microsoft YaHei'";
   ctx.fillStyle="#ffd66b";
-  ctx.fillText(`上钩 ${FISH.hits}/${FISH.HITS} · 脱钩 ${FISH.miss}/${FISH.MISS} · ${Math.ceil(FISH.tLeft)}s —— E 提竿`, bx+bw/2, by-8);
+  ctx.fillText(`上钩 ${FISH.hits}/${FISH.HITS} · 脱钩 ${FISH.miss}/${FISH.MISS} · ${Math.ceil(FISH.tLeft)}s —— E/F 提竿`, bx+bw/2, by-8);
   /* 时间条 */
   const tr = Math.max(0, FISH.tLeft/25);
   ctx.fillStyle="rgba(255,255,255,.16)"; ctx.fillRect(bx+16, by+bh-9, bw-32, 4);
@@ -5222,10 +5273,10 @@ const DRIFT_NOTES = [
 function driftSpotOK(x, y){
   if (worldTile(Math.floor(x/WTS), Math.floor(y/WTS)) !== "~") return false;
   for (const is of ISLANDS){
-    if (Math.hypot(x-(is.gx*WTS+WTS/2), y-(is.gy*WTS+WTS/2)) < 130) return false;
+    if (Math.hypot(x-(is.gx*WTS+WTS/2), y-(is.gy*WTS+WTS/2)) < 12) return false;   /* 只避开岛中心本身（瓦片已保证在水上）——13 岛间距仅 40~80px，大排除圈会把全图盖满 */
   }
-  if (Math.hypot(x-boat.x, y-boat.y) < 80) return false;
-  for (const d of drifts){ if (Math.hypot(x-d.x, y-d.y) < 90) return false; }
+  if (Math.hypot(x-boat.x, y-boat.y) < 40) return false;
+  for (const d of drifts){ if (Math.hypot(x-d.x, y-d.y) < 40) return false; }
   return true;
 }
 function spawnDrift(){
@@ -5269,7 +5320,7 @@ function driftTick(now){
   if (drifts.length < 4 && now > driftNextAt){ spawnDrift(); driftNextAt = now + 150000 + Math.random()*60000; }
 }
 function drawDrifts(et){
-  const w3dOn = !!(window.W3D && W3D.ready && !W3D.failed);   /* W3D 模式由 world3d.js 渲染 3D 漂流物 */
+  const w3dOn = !!w3dActive();   /* 2D 海图偏好/自动降级时走 2D 绘制 */
   if (scene!=="world" || w3dOn) return;
   for (const d of drifts){
     const bob = Math.sin(et*2.2 + d.x)*2.2;
@@ -6955,18 +7006,25 @@ function updateHintDOM(){
   if (scene==="world"){
     const is = islandNear();
     if (is && !dlgOpen){
+      const txt = `<b>E</b> · ${islandOpen(is)?"登陆":"了望"} ${is.name}`;
+      if (hintEl.dataset.k !== txt){ hintEl.dataset.k = txt; hintEl.innerHTML = txt; }   /* 去抖：同文案不重写 DOM（每帧 innerHTML 会触发无谓的解析/布局）
       hintEl.style.display="block";
-      hintEl.innerHTML = `<b>E</b> · ${islandOpen(is)?"登陆":"了望"} ${is.name}`;
-      if (window.W3D && W3D.ready && !W3D.failed){ hintEl.style.left="50%"; hintEl.style.top="74%"; }   /* 3D 世界图：2D 投影坐标不适用，固定底部居中 */
+      if (w3dActive()){ hintEl.style.left="50%"; hintEl.style.top="74%"; }   /* 3D 世界图：2D 投影坐标不适用，固定底部居中 */
       else { const [hx,hy]=w2s(is.gx*WTS+WTS/2, is.gy*WTS); hintEl.style.left=(hx*100)+"%"; hintEl.style.top=(hy*100)+"%"; }
     } else if (!dlgOpen && !FISH.on){
       const d = driftNear();
       if (d){
+        const txt = `<b>F</b> · 打捞 ${d.kind==="bottle"?"漂流瓶":"木箱"}`;
+        if (hintEl.dataset.k !== txt){ hintEl.dataset.k = txt; hintEl.innerHTML = txt; }
         hintEl.style.display="block";
-        hintEl.innerHTML = `<b>E</b> · 打捞 ${d.kind==="bottle"?"漂流瓶":"木箱"}`;
-        if (window.W3D && W3D.ready && !W3D.failed){ hintEl.style.left="50%"; hintEl.style.top="74%"; }
+        if (w3dActive()){ hintEl.style.left="50%"; hintEl.style.top="74%"; }
         else { const [hx,hy]=w2s(d.x, d.y-16); hintEl.style.left=(hx*100)+"%"; hintEl.style.top=(hy*100)+"%"; }
-      } else hintEl.style.display="none";
+      } else {
+        const txt = `<b>F</b> · 抛竿钓鱼（三中得鱼）`;
+        if (hintEl.dataset.k !== txt){ hintEl.dataset.k = txt; hintEl.innerHTML = txt; }
+        hintEl.style.display="block";
+        hintEl.style.left="50%"; hintEl.style.top="88%";
+      }
     } else hintEl.style.display="none";
     ambEl.style.display="none";
     return;
@@ -7057,16 +7115,28 @@ document.getElementById("bagBtn").onclick = ()=>{
    📸 一键合成 1200×675 分享图：当前画面 + 底部字幕条（游戏名/当前航向或判词/航序进度/日期）。
    优先走系统分享（navigator.share 文件），不支持则下载 PNG。全本地合成，零上传。 */
 let _shotBusy = false;
-function shareShot(){
+/* 现渲现读一帧 3D 画面（preserveDrawingBuffer 已关，必须同帧 render→toDataURL） */
+function grab3dImage(){
+  return new Promise((res) => {
+    if (!w3dActive() || !window.W3D || !W3D.grabFrame) return res(null);
+    const url = W3D.grabFrame();
+    if (!url) return res(null);
+    const img = new Image();
+    img.onload = () => res(img);
+    img.onerror = () => res(null);
+    img.src = url;
+  });
+}
+async function shareShot(){
   if (_shotBusy) return;
   _shotBusy = true;
   try{
     const W=1200, H=675, out=document.createElement("canvas");
     out.width=W; out.height=H;
     const c=out.getContext("2d");
-    /* 底图：W3D 模式取 3D 画布 + 2D 合成层叠加；纯 2D 场景直接取游戏画布（cover 裁切） */
-    const w3dCv = (scene==="world" && window.W3D && W3D.ready && !W3D.failed && W3D.canvas) ? W3D.canvas : null;
-    const layers = w3dCv ? [w3dCv, cv] : [cv];
+  /* 底图：W3D 模式现渲现读（preserveDrawingBuffer 已关，必须同帧 render→toDataURL）；纯 2D 直接取游戏画布 */
+  const img3d = await grab3dImage();
+  const layers = img3d ? [img3d, cv] : [cv];
     for (const src of layers){
       if (!src || !src.width) continue;
       const s = Math.max(W/src.width, H/src.height);
@@ -8910,7 +8980,11 @@ function loop(t){
   }
   ctx.clearRect(0,0,1000,600);
   /* 世界图 3D 大陆视觉：W3D 就绪时 2D 画布只留透明合成层（日光/夜色/浮字），岛内场景不受影响 */
-  const w3dOn = scene==="world" && window.W3D && W3D.ready && !W3D.failed;
+  if (qualityMode==="2d" && scene==="world"){
+    const cv3 = document.getElementById("cv3d");
+    if (cv3 && cv3.style.display !== "none") cv3.style.display = "none";   /* 持久化的 2D 偏好：模块插入画布后补隐藏 */
+  }
+  const w3dOn = w3dActive();
   if (w3dOn) W3D.frame(et);
   const bgc = w3dOn ? null : sceneBackdrop();   /* 岛外底色：岛屿只画岛体，其余区域必须补齐（根治 void 黑区） */
   if (bgc){ ctx.fillStyle=bgc; ctx.fillRect(0,0,1000,600); }
@@ -8944,10 +9018,30 @@ function loop(t){
   updateCompassArrow();   /* Steam 化：航向罗盘箭头每帧轻量刷新（DOM 仅文案变化时写入） */
   pollGamepad();   /* Steam 化：手柄轮询（左摇杆/十字键移动，A 互动） */
   renderAmbient();
+  /* 自适应画质：连续 2s 窗口平均帧率过低 → 先降 DPR、再切 2D 海图（仅 auto 模式，尊重手动选择） */
+  if (lastLoopT && t > lastLoopT){
+    perfT += Math.min((t - lastLoopT) / 1000, 0.5); perfAcc += 1;
+    if (perfT >= 2){
+      perfFps = perfAcc / perfT; perfAcc = 0; perfT = 0;
+      if (w3dOn && qualityMode === "auto"){
+        if (qualityDegrade < 1 && perfFps < 40){ qualityDegrade = 1; if (window.W3D && W3D.setDPR) W3D.setDPR(1.0); }
+        else if (qualityDegrade === 1 && perfFps < 26){
+          qualityDegrade = 2; qualityMode = "2d"; applyQuality(true);   /* 会话内降级，不写偏好——避免一次卡顿把用户永久锁在 2D */
+          toast("帧率偏低——已自动切到 2D 海图（右上「画质」可切回）。");
+        }
+      }
+    }
+  }
+  lastLoopT = t;
+  if (perfOn){
+    const pb = document.getElementById("perfBadge");
+    if (pb) pb.textContent = `fps ${Math.round(perfFps||0)} · 画质 ${qualityMode==="2d"?"2D":"3D"}${qualityDegrade===1?"·低DPR":""}`;
+  }
   requestAnimationFrame(loop);
 }
 (function init(){
   loadAudioPrefs(); applyVolumes();   /* Steam 化：恢复音频偏好（静音状态+音量档） */
+  loadQualityPrefs(); applyQuality(true);   /* 性能批：恢复画质偏好（3D/2D 海图） */
   load();
   touchInit();   /* Steam 化：触屏设备启用虚拟摇杆 */
   renderHUD();
@@ -9020,6 +9114,6 @@ window.__game={state, scene, boat, player:aiaPlayer, witch, seer, aeolus, boar, 
   campInfo:function(){ return {on:CAMP.on, wave:CAMP.wave, hit:CAMP.hit, held:!!state.campHeld}; },
   ramInfo:function(){ return {on:HIDE.on, n:HIDE.n, caught:HIDE.caught, done:!!state.ramHide, paidMem:(state.paidMem||[]).length}; }};
 </script>
-<script type="module" src="./world3d.js?v=15"></script>
+<script type="module" src="./world3d.js?v=16"></script>
 </body>
 </html>
