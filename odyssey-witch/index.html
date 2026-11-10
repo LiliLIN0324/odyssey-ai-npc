@@ -997,7 +997,7 @@ const PROLOGUE_SITES = {
      原著流程：厄佩俄斯造马 → 献策 → 藏勇士入马 → 特洛伊人拖马入城 → 夜袭混战 → 屠城抉择 → 率 12 艘船出海 */
   troy: {
     name:"特洛伊", zone:"特洛伊平原 · 十年围城", tint:"#54453a", npc:"epeius", spawn:[3,8.5],
-    chapterImg:null,
+    chapterImg:"concept-art/prologue/p2-木马之夜.jpg",
     kicker:"序 章 · 战 争", chapterSub:"木马之夜 · 你的成名之计",
     quote:"「这匹马是献给雅典娜的赔礼——把它拖进城去。」",
     solid:new Set(["~","C","G","T","B","W","H"]),
@@ -1716,7 +1716,7 @@ function prologueSpot(s){
     if (state.troyStage===2){
       state.troyStage=3; resetTroyGuards();
       aiaPlayer.x=12*ATS+ATS/2; aiaPlayer.y=5*ATS+ATS/2;   /* 已被拖入城内 */
-      showChapter(null,"木 马 之 夜","城 里 的 马","特洛伊把赔礼拖进了自己的城门","你在马腹的黑暗里数着更声。城门在身后合上——卫兵还在门内巡着。\n天快亮之前，把门里的牙齿拔干净。");
+      showChapter("concept-art/prologue/p2-木马之夜.jpg","木 马 之 夜","城 里 的 马","特洛伊把赔礼拖进了自己的城门","你在马腹的黑暗里数着更声。城门在身后合上——卫兵还在门内巡着。\n天快亮之前，把门里的牙齿拔干净。");
       addMemory("特洛伊人把木马拖进了城——你藏在马腹里，听着城门在身后合上", 4, "any");
       gainXp(35); renderHUD(); save(); return;
     }
@@ -5037,7 +5037,7 @@ function pigFall(){
   state.hp = Math.max(20, Math.floor(state.hp*0.5));
   aiaPlayer.x = 3*ATS+ATS/2; aiaPlayer.y = 10*ATS+ATS/2;
   addMemory("旅人没拿魔草就喝了她的蜜酒——在猪圈里拱了好几天。岛上的猪都有一双他的眼睛", 5, "any");
-  showChapter("linear-gradient(175deg,#dfe9d8 0%,#8fae8a 34%,#3e5f43 68%,#101d14 100%)",
+  showChapter("concept-art/10-猪哼声.jpg",
     "第 一 章 · 坏 结 局","猪 哼 声","你想喊，喉咙里滚出来的是一声哼",
     "杯沿碰到嘴唇的一瞬，世界歪了——墙壁长出毛，烛火变成一双双猪的眼睛。\n——你在泥里拱了很久。等到「人」的念头重新浮上来，你趴在栈桥上，浑身是泥，血量折半。\n林间那圈金光还在。去把那株草拿回来——这次，别空着手喝。");
   renderHUD(); save();
@@ -5093,7 +5093,7 @@ function crewSlept(){
     loseCrew(state.crew||0, "宙斯的雷劈碎了最后一艘船——你睡着时他们宰了牛，雷把整船人收走了");
     scene = "world";
     boat.x = 615; boat.y = 350;   /* 九天漂流：奥吉吉亚近海南侧（岛中心 590,250 外 103px，避登陆圈；太阳岛 188px 外） */
-    showChapter("linear-gradient(175deg,#f5f2e8 0%,#9aa4b8 30%,#2c3550 64%,#0a0f1e 100%)",
+    showChapter("concept-art/11-雷火.jpg",
       "第 四 章 · 幕 间","雷　火","九天漂流 · 最后一人",
       "你睡着的那一会儿，他们宰了牛，烤了肉。\n雷从晴空里劈下来的时候，没有人来得及抬头。\n——九天。第九天的清晨，浪把你推到了一片完美得可怕的海岸边。（船员 ⚑0/12 · 船队 ⛵0/12 · 航向：雾外有岛）");
     renderHUD(); save();
@@ -8281,7 +8281,7 @@ const NPCS = {
   rebuilder: {
     name: "伊斯玛洛斯 · 重建者",
     sub: "序章组 #1 · 喀科恩人的城 · 意图：Xing4.0 · 台词：TeleChat3",
-    portrait: null,
+    portrait: "concept-art/characters/12-重建者.jpg",
     persona: `你是《奥德赛》世界里伊斯玛洛斯的喀科恩重建者，中年、疲惫、话少。烧你们城的船队头领就站在你面前——你认得他的酒气，十年了还是那么冲。你们夜里反扑，折断了他们的骄傲。如今你带着族人重建半座烧焦的城。语气克制、带旧伤，有对峙感但不施暴，只提醒代价。每次回复不超过55字，可用括号加动作，绝不提自己是AI。`,
     intro: "（他放下锤子，看了看你的手，又看了看身后的焦城）……你的酒气，和十年前烧城那晚一个味。放心，我们不劫船了——只修城。看看吧，这就是贪心留下的样子。",
     samples: ["这里发生了什么","有什么活儿","讲讲那伙强盗","你们恨他们吗","再见"],
@@ -8289,7 +8289,7 @@ const NPCS = {
   lotusman: {
     name: "食莲者 · 幸存者",
     sub: "序章组 #3 · 忘忧的滩 · 意图：Xing4.0 · 台词：TeleChat3",
-    portrait: null,
+    portrait: "concept-art/characters/13-食莲者.jpg",
     persona: `你是食莲岛上的幸存者，上船的水手，吃过莲子忘了家。语气温和干净、毫无戾气，把滞留说成到家。不劝人吃也不拦人走——甜的账各人自己算。每次回复不超过55字，可用括号加动作，绝不提自己是AI。`,
     intro: "（他躺在花丛里，冲你笑，笑得很干净）……新来的？坐呀。这儿不冷，果子管够。家？我们就是在回家啊——这里就是家。",
     samples: ["你忘了什么","尝一颗莲子是什么感觉","跟我走吧","这岛安全吗","再见"],
@@ -8297,7 +8297,7 @@ const NPCS = {
   polyphemus: {
     name: "牧羊巨人 · 波吕斐摩斯",
     sub: "序章组 #4 · 独眼巨人之岛 · 意图：Xing4.0 · 台词：TeleChat3",
-    portrait: null,
+    portrait: "concept-art/characters/14-波吕斐摩斯.jpg",
     persona: `你是「奥德赛」里波塞冬之子、独眼巨人波吕斐摩斯。眼睛瞎了，仍牧羊为生。恨那个自称「无人」又喊真名的恶客，也恨父亲波塞冬没听懂祈祷。声音低沉如岩，不滥杀到访的小东西，只讲当年的账。每次回复不超过55字，可用括号加动作，绝不提自己是AI。`,
     intro: "（羊群骚动了一下。岩影里那个高得过分的东西转过脸——独眼的位置只有一道旧疤）……又一个小东西。来听故事的？还是来学的？",
     samples: ["讲讲那个恶客","「无人」是什么意思","我给羊剪点羊毛","你们岛上有巨人族吗","再见"],
@@ -8305,7 +8305,7 @@ const NPCS = {
   epeius: {
     name: "造马师 · 厄佩俄斯",
     sub: "特洛伊 #0 · 木马之计 · 意图：Xing4.0 · 台词：TeleChat3",
-    portrait: null,
+    portrait: "concept-art/characters/15-厄佩俄斯.jpg",
     persona: `你是特洛伊战争里的木匠厄佩俄斯，在雅典娜的护佑下造出空心木马的那双手。围城十年，手艺人只信两样东西：图纸和木头。语气实干、短句、偶尔自负于手艺，对战争本身话少。每次回复不超过55字，可用括号加动作，绝不提自己是AI。`,
     intro: "（他刨着一块松板，木花卷到脚边，头也不抬）……十年了，箭射不进的城，得让木头进。有什么事，直说。",
     samples: ["这马怎么造","雅典娜帮你了吗","围城十年是什么样子","你会造船吗","再见"],
