@@ -5,7 +5,8 @@
 
 const API_URL = "https://api-maas.teleai.com.cn/v1/chat/completions";
 const MODEL_PARSE = "Xing4.0-29B-Intent";
-const RETRY_DELAYS_MS = [500, 1200];   // 总计最多 3 次尝试
+const RETRY_DELAYS_MS = [400, 1000, 2200];   // 总计最多 4 次尝试（集群式 403 需要长退避逃出限流窗口）
+const JITTER = 0.35;   // 每个退避加 ±35% 抖动：避免同 isolate 重试撞同一限流窗口
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -27,7 +28,10 @@ async function callModel(env, model, messages, maxTokens, temperature) {
   };
   let lastErr = null;
   for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
-    if (attempt > 0) await new Promise((r) => setTimeout(r, RETRY_DELAYS_MS[attempt - 1]));
+    if (attempt > 0) {
+      const base = RETRY_DELAYS_MS[attempt - 1];
+      await new Promise((r) => setTimeout(r, Math.round(base * (1 + (Math.random() * 2 - 1) * JITTER))));
+    }
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 30000);
     try {

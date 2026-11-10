@@ -14,6 +14,9 @@ export const PALETTE = {
   fireOrange: 0xe0783a,  // 火把/坩埚火光
   nightBase:  0x0c1018,  // 夜/冥界近黑(P7 事件用)
   phosphor:   0x7fd1c8,  // 冷磷光(P7 事件用)
+  heroTunic:  0xe8dcc0,  // P4 角色：亚麻短衣
+  heroSkin:   0xd9a97e,  // P4 角色：皮肤
+  heroHair:   0x2a2320,  // P4 角色：头发/长枪杆
 };
 
 // 光源统一左上(odyssey-visual.md「统一左上光源」)——P1 的天空 shader、P7 的光照事件都复用此方向。
