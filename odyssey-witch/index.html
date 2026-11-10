@@ -3361,10 +3361,37 @@ function tickMove(dt){
   const sp = (scene==="aia"?150:scene==="hades"?120:scene==="aeolia"?130:scene==="strait"?135:scene==="sun"?140:scene==="ogggia"?125:scene==="scheria"?150:scene==="ithaca"?140:PROLOGUE_SITES[scene]?135:tail?230:110)*dt;
   const mover = scene==="aia" ? tryMoveAia : scene==="hades" ? tryMoveHades : scene==="aeolia" ? tryMoveAeolia : scene==="strait" ? tryMoveStrait : scene==="sun" ? tryMoveSun : scene==="ogggia" ? tryMoveOggia : scene==="scheria" ? tryMoveScheria : scene==="ithaca" ? tryMoveIthaca : PROLOGUE_SITES[scene] ? tryMovePrologue : tryMoveWorld;
   p.vx = dx*sp/dt; p.vy = dy*sp/dt;   /* 实际速度（px/s），相机前瞻用 */
-  if (dx) mover(p.x+dx*sp, p.y);
-  if (dy) mover(p.x, p.y+dy*sp);
+  /* 碰撞顺滑（游戏手感批）：先按原方向轴分离移动；全被挡时自动尝试 45° 绕行——
+     消灭「顶墙完全静止」的卡死感（海图岛屿密集，直线顶岸/贴墙走路是常态） */
+  let moved = false;
+  if (dx) moved = mover(p.x+dx*sp, p.y) || moved;
+  if (dy) moved = mover(p.x, p.y+dy*sp) || moved;
+  if (!moved){
+    const rx = Math.SQRT1_2;
+    const variants = [
+      [ (dx-dy)*rx, (dx+dy)*rx ],
+      [ (dx+dy)*rx, (dy-dx)*rx ],
+    ];
+    for (const [vx, vy] of variants){
+      if (!vx && !vy) continue;
+      let slid = false;
+      if (Math.abs(vx) > 0.01 && mover(p.x+vx*sp*0.62, p.y)) slid = true;
+      if (Math.abs(vy) > 0.01 && mover(p.x, p.y+vy*sp*0.62)) slid = true;
+      if (slid){ moved = true; break; }
+    }
+  }
+  /* 真正卡死（协助也走不动）：累计提示一次，别让玩家以为游戏挂了 */
+  if (!moved){
+    p.vx=0; p.vy=0;
+    _stuckT = (_stuckT||0) + dt;
+    if (_stuckT > 1.6 && performance.now()-(tickMove._stuckToastAt||0) > 12000){
+      tickMove._stuckToastAt = performance.now();
+      toast(scene==="world" ? "船头抵着浅滩——斜一点方向，或者顺岸滑行。" : "前面走不通——贴着边斜一点试试。");
+    }
+  } else _stuckT = 0;
   p.step = (p.step||0)+dt*8;
 }
+let _stuckT = 0;
 
 /* ==================== 野猪 AI（纯本地逻辑层，不烧模型） ==================== */
 function tryMoveBoar(nx, ny){
