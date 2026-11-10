@@ -235,7 +235,7 @@
   .ccQuote{margin-top:16px; font-size:12px; color:rgba(255,255,255,.62); letter-spacing:1px;}
   .ccSkip{position:absolute; right:14px; bottom:10px; z-index:2; font-size:11px; color:rgba(255,255,255,.5);}
   /* ---- P1.2 选择卡（showAsk：毛玻璃弹窗，复用章节卡视觉语言；等待选择不自动跳过） ---- */
-  #askCard{position:absolute; inset:0; z-index:19; display:none; align-items:center; justify-content:center;
+  #askCard{position:absolute; inset:0; z-index:30; display:none; align-items:center; justify-content:center;
     background:rgba(4,10,20,.45); backdrop-filter:blur(4px); border-radius:14px;}
   #askCard.show{display:flex; animation:askIn .3s ease-out;}
   @keyframes askIn{from{opacity:0; transform:scale(.97);} to{opacity:1; transform:scale(1);}}
@@ -1748,18 +1748,24 @@ function prologueSpot(s){
   case "torch": {
     if (state.troyStage<4) return toast("火把在墙垛上烧着。城门还没开——先把它抢下来。");
     if (state.troyStage>=5) return toast(state.troyBurned ? "火光在城脊上跑，一夜没停。灰会记十年。" : "你把火把插回了架上。有人从门缝里看了你一眼——没说话，走了。");
-    const burn = confirm("十年围城，今夜见了分晓。\n\n【烧城】= 按原著：屠城焚屋，船队满帆出海\n【放过】= 放下火把：平民走门，你只带走战争\n\n确定=烧城（原著）| 取消=放下火把（改写）");
-    state.troyStage=5;
-    if (burn){
-      state.troyBurned=true; sfx("warn"); feedback("large");
-      addMemory("特洛伊在身后烧成一条火线——这就是诸神要的胜利", 4, "any");
-      toast("火把落下。风把火从屋顶赶向屋顶——特洛伊在身后烧成一条火线。（原著之夜 · 火光会跟到判词里）");
-    } else {
-      state.troySpared=true; sfx("bless");
-      addMemory("屠城之夜，奥德修斯放下了火把——平民走门，只带走战争", 4, "any");
-      toast("你把火把插回墙垛。妇女和老人从侧门涌出去，没人回头看你。——荷马没写这一页。（改写 · 命运成就）");
-    }
-    renderHUD(); save(); return;
+    const decide = (burn)=>{
+      state.troyStage=5;
+      if (burn){
+        state.troyBurned=true; sfx("warn"); feedback("large");
+        addMemory("特洛伊在身后烧成一条火线——这就是诸神要的胜利", 4, "any");
+        toast("火把落下。风把火从屋顶赶向屋顶——特洛伊在身后烧成一条火线。（原著之夜 · 火光会跟到判词里）");
+      } else {
+        state.troySpared=true; sfx("bless");
+        addMemory("屠城之夜，奥德修斯放下了火把——平民走门，只带走战争", 4, "any");
+        toast("你把火把插回墙垛。妇女和老人从侧门涌出去，没人回头看你。——荷马没写这一页。（改写 · 命运成就）");
+      }
+      renderHUD(); save();
+    };
+    showAsk("第 零 章 · 木 马 之 夜","火 把 在 手","十年围城，今夜见了分晓。火把在你手里。","「烧，还是放下？」——没人回答你。墙下的人声，等着这个答案。",[
+      {label:"烧城（按原著）", hint:"屠城焚屋，船队满帆出海", fn:()=>decide(true)},
+      {label:"放下火把（改写）", hint:"平民走门，你只带走战争", fn:()=>decide(false)},
+    ]);
+    return;
   }
   case "dock":
     if (scene==="troy" && state.troyStage<5) return toast("船在滩上等着——可城里的账还没结完。（先把这一夜走完）");
@@ -2291,7 +2297,12 @@ function load(){
   ensureState();
   return true;
 }
-function hardReset(){ if(confirm("清空存档，从头开始？")){ localStorage.removeItem(SAVE_KEY); location.reload(); } }
+function hardReset(){
+  askConfirm("设 置","重 新 开 始","清空存档，从新的航程开始——这一步不可撤销。","「海不会替你保管过去。」", 
+    "清空存档，重新开始","不可撤销", "我再想想","保留现在的航程",
+    ()=>{ localStorage.removeItem(SAVE_KEY); location.reload(); },
+    ()=>{});
+}
 
 /* 迁移旧存档（埃亚岛单场景版） */
 (function migrate(){
@@ -3160,6 +3171,7 @@ let askOn = false, askOpts = [];   /* P1.2 选择卡（showAsk）：开着时锁
 addEventListener("keydown", e=>{
   if (e.key==="F3"){ e.preventDefault(); perfToggle(); return; }   /* 性能面板：fps/画质状态（弱机排查用） */
   if (askOn){
+    if (e.target && e.target.id === "askTextInput") return;   /* 自由输入框：按键交给输入框自己处理 */
     const n = parseInt(e.key,10);
     if (n>=1 && n<=askOpts.length){ e.preventDefault(); pickAsk(n-1); }
     return;   /* 必须选一个——不提供白嫖退出 */
@@ -3946,7 +3958,7 @@ function showFinale(mode, way, name){
     toast("航程归档了。海还长——去漂吧。（自由模式：航路全开）"); renderHUD();
     if (finalName) setTimeout(()=> showChapter("concept-art/09-伊萨卡.jpg","终 章 · 认 名", finalName, "游戏最后一张章节卡 · 标题是你的名字", "雾散尽了。往后每一张海图，都以这个名字命名。"), 450);
   };
-  ec.querySelector(".re").onclick = ()=>{ if(confirm("清空存档，从新的航程开始？")){ localStorage.removeItem(SAVE_KEY); location.reload(); } };
+  ec.querySelector(".re").onclick = ()=>{ askConfirm("尾 声","再 航 一 次","清空存档，从新的航程开始——这一步不可撤销。",null, "清空存档","不可撤销", "先看看结局","留着这段航程", ()=>{ localStorage.removeItem(SAVE_KEY); location.reload(); }, ()=>{}); };
 }
 /* ==================== P1.9 忒勒玛科斯（17g 原著第 16 卷：父子相认） ====================
    伊萨卡另一个也在找他的人——他问你见没见过奥德修斯，你决定告不告诉他你是谁（showAsk 第七次复用，零模型）。
@@ -4088,11 +4100,22 @@ function continueScheriaNight(){
     state.nausicaaAsk = true;
     showChapter("concept-art/characters/06-瑙西亚娅.jpg","第 六 章","被 看 见 的 夜 晚","她是唯一愿意听你说完的人","「全希腊的故事都从我家的门廊过——但你是第一个，让我想留、而不只是想送的。留下来，做客人吧。」");
     setTimeout(()=>{
-      const stay = confirm("瑙西亚娅的告白不是求婚，是请求：留下来，做客人。\n（确定 = 留下做客 · 客卿　|　取消 = 我要回家）");
-      if (stay){ state.guest = true; addMemory("旅人留在了斯克里岛——做费埃克斯的客人", 5); toast("「那就住下吧。」她说这话时没看你，耳根却红了。（客卿线 · 随时可去码头改主意）"); }
-      else { addMemory("旅人谢绝了瑙西亚娅——他说他还有一段海要走", 4); toast("她点点头，转身时很快：「那明天……我让人备船。」"); }
-      state.scheriaStage = 3; renderHUD(); save();
-      showSong2();   /* 德摩多科斯的歌：如实讲的段落才进歌（歌词卡第2张，可导出；P0.7 自白后改名） */
+      const settle = ()=>{
+        state.scheriaStage = 3; renderHUD(); save();
+        showSong2();
+      };
+      showAsk("第 六 章 · 告 白","留 下 来 吗","瑙西亚娅的告白不是求婚，是请求：留下来，做客人。","「全希腊的故事都从我家的门廊过——但你是第一个，让我想留、而不只是想送的。」",[
+        {label:"留下做客 · 客卿", hint:"随时可去码头改主意", fn:()=>{
+          state.guest = true; addMemory("旅人留在了斯克里岛——做费埃克斯的客人", 5);
+          toast("「那就住下吧。」她说这话时没看你，耳根却红了。（客卿线 · 随时可去码头改主意）");
+          settle();
+        }},
+        {label:"我要回家", hint:"还有一段海要走", fn:()=>{
+          addMemory("旅人谢绝了瑙西亚娅——他说他还有一段海要走", 4);
+          toast("她点点头，转身时很快：「那明天……我让人备船。」");
+          settle();
+        }},
+      ]);
     }, 600);
   }, 800);
 }
@@ -4338,25 +4361,32 @@ function interact(){
     if (state.sunWrath){ toast("你抬头——云压得很低，金纹黯着。天上没有回应。"); return; }
     if (state.sunBlessed){ toast(`祭坛的金纹亮着。「${state.sunName||"旅人"}」，他记得你。光在你包里——走得过黑暗。`); return; }
     if (!isDusk() && !isNight()){ toast(`太阳还悬在天上——守住。撑到黄昏，他会来问你的名字。（现在：${clockName()}）`); return; }
-    const nm = prompt("赫利俄斯：「你叫什么名字？」","");
-    if (nm===null){ toast("（你把沉默咽了回去。黄昏还没结束——想好了再来。）"); return; }
-    const name = nm.trim();
-    if (!name){ toast("（风把没说出口的名字吹散了。）"); return; }
-    if (/奥德修斯/.test(name)){
-      /* P0.1（17g 原著对齐）：你就是奥德修斯——赫利俄斯全知且认得你，报真名＝认亲，得光照旧 */
-      state.sunBlessed = true; state.sunName = "奥德修斯";
-      addItem("走得过黑暗的光");
-      gainXp(40); sfx("bless"); feedback("large");
-      addMemory("旅人对太阳神报出了真名——赫利俄斯认出了他：十年前的海风，和船员欠下的七群牛", 4, "any");
-      showChapter("concept-art/05-太阳岛.jpg","第 四 章","光","你守住了 · 他认得你","「奥德修斯。」——「我认得这个名字，也认得你。你船员欠下的七群牛，我记着账。但你守住了誓言。带一缕光走吧——它走得过黑暗。」");
-      renderHUD(); save(); return;
-    }
-    state.sunBlessed = true; state.sunName = name;
-    addItem("走得过黑暗的光");
-    gainXp(40); sfx("bless"); feedback("large");
-    addMemory(`旅人守住了太阳岛——他把名字报给了赫利俄斯：「${name}」，得到一缕「走得过黑暗的光」`, 4, "any");
-    showChapter("concept-art/05-太阳岛.jpg","第 四 章","光","你守住了 · 他认得你",`「${name}。」……（金光里有一声很轻的笑——他听得出这不是你生来的名字，但他收下了你的守誓。）「带一缕光走吧——它走得过黑暗。」`);
-    renderHUD(); save(); return;
+    askText({
+      kicker:"第 四 章 · 光", title:"你 叫 什 么 名 字",
+      body:"赫利俄斯的声音从光里落下来。", quote:"（报上名字——真名也行，化名也行：神认得你，也会记住你报过的名字。）",
+      placeholder:"……", okLabel:"报上名来",
+      onOk:(nm)=>{
+        const name = (nm||"").trim();
+        if (!name){ toast("（风把没说出口的名字吹散了。）"); return; }
+        if (/奥德修斯/.test(name)){
+          /* P0.1（17g 原著对齐）：你就是奥德修斯——赫利俄斯全知且认得你，报真名＝认亲，得光照旧 */
+          state.sunBlessed = true; state.sunName = "奥德修斯";
+          addItem("走得过黑暗的光");
+          gainXp(40); sfx("bless"); feedback("large");
+          addMemory("旅人对太阳神报出了真名——赫利俄斯认出了他：十年前的海风，和船员欠下的七群牛", 4, "any");
+          showChapter("concept-art/05-太阳岛.jpg","第 四 章","光","你守住了 · 他认得你","「奥德修斯。」——「我认得这个名字，也认得你。你船员欠下的七群牛，我记着账。但你守住了誓言。带一缕光走吧——它走得过黑暗。」");
+          renderHUD(); save(); return;
+        }
+        state.sunBlessed = true; state.sunName = name;
+        addItem("走得过黑暗的光");
+        gainXp(40); sfx("bless"); feedback("large");
+        addMemory(`旅人守住了太阳岛——他把名字报给了赫利俄斯：「${name}」，得到一缕「走得过黑暗的光」`, 4, "any");
+        showChapter("concept-art/05-太阳岛.jpg","第 四 章","光","你守住了 · 他认得你",`「${name}。」……（金光里有一声很轻的笑——他听得出这不是你生来的名字，但他收下了你的守誓。）「带一缕光走吧——它走得过黑暗。」`);
+        renderHUD(); save();
+      },
+      onCancel:()=>{ toast("（你把沉默咽了回去。黄昏还没结束——想好了再来。）"); },
+    });
+    return;
   }
   if (s.type==="sunDock"){
     scene = "world"; state.sunStage = 1;
@@ -4382,18 +4412,23 @@ function interact(){
       : "她替你答了一半：「家是有人等你的地方。」——「剩下的一半，我不替你说。到了该认的地方，你自己补。」";
     showChapter("concept-art/06-奥吉吉亚-卡吕普索.jpg","第 五 章","正 题","她终于问了那个问题",quote);
     setTimeout(()=>{
-      const stay = confirm("她的提议躺在空气里：留下来——永生，不死，每天都是同样的好天气。\n（确定 = 留下来 · 永生的锁　|　取消 = 我要走 · 造筏）");
-      state.calypsoStage = 4;
-      if (stay){
-        state.calypsoChoice = "stay";
-        addMemory("旅人答应留在奥吉吉亚——永生的锁合上了", 5);
-        toast("她说：好。（那天晚上，时间重新开始流动——想走的时候，筏台在海湾等你。）");
-      } else {
-        state.calypsoChoice = "raft";
-        addMemory("旅人拒绝了永生——他要自己造一艘筏", 5);
-        toast("她点头，眼睛却湿了：「筏台在海湾。木料、时辰、储粮——把你一路学的全用上吧。」");
-      }
-      renderHUD(); save();
+      const settle = (stay)=>{
+        state.calypsoStage = 4;
+        if (stay){
+          state.calypsoChoice = "stay";
+          addMemory("旅人答应留在奥吉吉亚——永生的锁合上了", 5);
+          toast("她说：好。（那天晚上，时间重新开始流动——想走的时候，筏台在海湾等你。）");
+        } else {
+          state.calypsoChoice = "raft";
+          addMemory("旅人拒绝了永生——他要自己造一艘筏", 5);
+          toast("她点头，眼睛却湿了：「筏台在海湾。木料、时辰、储粮——把你一路学的全用上吧。」");
+        }
+        renderHUD(); save();
+      };
+      showAsk("第 五 章 · 正 题","永 生 的 锁","她的提议躺在空气里：留下来——永生，不死，每天都是同样的好天气。","「你走了那么多海，难道没有一个岛值得停下？」",[
+        {label:"留下来 · 永生的锁", hint:"每天都是同样的好天气", fn:()=>settle(true)},
+        {label:"我要走 · 造筏", hint:"亲手把筏造出来", fn:()=>settle(false)},
+      ]);
     }, 600);
     return;
   }
@@ -4457,17 +4492,30 @@ function interact(){
       const miss=[]; if(state.raft.wood<3)miss.push(`木料 ${state.raft.wood}/3`); if(!state.raft.wind)miss.push("出湾的时辰"); if(state.raft.food<2)miss.push(`储粮 ${state.raft.food}/2`);
       toast(`筏还没成——缺：${miss.join("、")}。（这一路学的：砍伐、听风、储粮——把全游戏走一遍）`); return;
     }
+    const depart = ()=>{
+      scene = "world"; state.ogygiaLeft = true;
+      boat.x = 29*WTS+WTS/2+40; boat.y = 12*WTS+WTS/2+30;
+      gainXp(40); sfx("bless"); feedback("large");
+      addMemory("旅人自己造的筏出了湾——海面上第一次出现他自己划出来的尾迹", 5);
+      renderHUD(); save();
+      showChapter("concept-art/06-奥吉吉亚-卡吕普索.jpg","第 五 章","尾 迹","完美的岛在身后合上，像一本读完的书",`她站在栈桥上没有挥手。海面上，第一次出现你自己划出来的尾迹——「${state.calypsoName||"无名旅人"}，风会记路。」（历练 +40 · 斯克里岛已解锁）`);
+    };
     if (!state.calypsoName){
-      const nm = prompt("卡吕普索在栈桥上，最后一次问：「你是谁？」","");
-      state.calypsoName = (nm&&nm.trim()) ? nm.trim() : null;
-      if (state.calypsoName) addMemory(`出湾前，旅人对卡吕普索说出了自己的名字：「${state.calypsoName}」`, 4, "calypso");
+      askText({
+        kicker:"第 五 章 · 尾 迹", title:"最 后 一 次 问 你",
+        body:"卡吕普索站在栈桥上。她最后一次问：「你是谁？」",
+        quote:"（说一个名字——或者不填，让她记住一个无名的人。）",
+        placeholder:"……", okLabel:"说 出 来",
+        onOk:(nm)=>{
+          state.calypsoName = (nm||"").trim() || null;
+          if (state.calypsoName) addMemory(`出湾前，旅人对卡吕普索说出了自己的名字：「${state.calypsoName}」`, 4, "calypso");
+          depart();
+        },
+        onCancel:()=>{ state.calypsoName = null; depart(); },
+      });
+      return;
     }
-    scene = "world"; state.ogygiaLeft = true;
-    boat.x = 29*WTS+WTS/2+40; boat.y = 12*WTS+WTS/2+30;
-    gainXp(40); sfx("bless"); feedback("large");
-    addMemory("旅人自己造的筏出了湾——海面上第一次出现他自己划出来的尾迹", 5);
-    renderHUD(); save();
-    showChapter("concept-art/06-奥吉吉亚-卡吕普索.jpg","第 五 章","尾 迹","完美的岛在身后合上，像一本读完的书",`她站在栈桥上没有挥手。海面上，第一次出现你自己划出来的尾迹——「${state.calypsoName||"无名旅人"}，风会记路。」（历练 +40 · 斯克里岛已解锁）`);
+    depart();
     return;
   }
   /* ---------- 斯克里岛（第六章）交互：不接谎的船 + 回顾章 + 告白 + 送行 ---------- */
@@ -4485,42 +4533,54 @@ function interact(){
       ["strait","第三章 · 声之海峡","蜡、栈杆，和六头怪开出的价"],
       ["sun","第四章 · 太阳岛","饥饿、誓言，和一个名字"],
     ];
-    for (const [id,title,hint] of CH){
-      const honest = confirm(`${title}——这一段怎么讲？（她托着腮等你开口）\n${hint}\n\n确定 = 如实讲　|　取消 = 吹牛讲（更好听，但歌里不唱）`);
-      if (honest){
-        if (!state.talesTold.includes(id)) state.talesTold.push(id);
-        addMemory(`瑙西亚娅听了旅人如实讲的「${title}」`, 3, "nausicaa");
+    (async ()=>{
+      for (const [id,title,hint] of CH){
+        const v = await askChoice("篝 火 · 一 路 讲 来", title, hint, "（她托着腮等你开口——如实讲的段落才会进德摩多科斯的歌；吹牛，歌里不唱。）", [
+          {label:"如实讲", hint:"进歌", v:1},
+          {label:"吹牛讲", hint:"更好听，但歌里不唱", v:0},
+        ]);
+        if (v===1){
+          if (!state.talesTold.includes(id)) state.talesTold.push(id);
+          addMemory(`瑙西亚娅听了旅人如实讲的「${title}」`, 3, "nausicaa");
+        }
       }
-    }
-    state.scheriaStage = 2;
-    gainXp(30); feedback("large");
-    addMemory(`旅人在篝火边讲完了这一路——如实讲的段落共 ${state.talesTold.length} 段`, 4, "nausicaa");
-    toast(`故事讲完了。她安静了很久：「都记下了。」（如实讲的 ${state.talesTold.length}/5 段会进德摩多科斯的歌 · 历练 +30）`, 4200);
-    renderHUD(); save();
-    setTimeout(trojanSongEvent, 900);   /* P1.5 特洛伊段：盲歌手唱到木马——你落泪（原著第8卷），插在回顾与告白之间 */
+      state.scheriaStage = 2;
+      gainXp(30); feedback("large");
+      addMemory(`旅人在篝火边讲完了这一路——如实讲的段落共 ${state.talesTold.length} 段`, 4, "nausicaa");
+      toast(`故事讲完了。她安静了很久：「都记下了。」（如实讲的 ${state.talesTold.length}/5 段会进德摩多科斯的歌 · 历练 +30）`, 4200);
+      renderHUD(); save();
+      setTimeout(trojanSongEvent, 900);   /* P1.5 特洛伊段：盲歌手唱到木马——你落泪（原著第8卷），插在回顾与告白之间 */
+    })();
     return;
   }
   if (s.type==="ship"){
     if (state.scheriaStage<2){ toast("船缆系得整整齐齐，像在等一个还没被看见的人。（先去篝火，把你的故事讲完）"); return; }
-    const ans = prompt(state.selfRevealed
-      ? "送行的水手蹲在船头，按规矩再问一遍：「奥德修斯，家在哪？」\n（你当着全厅说过——答案已经定了，他只是要听你亲口再说一次）"
-      : "送行的水手蹲在船头，头一次开口问：「旅人，家在哪？」\n（暗线①总考试——世界不接谎：说不出口，船不开；说一个假的地方，雾会把你送回原点）",
-      state.selfRevealed ? "伊萨卡" : "");
-    if (ans===null) return;
-    const a = ans.trim();
-    if (!a || /说不出|不知道|没有/.test(a)){ toast("船安静着。说不出口的话——去讲给篝火听，或者去见她。"); return; }
-    state.homeAnswer = a;
-    if (!/伊萨卡/.test(a)){
-      toast(`「${a}，是吧。」水手点头，船开了。……雾散时，船头正对出发的滩涂。世界不接谎——但它也不惩罚。（再试试，说真话）`);
-      addMemory(`旅人对送行船说了「${a}」——雾把船送回了原点`, 3);
-      renderHUD(); save(); return;
-    }
-    state.scheriaFarewell = true; scene = "world";
-    boat.x = 17*WTS+WTS/2+40; boat.y = 7*WTS+WTS/2+30;
-    gainXp(40); sfx("bless"); feedback("large");
-    addMemory("费埃克斯人的船送旅人回家——全城安静，没有人回头念出这座岛的名字", 5);
-    renderHUD(); save();
-    showChapter("concept-art/08-斯克里岛.jpg","第 六 章","送 行","水手低语：别回头念出这座岛的名字","送行船上全城安静。只有桅杆的风声，和越来越远的、她站在码头上的那一点白。（历练 +40 · 伊萨卡已解锁——雾在散）");
+    askText({
+      kicker:"第 六 章 · 送 行", title:"家 在 哪",
+      body: state.selfRevealed
+        ? "送行的水手蹲在船头，按规矩再问一遍：「奥德修斯，家在哪？」"
+        : "送行的水手蹲在船头，头一次开口问：「旅人，家在哪？」",
+      quote: state.selfRevealed
+        ? "（你当着全厅说过——答案已经定了，他只是要听你亲口再说一次。）"
+        : "（世界不接谎：说不出口，船不开；说一个假的地方，雾会把你送回原点。）",
+      placeholder: state.selfRevealed ? "伊萨卡" : "……", okLabel:"回 答 他",
+      onOk:(ans)=>{
+        const a = (ans||"").trim();
+        if (!a || /说不出|不知道|没有/.test(a)){ toast("船安静着。说不出口的话——去讲给篝火听，或者去见她。"); return; }
+        state.homeAnswer = a;
+        if (!/伊萨卡/.test(a)){
+          toast(`「${a}，是吧。」水手点头，船开了。……雾散时，船头正对出发的滩涂。世界不接谎——但它也不惩罚。（再试试，说真话）`);
+          addMemory(`旅人对送行船说了「${a}」——雾把船送回了原点`, 3);
+          renderHUD(); save(); return;
+        }
+        state.scheriaFarewell = true; scene = "world";
+        boat.x = 17*WTS+WTS/2+40; boat.y = 7*WTS+WTS/2+30;
+        gainXp(40); sfx("bless"); feedback("large");
+        addMemory("费埃克斯人的船送旅人回家——全城安静，没有人回头念出这座岛的名字", 5);
+        renderHUD(); save();
+        showChapter("concept-art/08-斯克里岛.jpg","第 六 章","送 行","水手低语：别回头念出这座岛的名字","送行船上全城安静。只有桅杆的风声，和越来越远的、她站在码头上的那一点白。（历练 +40 · 伊萨卡已解锁——雾在散）");
+      },
+    });
     return;
   }
   if (s.type==="scDock"){
@@ -4559,21 +4619,28 @@ function interact(){
     if (state.suitorsSwept){ toast(state.telRevealed?"大厅已经肃清。血渍擦干净之前，弓先挂在墙上。":"大厅已经肃清。最后几箭是谁放的——没人问，你也没说。"); return; }
     if (state.suitorsFooled){ toast("他们又输了一场掷骰，没人再看门口的乞丐一眼。"); return; }
     if (!state.disguise){ toast("宴厅的喧闹扑面而来。穿着自己的脸走进去？——先去墙角拿那件斗篷。"); return; }
-    const nm = prompt("为首的斜着眼，用脚尖踢了踢你的瓦罐：「老叫花，叫什么名字？」\n（报一个化名——别报真名，更别报那个人的）","");
-    if (nm===null) return;
-    const a = nm.trim();
-    if (!a){ toast("你把沉默嚼碎了咽下去。他们丢了块骨头过来，哄笑着走了。"); return; }
-    if (/奥德修斯/.test(a)){
-      hurtPlayer(15, "冒名");
-      addMemory("旅人险些对求婚者报出「奥德修斯」——被酒杯砸中了肩膀（他们不知道，他们砸的是真的）", 4);
-      toast("满厅突然安静——然后炸成哄笑。一只酒杯砸在你肩上：「你也配姓这个名字！」（伤势 -15 · 再想一个名字）");
-      renderHUD(); save(); return;
-    }
-    state.suitorsFooled = true; state.ithacaStage = Math.max(state.ithacaStage, 2);
-    gainXp(25); sfx("bless");
-    addMemory(`旅人用化名「${a}」骗过了求婚者的眼睛`, 4);
-    toast(`「${a}是吧。」他们丢给你半块面包，转头继续掷骰。谎言是乞丐的斗篷——你穿上了。（骗过求婚者 ✓ · 历练 +25）`);
-    renderHUD(); save(); return;
+    askText({
+      kicker:"终 章 · 大 厅", title:"老 叫 花，叫 什 么 名 字",
+      body:"为首的斜着眼，用脚尖踢了踢你的瓦罐。",
+      quote:"（报一个化名——别报真名，更别报那个人的。）",
+      placeholder:"化名……", okLabel:"报 上 名 来",
+      onOk:(nm)=>{
+        const a = (nm||"").trim();
+        if (!a){ toast("你把沉默嚼碎了咽下去。他们丢了块骨头过来，哄笑着走了。"); return; }
+        if (/奥德修斯/.test(a)){
+          hurtPlayer(15, "冒名");
+          addMemory("旅人险些对求婚者报出「奥德修斯」——被酒杯砸中了肩膀（他们不知道，他们砸的是真的）", 4);
+          toast("满厅突然安静——然后炸成哄笑。一只酒杯砸在你肩上：「你也配姓这个名字！」（伤势 -15 · 再想一个名字）");
+          renderHUD(); save(); return;
+        }
+        state.suitorsFooled = true; state.ithacaStage = Math.max(state.ithacaStage, 2);
+        gainXp(25); sfx("bless");
+        addMemory(`旅人用化名「${a}」骗过了求婚者的眼睛`, 4);
+        toast(`「${a}是吧。」他们丢给你半块面包，转头继续掷骰。谎言是乞丐的斗篷——你穿上了。（骗过求婚者 ✓ · 历练 +25）`);
+        renderHUD(); save();
+      },
+    });
+    return;
   }
   if (s.type==="axes"){
     if (state.ithacaStage<2){ toast("十二道斧环在暮色里排成一线。大厅里全是别人的刀——还不是时候。"); return; }
@@ -4592,9 +4659,10 @@ function interact(){
   }
   if (s.type==="itDock"){
     if (state.ithacaStage>=1 && !state.finaleDone){
-      const turn = confirm("码头就在脚下。回船，转身——伊萨卡不一定是你的家。\n（B 路：把一路捡到的碎片，安进另一座岛、另一个人、另一片海）\n确定 = 转身离开　|　取消 = 留下走完");
-      if (turn){ showFinale("b"); return; }
-      toast("你转过身，朝大厅走回去。——好。把它走完。");
+      showAsk("终 章 · 码 头","回 船，还 是 留 下","码头就在脚下。回船，转身——伊萨卡不一定是你的家。","（B 路：把一路捡到的碎片，安进另一座岛、另一个人、另一片海。）",[
+        {label:"转身离开（B 路）", hint:"把碎片安进别处", fn:()=>showFinale("b")},
+        {label:"留下，把它走完", hint:"大厅里还有人等你", fn:()=>toast("你转过身，朝大厅走回去。——好。把它走完。")},
+      ]);
       return;
     }
     scene = "world";
@@ -4835,6 +4903,48 @@ function hideAsk(){
   askOn = false; chapterOn = false;
   document.getElementById("askCard").classList.remove("show");
 }
+/* ==================== 游戏内对话弹窗（流程批：替换全部原生 confirm/prompt） ====================
+   原生弹窗脱离游戏视觉、移动端样式丑陋、「取消=反选项」语义反直觉——统一用 askCard 视觉语言。
+   askChoice 返回 Promise<选项序号>，供顺序叙事（如篝火逐章回忆）await。 */
+function askChoice(kicker, title, body, quote, options){
+  return new Promise((resolve)=>{
+    showAsk(kicker, title, body, quote, options.map((o)=>({ label:o.label, hint:o.hint, fn:()=>resolve(o.v) })));
+  });
+}
+function askConfirm(kicker, title, body, quote, yesLabel, yesHint, noLabel, noHint, onYes, onNo){
+  showAsk(kicker, title, body, quote, [
+    { label: yesLabel||"确定", hint: yesHint, fn: onYes||(()=>{}) },
+    { label: noLabel||"取消", hint: noHint, fn: onNo||(()=>{}) },
+  ]);
+}
+/* 文本输入弹窗（替代 prompt）：确认按钮 + 回车提交 + Esc 取消 */
+function askText({kicker, title, body, quote, placeholder, okLabel, onOk, onCancel}){
+  const c = document.getElementById("askCard");
+  c.querySelector(".ccKicker").textContent = kicker||"";
+  c.querySelector(".ccTitle").textContent = title||"";
+  c.querySelector(".ccSub").textContent = body||"";
+  c.querySelector(".ccQuote").textContent = quote||"";
+  const bar = c.querySelector(".askOpts"); bar.innerHTML = "";
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "display:flex;gap:8px;width:100%";
+  const inp = document.createElement("input");
+  inp.id = "askTextInput"; inp.maxLength = 20; inp.placeholder = placeholder||"";
+  inp.style.cssText = "flex:1;padding:9px 12px;border-radius:8px;border:1px solid rgba(120,160,210,.4);background:rgba(6,14,26,.6);color:#fff;font-size:14px;outline:none";
+  const okBtn = document.createElement("button");
+  okBtn.className = "askBtn"; okBtn.innerHTML = `<span class="abKey">↵</span><span>${okLabel||"确定"}</span>`;
+  wrap.appendChild(inp); wrap.appendChild(okBtn);
+  bar.appendChild(wrap);
+  let done = false;
+  const submit = ()=>{ if (done) return; done = true; const v = inp.value; hideAsk(); if (onOk) onOk(v); };
+  okBtn.onclick = submit;
+  inp.addEventListener("keydown", (e)=>{
+    if (e.key==="Enter"){ e.preventDefault(); e.stopPropagation(); submit(); }
+    if (e.key==="Escape"){ e.preventDefault(); e.stopPropagation(); if (done) return; done = true; hideAsk(); if (onCancel) onCancel(); }
+  });
+  c.classList.add("show");
+  askOn = true; chapterOn = true;
+  setTimeout(()=>{ try{ inp.focus(); }catch(e){} }, 60);
+}
 /* 蜜酒事件：立誓前与喀耳刻照面必触发（interact 门控）。有魔草=两路破局；无魔草=饮下猪化 / 推杯挂起。 */
 function meadEvent(){
   const hasMoly = !!state.backpack["魔草"];
@@ -4970,7 +5080,7 @@ function crewSlept(){
       }
     }catch(e){}
   }
-  nw.onclick = ()=>{ if(confirm("清空存档，从头开始？")){ localStorage.removeItem(SAVE_KEY); location.reload(); } };
+  nw.onclick = ()=>{ askConfirm("标 题","新 的 航 程","清空存档，从头开始——这一步不可撤销。",null, "清空存档，重新开始","不可撤销", "继续现在的航程","保留存档", ()=>{ localStorage.removeItem(SAVE_KEY); location.reload(); }, ()=>{}); };
   go.onclick = ()=>{
     titleOn=false;
     const t=document.getElementById("titleScreen");
