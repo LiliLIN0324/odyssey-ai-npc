@@ -631,6 +631,18 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 - **坑（新）**：①**Playwright 触发战斗要绕开 UI 门控**——`interact()` 开头 `if(titleOn||chapterOn||mapOpen) return`，直接 evaluate 调 `startCampDefense/startRamHide` 需先点标题启航（`tsGo`/`继续航程`）或设 `titleOn=false` 局部变量；单步 `campDefenseTick/ramHideTick` 也被同一门控短路（界面打开冻结窗口防海图空转）——自动化用"直调 start* + 函数级驱动 strike/duck"绕过 tick 门控，最终验证走真实 spot+interact。②`payMemoryToDead` 依赖 imp≥3 记忆，测试要先把 `state.memory` 造一条 imp≥3 再触发（无真实记忆时返回 false＝走原 toast，行为正确）。③dist=0 验证 spot 匹配（ATS=40，campfire=300,340 / ramhide=660,220 / mother=580,340）。④规避"multiedit 部分生效"坑：本次全用单点 edit + 每批 node --check。
 - **未做**：v0.2.0 打 tag（判据 GREEN，仍留专门会话）；island3d 实验保留未决；评测线不动（本批零新意图词表）。**§17h 战斗群七场至此全部收齐（F1 特洛伊/F2 忒勒皮洛斯/F3 伊斯玛洛斯/F4 独眼巨人/F5 斯库拉/F6 求婚者/F7 波塞冬浪）。**
 
+### 17v. Steam 化打磨批次：实玩线上版→17 项体验缺口→生存/对话/引导三刀（11-10，本会话；分支 `feat/steam-ux-pass` 四提交，未动 main）
+
+- **接手背景**：用户指令「好好研究这个游戏，参考最近成熟 Steam 佳作进行修改优化」。**先实玩后动刀**：Playwright 实测线上版 odyssey-1c9.pages.dev（2D 主线，含自由文本对话全链路 fetch 捕获）+ aeaea-3d.pages.dev（3D 观赏原型）。对照系：Clair Obscur 33 号远征队（TGA2025 年度游戏/MC94）、KCD2（MC88，生存难度调优典范）、Hades 2（引导教科书）、《不问凡尘》（AI 原生 RPG 直接竞品）。
+- **实拍缺口清单（17 项，全部有复现证据）**：生存节奏灾难（看图+开船 5 分钟血 100→13、两次晕倒扣 20/30 启动金、晕倒循环）/ 开海图时钟与需求照走 / 食莲岛晕倒躺「女巫草垛」穿帮 + witch 坐标跨场景错位传送 / 船可驶出世界网格（实测 x=-69 负坐标空海）/ /api/chat 间歇 403（上游限流，curl 可复现 200）→ 自由文本频繁落入兜底 / 兜底台词全局「她」人称（食莲者是男的）/ 兜底台词写进 history 回传模型污染上下文（捕获请求体含「AI:（她皱了皱眉）…」）/ 对话等待 2-6s 无反馈（PRODUCT §9 规划的「正在思索」未实装）/ 占位符全局「对女巫说点什么」/ 副标技术标签直接暴露 / parse 请求当前消息重复拼接两次 / HUD 时钟与需求条仅事件驱动刷新（航行中静止）/ 食水无数值 / 新玩家无方向指引 / 章节卡残留无障碍树 / 3D 版无角色控制（轨道相机原型，P4 待做，不在本批范围）。
+- **修改一：生存节奏（d0e4210）**：新手保护期 `state.survivalGrace`（Lv1 默认开：衰减减半 + 饥渴不掉血只温和提醒；Lv2 升级时收束 toast「海不再护着你」）/ NEED_RATE 0.20·0.27→0.13·0.17（满值 8/6→13/10 分钟）/ 主循环 gate 加 `!mapOpen`（海图=全屏 UI，打开暂停需求与时钟）/ faintPlayer 场景分流（aia=女巫草垛原样·world=船板被浪拍醒·sun=船边·其他岛=原地醒来不传送不扣钱，恢复 50→60、需求 45→55、非女巫免 5 德拉克马）/ 首次出海 toast（跟着航向箭头走+键位）。
+- **修改二：AI 对话体验（fe42191）**：`postJSON` 重试助手（403/429/5xx/网络错→600ms 退避重试一次，400 不重试）挂接 apiParse/apiChat / `addThinkRow` 等待反馈（发送即插脉冲气泡，>350ms 显示「正在思索……」，完成/异常均移除——PRODUCT §9 兑底落地）/ `NPC_FALLBACK` 按 12 NPC 性别声口定制兜底台词（修「她」穿帮）/ 兜底标记 `fb:true`——apiParse/apiChat 拼上下文时 `filter(h=>!h.fb)` 不再回传模型，气泡 dashed 淡显可辨降级 / 占位符按 NPC（`对幸存者说点什么……`）/ 副标 `npcSubFor` 生产环境剥技术标签（`?debug=1` 还原，演示/评测场景不受影响）/ 「离线兑底」chip→「离线模式」。
+- **修改三：世界边界+引导+HUD（217edfb）**：tryMoveWorld 边界钳制（WTS/2 内边距 + 25s 节流「海图边缘回头」toast）/ load() 存档救援（界外船位钳回界内，钳到陆地全量扫最近水瓦片）/ 航向罗盘 DIR8 八向箭头+方位名（`⛵↙ 航向·去埃亚岛找喀耳刻接下委托（西南方）`，世界图每帧轻量刷新 DOM 仅变化时写入，近岛提示「按 E 登陆」）/ 主循环 1s 节流刷 renderHUD（时钟/需求条航行中实时可见）/ 食水数值化（hudHungerVal/hudThirstVal）/ chapterCard aria-hidden。
+- **修改四（顺手修，ad2edbc）**：apiParse 历史去重——send 先入栈又显式拼接导致当前消息在请求体里出现两次，拼接前弹出去重。
+- **验收（8788 mock 服务：chat 前 2 次 403 之后 200，验证降级与正常双路径；Playwright 全程）**：引导 toast+罗盘箭头（↙西南方，坐标核对方位正确）✓ / 地图打开 3s 时钟与饥饿零变化 ✓ / Lv1 饥渴归零 9s 血 77 不动（保护期）✓ / 持 a 1.5s 船停在 x=10 边界+回头 toast ✓ / 界外存档(-100)重载救援回界内水瓦片 ✓ / 占位符「对幸存者说点什么…」+副标无技术标签 ✓ / 发送 400ms 见思索气泡、完成后移除 ✓ / 消息 1：chat×2（403→重试→403→兜底）、兜底台词「（他躺在花丛里眨了眨眼）」男性人称、dashed 样式 ✓ / 消息 2：mock 200 正常台词+fbStyle=false ✓ / parse 请求体不含兜底台词（历史去污染）✓ / ?debug=1 副标完整还原 ✓ / 食莲岛晕倒「原地醒来·天色变了」+免钱+坐标不动 ✓ / HUD 时钟 3.5s 内 11:07→11:16 实时推进+食水数值可见 ✓ / 截图视觉复核（罗盘条逐字可读、无渲染异常）。node --check 四提交全绿。
+- **线上版遗留（非本仓可修，记录待办）**：①odyssey-1c9 的 /api/chat 间歇 403 根因在部署侧 Pages Function/上游（本仓无 functions 代码；重试机制已缓解，建议部署侧查上游限流与长 system prompt 的内容审核命中）②3D 线 P2 参考表仍卡用户侧图像生成（见 3d/HANDOFF）。
+- **坑（新）**：①Playwright 合成 KeyboardEvent 派发到 document 会被游戏 window 捕获层正常接收，但 `page.keyboard.down/up` 才触发 keyup 清理——测移动用 playwright 原生 API；②游戏的 `keys`/`boat`/`state` 等顶层 const/let 在经典脚本全局词法环境，`page.evaluate` 可直接读写（验收利器）；③验证 fetch 次数要防「嵌套包装器」假象（wrapper 套 wrapper 会让一次调用计数翻倍——先 reload 装单个捕获器再测）。
+
 ---
 
 ## 二、卡住的问题
