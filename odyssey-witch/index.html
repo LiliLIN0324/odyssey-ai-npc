@@ -53,6 +53,29 @@
   #bagPanel h3{font-size:12px; color:var(--sub); margin-bottom:8px; letter-spacing:1px;}
   #bagPanel .it{display:flex; justify-content:space-between; font-size:13px; padding:4px 0; border-bottom:1px dashed #eef2f7;}
   #bagPanel .it:last-child{border-bottom:none;}
+  /* Steam 化：音频设置弹层（🎚 按钮） */
+  #audioPanel{position:absolute; top:52px; right:12px; width:250px; background:var(--panel);
+    border:1px solid var(--line); border-radius:12px; padding:12px 14px; display:none;
+    box-shadow:0 10px 30px rgba(0,0,0,.3); z-index:5;}
+  #audioPanel .apRow{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--ink); padding:5px 0;}
+  #audioPanel .apRow span{width:44px; color:var(--sub); flex:none;}
+  #audioPanel .apRow input[type=range]{flex:1; accent-color:var(--blue);}
+  #audioPanel .apRow b{width:38px; text-align:right; font-size:11px; color:var(--sub); font-weight:600;}
+  #audioPanel .apNote{font-size:10.5px; color:var(--sub); margin-top:6px; border-top:1px dashed #eef2f7; padding-top:6px;}
+  /* Steam 化：触屏控件（粗指针设备显示） */
+  #touchUI{position:absolute; inset:auto 0 0 0; height:170px; pointer-events:none; display:none; z-index:7;}
+  #joyBase{position:absolute; left:26px; bottom:26px; width:118px; height:118px; border-radius:50%;
+    background:rgba(16,26,42,.38); border:2px solid rgba(255,255,255,.35); pointer-events:auto; touch-action:none;}
+  #joyKnob{position:absolute; left:50%; top:50%; width:52px; height:52px; border-radius:50%;
+    background:rgba(255,255,255,.55); box-shadow:0 4px 14px rgba(0,0,0,.35); transform:translate(-50%,-50%);}
+  #touchBtns{position:absolute; right:22px; bottom:30px; display:flex; flex-direction:column; gap:12px; pointer-events:auto;}
+  #touchBtns button{width:64px; height:64px; border-radius:50%; border:2px solid rgba(255,255,255,.4);
+    background:rgba(16,26,42,.45); color:#fff; font-size:15px; font-weight:600; touch-action:manipulation;}
+  #touchBtns button:active{background:rgba(255,255,255,.35);}
+  #tBtnE{font-size:18px !important;}
+  #touchRow{position:absolute; right:22px; bottom:112px; display:flex; gap:10px; pointer-events:auto;}
+  #touchRow button{width:46px; height:46px; border-radius:12px; border:2px solid rgba(255,255,255,.35);
+    background:rgba(16,26,42,.45); color:#fff; font-size:13px; touch-action:manipulation;}
   #bagPanel .it b{color:var(--blue-ink);}
   #dlg{position:absolute; left:2%; right:2%; bottom:2.5%; height:46%; background:var(--panel);
     border-radius:14px; border:1px solid var(--line); box-shadow:0 14px 44px rgba(0,0,0,.4);
@@ -173,6 +196,11 @@
   #tsNew{border:1px solid rgba(255,255,255,.5); background:rgba(255,255,255,.12); color:#fff; font-size:13px;
     padding:11px 22px; border-radius:26px; cursor:pointer;}
   #tsNew:hover{background:rgba(255,255,255,.22);}
+  /* Steam 化：标题屏存档信息卡——玩家在点「继续航程」前知道会接着哪段走 */
+  #tsSaveCard{display:none; margin-top:14px; padding:9px 14px; border-radius:10px; max-width:420px;
+    background:rgba(10,18,30,.45); border:1px solid rgba(255,255,255,.22); backdrop-filter:blur(4px);}
+  #tsSaveCard .t1{font-size:12.5px; color:#ffe1a8; letter-spacing:1px; margin-bottom:3px;}
+  #tsSaveCard .t2{font-size:11.5px; color:rgba(255,255,255,.72); line-height:1.6;}
   .tsTip{margin-top:30px; font-size:11px; line-height:1.8; color:rgba(255,255,255,.55);}
   /* ---- 章节过场（概念图 02-女巫小屋） ---- */
   #chapterCard{position:absolute; inset:0; z-index:18; border-radius:14px; overflow:hidden; cursor:pointer;
@@ -379,6 +407,8 @@
     <span class="pill" id="hudCompass" style="display:none"></span>
     <span class="spacer"></span>
     <button id="sndBtn" onclick="sndToggle()">🔊 音效</button>
+    <button id="audioCfgBtn" onclick="audioPanelToggle()" title="音量设置">🎚</button>
+    <button id="shotBtn" onclick="shareShot()" title="生成航迹分享卡片">📸 航迹</button>
     <button id="mapBtn">海图</button>
     <button id="questBtn">任务</button>
     <button id="bagBtn">背包</button>
@@ -389,6 +419,12 @@
   <div id="ambient"></div>
   <div id="toast"></div>
   <div id="bagPanel"><h3>背包</h3><div id="bagList"></div></div>
+  <div id="audioPanel">
+    <div class="apRow"><span>总音量</span><input type="range" min="0" max="100" value="100" id="ap_volMaster" oninput="audioSet('volMaster',this.value)"><b id="apv_volMaster">100%</b></div>
+    <div class="apRow"><span>音效</span><input type="range" min="0" max="100" value="100" id="ap_volSfx" oninput="audioSet('volSfx',this.value)"><b id="apv_volSfx">100%</b></div>
+    <div class="apRow"><span>环境音</span><input type="range" min="0" max="100" value="100" id="ap_volAmb" oninput="audioSet('volAmb',this.value)"><b id="apv_volAmb">100%</b></div>
+    <div class="apNote">偏好自动保存 · 🔇 按钮为静音开关</div>
+  </div>
   <div id="questPanel"><h3>任务日志</h3><div id="questList"></div></div>
   <div id="mapOverlay">
     <div id="mapBoard">
@@ -432,6 +468,14 @@
     </div>
   </div>
   <div id="keys">WASD / 方向键 移动 · E 互动 · M 海图 · P 俯瞰 · Esc 关闭对话</div>
+  <div id="touchUI">
+    <div id="joyBase"><div id="joyKnob"></div></div>
+    <div id="touchRow">
+      <button id="tBtnMap">海图</button>
+      <button id="tBtnBag">背包</button>
+    </div>
+    <div id="touchBtns"><button id="tBtnE">E</button></div>
+  </div>
   <div id="hitFlash"></div>
   <div id="chapterCard" aria-hidden="true">
     <div class="ccBody">
@@ -484,6 +528,7 @@
         <button id="tsGo">启航</button>
         <button id="tsNew" style="display:none">从头开始</button>
       </div>
+      <div id="tsSaveCard" style="display:none"></div>
       <button class="demoBtn" id="tsDemo" onclick="runDemo()">✦ 演示 NPC 智能</button>
       <div class="tsTip">WASD / 方向键 移动 · E 互动 · M 海图 · P 俯瞰全岛 · Esc 关闭对话<br>视觉素材为本项目原创 AI 概念图</div>
     </div>
@@ -3106,21 +3151,7 @@ addEventListener("keydown", e=>{
   if (inInput) return;
   const k = e.key.toLowerCase();
   if (["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(k)){ keys.add(k); e.preventDefault(); }
-  if (k==="e"){
-    e.preventDefault();
-    /* F5 斯库拉快反战：strike 窗口内 E=砍/拉救回，不进普通交互 */
-if (SC.on && SC.phase==="strike"){ scyllaStrike(); return; }
-    /* F6 求婚者肃清战：strike 窗口内 E=放箭击杀，不进普通交互 */
-    if (SU.on && SU.phase==="strike"){ suitorStrike(); return; }
-    /* F3 伊斯玛洛斯守营战：strike 窗口内 E=拍开火把 */
-    if (CAMP.on && CAMP.phase==="strike"){ campStrike(); return; }
-    /* F4 独眼巨人羊腹潜行：strike 窗口内 E=屏息低头 */
-    if (HIDE.on && HIDE.phase==="strike"){ ramDuck(); return; }
-    /* 预按：当前无可交互目标才进缓冲，避免双触发 */
-    const has = scene==="world" ? !!islandNear() : !!aiaNear();
-    if (!has) eBufAt = performance.now();
-    interact();
-  }
+  if (k==="e"){ e.preventDefault(); pressE(); }
   /* M=海图（全场景）；P=俯瞰全岛（岛屿内） */
   if (k==="m" && !chapterOn){ e.preventDefault(); mapOpen ? closeMap() : openMap(); }
   if (k==="p" && scene!=="world" && !mapOpen){
@@ -3130,6 +3161,101 @@ if (SC.on && SC.phase==="strike"){ scyllaStrike(); return; }
 }, true);
 addEventListener("keyup", e=> keys.delete(e.key.toLowerCase()));
 addEventListener("blur", ()=> keys.clear());
+
+/* ==================== 交互动作统一入口（Steam 化输入层：键盘 E / 触摸按钮 / 手柄 A 同源） ====================
+   原 E 键处理体从 keydown 分支抽出——四场反应战（F3/F4/F5/F6）的 strike 窗口拦截必须
+   对所有输入设备一致生效，否则手柄/触摸在战斗窗口按不了关键键。 */
+function pressE(){
+  if (askOn || titleOn || chapterOn || mapOpen || dlgOpen) return;   /* 与 keydown 门控一致：界面打开时不响应 */
+  /* F5 斯库拉快反战：strike 窗口内 E=砍/拉救回，不进普通交互 */
+  if (SC.on && SC.phase==="strike"){ scyllaStrike(); return; }
+  /* F6 求婚者肃清战：strike 窗口内 E=放箭击杀，不进普通交互 */
+  if (SU.on && SU.phase==="strike"){ suitorStrike(); return; }
+  /* F3 伊斯玛洛斯守营战：strike 窗口内 E=拍开火把 */
+  if (CAMP.on && CAMP.phase==="strike"){ campStrike(); return; }
+  /* F4 独眼巨人羊腹潜行：strike 窗口内 E=屏息低头 */
+  if (HIDE.on && HIDE.phase==="strike"){ ramDuck(); return; }
+  /* 预按：当前无可交互目标才进缓冲，避免双触发 */
+  const has = scene==="world" ? !!islandNear() : !!aiaNear();
+  if (!has) eBufAt = performance.now();
+  interact();
+}
+
+/* ==================== 手柄支持（Steam 化：Gamepad API，Steam Deck/常见手柄即插即用） ====================
+   左摇杆/十字键 → 移动（注入 keys，与键盘同源）；A=互动 · B=关窗 · X=背包 · Y=海图。
+   边沿触发防连发；0.42 死区防漂移。 */
+let gpActive = null, gpPrev = {};
+addEventListener("gamepadconnected", (e)=>{
+  gpActive = e.gamepad.index;
+  toast(`🎮 手柄已连接：左摇杆移动 · A 互动 · Y 海图 · X 背包 · B 关窗`);
+});
+addEventListener("gamepaddisconnected", ()=>{ gpActive = null; gpPrev = {}; keys.clear(); });
+function gpPress(btn, prevBtn, fn){
+  const now = !!(btn && btn.pressed);
+  const was = !!gpPrev[prevBtn];
+  gpPrev[prevBtn] = now;
+  if (now && !was) fn();
+}
+function pollGamepad(){
+  if (gpActive === null || typeof navigator.getGamepads !== "function") return;
+  const pads = navigator.getGamepads();
+  const gp = pads && (pads[gpActive] || [...pads].find(p=>p && p.connected));
+  if (!gp) return;
+  if (gpActive === null) gpActive = gp.index;
+  const dz = 0.42;
+  const ax = gp.axes[0]||0, ay = gp.axes[1]||0;
+  const dirSet = (key, on)=>{ if (on) keys.add(key); else keys.delete(key); };
+  dirSet("a", ax < -dz || (gp.buttons[14]&&gp.buttons[14].pressed));
+  dirSet("d", ax >  dz || (gp.buttons[15]&&gp.buttons[15].pressed));
+  dirSet("w", ay < -dz || (gp.buttons[12]&&gp.buttons[12].pressed));
+  dirSet("s", ay >  dz || (gp.buttons[13]&&gp.buttons[13].pressed));
+  gpPress(gp.buttons[0], "b0", ()=>{ if (askOn){ return; } pressE(); });            /* A */
+  gpPress(gp.buttons[1], "b1", ()=>{ if (dlgOpen) closeDlg(); else if (mapOpen) closeMap(); else if (document.getElementById("lyricCard").classList.contains("open")) closeLyric(); });   /* B */
+  gpPress(gp.buttons[2], "b2", ()=>{ document.getElementById("bagBtn").click(); });  /* X */
+  gpPress(gp.buttons[3], "b3", ()=>{ if (!chapterOn){ mapOpen ? closeMap() : openMap(); } });   /* Y */
+}
+
+/* ==================== 触屏控件（Steam 化：虚拟摇杆 + 互动键，粗指针设备显示） ====================
+   摇杆向量 → 注入 keys（与键盘同源，复用全部门控/战斗窗口逻辑）；E 按钮 → pressE()。 */
+function touchInit(){
+  const ui = document.getElementById("touchUI");
+  if (!ui) return;
+  const coarse = matchMedia && matchMedia("(pointer: coarse)").matches || ("ontouchstart" in window && navigator.maxTouchPoints > 0);
+  if (!coarse) return;
+  ui.style.display = "block";
+  const base = document.getElementById("joyBase"), knob = document.getElementById("joyKnob");
+  const joyKeys = {up:"w", down:"s", left:"a", right:"d"};
+  const clearJoy = ()=>{ for (const k of Object.values(joyKeys)) keys.delete(k); knob.style.left="50%"; knob.style.top="50%"; };
+  let joyId = null;
+  const onMove = (t)=>{
+    const r = base.getBoundingClientRect();
+    const cx = r.left + r.width/2, cy = r.top + r.height/2;
+    let dx = t.clientX - cx, dy = t.clientY - cy;
+    const max = r.width/2, len = Math.hypot(dx,dy);
+    if (len > max){ dx = dx/len*max; dy = dy/len*max; }
+    knob.style.left = `calc(50% + ${dx}px)`; knob.style.top = `calc(50% + ${dy}px)`;
+    const dead = max*0.22;
+    keys.delete("w"); keys.delete("s"); keys.delete("a"); keys.delete("d");
+    if (dy < -dead) keys.add("w");
+    if (dy >  dead) keys.add("s");
+    if (dx < -dead) keys.add("a");
+    if (dx >  dead) keys.add("d");
+  };
+  base.addEventListener("touchstart", (e)=>{ e.preventDefault(); const t=e.changedTouches[0]; joyId=t.identifier; onMove(t); }, {passive:false});
+  base.addEventListener("touchmove", (e)=>{ e.preventDefault(); for (const t of e.changedTouches) if (t.identifier===joyId) onMove(t); }, {passive:false});
+  const endJoy = (e)=>{ for (const t of e.changedTouches) if (t.identifier===joyId){ joyId=null; clearJoy(); } };
+  base.addEventListener("touchend", endJoy);
+  base.addEventListener("touchcancel", endJoy);
+  const bindTap = (id, fn)=>{
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener("touchstart", (e)=>{ e.preventDefault(); if (!askOn) fn(); }, {passive:false});
+  };
+  bindTap("tBtnE", pressE);
+  bindTap("tBtnMap", ()=>{ if (!chapterOn){ mapOpen ? closeMap() : openMap(); } });
+  bindTap("tBtnBag", ()=>{ document.getElementById("bagBtn").click(); });
+  window.addEventListener("blur", clearJoy);
+}
 
 /* ==================== 移动 ==================== */
 function aiaTile(cx,cy){ return (cx<0||cy<0||cx>=ACOLS||cy>=AROWS)?"~":AIA[cy][cx]; }
@@ -3276,6 +3402,29 @@ function shakeHp(){
  * ================================================================== */
 let AC = null, sndOn = true;
 let sfxGain = null, ambGain = null, ambCfg = null, lastAmbScene = null;
+/* Steam 化：音频偏好持久化（原实现刷新即丢：静音状态与音量档不记忆） */
+const AUDIO_PREF_KEY = "odyssey-audio-v1";
+const audioPrefs = { volMaster: 1, volSfx: 1, volAmb: 1 };
+function loadAudioPrefs(){
+  try{
+    const d = JSON.parse(localStorage.getItem(AUDIO_PREF_KEY)||"null");
+    if (d){
+      if (typeof d.sndOn==="boolean") sndOn = d.sndOn;
+      for (const k of ["volMaster","volSfx","volAmb"]){
+        if (typeof d[k]==="number" && d[k]>=0 && d[k]<=1) audioPrefs[k] = d[k];
+      }
+    }
+  }catch(e){}
+}
+function saveAudioPrefs(){
+  try{ localStorage.setItem(AUDIO_PREF_KEY, JSON.stringify({sndOn, ...audioPrefs})); }catch(e){}
+}
+function applyVolumes(){
+  if (sfxGain) sfxGain.gain.value = 0.5 * audioPrefs.volMaster * audioPrefs.volSfx;
+  /* ambGain 由 ambTick 的 ducking 泛写，音量系数在 tick 内乘 audioPrefs.volAmb */
+  const sb=document.getElementById("sndBtn");
+  if (sb){ sb.textContent = sndOn ? "🔊 音效" : "🔇 音效"; }
+}
 const SFX_CFG = {
   attack: [900, 560, 0.05, "square",   0.10],
   hurt:   [150,  70,  0.17, "sawtooth", 0.20],
@@ -3293,8 +3442,9 @@ function audioInit(){
   if (AC) return AC;
   try{
     AC = new (window.AudioContext||window.webkitAudioContext)();
-    sfxGain = AC.createGain(); sfxGain.gain.value = 0.5; sfxGain.connect(AC.destination);
+    sfxGain = AC.createGain(); sfxGain.connect(AC.destination);
     ambGain = AC.createGain(); ambGain.gain.value = 0;   ambGain.connect(AC.destination);
+    applyVolumes();
   }catch(e){}
   return AC;
 }
@@ -3359,8 +3509,28 @@ function waveSfx(){
 }
 function sndToggle(){
   sndOn = !sndOn;
+  applyVolumes(); saveAudioPrefs();
   document.getElementById("sndBtn").textContent = sndOn ? "🔊 音效" : "🔇 音效";
   if (sndOn){ audioInit(); lastAmbScene = null; }   /* 重开后环境层自动重建 */
+}
+/* Steam 化：音频设置弹层——总音量/音效/环境音三滑条，即时生效并持久化 */
+function audioPanelToggle(){
+  const p = document.getElementById("audioPanel");
+  const open = p.style.display !== "block";
+  p.style.display = open ? "block" : "none";
+  if (open){
+    for (const k of ["volMaster","volSfx","volAmb"]){
+      const el = document.getElementById("ap_"+k);
+      if (el){ el.value = Math.round(audioPrefs[k]*100); const v=document.getElementById("apv_"+k); if (v) v.textContent = el.value+"%"; }
+    }
+  }
+}
+function audioSet(key, raw){
+  const v = Math.max(0, Math.min(100, Number(raw)||0));
+  audioPrefs[key] = v/100;
+  const lab = document.getElementById("apv_"+key);
+  if (lab) lab.textContent = v+"%";
+  applyVolumes(); saveAudioPrefs();
 }
 
 /* ---------- 环境层（噪声/振荡器全合成，零音频文件） ---------- */
@@ -3467,8 +3637,8 @@ function ambTick(dt){
   if (!AC || !sndOn) return;
   if (AC.state === "suspended") AC.resume();
   if (ambGain){
-    /* ducking：对话/标题/过场时环境音让位（sidechain 的手写替身，慢恢复不喘） */
-    const target = (dlgOpen||titleOn||chapterOn ? 0.2 : 1) * 0.9;
+    /* ducking：对话/标题/过场/海图时环境音让位（sidechain 的手写替身，慢恢复不喘）；总环境音量滑条在此乘算 */
+    const target = (dlgOpen||titleOn||chapterOn||mapOpen ? 0.2 : 1) * 0.9 * (audioPrefs.volAmb||1);
     const cur = ambGain.gain.value;
     ambGain.gain.value = cur + (target-cur)*Math.min(1, dt*2.5);
   }
@@ -4713,7 +4883,23 @@ function crewSlept(){
   const hasSave = !!localStorage.getItem(SAVE_KEY);
   const go=document.getElementById("tsGo"), nw=document.getElementById("tsNew");
   go.textContent = hasSave ? "继续航程" : "启航";
-  if (hasSave) nw.style.display="";
+  if (hasSave){
+    nw.style.display="";
+    /* Steam 化：存档信息卡——接着哪段、走到哪，一眼可见（存档读取 UX 标配） */
+    try{
+      const d = parseSave(localStorage.getItem(SAVE_KEY)) || parseSave(localStorage.getItem(SAVE_KEY+".bak"));
+      if (d && d.state){
+        const s = d.state;
+        const legN = Object.keys(s.legs||{}).filter(k=>LEG_SEQ[k]!==undefined && s.legs[k]).length;
+        const sceneName = ({world:"地中海航行", aia:"埃阿亚岛", hades:"冥界之岸", aeolia:"风神岛", strait:"声之海峡", sun:"太阳岛", ogggia:"奥吉吉亚", scheria:"斯克里岛", ithaca:"伊萨卡", troy:"特洛伊海岸", ismaros:"伊斯玛洛斯", lotus:"食莲岛", cyclops:"独眼巨人之岛", telepylos:"忒勒皮洛斯"})[d.scene] || "海上";
+        const card=document.getElementById("tsSaveCard");
+        card.style.display="block";
+        card.innerHTML = `<div class="t1">上次的航迹 · ${sceneName}</div>`+
+          `<div class="t2">航序 ${legN}/14 · Lv.${s.level||1} · 钱袋 ${s.coins||0} 德拉克马 · 成就 ${(s.achiv||[]).length} 枚`+
+          ((s.crewLit)?` · ⚑ 船员 ${s.crew!=null?s.crew:12}/12`:"")+`</div>`;
+      }
+    }catch(e){}
+  }
   nw.onclick = ()=>{ if(confirm("清空存档，从头开始？")){ localStorage.removeItem(SAVE_KEY); location.reload(); } };
   go.onclick = ()=>{
     titleOn=false;
@@ -6628,6 +6814,64 @@ document.getElementById("bagBtn").onclick = ()=>{
   renderHUD();
 };
 
+/* ==================== 航迹分享卡（Steam 化，服务 PRODUCT §12 北极星「自发分享时刻/DAU ≥ 0.15」） ====================
+   📸 一键合成 1200×675 分享图：当前画面 + 底部字幕条（游戏名/当前航向或判词/航序进度/日期）。
+   优先走系统分享（navigator.share 文件），不支持则下载 PNG。全本地合成，零上传。 */
+let _shotBusy = false;
+function shareShot(){
+  if (_shotBusy) return;
+  _shotBusy = true;
+  try{
+    const W=1200, H=675, out=document.createElement("canvas");
+    out.width=W; out.height=H;
+    const c=out.getContext("2d");
+    /* 底图：W3D 模式取 3D 画布 + 2D 合成层叠加；纯 2D 场景直接取游戏画布（cover 裁切） */
+    const w3dCv = (scene==="world" && window.W3D && W3D.ready && !W3D.failed && W3D.canvas) ? W3D.canvas : null;
+    const layers = w3dCv ? [w3dCv, cv] : [cv];
+    for (const src of layers){
+      if (!src || !src.width) continue;
+      const s = Math.max(W/src.width, H/src.height);
+      const dw = src.width*s, dh = src.height*s;
+      try{ c.drawImage(src, (W-dw)/2, (H-dh)/2, dw, dh); }catch(e){}
+    }
+    /* 底部字幕条 */
+    const grad = c.createLinearGradient(0, H-220, 0, H);
+    grad.addColorStop(0, "rgba(8,14,24,0)");
+    grad.addColorStop(1, "rgba(8,14,24,.88)");
+    c.fillStyle = grad; c.fillRect(0, H-220, W, 220);
+    c.textBaseline = "alphabetic"; c.textAlign = "left";
+    c.fillStyle = "#ffd66b"; c.font = "600 30px 'Segoe UI','Microsoft YaHei'";
+    c.fillText("奥 德 赛 · 地 中 海", 46, H-150);
+    c.fillStyle = "#f2f6fb"; c.font = "500 24px 'Segoe UI','Microsoft YaHei'";
+    const obj = nextObjective();
+    const quote = obj ? (state.finaleDone ? "航程已完——海记得每一段。" : obj.text) : "海上";
+    c.fillText(quote.length>26 ? quote.slice(0,26)+"…" : quote, 46, H-104);
+    c.fillStyle = "#9fb2c8"; c.font = "400 19px 'Segoe UI','Microsoft YaHei'";
+    c.fillText(`航序 ${legsVisitedCount()}/14 · Lv.${state.level} · 成就 ${(state.achiv||[]).length} 枚 · ${clockName()} ${String(Math.floor(hourNow())).padStart(2,"0")}:${String(Math.floor(state.clock%60)).padStart(2,"0")}`, 46, H-62);
+    c.textAlign = "right";
+    const d = new Date();
+    c.fillText(`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")} · AI NPC 开放世界`, W-46, H-62);
+    /* 导出：系统分享优先，退回下载 */
+    out.toBlob((blob)=>{
+      _shotBusy = false;
+      if (!blob){ toast("卡片生成失败——浏览器不支持 canvas 导出。"); return; }
+      const file = new File([blob], "odyssey-航迹.png", {type:"image/png"});
+      const finish = (how)=>{ sfx("pick"); toast(how==="share" ? "航迹卡片已调起系统分享。" : "航迹卡片已保存到下载。发给那个会懂的人。"); };
+      try{
+        if (navigator.canShare && navigator.canShare({files:[file]})){
+          navigator.share({files:[file], title:"奥德赛 · 地中海", text:quote}).then(()=>finish("share")).catch(()=>{});
+        } else {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob); a.download = "odyssey-航迹.png";
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(()=>URL.revokeObjectURL(a.href), 3000);
+          finish("download");
+        }
+      }catch(e){ toast("分享失败——试试截图键，海不会怪你。"); }
+    }, "image/png");
+  }catch(e){ _shotBusy = false; toast("卡片生成失败：" + String(e.message||e).slice(0,40)); }
+}
+
 /* ---------- 风袋（暗线③：用风=快旅；贪念=用光。世界场景由 HUD/对话触发） ---------- */
 function useWind(){
   if (scene!=="world") return {text:"风袋得在海上放——回到船上，迎着风解开袋口。"};
@@ -8119,7 +8363,9 @@ async function apiParse(userText){
 }
 async function apiChat(instruction){
   const N = NPCS[currentNPC];
-  const sys = N.persona + "\n\n[你眼中的世界] " + contextBrief() + "\n\n当前情境：" + instruction;
+  const sys = N.persona + "\n\n[你眼中的世界] " + contextBrief()
+    + "\n\n[角色锚定] 你就是「" + N.name + "」本人。始终保持人格设定里的身份、性别与口吻，不要扮演或描述其他角色，不要出戏。"   /* Steam 化：修实测 persona drift（食莲者回复描述"她坐在船头"——串到别的角色形） */
+    + "\n\n当前情境：" + instruction;
   const messages=[{role:"system",content:sys},
     ...history[currentNPC].slice(-6).filter(h=>!h.fb).map(h=>({role:h.role==="user"?"user":"assistant",content:h.content}))];
   const d=await postJSON("/api/chat",{messages});
@@ -8410,11 +8656,14 @@ function loop(t){
   maleaTick();
   updateHintDOM();
   updateCompassArrow();   /* Steam 化：航向罗盘箭头每帧轻量刷新（DOM 仅文案变化时写入） */
+  pollGamepad();   /* Steam 化：手柄轮询（左摇杆/十字键移动，A 互动） */
   renderAmbient();
   requestAnimationFrame(loop);
 }
 (function init(){
+  loadAudioPrefs(); applyVolumes();   /* Steam 化：恢复音频偏好（静音状态+音量档） */
   load();
+  touchInit();   /* Steam 化：触屏设备启用虚拟摇杆 */
   renderHUD();
   fetch("/api/schema").then(r=>r.json()).then(s=>{
     if(Array.isArray(s)&&s.length){ SCHEMA=s; console.log("schema 菜单：",s.length,"个意图"); auditHandlers(); }

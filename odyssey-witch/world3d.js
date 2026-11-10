@@ -430,7 +430,7 @@ function buildTroy() {
 /* ---------- 初始化 ---------- */
 function init() {
   try {
-    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });   /* preserveDrawingBuffer：航迹分享卡需从事件回调读帧（否则 WebGL 背板已清空，截图空白） */
     renderer.setSize(1000, 600);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
   } catch (e) { failed = true; return; }
@@ -561,6 +561,7 @@ function frameTroy(et) {
 init();
 
 window.W3D = { get ready() { return ready; }, get failed() { return failed; }, frame,
+  canvas: renderer.domElement,   /* 航迹分享卡读帧用（preserveDrawingBuffer 已开） */
   debug: () => ({ boat: boatG ? boatG.position.toArray().map(v => Math.round(v * 10) / 10) : null,
                   cam: camera3 ? camera3.position.toArray().map(v => Math.round(v * 10) / 10) : null,
                   isles: isleList.length, calls: renderer.info.render.calls, tris: renderer.info.render.triangles }) };
