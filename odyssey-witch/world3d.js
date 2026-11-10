@@ -73,6 +73,8 @@ const ISLE_LOOK = {
   troy:    { r: 2.6, grass: 0xb09870, grassDeep: 0x8a7250, seed: 20261116, ash: true, mh: 0.9 },
 };
 const LOCKED_LOOK = { r: 1.3, grass: 0x93a3ad, grassDeep: 0x6d7d88, seed: 20261112, mist: true };
+/* 大陆默认地貌（地中海橄榄绿）：不属于任何剧情岛的陆块用它，避免被邻近小岛的焦土/黄金色污染 */
+const MAINLAND_LOOK = { r: 2.0, grass: 0x9dbf82, grassDeep: 0x78925f, seed: 20261120, mh: 1.0 };
 
 let renderer, scene3, camera3, waterU, boatG, sailMesh, isleList = [];
 let escortG = null, escortBoats = [], escPrev = null, escHead = { x: 0, z: -1 };
@@ -143,7 +145,207 @@ function buildIsle(cfg) {
 function buildIslands() {
   const group = new THREE.Group();
   const ISLES = window.ISLANDS || [];
-  if (!ISLES.length) console.warn("[W3D] window.ISLANDS 缺失：岛屿未装配（index.html 主脚本是否执行到位？）");
+  if (!ISLES.length) { console.warn("[W3D] window.ISLANDS 缺失：岛屿未装配（index.html 主脚本是否执行到位？）"); return group; }
+  const G = window.__game;
+  const grid = (G && G.worldGrid) ? G.worldGrid() : null;
+  /* ---------- 对齐批：按碰撞格生成岛体（视觉水线＝陆块边界，3D/2D 碰撞不再有形差） ----------
+     不再用「半径 r 的圆形锥体」，而是：连通陆块 → 每格离岸深度 → 角点高度场 → 半格精度三角化；
+     海面一侧角点负高、内陆按深度抬升，水线精确落在 land/water 格边界上。 */
+  if (grid) {
+    const H = grid.length, W = grid[0].length;
+    const WTS = (G.worldTileSize ? G.worldTileSize() : 20);
+    const LAND = new Set(["#", "X", "G"]);
+    const isLand = (x, y) => x >= 0 && y >= 0 && x < W && y < H && LAND.has(grid[y][x]);
+    /* 连通陆块 */
+    const seen = Array.from({ length: H }, () => new Array(W).fill(false));
+    const comps = [];
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      if (!isLand(x, y) || seen[y][x]) continue;
+      const stack = [[x, y]], cells = [];
+      seen[y][x] = true;
+      while (stack.length) {
+        const [cx, cy] = stack.pop(); cells.push([cx, cy]);
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nx = cx + dx, ny = cy + dy;
+          if (isLand(nx, ny) && !seen[ny][nx]) { seen[ny][nx] = true; stack.push([nx, ny]); }
+        }
+      }
+      comps.push(cells);
+    }
+    const nearestLook = (cxPx, cyPx) => {
+      let best = null, bd = 1e9;
+      for (const is of ISLES) {
+        const d = Math.hypot(cxPx - (is.gx * WTS + WTS / 2), cyPx - (is.gy * WTS + WTS / 2));
+        if (d < bd) { bd = d; best = is; }
+      }
+      const look = best && best.scene ? (ISLE_LOOK[best.scene] || LOCKED_LOOK) : { ...LOCKED_LOOK };
+      return { is: best, look };
+    };
+    for (const cells of comps) {
+      const set = new Set(cells.map(([x, y]) => x + "," + y));
+      /* 每格离岸深度（BFS 向内） */
+      const depth = new Map();
+      let frontier = [];
+      for (const [x, y] of cells) {
+        let edge = false;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (!set.has((x + dx) + "," + (y + dy))) edge = true;
+        if (edge) { depth.set(x + "," + y, 1); frontier.push([x, y]); }
+      }
+      let d0 = 1;
+      while (frontier.length) {
+        const next = [];
+        for (const [x, y] of frontier) {
+          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+            const k = (x + dx) + "," + (y + dy);
+            if (set.has(k) && !depth.has(k)) { depth.set(k, d0 + 1); next.push([x + dx, y + dy]); }
+          }
+        }
+        frontier = next; d0++;
+      }
+      let sx = 0, sy = 0, minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+      for (const [x, y] of cells) {
+        sx += x * WTS + WTS / 2; sy += y * WTS + WTS / 2;
+        minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+        minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+      }
+      const cxp = sx / cells.length, cyp = sy / cells.length;
+      const nk = nearestLook(cxp, cyp);
+      /* 主题色只在「该岛确实属于这个陆块」时启用：否则小岛的焦土/黄金色会把整片大陆染成褐色 */
+      const owned = !!(nk.is && nk.is.scene && set.has(nk.is.gx + "," + nk.is.gy));
+      const look = owned ? nk.look : MAINLAND_LOOK;
+      const mh = (look.mh || 1);
+      /* 体积按陆块面积给上限（大洲隆起、小岛也立得住），高度按离岸距离平滑抬升：
+         旧版按格线性叠加会出现「每格跳 1.3 单位」的台阶，改为指数饱和曲线，坡面连续。 */
+      const hMax = THREE.MathUtils.clamp(0.9 + cells.length * 0.018, 1.15, 3.4) * mh;
+      const hCell = (x, y) => {
+        const k = x + "," + y;
+        if (!set.has(k)) return null;
+        const d = depth.get(k) || 1;
+        if (d <= 1) return 0.35;   /* 岸唇高于浪峰（±0.21），避免海面波浪穿入陆地 */
+        return 0.35 + hMax * (1 - Math.exp(-(d - 1) / 2.4));
+      };
+      /* 角点高度（4 格平均；全水则按到陆块的距离下沉） */
+      const vh = (cx, cy) => {
+        let sum = 0, n = 0;
+        for (const [dx, dy] of [[-1, -1], [0, -1], [-1, 0], [0, 0]]) {
+          const h = hCell(cx + dx, cy + dy);
+          if (h !== null) { sum += h; n++; }
+        }
+        if (n) return sum / n;
+        let dmin = 1e9;
+        for (const [x, y] of cells) {
+          const ddx = Math.max(cx - (x + 1), x - cx, 0);
+          const ddy = Math.max(cy - (y + 1), y - cy, 0);
+          dmin = Math.min(dmin, Math.hypot(ddx, ddy));
+        }
+        return -0.32 - Math.min(dmin, 3) * 0.5;
+      };
+      /* 三角化：包围盒外扩 2 格（水下裙边） */
+      const P1 = new THREE.Color(look.grass), P2 = new THREE.Color(look.grassDeep);
+      const SAND = new THREE.Color(PAL.cliffLight), DEEP = new THREE.Color(PAL.oceanDeep);
+      const ROCK = new THREE.Color(PAL.cliffDark);
+      const positions = [], colors = [];
+      const pushV = (px, py, h, tint) => {
+        positions.push(px2x(px), h + (look.floatY ? look.floatY : 0), px2z(py));
+        colors.push(tint.r, tint.g, tint.b);
+      };
+      const colFor = (h, cx, cy) => {
+        /* 贴岸一圈（depth=1）为沙；向内有草丛/丘陵色，小岛不再整块染沙 */
+        let shore = false;
+        for (const [dx, dy] of [[0, 0], [-1, 0], [0, -1], [-1, -1]]) {
+          const k = (Math.floor(cx) + dx) + "," + (Math.floor(cy) + dy);
+          if (set.has(k) && (depth.get(k) || 9) <= 1) shore = true;
+        }
+        if (h <= -0.05) return DEEP;
+        if (shore) return SAND;
+        const noise = fbm(cx * 0.4 + 11.3, cy * 0.4 - 7.9, look.seed || 1, 3);
+        const t = THREE.MathUtils.clamp((h - 0.3) / 1.2, 0, 1);
+        const c = SAND.clone().lerp(P1, t).lerp(P2, THREE.MathUtils.clamp(noise * 1.2, 0, 1) * 0.5);
+        return c;
+      };
+      /* 岛顶：半格细分（1 单位步长）的高度场——平滑的海岸过渡，避免大块直角 */
+      const vhHalf = (hx, hy) => {
+        const x0 = Math.floor(hx), y0 = Math.floor(hy), x1 = Math.ceil(hx), y1 = Math.ceil(hy);
+        return (vh(x0, y0) + vh(x1, y0) + vh(x0, y1) + vh(x1, y1)) / 4;
+      };
+      const STEP = 0.5;
+      for (let y = minY - 1; y < maxY + 1.5; y += STEP) for (let x = minX - 1; x < maxX + 1.5; x += STEP) {
+        const h1 = vhHalf(x, y), h2 = vhHalf(x + STEP, y), h3 = vhHalf(x, y + STEP), h4 = vhHalf(x + STEP, y + STEP);
+        if (Math.max(h1, h2, h3, h4) < -0.05) continue;   /* 纯水格不建面 */
+        const c1 = colFor(h1, x, y), c2 = colFor(h2, x + STEP, y), c3 = colFor(h3, x, y + STEP), c4 = colFor(h4, x + STEP, y + STEP);
+        pushV(x * WTS, y * WTS, h1, c1); pushV(x * WTS, (y + STEP) * WTS, h3, c3); pushV((x + STEP) * WTS, y * WTS, h2, c2);
+        pushV((x + STEP) * WTS, y * WTS, h2, c2); pushV(x * WTS, (y + STEP) * WTS, h3, c3); pushV((x + STEP) * WTS, (y + STEP) * WTS, h4, c4);
+      }
+      /* 岸线裙边：每条 land→water 边建「沙滩坡 + 岩壁」两层——
+         坡顶严格在格边界（等碰撞线），向外 0.5 格落入水面、再 0.9 格沉入岩壁，消除悬浮感。 */
+      const dirs = [
+        { d: [1, 0],  a: [1, 0], b: [1, 1], out: [1, 0] },   /* 东边 */
+        { d: [-1, 0], a: [0, 0], b: [0, 1], out: [-1, 0] },  /* 西边 */
+        { d: [0, 1],  a: [0, 1], b: [1, 1], out: [0, 1] },   /* 南边 */
+        { d: [0, -1], a: [0, 0], b: [1, 0], out: [0, -1] },  /* 北边 */
+      ];
+      const H_BEACH = -0.8, H_CLIFF = -2.2;
+      for (const [x, y] of cells) {
+        for (const { d, a, b, out } of dirs) {
+          if (set.has((x + d[0]) + "," + (y + d[1]))) continue;   /* 邻居也是陆地：无岸线 */
+          const ax = (x + a[0]) * WTS, ay = (y + a[1]) * WTS;
+          const bx2 = (x + b[0]) * WTS, by2 = (y + b[1]) * WTS;
+          const o = 2.2 * WTS;   /* 向水下延伸 1.1 格左右，水线之上留出可见沙坡 */
+          /* 裙边内沿高度＝岛顶同点高度（vh 在整数格角与顶面完全一致），彻底消除接缝发丝缝 */
+          const hA = Math.max(vh(x + a[0], y + a[1]), 0.35);
+          const hB = Math.max(vh(x + b[0], y + b[1]), 0.35);
+          /* 沙滩坡 + 岩壁裙边（水下）：岛体有厚度，岸线严格在格边界 */
+          pushV(ax, ay, hA, SAND); pushV(bx2, by2, hB, SAND); pushV(ax + out[0] * o, ay + out[1] * o, H_BEACH, SAND);
+          pushV(ax + out[0] * o, ay + out[1] * o, H_BEACH, SAND); pushV(bx2, by2, hB, SAND); pushV(bx2 + out[0] * o, by2 + out[1] * o, H_BEACH, SAND);
+          const o2 = 3.0 * WTS;
+          pushV(ax + out[0] * o, ay + out[1] * o, H_BEACH, ROCK); pushV(bx2 + out[0] * o, by2 + out[1] * o, H_BEACH, ROCK); pushV(ax + out[0] * o2, ay + out[1] * o2, H_CLIFF, ROCK);
+          pushV(ax + out[0] * o2, ay + out[1] * o2, H_CLIFF, ROCK); pushV(bx2 + out[0] * o, by2 + out[1] * o, H_BEACH, ROCK); pushV(bx2 + out[0] * o2, by2 + out[1] * o2, H_CLIFF, ROCK);
+        }
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+      geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+      geo.computeVertexNormals();
+      const mat = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.95, side: THREE.DoubleSide });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.castShadow = true; mesh.receiveShadow = true;
+      group.add(mesh);
+      /* 有效半径（供水面色带用）：质心到最远陆格角 + 余量 */
+      let maxR = 0;
+      for (const [x, y] of cells) {
+        const cx = Math.max(Math.abs((x) * WTS - cxp), Math.abs((x + 1) * WTS - cxp));
+        const cy = Math.max(Math.abs((y) * WTS - cyp), Math.abs((y + 1) * WTS - cyp));
+        maxR = Math.max(maxR, Math.hypot(cx, cy));
+      }
+      const rU = maxR * SCALE + 0.25;
+      const x3 = px2x(cxp), z3 = px2z(cyp);
+      isleList.push({ x: x3, z: z3, r: rU, mesh });
+      /* 主题装饰（保持原风格） */
+      if (look.floatY) {
+        const cloud = new THREE.Mesh(
+          new THREE.SphereGeometry(Math.max(rU * 1.7, 2.6), 24, 12),
+          new THREE.MeshStandardMaterial({ color: 0xf2f5f8, roughness: 1, transparent: true, opacity: 0.88, flatShading: true })
+        );
+        cloud.scale.set(1.25, 0.32, 1.25);
+        cloud.position.set(x3, look.floatY - 1.5, z3);
+        group.add(cloud);
+        const rock = new THREE.Mesh(new THREE.ConeGeometry(rU * 0.72, 1.8, 7),
+          new THREE.MeshStandardMaterial({ color: PAL.cliffDark, flatShading: true, roughness: 1 }));
+        rock.position.set(x3, look.floatY - 0.95, z3);
+        group.add(rock);
+      }
+      if (look.spires) {
+        const spireMat = new THREE.MeshStandardMaterial({ color: 0x39434b, flatShading: true, roughness: 1 });
+        for (const [dx, dz, h, w] of [[1.1, -0.6, 2.6, 0.42], [-1.4, 0.8, 1.9, 0.34]]) {
+          const sp = new THREE.Mesh(new THREE.ConeGeometry(w, h, 5), spireMat);
+          sp.position.set(x3 + dx, h / 2 - 0.2, z3 + dz);
+          group.add(sp);
+        }
+      }
+    }
+    return group;
+  }
+  /* 兜底：旧圆形岛（worldGrid 不可用时） */
   for (const is of ISLES) {
     const look = is.scene ? (ISLE_LOOK[is.scene] || LOCKED_LOOK) : { ...LOCKED_LOOK, r: 1.3, seed: 20261112 + is.gx };
     const x3 = px2x(is.gx * 20 + 10), z3 = px2z(is.gy * 20 + 10);
@@ -151,35 +353,6 @@ function buildIslands() {
     mesh.position.set(x3, look.floatY || 0, z3);
     group.add(mesh);
     isleList.push({ x: x3, z: z3, r: look.r, mesh });
-    if (look.floatY) {
-      /* 风神岛：云海托盘（浮岛悬在云上） */
-      const cloud = new THREE.Mesh(
-        new THREE.SphereGeometry(look.r * 1.9, 24, 12),
-        new THREE.MeshStandardMaterial({ color: 0xf2f5f8, roughness: 1, transparent: true, opacity: 0.88, flatShading: true })
-      );
-      cloud.scale.set(1.25, 0.32, 1.25);
-      cloud.position.set(x3, look.floatY - 1.5, z3);
-      group.add(cloud);
-    }
-    if (look.spires) {
-      /* 海峡：斯库拉崖与漩涡的方向感——两根黑岩尖 */
-      const spireMat = new THREE.MeshStandardMaterial({ color: 0x39434b, flatShading: true, roughness: 1 });
-      for (const [dx, dz, h, w] of [[1.1, -0.6, 2.6, 0.42], [-1.4, 0.8, 1.9, 0.34]]) {
-        const sp = new THREE.Mesh(new THREE.ConeGeometry(w, h, 5), spireMat);
-        sp.position.set(x3 + dx, h / 2 - 0.2, z3 + dz);
-        group.add(sp);
-      }
-    }
-    if (look.mist) {
-      /* 待开放远岛：一圈雾感环（低透明白盘） */
-      const mist = new THREE.Mesh(
-        new THREE.RingGeometry(look.r * 1.15, look.r * 2.1, 24),
-        new THREE.MeshBasicMaterial({ color: 0xdfe8f0, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false })
-      );
-      mist.rotation.x = -Math.PI / 2;
-      mist.position.set(x3, 0.06, z3);
-      group.add(mist);
-    }
   }
   return group;
 }
@@ -188,10 +361,43 @@ function buildIslands() {
 function buildWater() {
   const geo = new THREE.PlaneGeometry(220, 170, 72, 60);
   geo.rotateX(-Math.PI / 2);
-  const isleU = isleList.map(i => new THREE.Vector3(i.x, i.z, i.r));
+  /* 岸距纹理（对齐批）：按碰撞格烘焙「到陆地格的距离」，海面近岸色/浪花沿真实海岸线（不再用圆形近似） */
+  const G0 = window.__game;
+  const grid0 = (G0 && G0.worldGrid) ? G0.worldGrid() : null;
+  let coastTex = null;
+  const coastRect = new THREE.Vector4(px2x(0), px2z(0), 92, 36);
+  const FAR = 40;
+  if (grid0) {
+    const H0 = grid0.length, W0 = grid0[0].length;
+    const WTS0 = (G0.worldTileSize ? G0.worldTileSize() : 20);
+    const cellW = WTS0 * SCALE;
+    const minX = px2x(0), minZ = px2z(0);
+    const worldW = W0 * cellW, worldH = H0 * cellW;
+    coastRect.set(minX, minZ, worldW, worldH);
+    const LAND0 = new Set(["#", "X", "G"]);
+    const landC = [];
+    for (let y = 0; y < H0; y++) for (let x = 0; x < W0; x++) if (LAND0.has(grid0[y][x])) landC.push([minX + (x + 0.5) * cellW, minZ + (y + 0.5) * cellW]);
+    const TW = W0 * 4, TH = H0 * 4;   /* 4 纹素/格：近岸色带与浪花过渡不再有格状锯齿 */
+    const data = new Uint8Array(TW * TH);
+    for (let ty = 0; ty < TH; ty++) for (let tx = 0; tx < TW; tx++) {
+      const px = minX + (tx + 0.5) * (worldW / TW);
+      const pz = minZ + (ty + 0.5) * (worldH / TH);
+      let best = FAR;
+      for (let i = 0; i < landC.length; i++) {
+        const d = Math.hypot(px - landC[i][0], pz - landC[i][1]) - cellW * 0.5;
+        if (d < best) { best = d; if (best <= 0) break; }
+      }
+      data[ty * TW + tx] = Math.max(0, Math.min(255, Math.round(Math.max(0, best) / FAR * 255)));
+    }
+    coastTex = new THREE.DataTexture(data, TW, TH, THREE.RedFormat, THREE.UnsignedByteType);
+    coastTex.wrapS = coastTex.wrapT = THREE.ClampToEdgeWrapping;
+    coastTex.magFilter = THREE.LinearFilter; coastTex.minFilter = THREE.LinearFilter;
+    coastTex.needsUpdate = true;
+  }
   waterU = {
     uTime: { value: 0 },
-    uIsle: { value: isleU },
+    uCoast: { value: coastTex },
+    uCoastRect: { value: coastRect },
     uShore: { value: new THREE.Color(PAL.oceanShore) },
     uMid: { value: new THREE.Color(PAL.oceanMid) },
     uDeep: { value: new THREE.Color(PAL.oceanDeep) },
@@ -221,7 +427,8 @@ function buildWater() {
       #include <fog_pars_fragment>
       varying vec3 vWorld;
       uniform float uTime;
-      uniform vec3 uIsle[${isleU.length}];
+      uniform sampler2D uCoast;
+      uniform vec4 uCoastRect;
       uniform vec3 uShore;
       uniform vec3 uMid;
       uniform vec3 uDeep;
@@ -235,14 +442,12 @@ function buildWater() {
                    mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), f.x), f.y);
       }
       void main() {
-        /* 到最近岛"岸线"的距离（负值=岛内水域，被岛体遮住） */
-        float dmin = 1e9;
-        for (int i = 0; i < ${isleU.length}; i++) {
-          float d = length(vWorld.xz - uIsle[i].xy) - uIsle[i].z;
-          dmin = min(dmin, d);
-        }
-        vec3 col = mix(uShore, uMid, smoothstep(0.0, 5.0, dmin));
-        col = mix(col, uDeep, smoothstep(5.0, 22.0, dmin));
+        /* 到最近陆地的距离（烘焙自碰撞格，单位：世界单位） */
+        vec2 cuvRaw = vec2((vWorld.x - uCoastRect.x) / uCoastRect.z, (vWorld.z - uCoastRect.y) / uCoastRect.w);
+        float inside = step(0.0, cuvRaw.x) * step(cuvRaw.x, 1.0) * step(0.0, cuvRaw.y) * step(cuvRaw.y, 1.0);
+        float dmin = mix(${FAR.toFixed(1)}, texture2D(uCoast, clamp(cuvRaw, 0.0, 1.0)).r * ${FAR.toFixed(1)}, inside);   /* 海图外一律深水 */
+        vec3 col = mix(uShore, uMid, smoothstep(0.0, 6.5, dmin));
+        col = mix(col, uDeep, smoothstep(6.5, 26.0, dmin));
         /* 大尺度海色起伏 + 近岸透亮浅色层（地中海的“看得到沙底”感） */
         col = mix(col, uMid, 0.09 * vnoise(vWorld.xz * 0.045 + vec2(3.1, 7.7)));
         col = mix(col, vec3(0.55, 0.85, 0.88), (1.0 - smoothstep(0.0, 2.6, dmin)) * 0.22);
