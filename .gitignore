@@ -17,3 +17,6 @@ __pycache__/
 
 # 审查截图归档（3d/HANDOFF.md §2.5 约定不进版本库）
 odyssey-witch/3d/tools/shots/
+
+# wrangler 本地状态（部署缓存/页面项目元数据）
+odyssey-witch/.wrangler/

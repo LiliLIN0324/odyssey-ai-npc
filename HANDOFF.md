@@ -665,7 +665,17 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 - **⑥美观三件**：①`--font-myth` 史诗楷体栈（STKaiti/KaiTi/Kaiti SC/楷体→Georgia 回退），用于标题 h1/章节卡 ccTitle/歌词卡/对话名 dlgName；②标题屏动态（背景 108% Ken Burns 30s 平移 + 6 点海面光尘浮动 + 启航按钮呼吸光效，全部 `prefers-reduced-motion` 关闭）；③夜海流星（nightAmount>0.5 才刷，帧率无关拖尾，画在 HUD 之下；首次一句风味 toast，`state.meteorSeen` 存档一次性）。
 - **验收（8788 mock + Playwright，控制台 0 error）**：漂流瓶打捞 drifts 1→0+记忆入账 ✓ / 木箱 德拉克马+7 ✓ / 提示条「E · 打捞 漂流瓶」✓ / 近漂流物时 E 打捞不抛竿（优先级）✓ / 抛竿→三次绿区命中→FISH off+鱼+1 ✓ / 故意空竿 miss 计数 ✓ / 钓鱼 HUD、2D 漂流物、流星绘制零异常 ✓ / 夜海流星实拍（右上拖尾，目检）✓ / W3D ready 且漂流物 3D 可见（船+瓶+箱目检）✓ / parse 并发两次→mock 上游仅 1 发、第三次 0ms 缓存命中 ✓ / 字体与动效 computed style 全命中（tsPan 30s、tsMotes、tsPulse、楷体栈）✓。node --check 绿（内联 411795 chars + world3d.js），wrangler functions build 成功。
 - **坑（新）**：①Pages Functions esbuild 禁跨目录 import——部署件必须目录内副本+同步脚本，`functions build` 是最快的探针；②pressE 优先级=钓鱼 strike > 打捞 > 抛竿 > 岛屿交互；③本仓 HUD 全是 plain fillRect，新 HUD 别引 roundRect（老环境兼容）；④Playwright 截图输出根只允许 playwright-mcp 与 C:\zhuantang_art，相对文件名会落到不可预期处，用绝对路径。
-- **待用户**：`npx wrangler login` → `pages secret put TELEAI_API_KEY --project-name odyssey-1c9` → `pages deploy`（先预览项目验证，会替换线上既有 functions）；上线后若 403 仍频，转天翼工单或走自部署 vLLM（PRODUCT §9）。
+- **部署（已由本机完成，2026-11-10，详见 §17y）**：项目真名是 `odyssey`（`odyssey-1c9` 是子域），在 Lily 账号下（`CLOUDFLARE_ACCOUNT_ID=f0273e54d22c215389dd6065a802ddae`）；`TELEAI_API_KEY` 已在 production；部署成功且线上 schema/parse/chat 实测 200。
+
+### 17y. 部署上线 + 403 重试 v2 + 全场景回归 + 3D P4 角色控制（11-10 续；用户授权「没做完的都定个目标全部做完」）
+
+- **合入 main**：PR #1（无 CI/无保护）merge commit 合入 `main @ 0a570f1`，8 个提交哈希完整保留（§17v/§17w/§17x 的提交引用不失效），远端特性分支已删。
+- **部署（首次由本机完成，2026-11-10）**：`wrangler login` OAuth（endtree@proton.me；首次超时需重发并在 2 分钟内点「允许」）。**项目真名是 `odyssey`（`odyssey-1c9` 是子域名），且在 Lily 账号下**——多账号必须指定 `CLOUDFLARE_ACCOUNT_ID=f0273e54d22c215389dd6065a802ddae`；`TELEAI_API_KEY` 已在 production 环境（部署继承，勿重复设置）。部署命令 `npx wrangler pages deploy . --project-name odyssey`。DEPLOY-403-FIX.md 已按实测修正（项目名/账号/验证结果）。
+- **线上验收**：`/api/schema` 200、`/api/parse` 200、`/api/chat` 200；首页 200 且含新代码（漂流物打捞/tsPan 均可检出）。
+- **403 重试 v2（压测驱动）**：chat 三次尝试实测 8 连发 3 败——403 成簇出现（窗口约 10s+），短退避逃不出去。服务端升级：parse 4 次尝试（400/1000/2200ms）、chat 5 次（500/1300/2800/5000ms），每档 ±35% 抖动；客户端 `postJSON` 双层退避（600/2500ms）。复测：12 连发 11 成功、8 连发 8 成功（合计 19/20≈95%，原 5/8）；残余 403 由游戏内按 NPC 定制的兜底台词接住（不阻塞对话）。17.5s 级慢成功=多次重试逃出限流窗口，属预期代价。
+- **G2 全场景回归**：13 场景（world/aia/hades/aeolia/strait/sun/ogggia/scheria/ithaca/ismaros/lotus/cyclops/telepylos）逐屏 400ms 采样——2D 画布像素全非空、window error/unhandledrejection 计数 0。
+- **G3 3D 线 P4 角色控制（新 `3d/app/src/character.js`）**：无骨骼占位角色（低多边形船长：短衣/披风/长枪；色板新增 heroTunic/heroSkin/heroHair 遵守「色板唯一来源」）+ 第三人称跟随相机（拖拽旋转/滚轮缩放/帧率无关缓动）+ WASD/方向键（相机相对）+ Shift 奔跑 + 手柄（左摇杆移动/右摇杆转相机/RT 奔跑）+ 地形贴地（islandHeight）+ 岛半径 92% 无条件封顶（防下海）。main.js 移除 OrbitControls 改由控制器接管。验收：手动步进 90 帧位移 8.25m=速度×时间精确；越界传送被钳回 55.2；手柄 1s 奔跑 8.83m + 相机 −1.32rad；`npm run build` 通过；截图目检（人物踏草/第三人称/无破面）。3d/HANDOFF §0 P4 已勾 ✅（绑定骨骼仍为 P4.5，依赖 P2 资产）。
+- **仍阻塞（如实记账，不伪造完成）**：①P2 资产生产（需用户侧出图 → Tripo 提交，见 PIPELINE §2）；②评测线（schema 瘦身/补用例后复测需 key.txt 与额度，本机无 key）；③P3/P5-P7 依赖 P2；④上游 403 策略未变——本批是「可部署的缓解+观测」，消灭需天翼出口 IP 策略或自部署 vLLM。
 
 ---
 

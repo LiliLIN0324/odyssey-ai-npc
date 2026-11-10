@@ -26,29 +26,36 @@ node ../tools/sync_schema.mjs          # 部署前必跑；--check 为漂移自�
 # 1. 登录 Cloudflare（浏览器 OAuth 一次）
 npx wrangler login
 
-# 2. 配置密钥（幂等，已设置过会覆盖）
-npx wrangler pages secret put TELEAI_API_KEY --project-name odyssey-1c9
-#   粘贴天翼 key（sk- 开头），回车
+# 2. 多账号时指定账号（本机双账号：odyssey 项目在 Lily 账号下）
+$env:CLOUDFLARE_ACCOUNT_ID='f0273e54d22c215389dd6065a802ddae'   # PowerShell
+# export CLOUDFLARE_ACCOUNT_ID=f0273e54d22c215389dd6065a802ddae  # bash/zsh
 
-# 3. 部署（静态资源 + functions/ 一起上；会替换线上既有 functions——
-#    若线上函数是别的会话手工部署且行为有差异，先在预览项目验证）
-npx wrangler pages deploy . --project-name odyssey-1c9
+# 3. 密钥已在线上（首次才需要）：
+# npx wrangler pages secret put TELEAI_API_KEY --project-name odyssey
+
+# 4. 部署（项目名是 odyssey，不是 odyssey-1c9——后者是子域名）
+npx wrangler pages deploy . --project-name odyssey
 ```
 
-## 验证
+## 验证（2026-11-10 已由本机实际部署并验证）
 
 ```bash
-# 各来一发（应稳定 200；连续快打 10 次观察是否仍 403）
-curl -X POST https://odyssey-1c9.pages.dev/api/chat \
-  -H "Content-Type: application/json" \
-  -d '{"messages":[{"role":"user","content":"你好"}]}'
+# 2026-11-10 实测：schema 200 / parse 200 / chat 200（偶发 403 已被服务端重试吸收）
 curl https://odyssey-1c9.pages.dev/api/schema | head -c 80
+curl -X POST https://odyssey-1c9.pages.dev/api/chat -H "Content-Type: application/json" \
+  -d '{"messages":[{"role":"user","content":"你好"}]}'
 ```
+
+## 重试策略（v2，2026-11-10 压测后升级）
+
+- parse：4 次尝试，退避 400/1000/2200ms（±35% 抖动）
+- chat：5 次尝试，退避 500/1300/2800/5000ms（±35% 抖动）
+- 实测 8 连发 chat 在 3 次尝试下 3 败（403 成簇出现，短退避逃不出去）→ 升级后复测见 HANDOFF §17x。
 
 ## 注意
 
 - 部署会把 `odyssey-witch/` 目录作为静态站点根（index.html + concept-art/ + world3d.js +
-  vendor/），`functions/api/*` 编译为 /api/*。与现行线上结构一致。
+  vendor/），`functions/api/*` 编译为 /api/*。与现行线上结构一致（2026-11-10 已实际部署验证）。
 - 若上游 403 在函数侧重试后仍高频出现，下一步是给天翼提交工单确认出口 IP 策略，
   或改用自部署 vLLM（PRODUCT §9 的公测阶梯方案）。
 
