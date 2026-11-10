@@ -8106,7 +8106,10 @@ function localFallbackParse(text){
 
 async function apiParse(userText){
   window.lastPlayerText = userText;   /* 名字考试等本地提取用（序章组） */
-  const lines=history[currentNPC].slice(-6).filter(h=>!h.fb).map(h=>(h.role==="user"?"Human: ":"AI: ")+h.content);
+  const hist = history[currentNPC].slice(-6).filter(h=>!h.fb);
+  /* send() 已把本次输入入栈——避免与下方显式拼接重复（实测原实现当前消息出现两次，浪费 token 且易扰动判读） */
+  if (hist.length && hist[hist.length-1].role==="user" && hist[hist.length-1].content===userText) hist.pop();
+  const lines=hist.map(h=>(h.role==="user"?"Human: ":"AI: ")+h.content);
   lines.push("Human: "+userText);
   const prompt=TASK_INSTRUCTION.replace("{schema}",JSON.stringify(SCHEMA)).replace("{user_input}",lines.join("\n"));
   const d=await postJSON("/api/parse",{prompt});
