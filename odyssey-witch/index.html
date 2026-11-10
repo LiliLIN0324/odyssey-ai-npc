@@ -9243,6 +9243,8 @@ window.__game={state, scene, boat, player:aiaPlayer, witch, seer, aeolus, boar, 
   boatTrail:()=>boatTrail, drawEscortFleet,
   /* 钓鱼 + 漂流物打捞（Steam 化玩法批） */
   FISH:()=>FISH, startFishing, fishingStrike, drifts:()=>drifts, driftNear, salvageDrift,
+  /* 世界网格（3D 岛体按碰撞格生成用：视觉海岸线与碰撞严格对齐） */
+  worldGrid:()=>WORLD, worldCols:()=>WCOLS, worldRows:()=>WROWS, worldTileSize:()=>WTS,
   fishInfo:function(){ return {on:FISH.on, hits:FISH.hits, miss:FISH.miss, tLeft:+FISH.tLeft.toFixed(1), cd:Math.max(0, FISH.cdUntil-performance.now()), drifts:drifts.length}; },
   ambInfo:function(){ return {active:ambActive, text:ambText, npc:typeof currentNPC!=="undefined"?currentNPC:null}; },
   /* F3 伊斯玛洛斯守营战 + F4 独眼巨人羊腹潜行（17h 序章战斗批） */
@@ -9251,6 +9253,6 @@ window.__game={state, scene, boat, player:aiaPlayer, witch, seer, aeolus, boar, 
   campInfo:function(){ return {on:CAMP.on, wave:CAMP.wave, hit:CAMP.hit, held:!!state.campHeld}; },
   ramInfo:function(){ return {on:HIDE.on, n:HIDE.n, caught:HIDE.caught, done:!!state.ramHide, paidMem:(state.paidMem||[]).length}; }};
 </script>
-<script type="module" src="./world3d.js?v=16"></script>
+<script type="module" src="./world3d.js?v=19"></script>
 </body>
 </html>
