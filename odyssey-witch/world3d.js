@@ -76,6 +76,7 @@ const LOCKED_LOOK = { r: 1.3, grass: 0x93a3ad, grassDeep: 0x6d7d88, seed: 202611
 
 let renderer, scene3, camera3, waterU, boatG, sailMesh, isleList = [];
 let escortG = null, escortBoats = [], escPrev = null, escHead = { x: 0, z: -1 };
+let fitFn = null;   /* init 内 fit 的稳定引用（setDPR 重算尺寸用） */
 let driftG = null, driftSlots = [];   /* 漂流物（Steam 化玩法批）：预建 4 槽，随 __game.drifts 同步 */
 let worldGroup = null, waterMesh = null, skyGroup = null, cloudGroup = null, troyGroup = null;
 let yawCur = 0; let ready = false; let failed = false; let lastEt = -1;
@@ -466,9 +467,12 @@ function buildTroy() {
 /* ---------- 初始化 ---------- */
 function init() {
   try {
-    renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });   /* preserveDrawingBuffer：航迹分享卡需从事件回调读帧（否则 WebGL 背板已清空，截图空白） */
+    /* 性能：去掉 preserveDrawingBuffer（每帧强制拷贝，弱 GPU 掉帧元凶之一）；
+       分享卡改用 W3D.grabFrame()（现渲现读，同帧内 toDataURL 不需保留缓冲）。
+       DPR 上限从 1.75 降到 1.25：填充率降 50%+，画面差异在这个美术风格下几乎不可见。 */
+    renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: false });
     renderer.setSize(1000, 600);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
   } catch (e) { failed = true; return; }
 
   scene3 = new THREE.Scene();
@@ -516,6 +520,7 @@ function init() {
     camera3.aspect = w / h;
     camera3.updateProjectionMatrix();
   }
+  fitFn = fit;
   fit();
   window.addEventListener("resize", fit);
 
@@ -523,8 +528,12 @@ function init() {
 }
 
 /* ---------- 每帧 ---------- */
+let lastFrameT = -1;
 function frame(et) {
   if (!ready) return;
+  /* 帧率无关的 dt（与主循环同源，防止高刷屏下转向过快/低帧下拖尾） */
+  const fdt = lastFrameT < 0 ? 0.016 : Math.min(Math.max(et - lastFrameT, 0.001), 0.12);
+  lastFrameT = et;
   /* 经典脚本顶层 let/const 模块读不到（实测 ReferenceError），统一走主脚本挂载的 __game 接口 */
   const G = window.__game;
   const sc = (G && G.getScene) ? G.getScene() : "world";
@@ -540,7 +549,7 @@ function frame(et) {
   let dy = yawT - yawCur;
   while (dy > Math.PI) dy -= Math.PI * 2;
   while (dy < -Math.PI) dy += Math.PI * 2;
-  yawCur += dy * 0.12;
+  yawCur += dy * Math.min(1, fdt * 8);   /* 帧率无关转向（原来 0.12/帧，60fps 时约合 0.12，弱机低帧下不再拖） */
   boatG.rotation.y = yawCur;
   boatG.rotation.z = Math.sin(et * 1.7) * 0.03;
   waterU.uTime.value = et;
@@ -613,7 +622,19 @@ function frameTroy(et) {
 init();
 
 window.W3D = { get ready() { return ready; }, get failed() { return failed; }, frame,
-  canvas: renderer.domElement,   /* 航迹分享卡读帧用（preserveDrawingBuffer 已开） */
+  canvas: renderer.domElement,   /* 航迹分享卡读帧用；读帧请优先用 grabFrame() */
+  /** 现渲现读一帧（preserveDrawingBuffer 已关，必须同帧内 render→toDataURL） */
+  grabFrame: () => {
+    if (!ready || !renderer) return null;
+    try { renderer.render(scene3, camera3); return renderer.domElement.toDataURL("image/png"); }
+    catch (e) { return null; }
+  },
+  /** 动态调渲染分辨率倍率（自适应画质用：1.25 → 1 → 0.85） */
+  setDPR: (r) => {
+    if (!ready || !renderer) return;
+    renderer.setPixelRatio(Math.max(0.75, Math.min(2, +r || 1)));
+    if (fitFn) fitFn();
+  },
   debug: () => ({ boat: boatG ? boatG.position.toArray().map(v => Math.round(v * 10) / 10) : null,
                   cam: camera3 ? camera3.position.toArray().map(v => Math.round(v * 10) / 10) : null,
                   isles: isleList.length, calls: renderer.info.render.calls, tris: renderer.info.render.triangles }) };
