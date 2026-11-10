@@ -1982,6 +1982,11 @@ function gainXp(n){
     popText(aiaPlayer.x, aiaPlayer.y-30, `升级！Lv.${state.level}`, "#ffd66b", true);
     feedback("large"); sfx("level");
     toast(`⬆ 历练足够，等级 ${state.level}！血上限 +10、攻击 +1，伤势痊愈。`);
+    /* 新手保护期收束（Steam 化引导）：Lv2 起海不再护着你——饥饿/干渴开始真正伤人 */
+    if (state.level>=2 && state.survivalGrace!==false){
+      state.survivalGrace=false;
+      setTimeout(()=>toast("你的名声开始在海上传开——新手的海不再护着你：往后饿与渴都会真的伤身。备好干粮和淡水再出达。"), 1600);
+    }
   }
   renderHUD();
 }
@@ -2426,14 +2431,21 @@ function drawDaylight(et){
   }
 }
 
-/* ==================== 生存需求（survival-crafting Pattern 1：衰减+分级后果，不秒杀） ==================== */
-const NEED_RATE = {hunger: 0.20, thirst: 0.27};   /* 每秒衰减：满值约 8/6 分钟 */
+/* ==================== 生存需求（survival-crafting Pattern 1：衰减+分级后果，不秒杀） ====================
+   Steam 化节奏调优（对标 KCD2 的生存平衡哲学：生存是气氛不是罚站）：
+   - 基础衰减 0.20/0.27 → 0.13/0.17（满值约 13/10 分钟，原为 8/6 分钟）；
+   - Lv1 新手保护期再减半且不掉血（引导期专注体验 AI NPC 与世界，不被生存压垮）；
+   - 全屏界面（海图）打开时暂停衰减与时钟（主循环门控）。 */
+const NEED_RATE = {hunger: 0.13, thirst: 0.17};   /* 每秒衰减：满值约 13/10 分钟 */
+function survivalGraceOn(){ return state.survivalGrace!==false && state.level<2; }
 let needHurtT = 0, lastNeedToast = 0;
 function tickNeeds(dt){
-  state.hunger = Math.max(0, state.hunger - NEED_RATE.hunger*dt);
-  state.thirst = Math.max(0, state.thirst - NEED_RATE.thirst*dt);
+  const grace = survivalGraceOn();
+  const k = grace ? 0.5 : 1;
+  state.hunger = Math.max(0, state.hunger - NEED_RATE.hunger*k*dt);
+  state.thirst = Math.max(0, state.thirst - NEED_RATE.thirst*k*dt);
   const starving = state.hunger<=20, parched = state.thirst<=15;
-  if (starving || parched){
+  if ((starving || parched) && !grace){
     needHurtT += dt;
     if (needHurtT >= 4){
       needHurtT = 0;
@@ -2442,11 +2454,19 @@ function tickNeeds(dt){
       if (state.hp<=0){ faintPlayer("饥渴交加"); return; }
       renderHUD();
     }
-    if (performance.now()-lastNeedToast > 15000){
+    if (performance.now()-lastNeedToast > 20000){
       lastNeedToast = performance.now(); sfx("warn");
       toast(starving&&parched ? "又饿又渴……再这样下去要出人命。找点吃的，喝口水。"
         : starving ? "肚子在叫……找点吃的（面包、烤肉都行）。"
         : "喉咙冒烟……该喝水了（背包里的淡水，或去泉眼灌）。");
+    }
+  } else if (starving || parched){
+    /* 保护期：只温和提醒，不扣血（20s 提醒间隔更长，不打断对话心流） */
+    if (performance.now()-lastNeedToast > 25000){
+      lastNeedToast = performance.now();
+      toast(starving&&parched ? "又饿又渴——路还长，找点吃的、灌口水再走。"
+        : starving ? "肚子空了——面包、烤肉都行，别硬撑。"
+        : "喉咙发干——背包里的淡水，或岛上的泉眼。");
     }
   } else needHurtT = 0;
   /* 需求影响状态文案（供「查询自身状态」） */
@@ -2454,18 +2474,31 @@ function tickNeeds(dt){
   state.status["口渴"] = state.thirst>70?"精神":state.thirst>40?"正常":state.thirst>15?"发干":"干渴难忍";
 }
 function faintPlayer(reason){
-  state.hp = 50; state.coins = Math.max(0, state.coins-5);
-  state.hunger = Math.max(state.hunger, 45); state.thirst = Math.max(state.thirst, 45);
+  /* Steam 化修复：晕倒按场景分流——非埃亚岛不再“躺女巫草垛”穿帮、不再跨场景错位传送
+     （原实现把 aiaPlayer 拉到 witch 坐标，在食莲岛/序章岛等场景里坐标无意义且文案穿帮）。
+     恢复量也调觉：非女巫场景不扣钱（没人收你医药费），恢复到 60。 */
+  state.hunger = Math.max(state.hunger, 55); state.thirst = Math.max(state.thirst, 55);
   state.status["伤势"] = "轻伤";
-  if (scene === "sun"){
-    /* 太阳岛没有女巫——晕倒在自己的船边（场景感知恢复点，不跨岛传送） */
-    aiaPlayer.x = 3*ATS+ATS/2; aiaPlayer.y = 10*ATS+ATS/2;
-    addMemory(`旅人${reason}晕倒在太阳岛上，被浪拍醒在自己的船边`, 2);
-    toast(`眼前一黑……醒来时你趴在自己的船底，满嘴海水味。命还在，医药钱省了——饿可没省。（血量恢复至 50，还剩 ${state.coins} 枚）`);
-  } else {
+  if (scene==="aia"){
+    state.hp = 50; state.coins = Math.max(0, state.coins-5);
     aiaPlayer.x = witch.x; aiaPlayer.y = witch.y + 60;
     addMemory(`旅人${reason}晕了过去，被她拖回屋外草垛`, 2);
     toast(`眼前一黑……醒来时你躺在女巫屋外的草垛上，她把药渣在你鼻子上抹了一把：医药费，五枚德拉克马。（血量恢复至 50，还剩 ${state.coins} 枚）`);
+  } else if (scene==="world"){
+    state.hp = 60;
+    addMemory(`旅人${reason}晕了过去，被一阵浪拍醒`, 2);
+    toast("眼前一黑……醒来时你趴在自己的船板上，满嘴海水味。海把你推回船里——这次不算死，算教训。（血量恢复至 60）");
+  } else if (scene==="sun"){
+    /* 太阳岛没有女巫——晕倒在自己的船边（场景感知恢复点，不跨岛传送） */
+    state.hp = 60;
+    aiaPlayer.x = 3*ATS+ATS/2; aiaPlayer.y = 10*ATS+ATS/2;
+    addMemory(`旅人${reason}晕倒在太阳岛上，被浪拍醒在自己的船边`, 2);
+    toast(`眼前一黑……醒来时你趴在自己的船底，满嘴海水味。命还在，医药钱省了——饿可没省。（血量恢复至 60）`);
+  } else {
+    /* 其他岛：原地醒来，不传送不改钱——修序章岛也躺“女巫草垛”的穿帮 */
+    state.hp = 60;
+    addMemory(`旅人${reason}晕了过去，又自己醒了过来`, 2);
+    toast("眼前一黑……醒来时你还在原地，天色变了，人还活着。得吃点东西、找口水了。（血量恢复至 60）");
   }
   renderHUD(); save();
 }
@@ -4629,6 +4662,8 @@ function crewSlept(){
     t.classList.add("hide");
     setTimeout(()=>t.remove(), 850);
     renderHUD();   /* 航向条在进图那一刻就点亮（闭环引导） */
+    /* Steam 化引导（Hades 式前 30 秒）：首次开船给一句方向与操作点拨——跟着航向箭头走 */
+    if (!hasSave) setTimeout(()=>toast("跟着顶部「⛵ 航向」的箭头走。WASD/方向键开船 · E 靠岸互动 · M 海图 · Esc 关窗"), 900);
   };
   /* 预加载会用到的概念图，避免登陆/开海图瞬间白屏 */
   ["concept-art/01-序章漂流.jpg","concept-art/02-女巫小屋.jpg","concept-art/07-冥界之岸.jpg","concept-art/03-斯库拉海峡.jpg","concept-art/04-塞壬之歌.jpg","concept-art/05-太阳岛.jpg","concept-art/06-奥吉吉亚-卡吕普索.jpg","concept-art/08-斯克里岛.jpg","concept-art/09-伊萨卡.jpg","concept-art/characters/02-喀耳刻.jpg","concept-art/characters/07-塞壬.jpg","concept-art/characters/08-斯库拉.jpg","concept-art/characters/09-埃俄罗斯.jpg","concept-art/characters/10-圣牛.jpg","concept-art/characters/05-卡吕普索.jpg","concept-art/characters/06-瑙西亚娅.jpg","concept-art/maps/01-世界海图.jpg","concept-art/maps/04-风神岛图.jpg"]
@@ -8182,7 +8217,8 @@ setInterval(()=>{
   lastLogic = now;
   timeScale = now < hitStopUntil ? 0.06 : 1;
   const ldt = dt*timeScale;
-  if (!dlgOpen && !titleOn && !chapterOn){
+  /* Steam 化：海图是全屏界面——打开时暂停需求与时钟（原实现只暂停移动，看图也会饿晕） */
+  if (!dlgOpen && !titleOn && !chapterOn && !mapOpen){
     tickMove(ldt);
     if (scene==="aia"){ tickBoar(ldt); witchUtilityTick(ldt); }
     tickNeeds(ldt);
