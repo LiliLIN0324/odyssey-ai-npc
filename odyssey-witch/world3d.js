@@ -210,9 +210,10 @@ function buildIslands() {
       }
       const cxp = sx / cells.length, cyp = sy / cells.length;
       const nk = nearestLook(cxp, cyp);
-      /* 主题色只在「该岛确实属于这个陆块」时启用：否则小岛的焦土/黄金色会把整片大陆染成褐色 */
-      const owned = !!(nk.is && nk.is.scene && set.has(nk.is.gx + "," + nk.is.gy));
-      const look = owned ? nk.look : MAINLAND_LOOK;
+      /* 主题色只在「该岛确实属于这个陆块且确有主题定义」时启用：
+         否则未知场景（ismaros/cyclops）会套 LOCKED_LOOK 的灰蓝，小岛的焦土/黄金色会把整片大陆染褐 */
+      const owned = !!(nk.is && nk.is.scene && ISLE_LOOK[nk.is.scene] && set.has(nk.is.gx + "," + nk.is.gy));
+      const look = owned ? ISLE_LOOK[nk.is.scene] : MAINLAND_LOOK;
       const mh = (look.mh || 1);
       /* 体积按陆块面积给上限（大洲隆起、小岛也立得住），高度按离岸距离平滑抬升：
          旧版按格线性叠加会出现「每格跳 1.3 单位」的台阶，改为指数饱和曲线，坡面连续。 */
@@ -285,6 +286,14 @@ function buildIslands() {
         { d: [0, -1], a: [0, 0], b: [1, 0], out: [0, -1] },  /* 北边 */
       ];
       const H_BEACH = -0.8, H_CLIFF = -2.2;
+      /* 绕序守卫：三角形法线必须朝上（+y）。旧版四边一套绕序，西/南两边实际朝下朝内，
+         flatShading 下变成暗面——视觉上就是「陆地悬在水上、没有岸线、还有裂缝」。 */
+      const quadUp = (A, B, C, D, flip) => {
+        if (flip) { pushV(A[0], A[1], A[2], A[3]); pushV(C[0], C[1], C[2], C[3]); pushV(B[0], B[1], B[2], B[3]);
+                    pushV(B[0], B[1], B[2], B[3]); pushV(C[0], C[1], C[2], C[3]); pushV(D[0], D[1], D[2], D[3]); }
+        else      { pushV(A[0], A[1], A[2], A[3]); pushV(B[0], B[1], B[2], B[3]); pushV(C[0], C[1], C[2], C[3]);
+                    pushV(C[0], C[1], C[2], C[3]); pushV(B[0], B[1], B[2], B[3]); pushV(D[0], D[1], D[2], D[3]); }
+      };
       for (const [x, y] of cells) {
         for (const { d, a, b, out } of dirs) {
           if (set.has((x + d[0]) + "," + (y + d[1]))) continue;   /* 邻居也是陆地：无岸线 */
@@ -294,12 +303,12 @@ function buildIslands() {
           /* 裙边内沿高度＝岛顶同点高度（vh 在整数格角与顶面完全一致），彻底消除接缝发丝缝 */
           const hA = Math.max(vh(x + a[0], y + a[1]), 0.35);
           const hB = Math.max(vh(x + b[0], y + b[1]), 0.35);
+          /* (b-a)×out 的 y 分量决定绕序：为负则这套顶点顺序会朝下，需要翻转 */
+          const flip = ((b[1] - a[1]) * out[0] - (b[0] - a[0]) * out[1]) < 0;
+          const oxo = out[0] * o, oyo = out[1] * o, ox2 = out[0] * 3.0 * WTS, oy2 = out[1] * 3.0 * WTS;
           /* 沙滩坡 + 岩壁裙边（水下）：岛体有厚度，岸线严格在格边界 */
-          pushV(ax, ay, hA, SAND); pushV(bx2, by2, hB, SAND); pushV(ax + out[0] * o, ay + out[1] * o, H_BEACH, SAND);
-          pushV(ax + out[0] * o, ay + out[1] * o, H_BEACH, SAND); pushV(bx2, by2, hB, SAND); pushV(bx2 + out[0] * o, by2 + out[1] * o, H_BEACH, SAND);
-          const o2 = 3.0 * WTS;
-          pushV(ax + out[0] * o, ay + out[1] * o, H_BEACH, ROCK); pushV(bx2 + out[0] * o, by2 + out[1] * o, H_BEACH, ROCK); pushV(ax + out[0] * o2, ay + out[1] * o2, H_CLIFF, ROCK);
-          pushV(ax + out[0] * o2, ay + out[1] * o2, H_CLIFF, ROCK); pushV(bx2 + out[0] * o, by2 + out[1] * o, H_BEACH, ROCK); pushV(bx2 + out[0] * o2, by2 + out[1] * o2, H_CLIFF, ROCK);
+          quadUp([ax, ay, hA, SAND], [bx2, by2, hB, SAND], [ax + oxo, ay + oyo, H_BEACH, SAND], [bx2 + oxo, by2 + oyo, H_BEACH, SAND], flip);
+          quadUp([ax + oxo, ay + oyo, H_BEACH, ROCK], [bx2 + oxo, by2 + oyo, H_BEACH, ROCK], [ax + ox2, ay + oy2, H_CLIFF, ROCK], [bx2 + ox2, by2 + oy2, H_CLIFF, ROCK], flip);
         }
       }
       const geo = new THREE.BufferGeometry();
