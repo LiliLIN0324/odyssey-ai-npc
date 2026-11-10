@@ -654,6 +654,19 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 - **验收（8788 mock + Playwright，全程 0 意外 error）**：标题存档卡无存档隐藏/有存档数据逐项正确 ✓ / 音频面板滑条生效+localStorage 写入+静音持久化（重载后 🔇 与音量档恢复）✓ / 分享卡：强制下载路径 click=true、blob≈485KB、文件名「odyssey-航迹.png」，blob 预览截图目检（金色标题/航向行/进度行/日期行四行齐全，W3D 夜航海面入图，排版合格）✓ / 手柄：合成 gamepadconnected（手工挂 gamepad 的 Event——GamepadEvent 构造器拒收假对象）→连接 toast、摇杆 -0.9→keys=["a"]、回中→清空 ✓ / pressE 直调触发设计的 P1.2 蜜酒剧情（新档初见女巫走 meadEvent 而非直开对话——非 bug）✓ / 触摸：桌面 touchUI 隐藏 ✓；matchMedia 覆写强制 coarse 后 touchInit 挂监听、摇杆左拖 keys=["a"] 且角色真实位移、抬手清键摇钮回位 ✓；触摸 E 开对话 ✓。node --check 全绿（内联 400336 chars + world3d.js）。
 - **坑（新）**：①headless Chrome 的 navigator.share(files) promise 永不落定且 canShare 返回 true——分享导出必须带「被拒/超时回落下载」链，自动化验证用 defineProperty(navigator,'canShare',{value:()=>false}) 强制走下载分支；②GamepadEvent 构造器要求真 Gamepad 对象，模拟手柄用 `new Event('gamepadconnected')` 手工挂 gamepad 属性 + 替身 navigator.getGamepads；③桌面端测触摸控件需覆写 matchMedia 再调 touchInit（init 时 coarse=false 已早退，监听器未挂，强转 display 无效）。
 
+### 17x. 第三批：403 根治件（解析缓存+函数重试）+ 海上钓鱼/漂流物 + 楷体/流星/标题动效（11-10 续；`feat/steam-ux-pass` 第六批）
+
+- **403 诊断定论**：线上 403 响应体 `{"error":"HTTP 403｜Forbidden"}` 与 server.py 错误透传格式一致 → **403 来自上游天翼 MaaS 对 Cloudflare 数据中心出口 IP 的间歇限制，与账号权限无关**（本机家宽同 key 稳定 200）。本机无部署源（odyssey-1c9 由远端会话部署）、无 key.txt；wrangler 未登录（login 需用户浏览器 OAuth，无法代办）。§17v 线上遗留①在本批已交出可部署根治件，待用户执行部署。
+- **①客户端 403 缓解（index.html）**：解析结果本地缓存 `odyssey-parse-cache-v1`（指纹=指令长度+SCHEMA 规模+历史行，意图解析温度 0 输出确定故可缓存，LRU 240）+ `parseInflight` 并发单飞。**意义：重复意图（买/查/导航）零请求零延迟，直接收窄撞 403 的面**。
+- **②函数端重试（新建 odyssey-witch/functions/api/{parse,chat,schema}.js）**：服务端退避重试两次（仅 403/429/5xx，500/1200ms），玩家无感；key 只走环境变量 `TELEAI_API_KEY`；超时 30s/45s；schema 边缘缓存 10 分钟。部署三步见 `odyssey-witch/DEPLOY-403-FIX.md`。
+- **③schema 部署件（新脚本 tools/sync_schema.mjs）**：Pages Functions 的 esbuild **不允许 import 出 functions 目录**（`wrangler pages functions build` 实测报 Could not resolve）——根 schema.json 仍是唯一源，脚本同步到 `functions/api/schema.json`，`--check` 做漂移自检；修正后本地打包通过（Compiled Worker successfully）。DEPLOY 文档已加第 0 步。
+- **④海上钓鱼（Dave the Diver 式，纯本地零模型）**：FISH 状态机（鱼影轨道游动+绿区往复，三中得鱼/三失脱钩/25s 超时，每中一枪提速），开阔海按 E 抛竿（不占岛屿交互位），E/手柄 A/触摸 E 全走 pressE 同一入口；**钓鱼中 tickMove 早退锚船**；冷却 70s。奖励发**「鱼」**并入既有食物链（进食 h:30、火盆烤成烤鱼）——原稿发「海鱼」是孤儿物品（进食表/烤鱼链只认「鱼」），已修。
+- **⑤漂流物打捞**：`drifts` 全场最多 4 个、捞后 150~210s 慢补、生成避开岛屿与船身；瓶=旅人纸条（8 条文案进记忆流+历练 4）/箱=钱/草药/淡水/面包四选一；2D 画布自绘浮沉+近船脉冲圈，**W3D 模式转 world3d.js 3D 网格**（driftSlots 4 槽、瓶/箱双形态切换、经 `__game.drifts` 同步，特洛伊视图自动隐藏/恢复）；提示条「E · 打捞 漂流瓶/木箱」；**打捞优先于抛竿**。
+- **⑥美观三件**：①`--font-myth` 史诗楷体栈（STKaiti/KaiTi/Kaiti SC/楷体→Georgia 回退），用于标题 h1/章节卡 ccTitle/歌词卡/对话名 dlgName；②标题屏动态（背景 108% Ken Burns 30s 平移 + 6 点海面光尘浮动 + 启航按钮呼吸光效，全部 `prefers-reduced-motion` 关闭）；③夜海流星（nightAmount>0.5 才刷，帧率无关拖尾，画在 HUD 之下；首次一句风味 toast，`state.meteorSeen` 存档一次性）。
+- **验收（8788 mock + Playwright，控制台 0 error）**：漂流瓶打捞 drifts 1→0+记忆入账 ✓ / 木箱 德拉克马+7 ✓ / 提示条「E · 打捞 漂流瓶」✓ / 近漂流物时 E 打捞不抛竿（优先级）✓ / 抛竿→三次绿区命中→FISH off+鱼+1 ✓ / 故意空竿 miss 计数 ✓ / 钓鱼 HUD、2D 漂流物、流星绘制零异常 ✓ / 夜海流星实拍（右上拖尾，目检）✓ / W3D ready 且漂流物 3D 可见（船+瓶+箱目检）✓ / parse 并发两次→mock 上游仅 1 发、第三次 0ms 缓存命中 ✓ / 字体与动效 computed style 全命中（tsPan 30s、tsMotes、tsPulse、楷体栈）✓。node --check 绿（内联 411795 chars + world3d.js），wrangler functions build 成功。
+- **坑（新）**：①Pages Functions esbuild 禁跨目录 import——部署件必须目录内副本+同步脚本，`functions build` 是最快的探针；②pressE 优先级=钓鱼 strike > 打捞 > 抛竿 > 岛屿交互；③本仓 HUD 全是 plain fillRect，新 HUD 别引 roundRect（老环境兼容）；④Playwright 截图输出根只允许 playwright-mcp 与 C:\zhuantang_art，相对文件名会落到不可预期处，用绝对路径。
+- **待用户**：`npx wrangler login` → `pages secret put TELEAI_API_KEY --project-name odyssey-1c9` → `pages deploy`（先预览项目验证，会替换线上既有 functions）；上线后若 403 仍频，转天翼工单或走自部署 vLLM（PRODUCT §9）。
+
 ---
 
 ## 二、卡住的问题

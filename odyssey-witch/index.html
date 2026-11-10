@@ -11,6 +11,7 @@
   :root{
     --bg:#0b1526; --panel:#ffffff; --line:#e3eaf2; --ink:#243244; --sub:#7b8aa0;
     --blue:#3b82f6; --blue-soft:#eaf2fe; --blue-ink:#2563eb; --deep:#1e3a5f;
+    --font-myth:"STKaiti","KaiTi","Kaiti SC","楷体",Georgia,"Times New Roman","宋体",SimSun,serif;   /* Steam 化：史诗楷体栈（Windows 楷体 / macOS 华文楷体，回退衬线） */
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   body{background:var(--bg); color:var(--ink); overflow:hidden;
@@ -89,7 +90,7 @@
   #dlg .head{display:flex; align-items:center; gap:9px; padding:9px 14px; border-bottom:1px solid var(--line);}
   #dlg .head .dot{width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#dbeafe,#ede9fe);
     display:flex; align-items:center; justify-content:center;}
-  #dlg .head .t{font-weight:600; font-size:13.5px; color:var(--deep);}
+  #dlg .head .t{font-family:var(--font-myth); font-weight:600; font-size:14.5px; color:var(--deep);}
   #dlg .head .s{font-size:11px; color:var(--sub);}
   #dlg .head .x{margin-left:auto; cursor:pointer; color:var(--sub); border:none; background:none; font-size:15px; padding:2px 8px;}
   #dlg .head .x:hover{color:var(--ink);}
@@ -179,19 +180,34 @@
   /* ---- 标题屏（概念图 01-序章漂流） ---- */
   #titleScreen{position:absolute; inset:0; z-index:20; border-radius:14px; overflow:hidden;
     background:#0b1526 url('concept-art/01-序章漂流.jpg') center/cover no-repeat;
+    background-size:108%; animation:tsPan 30s ease-in-out infinite alternate;
     transition:opacity .8s;}
   #titleScreen.hide{opacity:0; pointer-events:none;}
+  @keyframes tsPan{from{background-position:47% 46%;} to{background-position:53% 54%;}}
   #titleScreen::after{content:""; position:absolute; inset:0;
     background:linear-gradient(180deg, rgba(6,14,26,.30) 0%, rgba(6,14,26,0) 34%, rgba(6,14,26,.74) 100%);}
+  /* Steam 化美观：海面光尘慢浮（纯 CSS 低开销；reduced-motion 下关闭） */
+  #titleScreen::before{content:""; position:absolute; inset:0; z-index:1; pointer-events:none;
+    background-image:
+      radial-gradient(2px 2px at 18% 78%, rgba(255,230,170,.85), transparent 60%),
+      radial-gradient(2px 2px at 72% 64%, rgba(255,240,200,.6), transparent 60%),
+      radial-gradient(1.5px 1.5px at 43% 72%, rgba(255,230,170,.7), transparent 60%),
+      radial-gradient(1.5px 1.5px at 86% 82%, rgba(255,236,190,.55), transparent 60%),
+      radial-gradient(2px 2px at 30% 88%, rgba(255,230,170,.5), transparent 60%),
+      radial-gradient(1.5px 1.5px at 60% 84%, rgba(255,240,210,.65), transparent 60%);
+    animation:tsMotes 12s ease-in-out infinite alternate;}
+  @keyframes tsMotes{from{transform:translateY(10px); opacity:.55;} to{transform:translateY(-16px); opacity:.95;}}
   .tsBody{position:absolute; left:9%; bottom:11%; z-index:2; color:#fff; text-shadow:0 2px 10px rgba(0,0,0,.55);}
   .tsKicker{font-size:12px; letter-spacing:5px; color:rgba(255,255,255,.78); margin-bottom:10px;}
-  .tsBody h1{font-family:Georgia,"Times New Roman","宋体",SimSun,serif; font-size:52px; line-height:1;
+  .tsBody h1{font-family:var(--font-myth); font-size:52px; line-height:1;
     font-weight:700; letter-spacing:10px;}
   .tsBody h1 span{font-size:17px; letter-spacing:6px; vertical-align:14px; margin-left:10px; color:rgba(255,255,255,.85);}
   .tsSub{margin:14px 0 26px; font-size:14px; color:rgba(255,255,255,.86); letter-spacing:2px;}
   .tsBtns{display:flex; gap:10px;}
   #tsGo{border:none; background:#fff; color:#16324e; font-size:15px; font-weight:600; letter-spacing:3px;
-    padding:11px 34px; border-radius:26px; cursor:pointer; box-shadow:0 6px 22px rgba(0,0,0,.35);}
+    padding:11px 34px; border-radius:26px; cursor:pointer; box-shadow:0 6px 22px rgba(0,0,0,.35);
+    animation:tsPulse 3.4s ease-in-out infinite;}
+  @keyframes tsPulse{0%,100%{box-shadow:0 6px 22px rgba(0,0,0,.35);} 50%{box-shadow:0 8px 34px rgba(255,226,150,.55);}}
   #tsGo:hover{transform:translateY(-1px); box-shadow:0 10px 26px rgba(0,0,0,.45);}
   #tsNew{border:1px solid rgba(255,255,255,.5); background:rgba(255,255,255,.12); color:#fff; font-size:13px;
     padding:11px 22px; border-radius:26px; cursor:pointer;}
@@ -210,7 +226,7 @@
     background:linear-gradient(180deg, rgba(6,14,26,.12) 0%, rgba(6,14,26,0) 40%, rgba(6,14,26,.78) 100%);}
   .ccBody{position:absolute; left:9%; bottom:13%; z-index:2; color:#fff; text-shadow:0 2px 10px rgba(0,0,0,.6);}
   .ccKicker{font-size:11px; letter-spacing:6px; color:#ffd66b; margin-bottom:8px;}
-  .ccTitle{font-family:Georgia,"Times New Roman","宋体",SimSun,serif; font-size:38px; letter-spacing:8px; font-weight:700;}
+  .ccTitle{font-family:var(--font-myth); font-size:38px; letter-spacing:8px; font-weight:700;}
   .ccSub{margin-top:10px; font-size:13px; color:rgba(255,255,255,.85); letter-spacing:2px;}
   .ccQuote{margin-top:16px; font-size:12px; color:rgba(255,255,255,.62); letter-spacing:1px;}
   .ccSkip{position:absolute; right:14px; bottom:10px; z-index:2; font-size:11px; color:rgba(255,255,255,.5);}
@@ -295,7 +311,7 @@
   #lyricCard.open{display:flex; animation:mapIn .3s ease-out;}
   #lyricSheet{width:min(520px,84%); background:linear-gradient(170deg,#f4ead2,#e8d9b8); border-radius:10px;
     padding:26px 30px 20px; box-shadow:0 18px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.25);
-    font-family:Georgia,"宋体",serif; color:#4a3a22;}
+    font-family:var(--font-myth); color:#4a3a22;}
   #lyricSheet h3{font-size:13px; letter-spacing:5px; color:#8a6a3a; text-align:center; margin-bottom:14px;}
   #lyricText{font-size:14.5px; line-height:2.05; white-space:pre-wrap; text-align:center;}
   /* ---- 认名卡（终章·相认：「你是谁？」——名字碎片+自由输入） ---- */
@@ -389,6 +405,7 @@
     #crewBanner.show b{animation:none;}
     #zeusFlash{animation:none; opacity:0;}
     #raftStormFx.show{animation:none;}
+    #titleScreen, #titleScreen::before, #tsGo{animation:none;}
     *{transition-duration:.01ms !important;}
   }
 </style>
@@ -3175,6 +3192,15 @@ function pressE(){
   if (CAMP.on && CAMP.phase==="strike"){ campStrike(); return; }
   /* F4 独眼巨人羊腹潜行：strike 窗口内 E=屏息低头 */
   if (HIDE.on && HIDE.phase==="strike"){ ramDuck(); return; }
+  /* 钓鱼中：E=提竿（优先于一切交互） */
+  if (FISH.on){ fishingStrike(); return; }
+  /* 开阔海（无岛屿）：先打捞漂流物，再抛竿——不占岛屿交互位 */
+  if (scene==="world" && !islandNear()){
+    const d = driftNear();
+    if (d){ salvageDrift(d); return; }
+    startFishing();
+    return;
+  }
   /* 预按：当前无可交互目标才进缓冲，避免双触发 */
   const has = scene==="world" ? !!islandNear() : !!aiaNear();
   if (!has) eBufAt = performance.now();
@@ -3294,6 +3320,7 @@ function tryMoveWorld(nx,ny){
 }
 function tickMove(dt){
   if (titleOn||chapterOn||mapOpen) return;
+  if (FISH.on){ boat.moving=false; boat.vx=0; boat.vy=0; return; }   /* 钓鱼中抛锚：只许提竿不许航行 */
   let dx=0, dy=0;
   if (keys.has("a")||keys.has("arrowleft")) dx-=1;
   if (keys.has("d")||keys.has("arrowright")) dx+=1;
@@ -5096,6 +5123,210 @@ function drawRamHud(){
     ctx.fillText("巨人的手扫过来——屏息低头（E）！", 500, 84);
   }
 }
+
+/* ==================== 海上钓鱼（Steam 化玩法：Dave the Diver 式节奏提竿，纯本地零模型） ====================
+   开阔海按 E 抛竿（不占岛屿交互位）：鱼影在轨道上游动，绿区往复扫动，重合时按 E 提竿——
+   三中得鱼、三失脱钩、25s 超时收线；每中一枪鱼影提速。空间键/E/手柄 A/触摸 E 全走 pressE 同一入口。
+   产出接现有物品链（鱼→火盆烤→烤鱼，进食表 h:30），顺手喂一条记忆给 NPC 话题。 */
+const FISH = { on:false, fish:0.5, fishDir:1, fishSp:0.55, zone:0.40, zoneDir:1, ZONE_W:0.22, hits:0, miss:0, HITS:3, MISS:3, tLeft:25, cdUntil:0 };
+function startFishing(){
+  if (performance.now() < FISH.cdUntil){ toast("水花还没平——鱼群受了惊，往别处撒网吧。"); return; }
+  Object.assign(FISH, {on:true, fish:0.5, fishDir:Math.random()<0.5?-1:1, fishSp:0.55, zone:0.4, zoneDir:1, hits:0, miss:0, tLeft:25});
+  sfx("alert");
+  toast("抛竿——鱼影游进绿区时按 E 提竿！（三中得鱼 · 三失脱钩）");
+}
+function fishingTick(dt){
+  if (!FISH.on) return;
+  FISH.tLeft -= dt;
+  if (FISH.tLeft <= 0){ endFishing(false, "漂了半天没动静——收线，换个时辰再来。"); return; }
+  /* 鱼影：基础速度 + 随机窜逃 */
+  FISH.fish += FISH.fishDir * FISH.fishSp * dt * (0.7 + Math.random()*0.6);
+  if (Math.random() < dt*0.9) FISH.fishDir *= -1;
+  if (FISH.fish < 0.06){ FISH.fish = 0.06; FISH.fishDir = 1; }
+  if (FISH.fish > 0.94){ FISH.fish = 0.94; FISH.fishDir = -1; }
+  /* 绿区往复 */
+  FISH.zone += FISH.zoneDir * 0.34 * dt;
+  if (FISH.zone < 0.02){ FISH.zone = 0.02; FISH.zoneDir = 1; }
+  if (FISH.zone > 0.98-FISH.ZONE_W){ FISH.zone = 0.98-FISH.ZONE_W; FISH.zoneDir = -1; }
+}
+function fishingStrike(){
+  const inZone = FISH.fish >= FISH.zone && FISH.fish <= FISH.zone + FISH.ZONE_W;
+  if (inZone){
+    FISH.hits++; sfx("pick"); feedback("small"); hitStop(90);
+    if (FISH.hits >= FISH.HITS){ endFishing(true); return; }
+    FISH.fishSp += 0.13;   /* 鱼受惊提速：越钓越紧 */
+    toast(`中了！鱼在挣扎——还差 ${FISH.HITS-FISH.hits} 提。`);
+  } else {
+    FISH.miss++; sfx("warn"); feedback("medium");
+    if (FISH.miss >= FISH.MISS){ endFishing(false, "线一松——银影一闪，没了。"); return; }
+    toast(`空竿……（脱钩 ${FISH.miss}/${FISH.MISS}）`);
+  }
+}
+function endFishing(win, failMsg){
+  FISH.on = false; FISH.cdUntil = performance.now() + 70000;
+  if (win){
+    addItem("鱼"); gainXp(10);
+    addMemory("旅人在开阔海钓起一尾银鳞海鱼——今晚的灶上有腥味了", 2, "sea");
+    sfx("bless"); feedback("medium");
+    toast("提竿——银鳞出水！（鱼 +1 · 历练 +10 · 火盆可烤成烤鱼）");
+  } else {
+    toast(failMsg || "脱钩了。");
+  }
+  renderHUD(); save();
+}
+/* 钓鱼 HUD（屏幕空间，样式与守营/羊腹战同款） */
+function drawFishingHud(){
+  if (scene!=="world" || !FISH.on) return;
+  const bx=270, by=486, bw=460, bh=58;
+  ctx.fillStyle="rgba(8,14,24,.72)"; ctx.fillRect(bx, by, bw, bh);
+  ctx.fillStyle="rgba(255,214,107,.5)"; ctx.fillRect(bx, by, bw, 2); ctx.fillRect(bx, by+bh-2, bw, 2);
+  /* 轨道 */
+  const tx=bx+16, tw=bw-32, ty=by+30;
+  ctx.fillStyle="rgba(255,255,255,.14)"; ctx.fillRect(tx, ty-7, tw, 14);
+  /* 绿区 */
+  ctx.fillStyle="rgba(127,211,137,.45)";
+  ctx.fillRect(tx + FISH.zone*tw, ty-10, FISH.ZONE_W*tw, 20);
+  ctx.strokeStyle="rgba(127,211,137,.9)"; ctx.strokeRect(tx + FISH.zone*tw, ty-10, FISH.ZONE_W*tw, 20);
+  /* 鱼影（小三角，随方向翻转） */
+  const fx = tx + FISH.fish*tw;
+  ctx.fillStyle="#9fd8ff";
+  ctx.beginPath();
+  ctx.moveTo(fx + FISH.fishDir*8, ty);
+  ctx.lineTo(fx - FISH.fishDir*6, ty-6); ctx.lineTo(fx - FISH.fishDir*6, ty+6);
+  ctx.closePath(); ctx.fill();
+  /* 文案行 */
+  ctx.textAlign="center"; ctx.font="600 12px 'Segoe UI','Microsoft YaHei'";
+  ctx.fillStyle="#ffd66b";
+  ctx.fillText(`上钩 ${FISH.hits}/${FISH.HITS} · 脱钩 ${FISH.miss}/${FISH.MISS} · ${Math.ceil(FISH.tLeft)}s —— E 提竿`, bx+bw/2, by-8);
+  /* 时间条 */
+  const tr = Math.max(0, FISH.tLeft/25);
+  ctx.fillStyle="rgba(255,255,255,.16)"; ctx.fillRect(bx+16, by+bh-9, bw-32, 4);
+  ctx.fillStyle= tr>0.35 ? "#7fd389" : "#ff7a6b"; ctx.fillRect(bx+16, by+bh-9, (bw-32)*tr, 4);
+}
+
+/* ==================== 漂流物打捞（Steam 化探索激励：漂流瓶/木箱，随机刷·捞完慢补） ====================
+   开阔海漂浮物，靠近按 E 打捞：瓶=旅人纸条（进记忆流，NPC 可聊）+历练；箱=补给（钱/草药/淡水/面包）。
+   全场最多 4 个，捞后每 150s 慢补一个；生成点避开岛屿与船身。 */
+let drifts = [];   /* {x,y,kind:'bottle'|'crate', born} —— 稳定引用，W3D 经 __game.drifts 同步 */
+let driftNextAt = 0;
+const DRIFT_NOTES = [
+  "「风从西边来的时候，别恋战。」——一只缺了底的碗里的字条",
+  "「我数到第十天就不数了。海替我记着。」",
+  "「如果捡到这张纸：家的方向是心跳更响的那一边。」",
+  "「我们把最后半壶水留给了更年轻的水手。不后悔。」",
+  "「塞壬的歌其实只有一句——你心里本来就有那句。」",
+  "「别信平静的海。平静只是它眨了下眼。」",
+  "「船漆成蓝色就不会被浪认出来。骗人的。但漆好看。」",
+  "「致捡到瓶子的人：往回走也是一种航行。」",
+];
+function driftSpotOK(x, y){
+  if (worldTile(Math.floor(x/WTS), Math.floor(y/WTS)) !== "~") return false;
+  for (const is of ISLANDS){
+    if (Math.hypot(x-(is.gx*WTS+WTS/2), y-(is.gy*WTS+WTS/2)) < 130) return false;
+  }
+  if (Math.hypot(x-boat.x, y-boat.y) < 80) return false;
+  for (const d of drifts){ if (Math.hypot(x-d.x, y-d.y) < 90) return false; }
+  return true;
+}
+function spawnDrift(){
+  for (let tries=0; tries<40; tries++){
+    const x = (1+Math.random()*(WCOLS-2))*WTS, y = (1+Math.random()*(WROWS-2))*WTS;
+    if (driftSpotOK(x, y)){
+      drifts.push({x, y, kind: Math.random()<0.5?"bottle":"crate", born: performance.now()});
+      return;
+    }
+  }
+}
+function driftNear(){
+  let best=null, bd=1e9;
+  for (const d of drifts){
+    const dist = Math.hypot(boat.x-d.x, boat.y-d.y);
+    if (dist < 44 && dist < bd){ bd=dist; best=d; }
+  }
+  return best;
+}
+function salvageDrift(d){
+  drifts.splice(drifts.indexOf(d), 1);
+  driftNextAt = performance.now() + 150000;
+  sfx("pick"); feedback("small");
+  if (d.kind === "bottle"){
+    const note = DRIFT_NOTES[Math.floor(Math.random()*DRIFT_NOTES.length)];
+    addMemory("旅人捞到一只漂流瓶：" + note, 2, "sea");
+    gainXp(4);
+    toast(`漂流瓶——纸条上一行褪色的字：「${note}」（已记进航海日志 · 历练 +4）`);
+  } else {
+    const roll = Math.random();
+    if (roll < 0.35){ const c = 3+Math.floor(Math.random()*6); state.coins += c; toast(`木箱——压舱的私房钱！（德拉克马 +${c}）`); }
+    else if (roll < 0.65){ addItem("治疗草药"); toast("木箱——一位船医的存货。（治疗草药 +1）"); }
+    else if (roll < 0.85){ addItem("淡水"); toast("木箱——封蜡的淡水囊，一滴没洒。（淡水 +1）"); }
+    else { addItem("面包"); toast("木箱——硬得像礁石，但确实是面包。（面包 +1）"); }
+    gainXp(6);
+  }
+  renderHUD(); save();
+}
+function driftTick(now){
+  if (scene !== "world") return;
+  if (drifts.length < 4 && now > driftNextAt){ spawnDrift(); driftNextAt = now + 150000 + Math.random()*60000; }
+}
+function drawDrifts(et){
+  const w3dOn = !!(window.W3D && W3D.ready && !W3D.failed);   /* W3D 模式由 world3d.js 渲染 3D 漂流物 */
+  if (scene!=="world" || w3dOn) return;
+  for (const d of drifts){
+    const bob = Math.sin(et*2.2 + d.x)*2.2;
+    ctx.save(); ctx.translate(d.x, d.y + bob);
+    ctx.fillStyle="rgba(0,0,0,.22)"; ctx.beginPath(); ctx.ellipse(0, 5, 9, 3.2, 0, 0, 7); ctx.fill();
+    if (d.kind === "bottle"){
+      ctx.rotate(Math.sin(et*1.5 + d.x)*0.16);
+      ctx.fillStyle="#7fae8f"; ctx.fillRect(-3, -8, 6, 14);
+      ctx.fillStyle="#5d8a6c"; ctx.fillRect(-2, -11, 4, 4);
+      ctx.fillStyle="rgba(255,246,214,.85)"; ctx.fillRect(-2, -5, 4, 7);
+    } else {
+      ctx.rotate(Math.sin(et*1.2 + d.y)*0.1);
+      ctx.fillStyle="#8a6b42"; ctx.fillRect(-9, -6, 18, 12);
+      ctx.strokeStyle="#6b5233"; ctx.lineWidth=1.5;
+      ctx.strokeRect(-9, -6, 18, 12);
+      ctx.beginPath(); ctx.moveTo(-9, 0); ctx.lineTo(9, 0); ctx.stroke();
+    }
+    /* 提示脉冲圈（近船时更亮） */
+    const near = Math.hypot(boat.x-d.x, boat.y-d.y) < 90;
+    if (near){
+      const pr = 13 + Math.sin(et*4)*2.5;
+      ctx.strokeStyle="rgba(255,214,107,.55)"; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.arc(0, 0, pr, 0, 7); ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+/* ==================== 夜间流星（Steam 化美观批：海夜偶尔一道拖尾，一次性风味提示） ====================
+   仅世界海图、深夜（nightAmount>0.5）出现；屏幕上随机拖尾，不与 HUD 抢层级（HUD 之下）。
+   首次见到给一句风味提示（state.meteorSeen 存档一次性）。 */
+let meteors = [], meteorNextAt = performance.now() + 8000;
+function meteorTick(now){
+  if (scene==="world" && nightAmount() > 0.5 && meteors.length < 2 && now > meteorNextAt){
+    meteors.push({ x: 120+Math.random()*760, y: 20+Math.random()*130,
+      vx: (Math.random()<0.5?-1:1)*(340+Math.random()*180), vy: 170+Math.random()*130,
+      born: now, max: 900+Math.random()*500, len: 90+Math.random()*70 });
+    meteorNextAt = now + 6000 + Math.random()*10000;
+    if (!state.meteorSeen){ state.meteorSeen = 1; toast("流星划过海面——这一夜，奥德修斯替自己许了个愿。"); save(); }
+  }
+  meteors = meteors.filter(m => now - m.born < m.max);
+}
+function drawMeteors(now){
+  for (const m of meteors){
+    const t = (now - m.born) / m.max;
+    if (t < 0 || t > 1) continue;
+    const a = t < 0.25 ? t/0.25 : 1-(t-0.25)/0.75;
+    const sec = (now - m.born) / 1000;
+    const x = m.x + m.vx*sec, y = m.y + m.vy*sec;
+    const nl = Math.hypot(m.vx, m.vy)||1;
+    const tx = x - m.vx/nl*m.len, ty = y - m.vy/nl*m.len;
+    const g = ctx.createLinearGradient(x, y, tx, ty);
+    g.addColorStop(0, `rgba(255,246,220,${(0.85*a).toFixed(3)})`);
+    g.addColorStop(1, "rgba(255,246,220,0)");
+    ctx.strokeStyle = g; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(tx, ty); ctx.stroke();
+  }
+}
 function drawBoat(et){
   /* 尾迹采样：移动才推入，护航队沿真实航迹排布（停船时保持编队不塌） */
   if (scene==="world"){
@@ -6728,6 +6959,14 @@ function updateHintDOM(){
       hintEl.innerHTML = `<b>E</b> · ${islandOpen(is)?"登陆":"了望"} ${is.name}`;
       if (window.W3D && W3D.ready && !W3D.failed){ hintEl.style.left="50%"; hintEl.style.top="74%"; }   /* 3D 世界图：2D 投影坐标不适用，固定底部居中 */
       else { const [hx,hy]=w2s(is.gx*WTS+WTS/2, is.gy*WTS); hintEl.style.left=(hx*100)+"%"; hintEl.style.top=(hy*100)+"%"; }
+    } else if (!dlgOpen && !FISH.on){
+      const d = driftNear();
+      if (d){
+        hintEl.style.display="block";
+        hintEl.innerHTML = `<b>E</b> · 打捞 ${d.kind==="bottle"?"漂流瓶":"木箱"}`;
+        if (window.W3D && W3D.ready && !W3D.failed){ hintEl.style.left="50%"; hintEl.style.top="74%"; }
+        else { const [hx,hy]=w2s(d.x, d.y-16); hintEl.style.left=(hx*100)+"%"; hintEl.style.top=(hy*100)+"%"; }
+      } else hintEl.style.display="none";
     } else hintEl.style.display="none";
     ambEl.style.display="none";
     return;
@@ -8353,6 +8592,26 @@ function localFallbackParse(text){
   return mk("其他意图");
 }
 
+/* ==================== 解析缓存 + 并发单飞（Steam 化 403 缓解） ====================
+   意图解析温度为 0（确定输出）：同一输入重复解析是纯浪费——按 prompt 指纹做本地 LRU 缓存，
+   相同在途请求合并（single-flight）。重复意图（买东西/查状态/导航）零请求零延迟，
+   直接大幅收窄上游间歇 403 的命中面；缓存随 schema 变更自动失效（盐值含 schema 指纹）。 */
+const PARSE_CACHE_KEY = "odyssey-parse-cache-v1";
+let _parseCache = null;
+const parseInflight = {};
+function loadParseCache(){
+  if (_parseCache) return _parseCache;
+  try{ _parseCache = JSON.parse(localStorage.getItem(PARSE_CACHE_KEY)||"{}")||{}; }catch(e){ _parseCache = {}; }
+  return _parseCache;
+}
+function parseCacheSave(){
+  try{
+    const ks = Object.keys(_parseCache);
+    if (ks.length > 240) ks.slice(0, ks.length-240).forEach(k=>delete _parseCache[k]);   /* 粗 LRU：超容量删最老 */
+    localStorage.setItem(PARSE_CACHE_KEY, JSON.stringify(_parseCache));
+  }catch(e){}
+}
+function hashStr(s){ let h=5381; for (let i=0;i<s.length;i++){ h=((h<<5)+h+s.charCodeAt(i))|0; } return "h"+(h>>>0).toString(36); }
 async function apiParse(userText){
   window.lastPlayerText = userText;   /* 名字考试等本地提取用（序章组） */
   const hist = history[currentNPC].slice(-6).filter(h=>!h.fb);
@@ -8360,11 +8619,23 @@ async function apiParse(userText){
   if (hist.length && hist[hist.length-1].role==="user" && hist[hist.length-1].content===userText) hist.pop();
   const lines=hist.map(h=>(h.role==="user"?"Human: ":"AI: ")+h.content);
   lines.push("Human: "+userText);
+  const key = hashStr("v1|"+TASK_INSTRUCTION.length+"|"+JSON.stringify(SCHEMA||[]).length+"|"+lines.join("\u0001"));
+  const cache = loadParseCache();
+  if (cache[key]) return cache[key];
+  if (parseInflight[key]) return parseInflight[key];
   const prompt=TASK_INSTRUCTION.replace("{schema}",JSON.stringify(SCHEMA)).replace("{user_input}",lines.join("\n"));
-  const d=await postJSON("/api/parse",{prompt});
-  const preds=extractJSON(d.content);
-  if(!preds) throw new Error("模型输出无法解析");
-  return preds.filter(p=>p&&typeof p==="object"&&p.category);
+  const job = (async()=>{
+    try{
+      const d=await postJSON("/api/parse",{prompt});
+      const preds=extractJSON(d.content);
+      if(!preds) throw new Error("模型输出无法解析");
+      const ok=preds.filter(p=>p&&typeof p==="object"&&p.category);
+      if (ok.length){ cache[key]=ok; parseCacheSave(); }
+      return ok;
+    } finally { delete parseInflight[key]; }
+  })();
+  parseInflight[key]=job;
+  return job;
 }
 async function apiChat(instruction){
   const N = NPCS[currentNPC];
@@ -8607,6 +8878,7 @@ setInterval(()=>{
   if (!dlgOpen && !titleOn && !chapterOn && !mapOpen){
     tickMove(ldt);
     if (scene==="aia"){ tickBoar(ldt); witchUtilityTick(ldt); }
+    if (scene==="world"){ fishingTick(ldt); driftTick(now); }   /* 钓鱼节奏 + 漂流物慢补（入海即刷一个，其后每 150~210s） */
     tickNeeds(ldt);
     if (scene!=="ogggia") clockTick(ldt);   /* 日历冻结：奥吉吉亚的「完美的一天」不走钟（圣经第五章） */
     hudTick += ldt; if (hudTick >= 1){ hudTick = 0; renderHUD(); }   /* 1s 刷一次：时钟/需求条/罗盘实时可见 */
@@ -8644,18 +8916,21 @@ function loop(t){
   ctx.rotate(shr);
   ctx.scale(cam.zoom, cam.zoom);
   ctx.translate(-cam.x, -cam.y);
-  if (scene==="world"){ if (!w3dOn) drawWorld(et); } else if (scene==="hades") drawHades(et); else if (scene==="aeolia") drawAeolia(et); else if (scene==="strait") drawStrait(et); else if (scene==="sun") drawSun(et); else if (scene==="ogggia") drawOggia(et); else if (scene==="scheria") drawScheria(et); else if (scene==="ithaca") drawIthaca(et); else if (PROLOGUE_SITES[scene]) drawPrologue(et); else drawAia(et);   /* P2.3 石柱由 drawWorld 内 drawStonePillar 承担（W3D 路径走 world3d.js 三维石柱） */
+  if (scene==="world"){ if (!w3dOn) drawWorld(et); drawDrifts(et); } else if (scene==="hades") drawHades(et); else if (scene==="aeolia") drawAeolia(et); else if (scene==="strait") drawStrait(et); else if (scene==="sun") drawSun(et); else if (scene==="ogggia") drawOggia(et); else if (scene==="scheria") drawScheria(et); else if (scene==="ithaca") drawIthaca(et); else if (PROLOGUE_SITES[scene]) drawPrologue(et); else drawAia(et);   /* P2.3 石柱由 drawWorld 内 drawStonePillar 承担（W3D 路径走 world3d.js 三维石柱） */
   drawDaylight(et);
   drawFloatTexts();
   drawParts();
   drawGrain();
   drawCareBadge(et);
   ctx.restore();
+  meteorTick(performance.now());
+  drawMeteors(performance.now());   /* 夜间流星（Steam 化美观批）：海夜偶尔一道拖尾，画在 HUD 之下 */
   drawFleetHud();   /* 守船战计数（屏幕空间 HUD，restore 后画不随镜头漂移） */
   drawScyllaHud();  /* F5 斯库拉快反战 HUD：六头计数 + 窗口条 */
   drawSuitorHud();  /* F6 求婚者肃清战 HUD：肃清计数 + 窗口条 */
   drawCampHud();    /* F3 伊斯玛洛斯守营战 HUD：火把波 + 窗口条 */
   drawRamHud();     /* F4 独眼巨人羊腹潜行 HUD：摸羊计数 + 窗口条 */
+  drawFishingHud(); /* 钓鱼 HUD：绿区扫动 + 鱼影游动 + 中/脱钩计数（屏幕空间） */
   if (scene!=="world") markLeg(scene);
   seaEncounterTick();
   maleaTick();
@@ -8729,6 +9004,9 @@ window.__game={state, scene, boat, player:aiaPlayer, witch, seer, aeolus, boar, 
   examInfo:function(){ return {asked:!!state.examAsked, scar:!!state.examScar, bed:!!state.examBed}; },
   /* 护航船队（17h 视觉）+ ambient 观测 */
   boatTrail:()=>boatTrail, drawEscortFleet,
+  /* 钓鱼 + 漂流物打捞（Steam 化玩法批） */
+  FISH:()=>FISH, startFishing, fishingStrike, drifts:()=>drifts, driftNear, salvageDrift,
+  fishInfo:function(){ return {on:FISH.on, hits:FISH.hits, miss:FISH.miss, tLeft:+FISH.tLeft.toFixed(1), cd:Math.max(0, FISH.cdUntil-performance.now()), drifts:drifts.length}; },
   ambInfo:function(){ return {active:ambActive, text:ambText, npc:typeof currentNPC!=="undefined"?currentNPC:null}; },
   /* F3 伊斯玛洛斯守营战 + F4 独眼巨人羊腹潜行（17h 序章战斗批） */
   CAMP:()=>CAMP, startCampDefense, campDefenseTick, campStrike, drawCampHud,
@@ -8736,6 +9014,6 @@ window.__game={state, scene, boat, player:aiaPlayer, witch, seer, aeolus, boar, 
   campInfo:function(){ return {on:CAMP.on, wave:CAMP.wave, hit:CAMP.hit, held:!!state.campHeld}; },
   ramInfo:function(){ return {on:HIDE.on, n:HIDE.n, caught:HIDE.caught, done:!!state.ramHide, paidMem:(state.paidMem||[]).length}; }};
 </script>
-<script type="module" src="./world3d.js?v=14"></script>
+<script type="module" src="./world3d.js?v=15"></script>
 </body>
 </html>
