@@ -76,6 +76,7 @@ const LOCKED_LOOK = { r: 1.3, grass: 0x93a3ad, grassDeep: 0x6d7d88, seed: 202611
 
 let renderer, scene3, camera3, waterU, boatG, sailMesh, isleList = [];
 let escortG = null, escortBoats = [], escPrev = null, escHead = { x: 0, z: -1 };
+let driftG = null, driftSlots = [];   /* 漂流物（Steam 化玩法批）：预建 4 槽，随 __game.drifts 同步 */
 let worldGroup = null, waterMesh = null, skyGroup = null, cloudGroup = null, troyGroup = null;
 let yawCur = 0; let ready = false; let failed = false; let lastEt = -1;
 
@@ -375,6 +376,41 @@ function buildEscortFleet() {
   return g;
 }
 
+/* ---------- 漂流物（Steam 化玩法批：漂流瓶/木箱 3D 浮标，位置与类型随主脚本 drifts 数组同步） ---------- */
+function buildDrifts() {
+  const g = new THREE.Group();
+  driftSlots = [];
+  const glassMat = new THREE.MeshStandardMaterial({ color: 0x7fae8f, roughness: 0.35, flatShading: true });
+  const paperMat = new THREE.MeshBasicMaterial({ color: 0xfff6d6 });
+  const woodMat = new THREE.MeshStandardMaterial({ color: 0x8a6b42, roughness: 0.95, flatShading: true });
+  const bandMat = new THREE.MeshStandardMaterial({ color: 0x6b5233, roughness: 0.95, flatShading: true });
+  for (let i = 0; i < 4; i++) {
+    const slot = new THREE.Group();
+    /* 漂流瓶：瓶身 + 颈 + 软木塞 + 内卷纸 */
+    const bottle = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.1, 0.3, 8), glassMat);
+    body.position.y = 0.15; bottle.add(body);
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.05, 0.1, 8), glassMat);
+    neck.position.y = 0.34; bottle.add(neck);
+    const cork = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.05, 8), bandMat);
+    cork.position.y = 0.41; bottle.add(cork);
+    const note = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.16, 0.07), paperMat);
+    note.position.y = 0.16; bottle.add(note);
+    /* 木箱：箱体 + 两条加固带 */
+    const crate = new THREE.Group();
+    const box = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.3, 0.3), woodMat);
+    box.position.y = 0.15; crate.add(box);
+    const bandA = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.06, 0.32), bandMat);
+    bandA.position.y = 0.15; crate.add(bandA);
+    const bandB = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.32, 0.32), bandMat);
+    bandB.position.y = 0.15; crate.add(bandB);
+    slot.add(bottle); slot.add(crate);
+    slot.visible = false; g.add(slot);
+    driftSlots.push({ g: slot, bottle, crate });
+  }
+  return g;
+}
+
 /* ---------- P2.3 石化送客船：白石柱（17g 原著第 13 卷末；主脚本置 state.stonePillarDone 后显现） ---------- */
 let pillarG = null;
 function buildStonePillar() {
@@ -430,7 +466,7 @@ function buildTroy() {
 /* ---------- 初始化 ---------- */
 function init() {
   try {
-    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });   /* preserveDrawingBuffer：航迹分享卡需从事件回调读帧（否则 WebGL 背板已清空，截图空白） */
     renderer.setSize(1000, 600);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
   } catch (e) { failed = true; return; }
@@ -461,6 +497,8 @@ function init() {
   scene3.add(boatG);
   escortG = buildEscortFleet();
   scene3.add(escortG);
+  driftG = buildDrifts();
+  scene3.add(driftG);
   troyGroup = buildTroy(); troyGroup.visible = false; scene3.add(troyGroup);
 
   const cv = renderer.domElement;
@@ -492,7 +530,7 @@ function frame(et) {
   const sc = (G && G.getScene) ? G.getScene() : "world";
   if (sc === "troy") return frameTroy(et);
   /* 恢复世界图可见（特洛伊→世界 切换用） */
-  if (troyGroup && !troyGroup.visible){ worldGroup.visible=true; waterMesh.visible=true; boatG.visible=true; cloudGroup.visible=true; troyGroup.visible=false; }
+  if (troyGroup && !troyGroup.visible){ worldGroup.visible=true; waterMesh.visible=true; boatG.visible=true; cloudGroup.visible=true; if (driftG) driftG.visible=true; troyGroup.visible=false; }
   const b = (G && G.boat) || { x: 460, y: 180, face: "up" };
   const bx = px2x(b.x), bz = px2z(b.y);
   const bob = Math.sin(et * 2.1) * 0.05 + Math.cos(et * 1.4) * 0.03;
@@ -541,6 +579,20 @@ function frame(et) {
   if (pillarG.visible && G.scheriaExit){
     pillarG.position.set(px2x(G.scheriaExit.x + 92), 0, px2z(G.scheriaExit.y + 58));
   }
+  /* 漂流物：随主脚本 drifts 数组同步（瓶/箱形态切换 + 浮沉摇摆；最多 4 个） */
+  if (driftG) {
+    const ds = (G && G.drifts && G.drifts()) || [];
+    for (let i = 0; i < driftSlots.length; i++) {
+      const s = driftSlots[i], d = ds[i];
+      if (!d) { s.g.visible = false; continue; }
+      s.g.visible = true;
+      s.bottle.visible = d.kind === "bottle";
+      s.crate.visible = d.kind !== "bottle";
+      s.g.position.set(px2x(d.x), Math.sin(et * 2.2 + d.x) * 0.06 - 0.02, px2z(d.y));
+      s.g.rotation.y = Math.sin(et * 1.3 + d.x) * 0.4;
+      s.g.rotation.z = Math.sin(et * 1.6 + d.y) * 0.12;
+    }
+  }
   const camTarget = new THREE.Vector3(bx, 14, bz + 17);
   camera3.position.lerp(camTarget, 1 - Math.exp(-4 * dt));
   camera3.lookAt(bx, 0.8, bz - 2.5);
@@ -550,7 +602,7 @@ function frame(et) {
 /* 特洛伊 3D 战场渲染（固定相机俯视 + 火光闪烁；木马/卫兵/玩家由 2D 层叠加） */
 let troyCamInit = false;
 function frameTroy(et) {
-  if (troyGroup) { worldGroup.visible = false; waterMesh.visible = false; boatG.visible = false; cloudGroup.visible = false; if (escortG) escortG.visible = false; troyGroup.visible = true; }
+  if (troyGroup) { worldGroup.visible = false; waterMesh.visible = false; boatG.visible = false; cloudGroup.visible = false; if (escortG) escortG.visible = false; if (driftG) driftG.visible = false; troyGroup.visible = true; }
   const flick = 0.85 + 0.3 * Math.sin(et * 3.1) * Math.sin(et * 2.3);
   if (!troyCamInit) { camera3.position.set(0, 8.5, 13); troyCamInit = true; }
   camera3.lookAt(0, 1.2, 0);
@@ -561,6 +613,7 @@ function frameTroy(et) {
 init();
 
 window.W3D = { get ready() { return ready; }, get failed() { return failed; }, frame,
+  canvas: renderer.domElement,   /* 航迹分享卡读帧用（preserveDrawingBuffer 已开） */
   debug: () => ({ boat: boatG ? boatG.position.toArray().map(v => Math.round(v * 10) / 10) : null,
                   cam: camera3 ? camera3.position.toArray().map(v => Math.round(v * 10) / 10) : null,
                   isles: isleList.length, calls: renderer.info.render.calls, tris: renderer.info.render.triangles }) };
