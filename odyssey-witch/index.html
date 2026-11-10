@@ -372,7 +372,7 @@
   <div class="hud">
     <span class="pill">钱袋 <b id="hudCoins"></b> 德拉克马</span>
     <span class="pill">血 <b id="hudHp"></b><span id="hudHpBarWrap" style="display:inline-block;width:52px;height:7px;background:#e8eef5;border-radius:4px;vertical-align:middle;margin-left:6px;overflow:hidden"><i id="hudHpBar" style="display:block;height:100%;background:#3fae6a;border-radius:4px"></i></span></span>
-    <span class="pill">食 <span style="display:inline-block;width:34px;height:7px;background:#e8eef5;border-radius:4px;vertical-align:middle;margin-left:4px;overflow:hidden"><i id="hudHungerBar" style="display:block;height:100%;background:#c9933f;border-radius:4px"></i></span> 水 <span style="display:inline-block;width:34px;height:7px;background:#e8eef5;border-radius:4px;vertical-align:middle;margin-left:4px;overflow:hidden"><i id="hudThirstBar" style="display:block;height:100%;background:#3f8fae;border-radius:4px"></i></span></span>
+    <span class="pill">食 <span style="display:inline-block;width:34px;height:7px;background:#e8eef5;border-radius:4px;vertical-align:middle;margin-left:4px;overflow:hidden"><i id="hudHungerBar" style="display:block;height:100%;background:#c9933f;border-radius:4px"></i></span><b id="hudHungerVal" style="margin-left:3px;font-size:11px;color:#8fa0b5">80</b> 水 <span style="display:inline-block;width:34px;height:7px;background:#e8eef5;border-radius:4px;vertical-align:middle;margin-left:4px;overflow:hidden"><i id="hudThirstBar" style="display:block;height:100%;background:#3f8fae;border-radius:4px"></i></span><b id="hudThirstVal" style="margin-left:3px;font-size:11px;color:#8fa0b5">80</b></span>
     <span class="pill">Lv.<b id="hudLv">1</b><span style="display:inline-block;width:34px;height:7px;background:#e8eef5;border-radius:4px;vertical-align:middle;margin-left:5px;overflow:hidden"><i id="hudXpBar" style="display:block;height:100%;background:#7c6fd0;border-radius:4px"></i></span></span>
     <span class="pill" id="hudClock"></span>
     <span class="pill" id="hudQuest" style="display:none"></span>
@@ -433,7 +433,7 @@
   </div>
   <div id="keys">WASD / 方向键 移动 · E 互动 · M 海图 · P 俯瞰 · Esc 关闭对话</div>
   <div id="hitFlash"></div>
-  <div id="chapterCard">
+  <div id="chapterCard" aria-hidden="true">
     <div class="ccBody">
       <div class="ccKicker"></div>
       <div class="ccTitle"></div>
@@ -2201,7 +2201,23 @@ function load(){
   while ((d.v||2) < SAVE_VERSION) d.v = SAVE_VERSION;
   if (d.v > SAVE_VERSION) return false;   /* 未来版本存档：拒绝而不是静默清字段 */
   state = d.state;
-  if (d.boat){ boat.x=d.boat.x; boat.y=d.boat.y; }
+  if (d.boat){
+    /* Steam 化：存档救援——旧档船位可能在世界界外（边界钳制实装前驶出的），
+       钳回界内；若钳到陆地则搜最近水瓦片（46×18 全量扫描，一次性开销可忽） */
+    const M = WTS*0.5;
+    let bx = Math.max(M, Math.min(WCOLS*WTS-M, d.boat.x));
+    let by = Math.max(M, Math.min(WROWS*WTS-M, d.boat.y));
+    if (worldTile(Math.floor(bx/WTS), Math.floor(by/WTS)) !== "~"){
+      let best = null, bd = Infinity;
+      for (let cy2=0; cy2<WROWS; cy2++) for (let cx2=0; cx2<WCOLS; cx2++){
+        if (worldTile(cx2, cy2) !== "~") continue;
+        const dx = cx2*WTS+WTS/2-bx, dy = cy2*WTS+WTS/2-by, dd = dx*dx+dy*dy;
+        if (dd < bd){ bd = dd; best = {x: cx2*WTS+WTS/2, y: cy2*WTS+WTS/2}; }
+      }
+      if (best){ bx = best.x; by = best.y; }
+    }
+    boat.x = bx; boat.y = by;
+  }
   if (d.aia){ aiaPlayer.x=d.aia.x; aiaPlayer.y=d.aia.y; }
   scene = d.scene === "hades" ? "hades" : d.scene === "aeolia" ? "aeolia" : d.scene === "strait" ? "strait" : d.scene === "sun" ? "sun" : d.scene === "aia" ? "aia" : d.scene === "ogggia" ? "ogggia" : d.scene === "scheria" ? "scheria" : d.scene === "ithaca" ? "ithaca" : PROLOGUE_SITES[d.scene] ? d.scene : "world";
   ensureState();
@@ -3139,7 +3155,16 @@ function tryMoveAeolia(nx,ny){
 function tryMoveWorld(nx,ny){
   const ch = worldTile(Math.floor(nx/WTS), Math.floor(ny/WTS));
   if (ch==="#"||ch==="X"||ch==="G") return false;
-  boat.x=nx; boat.y=ny; return true;
+  /* Steam 化：世界边界钳制——海图之外是没人回来讲过的海，不让船驶出可航行水域
+     （原实现实测能把船开到负坐标的无尽空海，失去一切视觉参照） */
+  const M = WTS*0.5;
+  const cx = Math.max(M, Math.min(WCOLS*WTS-M, nx));
+  const cy = Math.max(M, Math.min(WROWS*WTS-M, ny));
+  if ((cx!==nx || cy!==ny) && performance.now()-(tryMoveWorld._edgeAt||0) > 25000){
+    tryMoveWorld._edgeAt = performance.now();
+    toast("海图的边缘。再往外，是没人回来讲过的海——回头吧。（M 看海图）");
+  }
+  boat.x=cx; boat.y=cy; return true;
 }
 function tickMove(dt){
   if (titleOn||chapterOn||mapOpen) return;
@@ -3515,6 +3540,34 @@ function islandOpen(is){
   return g ? !!g.cond() : !!is.open;
 }
 /* 当前航向（纯规则、零模型调用；HUD 引导与海图脉动共用） */
+/* ==================== 航向罗盘（Steam 化引导）：8 向箭头指目标岛 ====================
+   新玩家进世界图的第一问是「往哪边开」——原实现要自己开海图找「▶ 航向」标记。
+   世界图航行时给 8 向箭头 + 方位名，每帧轻量刷新（DOM 仅在文案变化时写入）。 */
+const DIR8 = [
+  {g:"→", n:"东"}, {g:"↘", n:"东南"}, {g:"↓", n:"南"}, {g:"↙", n:"西南"},
+  {g:"←", n:"西"}, {g:"↖", n:"西北"}, {g:"↑", n:"北"}, {g:"↗", n:"东北"},
+];
+function objectiveIsland(obj){
+  if (!obj || !obj.k) return null;
+  return ISLANDS.find(is => is.scene===obj.k) || null;
+}
+function compassHTML(obj){
+  const is = objectiveIsland(obj);
+  if (!is || scene!=="world") return `⛵ 航向 · ${obj.text}`;
+  const dx = is.gx*WTS+WTS/2 - boat.x, dy = is.gy*WTS+WTS/2 - boat.y;
+  if (Math.hypot(dx, dy) < 90) return `⛵ 航向 · ${obj.text}（就在附近，按 E 登陆）`;
+  const d = DIR8[(Math.round(Math.atan2(dy, dx)/(Math.PI/4))+8)%8];
+  return `⛵ ${d.g} 航向 · ${obj.text}（${d.n}方）`;
+}
+let _compassCache = "";
+function updateCompassArrow(){
+  const cp = document.getElementById("hudCompass");
+  if (!cp || titleOn || dlgOpen || mapOpen || chapterOn){ if (_compassCache){ _compassCache=""; if (cp) cp.style.display="none"; } return; }
+  const obj = nextObjective();
+  if (!obj){ if (_compassCache){ _compassCache=""; cp.style.display="none"; } return; }
+  const html = compassHTML(obj);
+  if (html !== _compassCache){ _compassCache = html; cp.style.display=""; cp.innerHTML = html; }
+}
 function nextObjective(){
   const q=getQuest("witch_grass");
   if (!q) return {k:"aia", text:"去埃亚岛找喀耳刻接下委托"};
@@ -4500,13 +4553,14 @@ function showChapter(img,kicker,title,sub,quote){
   c.querySelector(".ccTitle").textContent=title;
   c.querySelector(".ccSub").textContent=sub;
   c.querySelector(".ccQuote").textContent=quote||"";
-  c.classList.add("show"); chapterOn=true;
+  c.classList.add("show"); c.removeAttribute("aria-hidden"); chapterOn=true;
   clearTimeout(chTimer); chTimer=setTimeout(skipChapter, 3000);
 }
 function skipChapter(){
   if (askOn) return;   /* 选择卡复用 chapterOn 门控，但不许章节卡的跳过通道把它关掉 */
   clearTimeout(chTimer);
-  document.getElementById("chapterCard").classList.remove("show");
+  const c=document.getElementById("chapterCard");
+  c.classList.remove("show"); c.setAttribute("aria-hidden","true");   /* Steam 化：关闭后移出无障碍树（屏幕阅读器不再读到残留的「点击任意处跳过」） */
   chapterOn=false;
 }
 document.getElementById("chapterCard").onclick = skipChapter;
@@ -6521,6 +6575,8 @@ function renderHUD(){
   const hb=document.getElementById("hudHungerBar"), tb=document.getElementById("hudThirstBar");
   hb.style.width = Math.max(0,Math.min(100,state.hunger))+"%"; hb.style.background = state.hunger>40?"#c9933f":"#e05252";
   tb.style.width = Math.max(0,Math.min(100,state.thirst))+"%"; tb.style.background = state.thirst>40?"#3f8fae":"#e05252";
+  document.getElementById("hudHungerVal").textContent = Math.round(state.hunger);   /* Steam 化：需求条数值化（原只有进度条，玩家不知还剩多少） */
+  document.getElementById("hudThirstVal").textContent = Math.round(state.thirst);
   document.getElementById("hudLv").textContent = state.level;
   document.getElementById("hudXpBar").style.width = Math.min(100, state.xp/xpToNext(state.level)*100)+"%";
   /* 船队（17h）：特洛伊出海后点亮 12 艘，折损肉眼可见 */
@@ -6553,7 +6609,7 @@ function renderHUD(){
   /* 航向引导（闭环）：当前该去哪，一行说清（纯规则零模型） */
   const cp=document.getElementById("hudCompass");
   const obj=nextObjective();
-  if (obj && !titleOn && !dlgOpen && !mapOpen){ cp.style.display=""; cp.innerHTML=`⛵ 航向 · ${obj.text}`; }
+  if (obj && !titleOn && !dlgOpen && !mapOpen){ cp.style.display=""; cp.innerHTML=compassHTML(obj); }
   else cp.style.display="none";
   /* 风袋快捷键（有风袋才出现） */
   const wb=document.getElementById("windBtn");
@@ -8286,6 +8342,7 @@ function closeDemo(){
  * 逻辑步：hit-stop 冻结（timeScale），对话/标题/过场时世界暂停（含需求与时间）。
  * 相机与环境音走真实 dt，不受冻结影响（game-feel：反馈不阻塞）。 */
 let lastLogic = performance.now();
+let hudTick = 0;   /* Steam 化：HUD 实时刷新计时（1s 一刷——原实现只住事件驱动刷，航行中时钟/需求条静止不动） */
 setInterval(()=>{
   const now = performance.now();
   const dt = Math.min((now-lastLogic)/1000, 0.05);
@@ -8298,6 +8355,7 @@ setInterval(()=>{
     if (scene==="aia"){ tickBoar(ldt); witchUtilityTick(ldt); }
     tickNeeds(ldt);
     if (scene!=="ogggia") clockTick(ldt);   /* 日历冻结：奥吉吉亚的「完美的一天」不走钟（圣经第五章） */
+    hudTick += ldt; if (hudTick >= 1){ hudTick = 0; renderHUD(); }   /* 1s 刷一次：时钟/需求条/罗盘实时可见 */
   }
   camTick(dt); ambTick(dt); npcAmbientTick(dt);
   achTimer += dt; if (achTimer >= 2){ achTimer = 0; achivTick(); }   /* 命运锚点轮询：2s 扫一次成就（零侵入不漏发） */
@@ -8348,6 +8406,7 @@ function loop(t){
   seaEncounterTick();
   maleaTick();
   updateHintDOM();
+  updateCompassArrow();   /* Steam 化：航向罗盘箭头每帧轻量刷新（DOM 仅文案变化时写入） */
   renderAmbient();
   requestAnimationFrame(loop);
 }
