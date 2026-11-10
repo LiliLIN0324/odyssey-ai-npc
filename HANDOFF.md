@@ -643,6 +643,17 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 - **线上版遗留（非本仓可修，记录待办）**：①odyssey-1c9 的 /api/chat 间歇 403 根因在部署侧 Pages Function/上游（本仓无 functions 代码；重试机制已缓解，建议部署侧查上游限流与长 system prompt 的内容审核命中）②3D 线 P2 参考表仍卡用户侧图像生成（见 3d/HANDOFF）。
 - **坑（新）**：①Playwright 合成 KeyboardEvent 派发到 document 会被游戏 window 捕获层正常接收，但 `page.keyboard.down/up` 才触发 keyup 清理——测移动用 playwright 原生 API；②游戏的 `keys`/`boat`/`state` 等顶层 const/let 在经典脚本全局词法环境，`page.evaluate` 可直接读写（验收利器）；③验证 fetch 次数要防「嵌套包装器」假象（wrapper 套 wrapper 会让一次调用计数翻倍——先 reload 装单个捕获器再测）。
 
+### 17w. Steam 化第二批：手柄/触摸输入层 + 分享卡 + 音频设置 + 人格锚定 + 存档卡（11-10，本会话续；分支 `feat/steam-ux-pass` 第五提交 d4ad57d+fix，用户授权「定个目标都完成」）
+
+- **目标背景**：用户「定个目标都完成修复，可找开源代码学习，多做些」。自查定标五项：A 程序化环境音（读码后发现 17i 已有完整场景化实现——改定位为音频设置+持久化+海图 ducking 补全）/ B 对话人格锚定 / C 航迹分享卡 / D 标题存档信息卡 / E 手柄+触摸输入层。开源学习点：WebAudio 合成为 17i 既有范式沿用（无新依赖）；Gamepad API 标准映射（W3C spec：按钮 0=A、12-15 十字键）；虚拟摇杆用标准 thumbstick 向量→四向键注入模式。
+- **①人格锚定（apiChat）**：system 加 `[角色锚定] 你就是「N.name」本人…不扮演或描述其他角色`——修实测 persona drift（食莲者回复描述「她坐在船头」串形）。
+- **②航迹分享卡（📸 航迹按钮，服务 PRODUCT §12 北极星「自发分享时刻/DAU≥0.15」）**：shareShot() canvas 合成 1200×675（W3D 3D 画布+2D 合成层叠加 / 纯 2D 场景直取游戏画布，cover 裁切）+ 底部字幕条（金色「奥 德 赛 · 地 中 海」/ 当前航向或判词 / `航序 N/14 · Lv · 成就 · 游戏内时刻` / 右下日期+「AI NPC 开放世界」）。导出：navigator.share 文件优先，**被拒/不支持/异常一律回落下载**（实测 headless Chrome canShare 返回 true 但 share() promise 永不落定——真机不会，但回落链兜住一切环境）。配套 world3d.js 两处：`W3D.canvas` 暴露 + `preserveDrawingBuffer: true`（事件回调读帧否则 WebGL 背板已清空，截图空白）。
+- **③音频设置（🎚/「音量」按钮弹层）**：总音量/音效/环境音三滑条即时生效，`odyssey-audio-v1` localStorage 持久化（含静音状态 sndOn——原刷新即丢）；ambTick ducking 补 mapOpen（海图全屏时环境音让位）+ 乘环境音滑条系数。
+- **④标题屏存档信息卡**：hasSave 时显示「上次的航迹 · 场景名 / 航序 N/14 · Lv · 钱袋 · 成就 N 枚 · ⚑ 船员」（parseSave 兜底 .bak），玩家点「继续航程」前知道接着哪段走。
+- **⑤输入层统一（pressE）+ 手柄 + 触摸**：E 键处理体从 keydown 分支抽出为 `pressE()`（四场反应战 strike 窗口拦截对全设备一致生效；门控与 keydown 相同）；**Gamepad API** 轮询挂 rAF loop（左摇杆/十字键→注入 keys 与键盘同源，A=互动 B=关窗 X=背包 Y=海图，边沿触发防连发，0.42 死区，gamepadconnected toast）；**触屏虚拟摇杆**（`pointer:coarse` 或 maxTouchPoints 才显示；touchmove 向量→四向键注入，22% 死区，抬手清键+摇钮回位；E/海图/背包三按钮走 bindTap→pressE/开关面板）。
+- **验收（8788 mock + Playwright，全程 0 意外 error）**：标题存档卡无存档隐藏/有存档数据逐项正确 ✓ / 音频面板滑条生效+localStorage 写入+静音持久化（重载后 🔇 与音量档恢复）✓ / 分享卡：强制下载路径 click=true、blob≈485KB、文件名「odyssey-航迹.png」，blob 预览截图目检（金色标题/航向行/进度行/日期行四行齐全，W3D 夜航海面入图，排版合格）✓ / 手柄：合成 gamepadconnected（手工挂 gamepad 的 Event——GamepadEvent 构造器拒收假对象）→连接 toast、摇杆 -0.9→keys=["a"]、回中→清空 ✓ / pressE 直调触发设计的 P1.2 蜜酒剧情（新档初见女巫走 meadEvent 而非直开对话——非 bug）✓ / 触摸：桌面 touchUI 隐藏 ✓；matchMedia 覆写强制 coarse 后 touchInit 挂监听、摇杆左拖 keys=["a"] 且角色真实位移、抬手清键摇钮回位 ✓；触摸 E 开对话 ✓。node --check 全绿（内联 400336 chars + world3d.js）。
+- **坑（新）**：①headless Chrome 的 navigator.share(files) promise 永不落定且 canShare 返回 true——分享导出必须带「被拒/超时回落下载」链，自动化验证用 defineProperty(navigator,'canShare',{value:()=>false}) 强制走下载分支；②GamepadEvent 构造器要求真 Gamepad 对象，模拟手柄用 `new Event('gamepadconnected')` 手工挂 gamepad 属性 + 替身 navigator.getGamepads；③桌面端测触摸控件需覆写 matchMedia 再调 touchInit（init 时 coarse=false 已早退，监听器未挂，强转 display 无效）。
+
 ---
 
 ## 二、卡住的问题

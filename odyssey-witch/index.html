@@ -407,7 +407,7 @@
     <span class="pill" id="hudCompass" style="display:none"></span>
     <span class="spacer"></span>
     <button id="sndBtn" onclick="sndToggle()">🔊 音效</button>
-    <button id="audioCfgBtn" onclick="audioPanelToggle()" title="音量设置">🎚</button>
+    <button id="audioCfgBtn" onclick="audioPanelToggle()" title="音量设置">音量</button>
     <button id="shotBtn" onclick="shareShot()" title="生成航迹分享卡片">📸 航迹</button>
     <button id="mapBtn">海图</button>
     <button id="questBtn">任务</button>
@@ -6851,23 +6851,28 @@ function shareShot(){
     c.textAlign = "right";
     const d = new Date();
     c.fillText(`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")} · AI NPC 开放世界`, W-46, H-62);
-    /* 导出：系统分享优先，退回下载 */
+    /* 导出：系统分享优先（被拒/失败/不支持一律回落下载——实测 headless 与部分安卓 WebView share() 会拒绝） */
     out.toBlob((blob)=>{
       _shotBusy = false;
       if (!blob){ toast("卡片生成失败——浏览器不支持 canvas 导出。"); return; }
       const file = new File([blob], "odyssey-航迹.png", {type:"image/png"});
-      const finish = (how)=>{ sfx("pick"); toast(how==="share" ? "航迹卡片已调起系统分享。" : "航迹卡片已保存到下载。发给那个会懂的人。"); };
-      try{
-        if (navigator.canShare && navigator.canShare({files:[file]})){
-          navigator.share({files:[file], title:"奥德赛 · 地中海", text:quote}).then(()=>finish("share")).catch(()=>{});
-        } else {
+      const download = ()=>{
+        try{
           const a = document.createElement("a");
           a.href = URL.createObjectURL(blob); a.download = "odyssey-航迹.png";
           document.body.appendChild(a); a.click(); a.remove();
           setTimeout(()=>URL.revokeObjectURL(a.href), 3000);
-          finish("download");
-        }
-      }catch(e){ toast("分享失败——试试截图键，海不会怪你。"); }
+          sfx("pick"); toast("航迹卡片已保存到下载。发给那个会懂的人。");
+        }catch(e){ toast("分享失败——试试截图键，海不会怪你。"); }
+      };
+      try{
+        if (navigator.canShare && navigator.canShare({files:[file]})){
+          navigator.share({files:[file], title:"奥德赛 · 地中海", text:quote})
+            .then(()=>{ sfx("pick"); toast("航迹卡片已调起系统分享。"); })
+            .catch((err)=>{ if (err && err.name==="AbortError"){ return; }   /* 用户主动取消不算失败 */
+                             download(); });
+        } else download();
+      }catch(e){ download(); }
     }, "image/png");
   }catch(e){ _shotBusy = false; toast("卡片生成失败：" + String(e.message||e).slice(0,40)); }
 }
