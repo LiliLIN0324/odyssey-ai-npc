@@ -2250,7 +2250,8 @@ function questEvent(kind, data){
   renderHUD();
 }
 let scene = "world";
-const boat  = { x: 9*WTS+WTS/2, y: 7*WTS+WTS/2 };
+const boat  = { x: 22*WTS+WTS/2, y: 11*WTS+WTS/2 };   /* 爱琴海南口开阔水域（特洛伊西南，朝埃亚岛去）：
+                                                         旧值 (9,7) 落在意大利半岛陆地格上，开局四方向全卡死、3D 下相机埋进岛体 */
 const aiaPlayer = { x: 4*ATS+ATS/2, y: 8*ATS+ATS/2, w: 24, h: 14, face: "down", moving:false, step:0 };
 
 const SAVE_KEY = "odyssey-med-v2", SAVE_VERSION = 3;
@@ -2281,10 +2282,10 @@ function load(){
     const M = WTS*0.5;
     let bx = Math.max(M, Math.min(WCOLS*WTS-M, d.boat.x));
     let by = Math.max(M, Math.min(WROWS*WTS-M, d.boat.y));
-    if (worldTile(Math.floor(bx/WTS), Math.floor(by/WTS)) !== "~"){
+    if (isSolidTile(Math.floor(bx/WTS), Math.floor(by/WTS))){
       let best = null, bd = Infinity;
       for (let cy2=0; cy2<WROWS; cy2++) for (let cx2=0; cx2<WCOLS; cx2++){
-        if (worldTile(cx2, cy2) !== "~") continue;
+        if (isSolidTile(cx2, cy2)) continue;
         const dx = cx2*WTS+WTS/2-bx, dy = cy2*WTS+WTS/2-by, dd = dx*dx+dy*dy;
         if (dd < bd){ bd = dd; best = {x: cx2*WTS+WTS/2, y: cy2*WTS+WTS/2}; }
       }
@@ -3312,6 +3313,19 @@ function tryMoveAia(nx,ny){
   aiaPlayer.x=nx; aiaPlayer.y=ny; return true;
 }
 function worldTile(cx,cy){ return (cx<0||cy<0||cx>=WCOLS||cy>=WROWS)?"~":WORLD[cy][cx]; }
+const isSolidTile = (cx,cy)=>{ const c=worldTile(cx,cy); return c==="#"||c==="X"||c==="G"; };
+/* 出生点保险：船位若落在陆地/礁石上（旧默认值 (9,7) 就在意大利半岛上），
+   就近挪到可航行水域——否则开局四方向都走不动，3D 下船还会埋进岛体里。 */
+(function spawnGuard(){
+  if (!isSolidTile(Math.floor(boat.x/WTS), Math.floor(boat.y/WTS))) return;
+  let best=null, bd=Infinity;
+  for (let cy=0; cy<WROWS; cy++) for (let cx=0; cx<WCOLS; cx++){
+    if (isSolidTile(cx,cy)) continue;
+    const dx = cx*WTS+WTS/2-boat.x, dy = cy*WTS+WTS/2-boat.y, dd = dx*dx+dy*dy;
+    if (dd < bd){ bd = dd; best = {x: cx*WTS+WTS/2, y: cy*WTS+WTS/2}; }
+  }
+  if (best){ boat.x = best.x; boat.y = best.y; }
+})();
 function tryMoveHades(nx,ny){
   const hw=aiaPlayer.w/2, hh=aiaPlayer.h/2;
   for (const [dx,dy] of [[-hw,-hh],[hw,-hh],[-hw,hh],[hw,hh]])
@@ -9253,6 +9267,6 @@ window.__game={state, scene, boat, player:aiaPlayer, witch, seer, aeolus, boar, 
   campInfo:function(){ return {on:CAMP.on, wave:CAMP.wave, hit:CAMP.hit, held:!!state.campHeld}; },
   ramInfo:function(){ return {on:HIDE.on, n:HIDE.n, caught:HIDE.caught, done:!!state.ramHide, paidMem:(state.paidMem||[]).length}; }};
 </script>
-<script type="module" src="./world3d.js?v=19"></script>
+<script type="module" src="./world3d.js?v=20"></script>
 </body>
 </html>
