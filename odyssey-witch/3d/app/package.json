@@ -5,9 +5,12 @@
   "type": "module",
   "description": "埃阿亚岛 · 女巫的领地 —— Three.js 浏览器 3D 垂直切片",
   "scripts": {
+    "predev": "node tools/gen-asset-index.mjs",
     "dev": "vite",
+    "prebuild": "node tools/gen-asset-index.mjs",
     "build": "vite build",
     "preview": "vite preview",
+    "check:assets": "node tools/check-assets.mjs",
     "deploy": "vite build && wrangler pages deploy"
   },
   "dependencies": {
