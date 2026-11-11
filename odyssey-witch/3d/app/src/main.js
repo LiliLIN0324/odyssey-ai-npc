@@ -10,7 +10,7 @@ const { showHUD } = initUI();
 
 // --- 渲染器 ---
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));   // DPR 上限 2→1.5：填充率降 44%，低多边形风格下肉眼几乎无差
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.shadowMap.enabled = true;
@@ -53,7 +53,7 @@ let acc = 0;
 renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 0.1);
   elapsed += dt;
-  world.update(dt, elapsed);
+  world.update(dt, elapsed, character.state);   // 角色状态传给世界：阴影相机随人移动（world.js）
   character.update(dt);
   renderer.render(scene, camera);
 

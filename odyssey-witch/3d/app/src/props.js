@@ -69,14 +69,29 @@ export function createProps(scene) {
 
     const loader = new GLTFLoader();
 
-    for (const spec of list) {
-      const url = `assets/${spec.file}`;
+    /* 串行 await → Promise.allSettled 并行加载：N 个 glb 的装配时间从 Σt 降到 max(t)；
+       错误在各任务内部兜住（不会 unhandled rejection），结果仍按清单顺序处理 */
+    const tasks = list.map((spec) => (async () => {
       try {
-        if (!present.has(spec.file)) {
-          missing.push(spec.id);
-          continue;
-        }
-        const gltf = await loadGlb(loader, url);
+        if (!present.has(spec.file)) return { spec, missing: true };
+        const gltf = await loadGlb(loader, `assets/${spec.file}`);
+        return { spec, gltf };
+      } catch (e) {
+        return { spec, error: e };
+      }
+    })());
+    const settled = await Promise.allSettled(tasks);
+
+    for (const r of settled) {
+      if (r.status === 'rejected') continue;   // 任务内已兜错，理论到不了这里
+      const { spec, gltf, missing: isMissing, error } = r.value;
+      if (error) {
+        stats.failed.push({ id: spec.id, error: String((error && error.message) || error) });
+        console.warn(`[props] ${spec.id} 加载失败：`, error);
+        continue;
+      }
+      if (isMissing) { missing.push(spec.id); continue; }
+      try {
         const tris = countTriangles(gltf.scene);
         const copies = 1 + (spec.repeat ? spec.repeat.length : 0);
         stats.loaded += 1;

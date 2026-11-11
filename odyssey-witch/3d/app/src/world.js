@@ -391,14 +391,20 @@ export function buildWorld(scene) {
   sun.position.copy(SUN_DIRECTION).multiplyScalar(80);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
-  sun.shadow.camera.left = -70;
-  sun.shadow.camera.right = 70;
-  sun.shadow.camera.top = 70;
-  sun.shadow.camera.bottom = -70;
+  sun.shadow.camera.left = -40;   // 阴影正交盒 140→80:贴图密度翻倍,配合帧内随角色移动,身边阴影不再糊
+  sun.shadow.camera.right = 40;
+  sun.shadow.camera.top = 40;
+  sun.shadow.camera.bottom = -40;
   sun.shadow.camera.far = 250;
   sun.shadow.bias = -0.0002;
   sun.shadow.normalBias = 0.5;
+  sun.shadow.camera.updateProjectionMatrix();   // DirectionalLightShadow 不自动重投影：改盒后不调这句盒参数不生效
   scene.add(sun);
+  // 阴影目标随角色移动:DirectionalLight.target 默认固定在原点且必须 add 进场景,否则 matrixWorld 不更新
+  const sunTarget = new THREE.Object3D();
+  sun.target = sunTarget;
+  scene.add(sunTarget);
+  const sunOffset = SUN_DIRECTION.clone().multiplyScalar(80);   // 光位 = 角色位置 + 太阳方向×80,方向恒定
 
   scene.add(buildIsland());
 
@@ -413,9 +419,15 @@ export function buildWorld(scene) {
   scene.add(fire.light);
 
   return {
-    update(_dt, elapsed) {
+    update(_dt, elapsed, player) {
       water.uniforms.uTime.value = elapsed;
       updateFire(fire, elapsed);
+      // 阴影盒每帧跟随角色:光源/目标平移保持太阳方向不变,±40 盒始终罩住玩家身边
+      if (player) {
+        sunTarget.position.set(player.x, 0, player.z);
+        sun.position.set(player.x + sunOffset.x, sunOffset.y, player.z + sunOffset.z);
+        sunTarget.updateMatrixWorld();
+      }
     },
   };
 }

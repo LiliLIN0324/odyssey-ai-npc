@@ -77,7 +77,13 @@ const LOCKED_LOOK = { r: 1.3, grass: 0x93a3ad, grassDeep: 0x6d7d88, seed: 202611
 const MAINLAND_LOOK = { r: 2.0, grass: 0x9dbf82, grassDeep: 0x78925f, seed: 20261120, mh: 1.0 };
 
 let renderer, scene3, camera3, waterU, boatG, sailMesh, isleList = [];
-let escortG = null, escortBoats = [], escPrev = null, escHead = { x: 0, z: -1 };
+let escortG = null, escortHull = null, escortSail = null, escPrev = { x: 0, z: 0 }, escPrevOk = false, escHead = { x: 0, z: -1 };
+/* 热路径零分配：护航船实例矩阵 / 相机目标点 / 主船兜底字面量全部模块级复用 */
+const ESCORT_MAX = 11;
+const _ebDummy = new THREE.Object3D();
+const _camTarget = new THREE.Vector3();
+const BOAT_FALLBACK = { x: 460, y: 180, face: "up" };
+let labelSprites = [];   /* 岛名标签（Sprite+CanvasTexture）：随相机距离淡出，3D 下补回导航信息 */
 let fitFn = null;   /* init 内 fit 的稳定引用（setDPR 重算尺寸用） */
 let driftG = null, driftSlots = [];   /* 漂流物（Steam 化玩法批）：预建 4 槽，随 __game.drifts 同步 */
 let worldGroup = null, waterMesh = null, skyGroup = null, cloudGroup = null, troyGroup = null;
@@ -181,6 +187,10 @@ function buildIslands() {
       const look = best && best.scene ? (ISLE_LOOK[best.scene] || LOCKED_LOOK) : { ...LOCKED_LOOK };
       return { is: best, look };
     };
+    /* draw call 减半①：全部连通块写进同一份 position/color 大数组 → 单 Mesh + 单材质（原来每块独立 Mesh+材质，
+       十几块就是十几条 call）。岛间差异已烘在顶点色里，几何合并不影响观感 */
+    const positions = [], colors = [];
+    const compMeta = [];   /* 每块质心/有效半径，网格建好后统一回填 isleList */
     for (const cells of comps) {
       const set = new Set(cells.map(([x, y]) => x + "," + y));
       /* 每格离岸深度（BFS 向内） */
@@ -245,7 +255,6 @@ function buildIslands() {
       const P1 = new THREE.Color(look.grass), P2 = new THREE.Color(look.grassDeep);
       const SAND = new THREE.Color(PAL.cliffLight), DEEP = new THREE.Color(PAL.oceanDeep);
       const ROCK = new THREE.Color(PAL.cliffDark);
-      const positions = [], colors = [];
       const pushV = (px, py, h, tint) => {
         positions.push(px2x(px), h + (look.floatY ? look.floatY : 0), px2z(py));
         colors.push(tint.r, tint.g, tint.b);
@@ -311,14 +320,6 @@ function buildIslands() {
           quadUp([ax + oxo, ay + oyo, H_BEACH, ROCK], [bx2 + oxo, by2 + oyo, H_BEACH, ROCK], [ax + ox2, ay + oy2, H_CLIFF, ROCK], [bx2 + ox2, by2 + oy2, H_CLIFF, ROCK], flip);
         }
       }
-      const geo = new THREE.BufferGeometry();
-      geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-      geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
-      geo.computeVertexNormals();
-      const mat = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.95, side: THREE.DoubleSide });
-      const mesh = new THREE.Mesh(geo, mat);
-      mesh.castShadow = true; mesh.receiveShadow = true;
-      group.add(mesh);
       /* 有效半径（供水面色带用）：质心到最远陆格角 + 余量 */
       let maxR = 0;
       for (const [x, y] of cells) {
@@ -328,7 +329,7 @@ function buildIslands() {
       }
       const rU = maxR * SCALE + 0.25;
       const x3 = px2x(cxp), z3 = px2z(cyp);
-      isleList.push({ x: x3, z: z3, r: rU, mesh });
+      compMeta.push({ x: x3, z: z3, r: rU });   /* 几何统一在循环外建 Mesh（合并批） */
       /* 主题装饰（保持原风格） */
       if (look.floatY) {
         const cloud = new THREE.Mesh(
@@ -352,6 +353,18 @@ function buildIslands() {
         }
       }
     }
+    /* 合并批收口：全部连通块 → 一个 BufferGeometry + 一个共享材质 = 整片大陆 1 条 draw call。
+       side 改 FrontSide 的前提：①顶面三角形绕序已验算法线朝 +y；②裙边 quadUp 有 flip 绕序守卫
+       （(b-a)×out 符号判定），东/西/南/北四向均已覆盖——确认存在才改，若后续新增面生成路径须同样过守卫。
+       shadowMap 从未启用（renderer.shadowMap 无处打开），castShadow/receiveShadow 旗标是死开销，一并删除 */
+    const isleGeo = new THREE.BufferGeometry();
+    isleGeo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    isleGeo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+    isleGeo.computeVertexNormals();
+    const isleMat = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.95, side: THREE.FrontSide });
+    const isleMesh = new THREE.Mesh(isleGeo, isleMat);
+    group.add(isleMesh);
+    for (const m of compMeta) isleList.push({ ...m, mesh: isleMesh });   /* 质心/半径回填，mesh 仅供 debug 引用 */
     return group;
   }
   /* 兜底：旧圆形岛（worldGrid 不可用时） */
@@ -415,7 +428,7 @@ function buildWater() {
   };
   const mat = new THREE.ShaderMaterial({
     uniforms: Object.assign(THREE.UniformsUtils.clone(THREE.UniformsLib.fog), waterU),
-    fog: false, transparent: false,
+    fog: true, transparent: false,   /* 死雾修复：原 fog:false 让渲染器永不刷新雾 uniforms（clone 的 UniformsLib.fog 空转），远岛与海面衰减不同步——岛体 StandardMaterial 是 0.0062，海面却是默认白雾 */
     vertexShader: /* glsl */`
       #include <fog_pars_vertex>
       varying vec3 vWorld;
@@ -514,18 +527,24 @@ function buildSky() {
   return new THREE.Mesh(new THREE.SphereGeometry(300, 32, 16), mat);
 }
 
-/* ---------- 高积云（低模白朵，给天际添呼吸感） ---------- */
+/* ---------- 高积云（低模白朵，给天际添呼吸感） ----------
+   draw call 减半②：10 朵独立 sphere → 1 个 InstancedMesh（10→1 条 call）；
+   大小差异改逐实例缩放，随机数消费顺序不变，云的分布与旧版逐位一致 */
 function buildClouds() {
-  const g = new THREE.Group();
   const mat = new THREE.MeshStandardMaterial({ color: 0xf4f7fa, roughness: 1, flatShading: true, transparent: true, opacity: 0.92 });
   const rand = mulberry32(777);
+  const inst = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 10, 7), mat, 10);
+  const dummy = new THREE.Object3D();
   for (let i = 0; i < 10; i++) {
-    const c = new THREE.Mesh(new THREE.SphereGeometry(1.3 + rand() * 1.7, 10, 7), mat);
-    c.scale.set(1.7, 0.4, 1.0);
-    c.position.set((rand() * 2 - 1) * 42, 6.5 + rand() * 4, (rand() * 2 - 1) * 17);
-    g.add(c);
+    const r = 1.3 + rand() * 1.7;   /* 原半径随机值 → 缩放系数（扁比例 1.7/0.4/1.0 保持） */
+    dummy.position.set((rand() * 2 - 1) * 42, 6.5 + rand() * 4, (rand() * 2 - 1) * 17);
+    dummy.scale.set(r * 1.7, r * 0.4, r * 1.0);
+    dummy.updateMatrix();
+    inst.setMatrixAt(i, dummy.matrix);
   }
-  return g;
+  inst.instanceMatrix.needsUpdate = true;
+  inst.frustumCulled = false;   /* 实例散布全图，按单位球包围盒会整片误剔除 */
+  return inst;
 }
 
 /* ---------- 帆船（程序化低模：船体+桅杆+帆，随航向平滑转头，随浪起伏） ---------- */
@@ -569,24 +588,25 @@ function buildBoat() {
 }
 
 
-/* ---------- 护航船队（17h 船队折损可视化：V 字跟航，随 state.fleet 折损增减；航向用运动方向，与模型朝向约定解耦） ---------- */
+/* ---------- 护航船队（17h 船队折损可视化：V 字跟航，随 state.fleet 折损增减；航向用运动方向，与模型朝向约定解耦） ----------
+   draw call 减半③：11 艘 × (hull+sail) 22 条 call → hull/sail 两个 InstancedMesh 共 2 条。
+   vendor 无 BufferGeometryUtils 无法合 geometry，且 hull(受光)/sail(恒亮) 材质不同不能并一体，实例化是唯一不换观感的路 */
 function buildEscortFleet() {
   const g = new THREE.Group();
-  escortBoats = [];
   const hullMat = new THREE.MeshStandardMaterial({ color: 0x6d4a2b, roughness: 1, flatShading: true });
   const sailMat = new THREE.MeshBasicMaterial({ color: 0xe8e0cc, side: THREE.DoubleSide });
-  for (let i = 0; i < 11; i++) {
-    const b = new THREE.Group();
-    const hull = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.24, 1.3), hullMat);
-    hull.position.y = 0.12; b.add(hull);
-    const sailGeo = new THREE.BufferGeometry();
-    sailGeo.setAttribute('position', new THREE.Float32BufferAttribute([
-      -0.34, 0.24, 0.04,  0.34, 0.24, 0.04,  0.0, 0.98, 0.04,
-    ], 3));
-    sailGeo.computeVertexNormals();
-    b.add(new THREE.Mesh(sailGeo, sailMat));
-    b.visible = false; g.add(b); escortBoats.push(b);
-  }
+  const hullGeo = new THREE.BoxGeometry(0.46, 0.24, 1.3);
+  hullGeo.translate(0, 0.12, 0);   /* 原子节点 hull.position.y=0.12 烘进几何，实例矩阵即可直接用船位 */
+  const sailGeo = new THREE.BufferGeometry();
+  sailGeo.setAttribute('position', new THREE.Float32BufferAttribute([
+    -0.34, 0.24, 0.04,  0.34, 0.24, 0.04,  0.0, 0.98, 0.04,
+  ], 3));
+  sailGeo.computeVertexNormals();
+  escortHull = new THREE.InstancedMesh(hullGeo, hullMat, ESCORT_MAX);
+  escortSail = new THREE.InstancedMesh(sailGeo, sailMat, ESCORT_MAX);
+  escortHull.frustumCulled = false; escortSail.frustumCulled = false;   /* 跟随主船全图移动，按船体包围盒会误剔除 */
+  escortHull.count = 0; escortSail.count = 0;   /* 折损数在帧内以 count 控制 */
+  g.add(escortHull); g.add(escortSail);
   g.visible = false;
   return g;
 }
@@ -628,6 +648,7 @@ function buildDrifts() {
 
 /* ---------- P2.3 石化送客船：白石柱（17g 原著第 13 卷末；主脚本置 state.stonePillarDone 后显现） ---------- */
 let pillarG = null;
+let troyLight = null;   /* 特洛伊营火 PointLight 引用（flick 闪烁乘进 intensity） */
 function buildStonePillar() {
   const g = new THREE.Group();
   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.62, 7.5, 7),
@@ -675,6 +696,46 @@ function buildTroy() {
     const t = new THREE.Mesh(new THREE.SphereGeometry(0.16, 6, 4), fireMat); t.position.set(Math.cos(a) * 6.2, 0.35, Math.sin(a) * 6.2); g.add(t);
   }
   const pl = new THREE.PointLight(0xff9a4a, 1.2, 20); pl.position.set(0, 5, 0); g.add(pl);
+  troyLight = pl;   /* 帧内火光闪烁乘到这盏营火灯（原来 flick 算完即弃） */
+  return g;
+}
+
+/* ---------- 岛名标签（CanvasTexture Sprite：白字 + 深色半透明圆角底；open:false 灰字「待开放」） ----------
+   2D drawWorld 才画岛名，3D 海图此前导航信息全失；ISLANDS 由主脚本挂载（gx/gy/name/open）。
+   每帧按相机距离淡出（20 内全显 / >60 隐没）在 frame() 里做。 */
+function buildLabels() {
+  const g = new THREE.Group();
+  const ISLES = window.ISLANDS || [];
+  const G = window.__game;
+  const WTS = (G && G.worldTileSize) ? G.worldTileSize() : 20;
+  for (const is of ISLES) {
+    const cnv = document.createElement("canvas");
+    cnv.width = 512; cnv.height = 128;
+    const ctx = cnv.getContext("2d");
+    ctx.font = 'bold 54px "Noto Serif SC","Songti SC",serif';
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    const label = is.open ? is.name : "待开放";   /* 未开放岛画灰字「待开放」 */
+    const tw = Math.min(ctx.measureText(label).width + 48, 500);
+    /* 深色半透明圆角底（保证亮海面/白帆上也能读清） */
+    ctx.fillStyle = "rgba(10,18,28,0.62)";
+    const bx0 = (512 - tw) / 2, by0 = 26, bh = 76, rr = 18;
+    ctx.beginPath();
+    ctx.moveTo(bx0 + rr, by0);
+    ctx.arcTo(bx0 + tw, by0, bx0 + tw, by0 + bh, rr);
+    ctx.arcTo(bx0 + tw, by0 + bh, bx0, by0 + bh, rr);
+    ctx.arcTo(bx0, by0 + bh, bx0, by0, rr);
+    ctx.arcTo(bx0, by0, bx0 + tw, by0, rr);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = is.open ? "#ffffff" : "#9aa7b2";
+    ctx.fillText(label, 256, 66);
+    const tex = new THREE.CanvasTexture(cnv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 1 }));
+    sp.position.set(px2x(is.gx * WTS + WTS / 2), 8, px2z(is.gy * WTS + WTS / 2));   /* 岛心上方 */
+    sp.scale.set(6.4, 1.6, 1);   /* 与 512:128 画布同比（4:1） */
+    g.add(sp);
+    labelSprites.push({ sp, x: sp.position.x, y: 8, z: sp.position.z });
+  }
   return g;
 }
 
@@ -707,6 +768,7 @@ function init() {
   skyGroup = buildSky(); scene3.add(skyGroup);
   worldGroup = new THREE.Group();
   worldGroup.add(buildIslands());   /* 先建岛：水 shader 的 uIsle 岸线数组依赖 isleList */
+  worldGroup.add(buildLabels());    /* 岛名 Sprite 标签：挂 worldGroup（特洛伊场景随组隐藏） */
   scene3.add(worldGroup);
   waterMesh = buildWater(); scene3.add(waterMesh);
   cloudGroup = buildClouds(); scene3.add(cloudGroup);
@@ -726,6 +788,21 @@ function init() {
   const stage = document.getElementById("stage");
   const cv2 = document.getElementById("cv");
   stage.insertBefore(cv, cv2);   /* 垫在 2D 画布下面：日光/夜色/浮字仍由 2D 层合成 */
+
+  /* WebGL 上下文丢失兜底（GPU 重置/驱动崩溃）：lost→置 failed 旗标 + 藏 cv3d（主循环 w3dActive 失效自动回落 2D）
+     + 广播 w3d-failed（主页面侧已接线切画质并 toast）；preventDefault 保留后续恢复机会。
+     restored→three r170 内部会重建 GL 状态，这里只需清旗标恢复 ready 并重跑 fit（尺寸/DPR 可能已变） */
+  cv.addEventListener("webglcontextlost", (e) => {
+    e.preventDefault();
+    failed = true; ready = false;
+    cv.style.display = "none";
+    window.dispatchEvent(new CustomEvent("w3d-failed"));
+  }, false);
+  cv.addEventListener("webglcontextrestored", () => {
+    failed = false; ready = true;
+    cv.style.display = "";
+    if (fitFn) fitFn();
+  }, false);
 
   /* 渲染分辨率跟随舞台实际尺寸（含窗口缩放），CSS 尺寸交给样式表 */
   function fit() {
@@ -752,9 +829,14 @@ function frame(et) {
   const G = window.__game;
   const sc = (G && G.getScene) ? G.getScene() : "world";
   if (sc === "troy") return frameTroy(et);
-  /* 恢复世界图可见（特洛伊→世界 切换用） */
-  if (troyGroup && !troyGroup.visible){ worldGroup.visible=true; waterMesh.visible=true; boatG.visible=true; cloudGroup.visible=true; if (driftG) driftG.visible=true; troyGroup.visible=false; }
-  const b = (G && G.boat) || { x: 460, y: 180, face: "up" };
+  /* 恢复世界图可见（特洛伊→世界 切换用）：条件是「特洛伊组正在显示」——原条件写反（!visible 恒假），
+     一趟特洛伊后 worldGroup/water/boat 永久隐藏，3D 海图报废；同时复位 troyCamInit（二次进特洛伊沿用旧机位） */
+  if (troyGroup && troyGroup.visible){
+    worldGroup.visible=true; waterMesh.visible=true; boatG.visible=true; cloudGroup.visible=true;
+    if (escortG) escortG.visible=true; if (driftG) driftG.visible=true;
+    troyGroup.visible=false; troyCamInit=false;
+  }
+  const b = (G && G.boat) || BOAT_FALLBACK;   /* 兜底字面量提为模块级，避免 __game 未挂载时每帧 new */
   const bx = px2x(b.x), bz = px2z(b.y);
   const bob = Math.sin(et * 2.1) * 0.05 + Math.cos(et * 1.4) * 0.03;
   boatG.position.set(bx, bob, bz);
@@ -770,7 +852,7 @@ function frame(et) {
   /* 相机跟随：帧率无关指数缓动（低帧下也不拖泥带水） */
   const dt = lastEt < 0 ? 0.016 : Math.min(Math.max(et - lastEt, 0.001), 0.12); lastEt = et;
   /* 护航船队：航向取运动方向（指数平滑），V 字编队挂在主船尾迹上；折损后队列缩短 */
-  if (escPrev) {
+  if (escPrevOk) {
     const dxh = bx - escPrev.x, dzh = bz - escPrev.z, dl = Math.hypot(dxh, dzh);
     if (dl > 0.02) {
       const k = 1 - Math.exp(-3 * dt);
@@ -778,23 +860,24 @@ function frame(et) {
       const hl = Math.hypot(escHead.x, escHead.z) || 1; escHead.x /= hl; escHead.z /= hl;
     }
   }
-  escPrev = { x: bx, z: bz };
+  escPrev.x = bx; escPrev.z = bz; escPrevOk = true;   /* 复用同一对象：热路径不再每帧 new 字面量 */
   if (escortG) {
     const fl = Math.max(0, Math.min(12, (G && G.state && G.state.fleet) || 0));
-    const n = Math.max(0, fl - 1);
+    const n = Math.max(0, Math.min(fl - 1, ESCORT_MAX));
     escortG.visible = n > 0;
     const pxh = -escHead.z, pzh = escHead.x;   /* 航向左手垂直向 */
-    for (let i = 0; i < escortBoats.length; i++) {
-      const eb = escortBoats[i];
-      if (i >= n) { eb.visible = false; continue; }
-      eb.visible = true;
+    for (let i = 0; i < n; i++) {
       const back = 2.2 + i * 1.35, side = (i % 2 ? 1 : -1) * (0.9 + Math.floor(i / 2) * 0.8);
-      eb.position.set(bx - escHead.x * back + pxh * side,
+      _ebDummy.position.set(bx - escHead.x * back + pxh * side,
                       Math.sin(et * 2.1 + i * 1.7) * 0.05,
                       bz - escHead.z * back + pzh * side);
-      eb.rotation.y = Math.atan2(-escHead.x, -escHead.z);
-      eb.rotation.z = Math.sin(et * 1.7 + i) * 0.03;
+      _ebDummy.rotation.set(0, Math.atan2(-escHead.x, -escHead.z), Math.sin(et * 1.7 + i) * 0.03);
+      _ebDummy.updateMatrix();
+      escortHull.setMatrixAt(i, _ebDummy.matrix);
+      escortSail.setMatrixAt(i, _ebDummy.matrix);
     }
+    escortHull.count = escortSail.count = n;   /* 实例化批：折损直接缩 count，矩阵标记上载 */
+    escortHull.instanceMatrix.needsUpdate = true; escortSail.instanceMatrix.needsUpdate = true;
   }
   /* P2.3 石柱：主脚本置 state.stonePillarDone 后显现（斯克里东南海面，SCHERIA_EXIT 经 __game 挂载） */
   if (!pillarG){ pillarG = buildStonePillar(); scene3.add(pillarG); }
@@ -816,9 +899,17 @@ function frame(et) {
       s.g.rotation.z = Math.sin(et * 1.6 + d.y) * 0.12;
     }
   }
-  const camTarget = new THREE.Vector3(bx, 14, bz + 17);
-  camera3.position.lerp(camTarget, 1 - Math.exp(-4 * dt));
+  _camTarget.set(bx, 14, bz + 17);   /* 模块级复用向量：相机跟随热路径不再每帧 new Vector3 */
+  camera3.position.lerp(_camTarget, 1 - Math.exp(-4 * dt));
   camera3.lookAt(bx, 0.8, bz - 2.5);
+  /* 岛名标签随相机距离淡出：20 内全显，>60 隐没（淡透后顺带 visible=false 省掉无谓 sprite call） */
+  for (let i = 0; i < labelSprites.length; i++) {
+    const L = labelSprites[i];
+    const dxl = camera3.position.x - L.x, dyl = camera3.position.y - L.y, dzl = camera3.position.z - L.z;
+    const op = 1 - sstep(Math.sqrt(dxl * dxl + dyl * dyl + dzl * dzl), 20, 60);
+    L.sp.visible = op > 0.02;
+    if (L.sp.visible) L.sp.material.opacity = op;
+  }
   renderer.render(scene3, camera3);
 }
 
@@ -826,17 +917,17 @@ function frame(et) {
 let troyCamInit = false;
 function frameTroy(et) {
   if (troyGroup) { worldGroup.visible = false; waterMesh.visible = false; boatG.visible = false; cloudGroup.visible = false; if (escortG) escortG.visible = false; if (driftG) driftG.visible = false; troyGroup.visible = true; }
-  const flick = 0.85 + 0.3 * Math.sin(et * 3.1) * Math.sin(et * 2.3);
+  const flick = 0.85 + 0.3 * Math.sin(et * 3.1) * Math.sin(et * 2.3);   /* 双正弦火光闪烁，乘进营火灯（原先是死代码） */
+  if (troyLight) troyLight.intensity = 1.2 * flick;
   if (!troyCamInit) { camera3.position.set(0, 8.5, 13); troyCamInit = true; }
   camera3.lookAt(0, 1.2, 0);
-  const amb = 0.55 + 0.18 * Math.sin(et * 1.7);
   renderer.render(scene3, camera3);
 }
 
 init();
 
 window.W3D = { get ready() { return ready; }, get failed() { return failed; }, frame,
-  canvas: renderer.domElement,   /* 航迹分享卡读帧用；读帧请优先用 grabFrame() */
+  canvas: renderer ? renderer.domElement : null,   /* 防崩：renderer 构造失败时原写法在模块顶层抛 TypeError，failed 旗标随模块一起丢失 */
   /** 现渲现读一帧（preserveDrawingBuffer 已关，必须同帧内 render→toDataURL） */
   grabFrame: () => {
     if (!ready || !renderer) return null;
@@ -849,6 +940,7 @@ window.W3D = { get ready() { return ready; }, get failed() { return failed; }, f
     renderer.setPixelRatio(Math.max(0.75, Math.min(2, +r || 1)));
     if (fitFn) fitFn();
   },
-  debug: () => ({ boat: boatG ? boatG.position.toArray().map(v => Math.round(v * 10) / 10) : null,
+  debug: () => renderer ? ({ boat: boatG ? boatG.position.toArray().map(v => Math.round(v * 10) / 10) : null,
                   cam: camera3 ? camera3.position.toArray().map(v => Math.round(v * 10) / 10) : null,
-                  isles: isleList.length, calls: renderer.info.render.calls, tris: renderer.info.render.triangles }) };
+                  isles: isleList.length, calls: renderer.info.render.calls, tris: renderer.info.render.triangles })
+                : ({ boat: null, cam: null, isles: isleList.length, calls: 0, tris: 0 }) };   /* failed 态也安全可查 */

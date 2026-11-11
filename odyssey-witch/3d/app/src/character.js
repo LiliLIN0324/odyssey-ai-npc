@@ -116,6 +116,8 @@ export function createCharacterController(scene, camera, dom) {
 
   /* ---------- 每帧 ---------- */
   const tmpFwd = new THREE.Vector3();
+  const tmpRight = new THREE.Vector3();   /* 每帧热路径复用：原 update 内 new Vector3 ×2 每帧产生垃圾 */
+  const tmpMv = new THREE.Vector3();
   let bobT = 0;
 
   function update(dt) {
@@ -125,7 +127,8 @@ export function createCharacterController(scene, camera, dom) {
     let run = keys.has('shift');
     let gpyaw = 0, gppitch = 0, gpmove = false;
     const pads = typeof navigator.getGamepads === 'function' ? navigator.getGamepads() : [];
-    const gp = pads && [...pads].find((p) => p && p.connected);
+    let gp = null;   /* 原spread+find 每帧分配一个数组，改普通遍历零分配 */
+    if (pads) for (const p of pads) { if (p && p.connected) { gp = p; break; } }
     if (gp) {
       const ax = gp.axes[0] || 0, ay = gp.axes[1] || 0;
       if (Math.hypot(ax, ay) > 0.18) { ix += ax; iz += ay; gpmove = true; }
@@ -137,10 +140,10 @@ export function createCharacterController(scene, camera, dom) {
     if (gpyaw) state.camYaw -= gpyaw * 2.2 * dt;
     if (gppitch) state.camPitch = Math.min(1.15, Math.max(0.12, state.camPitch + gppitch * 1.4 * dt));
 
-    /* 相机朝向 → 移动向量（相机相对） */
+    /* 相机朝向 → 移动向量（相机相对；right/mv 用模块级复用向量，热路径零分配） */
     tmpFwd.set(-Math.sin(state.camYaw), 0, -Math.cos(state.camYaw));
-    const right = new THREE.Vector3(-tmpFwd.z, 0, tmpFwd.x);
-    const mv = new THREE.Vector3().addScaledVector(tmpFwd, -iz).addScaledVector(right, ix);
+    const right = tmpRight.set(-tmpFwd.z, 0, tmpFwd.x);
+    const mv = tmpMv.set(0, 0, 0).addScaledVector(tmpFwd, -iz).addScaledVector(right, ix);
     state.moving = mv.lengthSq() > 0.0004;
     state.running = run && state.moving;
 

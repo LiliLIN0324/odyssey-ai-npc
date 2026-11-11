@@ -758,6 +758,33 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 - **既有遗留（已用 `git stash` 对照基线 6c56bd0 复现，**非本轮回归**）**：① **世界画布在 bu 自动化浏览器里 2D/3D 均未上屏（显黑）**——canvas 几何正常（1000×600 / rect 764×458）、逻辑循环在跑、无 JS error；基线干净树同样复现，倾向自动化浏览器的 canvas/WebGL 合成限制，**需在真实桌面浏览器复核**（上一轮传闻冒烟同环境曾正常出海面）；② `island3d.js` 为未接线的岛内 3D 实验模块（0 引用，world3d 也不引），保留未删；③ 账本 §二.9 风神岛两处小瑕疵（左侧 void 黑区、跳过提示与 HUD 重叠）本环境看不到画面，未能目检复核；代码层 `sceneBackdrop` 已补底色、`.ccSkip` 在章节卡内 z-2 被卡 z-18 覆盖，看似已处理；④ 外部阻塞：3D P2 资产、评测 multi 准确率、天翼 key 复测（见 §二/§三）。
 - **验收**：`node --test tools/rumors.test.cjs` 11/11；`check_inline_js.py` OK（blocks=1，429300 chars）；`server.py` `py_compile` 0；静态服务器实测 `/src/rumors.js` 4394B、压缩地图 270KB、立绘 149KB、world3d/three 均 200；50 张图可打开 0 损坏。
 
+### 26. 全游戏优化批 v2——四路子智能体深审 + 修复/体验/性能/传闻v2 四线（11-12，分支 `feat/rumor-mongering`；用户「继续任务 多派子智能体 借鉴成熟游戏案例 彻底优化游戏 不完成不停止」，豆包线程 xqd6pm60zH7i8JdXs 已登录读取确认任务脉络）
+
+- **方法**：4 个并行子智能体出报告（① 成熟游戏案例调研：Sunless Sea/Spiritfarer/Wind Waker/80 Days/GDC juice 三件套/Hades 多币经济/Generative Agents，18 条带来源映射；② 2D 玩法层深审；③ 3D 线深审；④ 内容/传闻系统审计）→ 汇总路线图 → 分工实施：index.html 主线本会话自做，rumors.js+单测与 world3d.js+3d/app 各派一个子智能体（错开共享文件避免冲突）。并发限制实测：**同时只跑得动 1 个后台子智能体**，多派会 `user concurrency limit exceeded`，需串行补发。
+- **修复批（P0/P1）**：
+  1. **P0·index.html L7229 未闭合注释吞掉登陆提示**：`/* 去抖…` 行尾缺 `*/`，把 `hintEl.style.display="block"` 和 3D 定位分支整段吞进注释——因 `if(x){} /*c*/ else{}` 在 JS 里合法（注释算空白）**不炸语法**，但世界图「E 登陆 XX岛」提示自 #hint `display:none` 默认起永久不显示，且 else 挂到了去抖 if 上。补一行 `*/` 修复，实机确认提示恢复。
+  2. **P0·world3d.js:756 特洛伊返回恢复条件写反**：`!troyGroup.visible` 恒假 → 一趟特洛伊后 worldGroup/water/boat 永久隐藏，3D 海图报废。翻转条件 + `troyCamInit=false` 复位（二次进特洛伊沿用旧机位）+ escortG 恢复（本会话先修，子智能体后改写为同义实现）。
+  3. keydown `e.repeat` 过滤（非移动键）——OS 重复率 ~30/s 按住 E 可秒杀野猪/卫兵/四场快反战的窗口判定价值。
+  4. `fleetDefenseTick` 补界面门控（dlgOpen/titleOn/chapterOn/mapOpen）——与 F5/F3/F4/F6 同款；修"开海图看船位被巨石偷家"。
+  5. 章节卡自动跳过 3s 固定 → `3000+45ms/字`（上限 9s）——80~140 字引言此前读不完。
+  6. 特洛伊零引导：`nextObjective` 终章后补 `{k:"troy"}` 分支（ISLANDS 有 scene:"troy"，罗盘直接可用）+ 首航 toast 3.8s 处补一句"东边特洛伊还停着十二艘船"。
+  7. 海遇阈值 300→900 起步/1600 封顶步进 60（110px/s 航速下 2.7s 一遇太密→8s 起步）；`ensureState` 旧档归一化（<900 抬到 900，幂等）；`seaEncInfo` 同步。
+  8. `postJSON` AbortController 超时：parse 8s / chat 15s，`AbortError→noRetry` 不进重试退避直接落本地兜底（原来弱网可悬 10s+）。
+  9. `renderHUD` bagList 仅面板开着才重建 DOM（原来每秒全量重建）。
+  10. G 键切换 3D/2D 海图（原来只有右上按钮）。
+  11. 好感 60 档文案对齐：承诺"蜂蜜酒半价+多装一份"实发全货架九折——改文案为"熟人价九折"。
+  12. QUEST_DEFS `治疗药草→治疗草药` 错字 + 注明 reward 是定义层数据（实际发放硬编码在复命分支）。
+- **体验批（调研映射）**：①**到港仪式卡** `#arrival`（Wind Waker 岛名弹出/Spiritfarer 到港过场）——`markLeg` 首访触发，航序号+岛名+注脚+bless 音，3.2s 自散，`prefers-reduced-motion` 适配，连跳两岛强制重排重启动画；实机直调渲染验证 ✓。②**multi 分句引导 chip** `splitClauseHint`：≥2 分句各带动词而模型只拆出 <2 意图 → 绿色 chip「你好像说了两件事——分开说，我答得更准」；拆齐了给「都记下了，一件件来」正反馈（评测线 multi 组 53.8%~61.5% 是模型短板，UI 零成本补救；`.chip.tip` 新样式）。四态直测 ✓。③首开对话追加引导句「一次讲一件事…带我去×」。④witch/calypso/nausicaa 三处本地「查询附近目标」回复加导航句式尾缀。⑤E 空按补 `miss` 轻音（SFX_CFG 新键）。⑥海事件池 3→7（+海豚/逆风/祭品箱/死寂，80 Days 式文字卡扩容，lore 安全）。
+- **文案批**：埃亚岛→**埃阿亚岛** 31 处（圣经 6:4 多数派+章节卡/地图名既有用词；cases/schema 无此词零风险）、栈杆→**桅杆** 14 处（对齐 schema.json 已用词；物品状态走 `state.mastTied`/`type:"mast"` 键，旧档安全）、绑栈→绑桅 5 处、瑞西亚娅→**瑙西亚娅**（localFallbackParse 正则，该 NPC 另 30 处均正确）、lore.md 忒勒斯玛科斯/卡瑞布狄斯两处笔误。
+- **传闻 v2（子智能体产 rumors.js，本会话接线 index.html）**：`gossipTick(rumors,npcs,now,rng?)` NPC 间多跳转述——hop 0/1/2、权重 ÷(1+hop)、传播半径同场景 1.0/邻岛 0.6/跨海 0.3（NEAR 邻接表）、失真三级 vers **只减法不编造**（stripDetails 去数字细节/skeletonize 留主谓）；`VOICE` 12 NPC ×2 套口吻模板（djb2 hash(rumorId+npcKey) 稳定取样，同一 NPC 对同一传闻说法恒定）；`lineFor(entry, npcKey)` 签名扩展，未知 key 回落 v1 通用口吻。**接线**：`clockTick` 跨零点回卷瞬间 `RUMOR.gossipTick(state.rumors, NPC_SCENE, Date.now())`（奥吉吉亚日历冻结不走钟→传闻自然停跳，符合设定）；`rumors.js?v=2` 缓存版本。单测 11→**23 全绿**（v1 用例未动一字）。
+- **RUMOR_DERIVE 20→27**：+stone_pillar（回望石化）/scylla_six（crewScylla 六人账）/scylla_six_saved（scSixSaved 改写）/raft_veil（收纱渡浪）/raft_refuse（拒纱推回）/tel_reveal（父子相认）/name_pledge（**sunDebt** 借牛立信——审计纠错：报告里的"sunLoan"实际旗标是 `state.sunDebt`）。crewCyclops/crewSun 不入表（与 zeus_struck/pol 系事件重复）。
+- **性能批**：`cg(x0,y0,x1,y1,stops)` 渐变缓存（坐标+色标做键的 Map，CanvasGradient 跨帧复用），**32 处调用点转换**——世界图+六岛每帧合计新建 250~400 个 createLinearGradient 的 GC 热点清零；保留动态坐标 2 处（流星拖尾/章节卡独立 context）+每帧 ~10 个径向光晕（不值得缓存）。
+- **考卷**：+10 条地名覆盖（特洛伊×2/太阳岛×2/埃阿亚岛/忒勒玛科斯/第勒尼安海/爱奥尼亚海/克里特岛/伊萨卡），313→**323 条**，README 计数同步。**全部未实跑（卡天翼 key），预期首跑按流程归因**。
+- **w3d-failed 事件**：index.html 侧监听 → qualityMode="2d"+toast（配合 world3d.js 的 webglcontextlost 监听，子智能体实施）。
+- **新坑（自动化环境，§二.10 根因延伸）**：**自动化浏览器里 rAF 完全冻结**——hook 实测 1s 内 0 次调用（document.visible 依旧），而 `setInterval(tick,20)` 正常走（clock 在推进）。后果：挂在 rAF `loop()` 里的 `markLeg`/`updateHintDOM`/全部 drawXxx 不执行 → zone 标签不刷新、legs 不点亮、canvas 显黑（§25 体检的"未上屏"由此而来）。**凡是渲染帧路径的行为在自动化环境不可测**，只能直调函数验证（`arrivalSplash("aia")` 直调渲染 ✓）或 getImageData 采样；真机复核不可省。
+- **验收**：`node --test tools/rumors.test.cjs` **23/23**；`check_inline_js.py` OK（blocks=1）；`server.py` `py_compile` 0；`eval.py --backend mock` 323 条全绿（含 10 条新用例链路通）；离线实机（临时假 key 起服，验完已删）：页面 0 JS error、「E·了望/登陆」hint 恢复显示、G/M/Esc 键全通、购买链路通（离线兜底→本地解析→真扣款 15 德拉克）、w3d 失败自动降级实走（qualityDegrade=2）、`splitClauseHint` 四态 ✓、到港卡渲染 ✓。资源 200：/、/src/rumors.js?v=2（12.1KB）、world3d、three、地图图。
+- **3D 子智能体批**（world3d.js + 3d/app/src，`node --check` 绿 + esbuild 四文件过）：①`webglcontextlost/restored` 监听（lost→failed+藏 cv3d+派发 `w3d-failed`；restored→恢复 ready 重跑 fit）；②init 防崩 `canvas: renderer ? renderer.domElement : null`；③热路径零分配（escPrev 原地改/_camTarget 复用/character.js 每帧 new Vector3×2→0/手柄遍历去 spread）；④draw call 60-75→**≈30-45**：岛体全连通块并单 geometry+共享材质+FrontSide（先核实 quadUp 四向绕序守卫在位才改）+删死 shadow 旗标、云 10→1 InstancedMesh、护航船 22→2（hull/sail 各一 InstancedMesh，折损用 count 控制）；⑤**3D 岛名标签** CanvasTexture Sprite（512×128 圆角底，open:false 灰字「待开放」，20 内全显/>60 隐没省 call）——补齐 3D 下导航信息缺口；⑥frameTroy flick 接进 PointLight、死变量 amb 删；⑦3d/app：DPR 上限 1.5、阴影盒 140→80 且 sun 位置/目标随角色（顺带修 `updateProjectionMatrix()` 从未重投影的隐性失效）、props 串行 await→Promise.allSettled。未做：BufferGeometryUtils 合并（vendor 无此模块）、漂流物 16 call（不在清单）。
+
 ---
 
 ## 二、卡住的问题
@@ -771,7 +798,7 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 7. （已处理 11-07）**评测证据只在本机**：`result-*.json` 被 gitignore，仓库里查无此数——已把三轮 summary 快照入库 `results/`（含对照表 README），复测请提新快照，别覆盖。
 8. （新增 11-07）**天翼 429 在 workers=3/4 下仍会撞**（v3 撞 14 条、v22 撞 3 条、generic 撞 2 条）：全量跑完先查 `error` 字段，用 `.temp/rerun_*_failed.py` 模式单并发补跑合并，别直接采信带 error 的 summary——三个快照都是补跑后才提的。
 9. （11-07 傍晚风神岛批次对账，十三次微补终局更新）**遗留对齐项**：① ~~圣经没有风神岛~~ **已闭**——并行会话已补「插章·风神岛·风的账」；② 风神名字在圣经内两写（原版骨引荷马作"埃俄斯"、自由肉/游戏用"埃俄罗斯"），插章内混用，建议下轮圣经通稿统一；③ **三张新图未接线 → 已全部收口**——`NPCS.aeolus.portrait` 已接（§一.10）；塞壬 `07-塞壬.jpg` 此前已接；`08-斯库拉.jpg` 已接进"六头·付价"章节卡、`maps/04-风神岛图.jpg` 已接进风神岛章节卡（§一.11，实机验证通过）；④ **16 条用例待评测 + ch3 schema 词表未补**（见 §一.8，下一步评测工作面）；⑤ 两处小瑕疵（十二次微补冒烟目检遗留，终局冒烟未复核）：风神岛场景画面左侧 void 黑区（疑似相机边界）、顶部"点击任意处跳过"提示与 HUD 重叠；⑥ 自动化冒烟怪癖（不影响真人游玩）：新标题屏的按钮用 DOM locator 点击会超时，坐标点击/真人鼠标正常——写自动化测试时走坐标路径。
-10. （11-11 体检批，**待真实浏览器复核**）世界画布在 bu 自动化浏览器里 2D/3D 均未上屏显黑：canvas 几何正常、逻辑循环在跑、无 JS error；`git stash` 对照基线 6c56bd0 同样复现，**非本轮优化回归**，倾向自动化浏览器 canvas/WebGL 合成限制。下次在真实桌面浏览器打开 `server.py` 或 Pages 站，先确认海面/船正常；若真实环境也黑，再查 2D `drawWorld` 与 3D `renderer.render` 上屏链路。
+10. （11-12 更新：**根因已定位**）世界画布在 bu 自动化浏览器里 2D/3D 均未上屏显黑——**自动化浏览器里 rAF 完全冻结**（hook 实测 1s 0 次调用，document.visible 依旧），而 setInterval 正常走：挂在 rAF `loop()` 里的 markLeg/updateHintDOM/drawXxx 全不执行（zone 不刷新、legs 不点亮），canvas 自然黑。§26 修复批的所有"渲染帧路径"改动（到港卡、渐变缓存、登陆提示显示）在自动化环境只能直调函数验证，**真机桌面浏览器复核仍是必做项**（打开 `server.py` 或 Pages 站确认海面/船/到港卡/3D 岛名标签）。
 
 ---
 
@@ -793,7 +820,7 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 4. **第三章·声之海（2D）**：剧本已补全（`odyssey-story.md`）——塞壬日志歌词（分享时刻预埋）、物品级代价（六头吃背包）、斯库拉接话"不怪你"；**11-07 傍晚已开篇**：声之海峡场景部分实装（scene `strait`、siren NPC、塞壬立绘已接）+ `ch3_oov` 组 14 条已加——**下一步就是 §2.5 流程跑一遍**：首跑（预期大面积翻车，蜡/桅杆/歌词残页不在 schema）→归因→补 schema 词表→复测→对判据
 5. **v0.2.0 发版门（tag 纪律）——11-07 实测：判据 RED，不打 tag**。交互判据（三条冥界交互走通）✅；OOV 判据 hades_oov 85.7% < 87.9%（差 1 条）。走 §三.3 v2.3 专项，复测全绿才打 `v0.2.0` 并回填 PRODUCT.md §7。**判据不绿不打 tag**（v0.1.0 已在远端，别动）
 6. （已完成 11-07）`schema-island-generic.json` 基线对照已实跑：68.7% vs 奥德赛 92.1%，README 已改写，快照在 `results/generic-baseline-20261107.json`。
-7. **传闻系统 v2（活的社会·续，§一.24）**：v1 只做"玩家事件 → NPC"单向。可选下一步：① NPC 之间多跳转述（传闻在 NPC 间传播、随距离/时间衰减失真）；② 传闻摘要交模型按各 NPC 口吻二次润色；③ 后续新剧情 flag 落 `RUMOR_DERIVE` 表补条目即可，规则层不用动。
+7. **传闻系统 v2（活的社会·续，§一.24）——✅ 已于 §26 落地**：多跳 gossipTick（hop/失真 vers/传播半径）+ VOICE 口吻模板 + RUMOR_DERIVE 20→27 全部入库，单测 23 绿。剩候选（v3）：① 模型按口吻二次润色（需天翼 key）；② 传闻多跳后的"以讹传讹"变异事件（纯规则可做，暂缓）；③ 新剧情 flag 落 `RUMOR_DERIVE` 表补条目即可，规则层不用动。
 
 ---
 

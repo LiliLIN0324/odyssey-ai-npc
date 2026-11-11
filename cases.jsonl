@@ -311,3 +311,13 @@
 {"id": "ith_12", "group": "ithaca_oov", "text": "这把弓值多少钱", "expect": [{"category": "查询价格", "args": {"物品": "弓"}}]}
 {"id": "ith_13", "group": "ithaca_oov", "text": "安提诺奥斯是谁", "expect": [{"category": "查询生物情报", "args": {"生物": "安提诺奥斯"}}]}
 {"id": "ith_14", "group": "ithaca_oov", "text": "家到底是什么", "expect": [{"category": "查询神谕", "args": {}}]}
+{"id": "prologue_15", "group": "prologue_oov", "text": "我要去特洛伊", "expect": [{"category": "导航到地点", "args": {"目的地": "特洛伊"}}]}
+{"id": "prologue_16", "group": "prologue_oov", "text": "特洛伊在哪", "expect": [{"category": "查询附近目标", "args": {}}]}
+{"id": "ch5_15", "group": "ch5_oov", "text": "去太阳岛", "expect": [{"category": "导航到地点", "args": {"目的地": "太阳岛"}}]}
+{"id": "ch5_16", "group": "ch5_oov", "text": "赫利俄斯的牛在哪", "expect": [{"category": "查询附近目标", "args": {}}]}
+{"id": "hades_17", "group": "hades_oov", "text": "带我去埃阿亚岛", "expect": [{"category": "导航到地点", "args": {"目的地": "埃阿亚岛"}}]}
+{"id": "ch6_15", "group": "ch6_oov", "text": "去第勒尼安海", "expect": [{"category": "导航到地点", "args": {"目的地": "第勒尼安海"}}]}
+{"id": "ch6_16", "group": "ch6_oov", "text": "爱奥尼亚海在哪", "expect": [{"category": "查询附近目标", "args": {}}]}
+{"id": "ith_15", "group": "ithaca_oov", "text": "忒勒玛科斯在哪", "expect": [{"category": "查询附近目标", "args": {}}]}
+{"id": "ith_16", "group": "ithaca_oov", "text": "我要回伊萨卡", "expect": [{"category": "导航到地点", "args": {"目的地": "伊萨卡"}}]}
+{"id": "ch6_17", "group": "ch6_oov", "text": "克里特岛怎么去", "expect": [{"category": "导航到地点", "args": {"目的地": "克里特岛"}}]}
