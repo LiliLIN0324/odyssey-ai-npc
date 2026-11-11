@@ -749,6 +749,15 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 - **验收**：① `node --test tools/rumors.test.cjs` **11/11**（零 npm 依赖，Node 22 内置 node:test；覆盖去重/淘汰/当事人排除/未听优先/新鲜度本地加权/私事不扩散/已听计数/兜底）；② `check_inline_js.py` OK；③ 真机（本地零依赖静态服务器，离线）：注入三 flag 派生 3 条、巨人候选排除自身 `pol_name`、女巫听到全部；二次同步幂等不重复入账；`markHeard` 计数正确；开场钩子出远道传闻台词；记忆条分组 + 📢 前缀；副标计数正确；离线对话兜底链路不炸；**0 新增 JS error**（唯一 404 是离线缺 `/api/schema`，既有行为）。
 - **边界 / v2 候选**：① 传闻摘要是本地模板句，未调模型二次润色；② 目前 20 条名声事件入表，后续新剧情 flag 按 `RUMOR_DERIVE` 同表追加即可；③ **v1 只做"玩家事件 → NPC"单向**，未做 NPC 之间多跳"转述再转述"（Generative Agents 的反思/多跳传播留 v2）；④ 旧档回补逻辑走 ensureState 既有迁移惯例，未在真机跑完整多章节旧档流程复核。
 
+### 25. 全游戏体检 + 体积/部署优化批（11-11，分支 `feat/rumor-mongering`；用户「对全部游戏进行优化这件事本身执行好」）
+
+- **体检方法**：活工作树静态扫描（坏味道/资源在场性/DOM id/定时器/存档兜底）+ 离线浏览器实测，不采信跨会话旧快照。六维结论：代码健康/稳定性/内容/部署工程成熟，主要可闭环收益在**静态体积**与**一处部署路由遗漏**。
+- **已落地 · 部署路由补漏（P1）**：`server.py` 原静态路由只托管 `/world3d.js` 与 `/vendor/`，**`/src/rumors.js` 落到 else → 404**，本地服务模式下传闻模块挂不上、走空实现退化。已补 `/src/` JS 分支（复用 `_send_js`，路径穿越防护 + `.js/.mjs` 白名单与 `/vendor/` 同构）。`py_compile` 通过。
+- **已落地 · 概念图体积治理（P2）**：50 张概念图原 **39.6MB**（单张 1.0~1.5MB、宽 3200，远超 1000×600 画布/立绘框/地图板显示需求）。按显示尺寸降采样重编码：立绘宽 720 / 地图宽 1600 / 横屏章节背景宽 1920，JPEG q82~84、progressive；**brand IP 物料与 favicon 不动**；文件名/目录/代码引用零改动。结果 **37.5→14.2MB（38%）**，磁盘总 39.6→**16.3MB（省 59%）**；50 张 `PIL verify` 0 损坏。可复用脚本 `tools/optimize_images.py`（`--dry-run` 出报告；幂等，已达标图跳过，避免二次重编码累积损失）。
+- **复核通过、未改动**：① 存档链路——`parseSave` 最小字段校验、主档损坏回退 `.bak`、未来版本拒绝、船位界外钳制 + 最近水瓦片回捞、scene 白名单、`ensureState` 逐字段兜底；② DOM id 引用 74 处仅 `cv3d` 为 world3d.js 动态创建且有 null 保护；③ 无 TODO/占位文案/硬编码端口或外链；输入框占位符已按 NPC 定制；④ 24 处空 catch 均为 localStorage/音频/图像加载的合理兜底；⑤ 打字机 interval 自然自清，主循环常驻无需清理；⑥ 45 个概念图引用磁盘 0 缺失，`vendor/three.module.min.js` 691KB 在位；⑦ 预加载 18 张（9 CG+6 角色+2 地图+序章）策略合理，体积压力已被本轮压缩消除。
+- **既有遗留（已用 `git stash` 对照基线 6c56bd0 复现，**非本轮回归**）**：① **世界画布在 bu 自动化浏览器里 2D/3D 均未上屏（显黑）**——canvas 几何正常（1000×600 / rect 764×458）、逻辑循环在跑、无 JS error；基线干净树同样复现，倾向自动化浏览器的 canvas/WebGL 合成限制，**需在真实桌面浏览器复核**（上一轮传闻冒烟同环境曾正常出海面）；② `island3d.js` 为未接线的岛内 3D 实验模块（0 引用，world3d 也不引），保留未删；③ 账本 §二.9 风神岛两处小瑕疵（左侧 void 黑区、跳过提示与 HUD 重叠）本环境看不到画面，未能目检复核；代码层 `sceneBackdrop` 已补底色、`.ccSkip` 在章节卡内 z-2 被卡 z-18 覆盖，看似已处理；④ 外部阻塞：3D P2 资产、评测 multi 准确率、天翼 key 复测（见 §二/§三）。
+- **验收**：`node --test tools/rumors.test.cjs` 11/11；`check_inline_js.py` OK（blocks=1，429300 chars）；`server.py` `py_compile` 0；静态服务器实测 `/src/rumors.js` 4394B、压缩地图 270KB、立绘 149KB、world3d/three 均 200；50 张图可打开 0 损坏。
+
 ---
 
 ## 二、卡住的问题
@@ -762,6 +771,7 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 7. （已处理 11-07）**评测证据只在本机**：`result-*.json` 被 gitignore，仓库里查无此数——已把三轮 summary 快照入库 `results/`（含对照表 README），复测请提新快照，别覆盖。
 8. （新增 11-07）**天翼 429 在 workers=3/4 下仍会撞**（v3 撞 14 条、v22 撞 3 条、generic 撞 2 条）：全量跑完先查 `error` 字段，用 `.temp/rerun_*_failed.py` 模式单并发补跑合并，别直接采信带 error 的 summary——三个快照都是补跑后才提的。
 9. （11-07 傍晚风神岛批次对账，十三次微补终局更新）**遗留对齐项**：① ~~圣经没有风神岛~~ **已闭**——并行会话已补「插章·风神岛·风的账」；② 风神名字在圣经内两写（原版骨引荷马作"埃俄斯"、自由肉/游戏用"埃俄罗斯"），插章内混用，建议下轮圣经通稿统一；③ **三张新图未接线 → 已全部收口**——`NPCS.aeolus.portrait` 已接（§一.10）；塞壬 `07-塞壬.jpg` 此前已接；`08-斯库拉.jpg` 已接进"六头·付价"章节卡、`maps/04-风神岛图.jpg` 已接进风神岛章节卡（§一.11，实机验证通过）；④ **16 条用例待评测 + ch3 schema 词表未补**（见 §一.8，下一步评测工作面）；⑤ 两处小瑕疵（十二次微补冒烟目检遗留，终局冒烟未复核）：风神岛场景画面左侧 void 黑区（疑似相机边界）、顶部"点击任意处跳过"提示与 HUD 重叠；⑥ 自动化冒烟怪癖（不影响真人游玩）：新标题屏的按钮用 DOM locator 点击会超时，坐标点击/真人鼠标正常——写自动化测试时走坐标路径。
+10. （11-11 体检批，**待真实浏览器复核**）世界画布在 bu 自动化浏览器里 2D/3D 均未上屏显黑：canvas 几何正常、逻辑循环在跑、无 JS error；`git stash` 对照基线 6c56bd0 同样复现，**非本轮优化回归**，倾向自动化浏览器 canvas/WebGL 合成限制。下次在真实桌面浏览器打开 `server.py` 或 Pages 站，先确认海面/船正常；若真实环境也黑，再查 2D `drawWorld` 与 3D `renderer.render` 上屏链路。
 
 ---
 
@@ -836,6 +846,7 @@ odyssey-witch/
     app/                   Vite+three（P0/PD/P1 ✅；npm run dev 本地跑、npm run deploy 发 Cloudflare Pages；node_modules/dist/raw-assets 已 ignore）
 tools/rerun_failed.py    429 失败用例重跑合并脚本（源自 .temp，已转正）
 tools/rumors.test.cjs    传闻纯规则 node:test 单测（`node --test tools/rumors.test.cjs`，零依赖）
+tools/optimize_images.py 概念图批量降采样重编码（`--dry-run` 出报告；幂等；brand/favicon 不动）
 tools/handoff_check.py   HANDOFF 体检脚本（§六机制的机械部分，收尾必跑）
 ```
 

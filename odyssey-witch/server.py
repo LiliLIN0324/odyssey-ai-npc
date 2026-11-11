@@ -137,6 +137,9 @@ class Handler(BaseHTTPRequestHandler):
             self._send_static(rel)
         elif path == "/world3d.js":
             self._send_js(HERE / "world3d.js", HERE)
+        elif self.path.startswith("/src/"):
+            rel = unquote(self.path.split("?", 1)[0][len("/src/"):])
+            self._send_js(HERE / "src" / rel, HERE / "src")
         elif self.path.startswith("/vendor/"):
             rel = unquote(self.path.split("?", 1)[0][len("/vendor/"):])
             self._send_js(HERE / "vendor" / rel, HERE / "vendor")
