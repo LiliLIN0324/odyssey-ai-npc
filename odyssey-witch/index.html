@@ -572,6 +572,7 @@
   </div>
 </div>
 
+<script src="./src/rumors.js?v=1"></script>
 <script>
 /* ==================================================================
  *  奥德赛 · 地中海 —— 世界地图 + 埃亚岛 2.5D
@@ -2047,6 +2048,7 @@ let state = {
    polWrathMark: false,     /* P2.8：诅咒入账标记（防重复记账） */
    raftWrathMark: false,    /* P2.8：掀筏入账标记（多次掀筏只记一笔） */
    cliffWarn: false,        /* 忒勒皮洛斯：崖下险道首次警告 */
+  rumors: [],              /* 传闻账本 [{id,t,imp,place,who,summary,heard:[]}]（活的社会：名声事件横向传播） */
 };
 
 /* ---------- 派生数值：从基础属性重算，绝不存为真值（rpg Pattern 1） ---------- */
@@ -2190,6 +2192,7 @@ function ensureState(){
    if (state.campHeld===undefined) state.campHeld=false;
    if (state.ramHide===undefined) state.ramHide=false;
    if (!Array.isArray(state.paidMem)) state.paidMem=[];
+  if (!Array.isArray(state.rumors)) state.rumors=[];   /* 传闻账本：旧档补空表，随后按 flag 幂等派生 */
   crewLedgerLight();
   if (state.tookWine===undefined) state.tookWine=false;
   if (state.targetHits===undefined) state.targetHits=0;
@@ -2223,6 +2226,7 @@ function ensureState(){
     state.quests[id] = Object.assign({id, who:id==="aeolia_winds"?"aeolus":"witch"}, state.quest);
     state.quest = null;
   }
+  syncRumorsFromState();   /* 按既有 flag 幂等派生传闻（旧档回补；重复触发不重复入账） */
   const d=derived(); if (state.hp>d.maxHp) state.hp=d.maxHp;
 }
 /* ---------- 任务系统（rpg：定义是数据、进度进存档；目标由事件总线驱动） ---------- */
@@ -2621,6 +2625,58 @@ function recallMemories(k, who){
     .sort((a,b)=>(b.imp-a.imp)||(b.t-a.t)).slice(0, k||5)
     .sort((a,b)=>a.t-b.t).map(m=>m.text);
 }
+
+/* ==================== 传闻系统（活的社会 · v1）====================
+   名声事件不留在当事人的记忆里，而作为公开传闻在 NPC 间流传；没见过你的 NPC
+   也能从“海路”听说。纯规则在 src/rumors.js（可单测），这里只做 flag → 传闻的
+   幂等派生与接线。对照 Generative Agents 记忆流反思 + AI Town 社交传播。 */
+/* 兜底：src/rumors.js 万一未托管到，空实现让传闻静默退化，不拖垮整页 */
+const R = (typeof RUMOR!=="undefined" && RUMOR) ? RUMOR : {
+  addRumor(){}, forNpc(){return[];}, nextUnheard(){return null;},
+  markHeard(){}, heardCount(){return 0;}, lineFor(){return "";},
+};
+const NPC_SCENE = {
+  witch:"aia", seer:"hades", aeolus:"aeolia", siren:"strait", cattle:"sun",
+  calypso:"ogggia", nausicaa:"scheria", rebuilder:"ismaros", lotusman:"lotus",
+  polyphemus:"cyclops", epeius:"troy", telemachus:"ithaca",
+};
+/* 派生表：cond 复用既有剧情 flag；成立即入传闻账本（同 id 幂等去重）。
+   who=当事人 NPC key：当事人本人记得，不算“听来的传闻”；"any"=人人可传。 */
+const RUMOR_DERIVE = [
+  { id:"troy_burn",    place:"troy",     who:"any",        imp:4, summary:"特洛伊在身后烧成一条火线——十年围城，一夜收账", cond:()=>!!state.troyBurned },
+  { id:"troy_spared",  place:"troy",     who:"any",        imp:4, summary:"屠城之夜那人放下了火把——平民走门，只带走战争", cond:()=>!!state.troySpared },
+  { id:"pol_name",     place:"cyclops",  who:"polyphemus", imp:5, summary:"有人把真名报给了独眼巨人——波塞冬在浪底下听见了", cond:()=>state.polNameGiven==="奥德修斯" },
+  { id:"pol_blind",    place:"cyclops",  who:"polyphemus", imp:4, summary:"那人躲进羊腹下混出了巨人的洞——六只羊，六次空当", cond:()=>!!state.ramHide },
+  { id:"poly_noone",   place:"cyclops",  who:"polyphemus", imp:3, summary:"独眼巨人洞里传出个假名：「无人」——喊真名的事还在后头", cond:()=>!!state.namesHeard },
+  { id:"sun_wrath",    place:"sun",      who:"cattle",     imp:4, summary:"太阳岛的圣牛进了汤锅——饥饿赢了誓言，太阳记了仇", cond:()=>!!state.sunWrath },
+  { id:"sun_blessed",  place:"sun",      who:"cattle",     imp:4, summary:"那人守住太阳岛的誓言，一头牛没动——得了一缕走得过黑暗的光", cond:()=>!!state.sunBlessed },
+  { id:"crew_saved",   place:"sun",       who:"any",        imp:4, summary:"他按住了要宰牛的船员的手——人活着，只是恨了他很久", cond:()=>!!state.crewSaved },
+  { id:"zeus_struck",   place:"sun",      who:"any",        imp:5, summary:"雷落下来那天他睡着了——草场多了一百个影子，全船只剩他一个", cond:()=>!!state.zeusStruck },
+  { id:"wax_ears",     place:"strait",   who:"siren",      imp:3, summary:"过海峡时那人封了耳——塞壬的歌，他一段也没听进去", cond:()=>!!state.waxEars },
+  { id:"mast_tied",    place:"strait",   who:"siren",      imp:4, summary:"他把自己绑上栈杆听完了整首歌——歌词残页还在怀里", cond:()=>!!state.mastTied },
+  { id:"windbag_out",  place:"aeolia",   who:"aeolus",      imp:5, summary:"风袋用光了又回去借风——连神明都憎恨的人，风绕着他走", cond:()=>!!state.banishedFromAeolia },
+  { id:"pigged",       place:"aia",       who:"witch",       imp:4, summary:"有人没拿魔草就喝了蜜酒——在猪圈里拱了好几天才想起自己是谁", cond:()=>!!state.pigged },
+  { id:"moly_rescue",  place:"aia",       who:"witch",       imp:3, summary:"他握着黑根银花的草破了咒——猪栏里拱出来一队恢复人形的水手", cond:()=>!!state.circeSworn },
+  { id:"calypso_stay", place:"ogggia",    who:"calypso",    imp:4, summary:"有人选了永生——奥吉吉亚的锁合上了，他不再提回家", cond:()=>state.calypsoChoice==="stay" },
+  { id:"calypso_raft", place:"ogggia",    who:"calypso",    imp:4, summary:"他谢绝了永生，自己造筏出湾——海面上第一次有他划的尾迹", cond:()=>state.calypsoChoice==="raft" },
+  { id:"scheria_reveal",place:"scheria", who:"nausicaa",   imp:5, summary:"篝火边他报出了名字：奥德修斯。全厅安静了一瞬", cond:()=>!!state.selfRevealed },
+  { id:"home_stand",   place:"ithaca",    who:"any",        imp:5, summary:"大厅里十二道斧环一箭穿过——求婚者的刀还没拔出来", cond:()=>!!state.suitorsSwept },
+  { id:"aid_ismaros",  place:"ismaros",   who:"rebuilder",  imp:3, summary:"洗劫之城的后人没遭他报复——他给伤者上了药", cond:()=>!!state.ismarosSpared },
+  { id:"lotus_drag",    place:"lotus",    who:"lotusman",   imp:3, summary:"他把忘了家的食莲者绑上凳拖回了船", cond:()=>!!state.lotusDraggedOk },
+];
+function syncRumorsFromState(){
+  if (!Array.isArray(state.rumors)) state.rumors=[];
+  for (const d of RUMOR_DERIVE){
+    let ok=false; try{ ok=!!d.cond(); }catch(e){}
+    if (ok) R.addRumor(state.rumors, { id:d.id, place:d.place, who:d.who, imp:d.imp, summary:d.summary });
+  }
+}
+/* 该 NPC 下一句可转述的传闻（未听过优先）；无则 null */
+function rumorNextFor(npcKey){
+  return R.nextUnheard(state.rumors, npcKey, NPC_SCENE[npcKey]);
+}
+function rumorHeardCount(npcKey){ return R.heardCount(state.rumors, npcKey); }
+
 /* P1.4 记忆支付（story 设计：对亡者讲一段真的过去，他们能"活"一炷香；讲过的记忆碎片标记"已支付"，三章塞壬唱不出这段）：
    从记忆流里挑一条真实的记忆（imp>=3），讲给亡母——该记忆进入 state.paidMem（"已支付"），
    塞壬之歌 buildLyric 不再引用它。返回 true=支付了一笔 / false=没有可支付的记忆。 */
@@ -2989,9 +3045,16 @@ function npcAmbientTick(dt){
   if (ambActive){ ambActive=null; return; }  /* 说完停一轮，避免无缝接龙 */
   const cands = (AMBIENT[npc]||[]).filter(a =>
     now - (ambientCooldown[npc+"."+a.id]||0) > 90000 && a.cond());
+  /* 传闻口：海路听来的名声事件纳入环境台词候选（未听过优先；全听过则不抢话） */
+  const rumor = rumorNextFor(npc);
+  if (rumor && !rumor.heard){
+    cands.push({ id:"rumor:"+rumor.r.id, w:0.85, cond:()=>true,
+      line:()=>R.lineFor(rumor), _rumor:rumor.r.id });
+  }
   if (!cands.length) return;
   cands.sort((a,b)=>b.w-a.w);
   const pick = cands[0];
+  if (pick._rumor) R.markHeard(state.rumors, pick._rumor, npc);
   ambientCooldown[npc+"."+pick.id] = now;
   ambActive = pick.id; ambUntil = now + 5200;
   ambAnchor = anchor;
@@ -8779,6 +8842,14 @@ function memoryGreeting(){
   return style[currentNPC]||null;
 }
 
+/* ---------- 传闻开场钩子：没见过你的 NPC 也能从海路听说你的名声（每条只提一次） ---------- */
+function rumorGreeting(){
+  const rumor = rumorNextFor(currentNPC);
+  if (!rumor || rumor.heard) return null;
+  R.markHeard(state.rumors, rumor.r.id, currentNPC);
+  return R.lineFor(rumor);
+}
+
 /* 开场白按好感分档（dialogue-systems：关系变量门控分支） */
 function witchIntro(){
   if (state.sunlit) return "（门开着，晨光落在坩埚上——岛上第一次这么亮。她头也不抬，声音却比哪天都软）……回来了。快进来，锅里是新的。";
@@ -8800,6 +8871,8 @@ function contextBrief(){
   if (state.backpack["风袋"]) parts.push(`他包里有风袋×${state.backpack["风袋"]}`);
   const mems = recallMemories(3);
   if (mems.length) parts.push("你记得关于他的事："+mems.join("；"));
+  const rums = R.forNpc(state.rumors, currentNPC, NPC_SCENE[currentNPC]).slice(0,2).map(x=>x.r.summary);
+  if (rums.length) parts.push("你从海路听来的传闻："+rums.join("；"));
   if (currentNPC==="witch") parts.push(`你对他的态度：${affinityTier()}（好感 ${Math.round(state.affinity)}/100；冷淡<30<熟络<60<信任<85<托付，态度越热络称呼和语气越软）`);
   return parts.join("。");
 }
@@ -8924,6 +8997,8 @@ function openDlg(npc){
   document.getElementById("dlgSub").textContent = npcSubFor(currentNPC, N.sub) + (currentNPC==="witch" ? " · 关系："+affinityProgress() : "");
   const memCount = state.memory.filter(m=>m.who===currentNPC||m.who==="any").length;
   if (memCount) document.getElementById("dlgSub").textContent += ` · 记得你的 ${Math.min(memCount,40)} 件事`;
+  const rumorCount = rumorHeardCount(currentNPC);
+  if (rumorCount) document.getElementById("dlgSub").textContent += ` · 听过 ${rumorCount} 条传闻`;
   document.getElementById("msgs").innerHTML = "";
   for (const h of history[currentNPC]) addMsg(h.role==="user"?"user":"witch", h.content, null, true);
   if (!history[currentNPC].length){
@@ -8933,6 +9008,9 @@ function openDlg(npc){
     /* 记忆流开场钩子：NPC 主动提「上次的事」（Generative Agents 状态可见化，每条记忆只提一次） */
     const mg = memoryGreeting();
     if (mg){ addMsg("witch", mg); history[currentNPC].push({role:"assistant",content:mg}); }
+    /* 传闻开场钩子：没见过你的 NPC 也能从海路听说你的名声（每条只提一次） */
+    const rg = rumorGreeting();
+    if (rg){ addMsg("witch", rg); history[currentNPC].push({role:"assistant",content:rg}); }
   }
   document.getElementById("memStrip").style.display="none";   /* 每次开对话收起记忆条 */
   renderSamples();
@@ -8943,9 +9021,11 @@ document.getElementById("memBtn").onclick = ()=>{
   const s=document.getElementById("memStrip");
   if (s.style.display==="flex"){ s.style.display="none"; return; }
   const mems = recallMemories(6, currentNPC);
-  s.innerHTML = mems.length
-    ? mems.map(m=>`<span class="chip">${m}</span>`).join("")
-    : '<span class="chip">（你们之间还没有共同记忆）</span>';
+  const rumors = R.forNpc(state.rumors, currentNPC, NPC_SCENE[currentNPC]).slice(0,4).map(x=>x.r);
+  let html = "";
+  if (mems.length) html += mems.map(m=>`<span class="chip">${m}</span>`).join("");
+  if (rumors.length) html += `<span class="chip" style="opacity:.6">📢 海路传闻</span>` + rumors.map(r=>`<span class="chip">📢 ${r.summary}</span>`).join("");
+  s.innerHTML = html || '<span class="chip">（你们之间还没有共同记忆）</span>';
   s.style.display="flex";
   sfx("pick");
 };

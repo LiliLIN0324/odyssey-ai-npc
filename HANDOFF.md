@@ -740,6 +740,15 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 - **验收**：①10 张详图本地+线上 HEAD 200；②实机——进独眼巨人岛场景按 M 显示「详 图 · 独眼巨人之岛」（正方形、无船位/图例、无拉伸），回到世界按 M 恢复世界海图（13 个标记+船位+图例全在）；③`tools/check_inline_js.py` OK（内联 423706 chars）；④A1 参考表逐字核查仅含「AI生成」水印，无其他文字/UI。
 - **坑**：①`#mapBoard img` 是 `object-fit:fill`，1:1 岛图进 2.39:1 板会被拉扁——必须给 siteMap 单独版式；②测试时在地图开着的状态按 E 无效（tickMove/互动被 mapOpen 门控），先 Esc 关图再交互。
 
+### 24. 传闻系统 v1：名声事件横向传播（活的社会）（11-11，分支 `feat/rumor-mongering`；用户「你定个目标参考成熟案例优化游戏」）
+
+- **方向抉择**：核实活代码谣言/横向传播 **0 实现**（仅两句台词文案带"传闻"字样）——这是 PRODUCT 支柱 1「活的社会」与护城河第 5 条「记忆通过谣言传到没见过的 NPC 嘴里」的缺口。3D P2 资产卡用户出图、评测复测卡天翼 key，本仓都做不了；故选本项，对照 **Generative Agents 记忆流反思** + **AI Town 社交网**，纯本地规则零模型、可单测、不依赖外部条件。
+- **纯规则模块** `odyssey-witch/src/rumors.js`（102 行，UMD 双模式：浏览器挂 `window.RUMOR` / Node `module.exports`）：`addRumor` 去重入账（上限 24 条、最老先淘汰）；`forNpc` 候选（**当事人排除** `who===npcKey`、未听优先、权重 = imp × 新鲜度(陈旧×0.6) × 本地(×1.15)）；`nextUnheard` / `markHeard` / `heardCount` / `lineFor`（本地近距离 / 远道"听海路来的风"两口吻）。
+- **接线 `index.html`（9385 行，+83/-3）**：`state.rumors` 账本 + `ensureState` 兜底（旧档补空表）；`RUMOR_DERIVE` **20 条派生表**——cond 复用既有剧情 flag，`syncRumorsFromState()` 在 ensureState 末尾幂等推导（同 id 去重，旧档自动回补，**不侵入 100+ 处 addMemory 事件挂点**）；`NPC_SCENE` NPC→场景映射；四处可见证据：① AMBIENT 传闻口（权重 0.85、复用 90s 冷却、未听才抢话、转述后 `markHeard`）；② 对话开场钩子 `rumorGreeting()`（每条只提一次）；③ `contextBrief` 注入「你从海路听来的传闻」供 T3 台词知情；④ 副标「听过 M 条传闻」+ 记忆条分「个人记忆 / 📢海路传闻」两组。
+- **兜底**：`src/rumors.js` 万一未托管到，主脚本 `R` 走空实现静默退化（空数组/null/0/""），不拖垮整页。
+- **验收**：① `node --test tools/rumors.test.cjs` **11/11**（零 npm 依赖，Node 22 内置 node:test；覆盖去重/淘汰/当事人排除/未听优先/新鲜度本地加权/私事不扩散/已听计数/兜底）；② `check_inline_js.py` OK；③ 真机（本地零依赖静态服务器，离线）：注入三 flag 派生 3 条、巨人候选排除自身 `pol_name`、女巫听到全部；二次同步幂等不重复入账；`markHeard` 计数正确；开场钩子出远道传闻台词；记忆条分组 + 📢 前缀；副标计数正确；离线对话兜底链路不炸；**0 新增 JS error**（唯一 404 是离线缺 `/api/schema`，既有行为）。
+- **边界 / v2 候选**：① 传闻摘要是本地模板句，未调模型二次润色；② 目前 20 条名声事件入表，后续新剧情 flag 按 `RUMOR_DERIVE` 同表追加即可；③ **v1 只做"玩家事件 → NPC"单向**，未做 NPC 之间多跳"转述再转述"（Generative Agents 的反思/多跳传播留 v2）；④ 旧档回补逻辑走 ensureState 既有迁移惯例，未在真机跑完整多章节旧档流程复核。
+
 ---
 
 ## 二、卡住的问题
@@ -774,6 +783,7 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 4. **第三章·声之海（2D）**：剧本已补全（`odyssey-story.md`）——塞壬日志歌词（分享时刻预埋）、物品级代价（六头吃背包）、斯库拉接话"不怪你"；**11-07 傍晚已开篇**：声之海峡场景部分实装（scene `strait`、siren NPC、塞壬立绘已接）+ `ch3_oov` 组 14 条已加——**下一步就是 §2.5 流程跑一遍**：首跑（预期大面积翻车，蜡/桅杆/歌词残页不在 schema）→归因→补 schema 词表→复测→对判据
 5. **v0.2.0 发版门（tag 纪律）——11-07 实测：判据 RED，不打 tag**。交互判据（三条冥界交互走通）✅；OOV 判据 hades_oov 85.7% < 87.9%（差 1 条）。走 §三.3 v2.3 专项，复测全绿才打 `v0.2.0` 并回填 PRODUCT.md §7。**判据不绿不打 tag**（v0.1.0 已在远端，别动）
 6. （已完成 11-07）`schema-island-generic.json` 基线对照已实跑：68.7% vs 奥德赛 92.1%，README 已改写，快照在 `results/generic-baseline-20261107.json`。
+7. **传闻系统 v2（活的社会·续，§一.24）**：v1 只做"玩家事件 → NPC"单向。可选下一步：① NPC 之间多跳转述（传闻在 NPC 间传播、随距离/时间衰减失真）；② 传闻摘要交模型按各 NPC 口吻二次润色；③ 后续新剧情 flag 落 `RUMOR_DERIVE` 表补条目即可，规则层不用动。
 
 ---
 
@@ -810,7 +820,8 @@ results/                 ★评测证据入库处：六份 summary 快照 + 对�
 key.txt                  天翼 API key（gitignored）
 shots/                   2D/评测线截图归档（实机验证用；3D 线截图在 3d/tools/shots/，不入库）
 odyssey-witch/
-  index.html             游戏全部前端（地图/渲染/对话/30类handler/存档；第二章冥界+风神岛插章+声之海峡开篇已实装，3343 行）
+  index.html             游戏全部前端（地图/渲染/对话/30类handler/存档；传闻系统 v1 已接线，9385 行）
+  src/rumors.js          传闻系统纯规则（零 DOM/零存储，UMD 双模式，可单测；浏览器挂 window.RUMOR）
   server.py              本地服务 :8765（静态托管 + /api/schema|parse|chat 代理）
   启动游戏.bat + start-service.vbs   一键启动（vbs 静默拉起 server.py）
   odyssey-story.md       剧情圣经（八章全写完：第一章+第二章已实装）
@@ -824,6 +835,7 @@ odyssey-witch/
     tools/review_shots.py  Blender 四视角截图（喂独立审查盲评）
     app/                   Vite+three（P0/PD/P1 ✅；npm run dev 本地跑、npm run deploy 发 Cloudflare Pages；node_modules/dist/raw-assets 已 ignore）
 tools/rerun_failed.py    429 失败用例重跑合并脚本（源自 .temp，已转正）
+tools/rumors.test.cjs    传闻纯规则 node:test 单测（`node --test tools/rumors.test.cjs`，零依赖）
 tools/handoff_check.py   HANDOFF 体检脚本（§六机制的机械部分，收尾必跑）
 ```
 
