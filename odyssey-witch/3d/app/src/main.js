@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { buildWorld } from './world.js';
 import { createCharacterController } from './character.js';
+import { createProps } from './props.js';
 import { initUI } from './ui.js';
 
 const { showHUD } = initUI();
@@ -27,11 +28,14 @@ camera.position.set(-46, 30, 52);
 // --- 世界(P1:岛/海/天/光/草/火) ---
 const world = buildWorld(scene);
 
+// --- Tripo 资产接入(P3 预留：依赖 public/assets/props.json；glb 缺失时静默跳过) ---
+const props = createProps(scene);
+
 // --- 角色与控制(P4:WASD/手柄移动 + 拖拽相机 + 滚轮缩放) ---
 const character = createCharacterController(scene, camera, renderer.domElement);
 
 // 调试/测试钩子(P7 性能终审与自动化截图用)
-window.__AEAEA__ = { renderer, scene, camera, character };
+window.__AEAEA__ = { renderer, scene, camera, character, props };
 
 // --- 自适应 ---
 window.addEventListener('resize', () => {

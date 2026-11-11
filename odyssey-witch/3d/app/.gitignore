@@ -1,3 +1,6 @@
 node_modules/
 dist/
 raw-assets/
+
+# 构建期生成（tools/gen-asset-index.mjs）
+public/assets/present.json

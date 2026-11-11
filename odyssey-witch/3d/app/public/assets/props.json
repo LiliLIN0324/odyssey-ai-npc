@@ -1,0 +1,89 @@
+{
+  "_comment": "Tripo 产出物的落位表（对齐 3d/refs/A1-埃阿亚岛多视角参考表.jpg 的俯视布局）。坐标单位=米，岛半径 60；pos=[x,z]，y 自动贴地形。file 缺省时运行时静默跳过，不影响可玩性。budgetTris 来自 PIPELINE.md §3 面数预算。",
+  "props": [
+    {
+      "id": "witch-hut",
+      "file": "witch-hut.glb",
+      "pos": [-9, -12],
+      "rotY": 0.35,
+      "scale": 1,
+      "budgetTris": 15000,
+      "castShadow": true,
+      "note": "女巫小屋 · 视觉主角（Tripo Image-to-3D HD）"
+    },
+    {
+      "id": "cauldron",
+      "file": "cauldron.glb",
+      "pos": [-2.5, -6.5],
+      "rotY": -0.2,
+      "scale": 1,
+      "budgetTris": 5000,
+      "castShadow": true,
+      "note": "坩埚（绿泡后期换成自发光材质）"
+    },
+    {
+      "id": "dock",
+      "file": "dock.glb",
+      "pos": [2, 54],
+      "rotY": 3.1416,
+      "scale": 1,
+      "budgetTris": 8000,
+      "castShadow": true,
+      "note": "栈桥 + 小船（普通档）"
+    },
+    {
+      "id": "altar",
+      "file": "altar.glb",
+      "pos": [18, -16],
+      "rotY": 0.8,
+      "scale": 1,
+      "budgetTris": 4000,
+      "castShadow": true,
+      "note": "旧祭坛石碑（交互点）"
+    },
+    {
+      "id": "maguey",
+      "file": "maguey.glb",
+      "pos": [6, 12],
+      "rotY": 0,
+      "scale": 1,
+      "budgetTris": 1500,
+      "castShadow": false,
+      "repeat": [[12, 8], [16, 16], [-6, 20], [-16, 4]],
+      "note": "发光玛草丛（可采集；repeat 处同模型复制摆放）"
+    },
+    {
+      "id": "tree",
+      "file": "tree.glb",
+      "pos": [-22, -2],
+      "rotY": 0,
+      "scale": 1,
+      "budgetTris": 3000,
+      "castShadow": true,
+      "repeat": [[-26, 12], [-14, -26], [4, -24], [24, 4], [20, 26], [-4, 30]],
+      "note": "乔木（复制摆放，不追求单棵精度）"
+    },
+    {
+      "id": "circe",
+      "file": "circe.glb",
+      "pos": [-6.5, -9],
+      "rotY": 2.6,
+      "scale": 1,
+      "budgetTris": 30000,
+      "castShadow": true,
+      "character": true,
+      "note": "喀耳刻（Multi-View to 3D + Smart Mesh，需绑定 idle/walk）"
+    },
+    {
+      "id": "traveler",
+      "file": "traveler.glb",
+      "pos": [3.5, 47],
+      "rotY": 0,
+      "scale": 1,
+      "budgetTris": 30000,
+      "castShadow": true,
+      "character": true,
+      "note": "无名旅人（玩家替身；接入后替换 character.js 的胶囊占位）"
+    }
+  ]
+}

@@ -108,6 +108,27 @@ Sac 的规则：**按资产的下游用途选做法，不是所有东西都最�
 | 草地覆盖 | **Three.js instanced 草卡** | — | 视预算 | 贴色板两档绿，破"色块感" |
 | 火堆/萤火 | **粒子** | — | 无网格 | 暖橙 #e0783a，氛围担当 |
 
+### 3.1 产出物落位契约（2026-11-11 已落地，Tripo 出图即可自动进场）
+
+Tripo 导出的 glb **按文件名丢进 `app/public/assets/` 即可**，代码会自己接：
+
+| 文件名 | 落位 | 面数预算 |
+|---|---|---|
+| `witch-hut.glb` | (-9, -12) 岛心北侧 | ≤ 15k |
+| `cauldron.glb` | (-2.5, -6.5) 小屋旁 | ≤ 5k |
+| `dock.glb` | (2, 54) 南岸栈桥 | ≤ 8k |
+| `altar.glb` | (18, -16) 东侧石碑 | ≤ 4k |
+| `maguey.glb` | (6, 12) + 4 处复制点 | ≤ 1.5k |
+| `tree.glb` | (-22, -2) + 6 处复制点 | ≤ 3k |
+| `circe.glb` | (-6.5, -9) | ≤ 30k（角色） |
+| `traveler.glb` | (3.5, 47) | ≤ 30k（角色） |
+
+- 坐标/旋转/缩放/复制点全部写在 `app/public/assets/props.json`（一个文件改布局，不改代码）。
+- 运行时由 `src/props.js` 加载：**y 坐标自动按 `islandHeight()` 贴地**、开阴影、把 Tripo 常见的 `metalness=1` 归一到非金属（否则无环境贴图时发黑）。
+- 缺文件不会报错：构建期 `tools/gen-asset-index.mjs` 生成 `present.json` 清单，缺失的只在控制台汇总一行（已加载 N / 待产出 M / 失败 K）。
+- 体检命令：`npm run check:assets` —— 解析 GLB 头拿三角面/贴图/体积，逐项对比预算与 §6 总预算，超了退出码非 0。
+- 角色（`circe`/`traveler`）目前只进场不接管操作；接动画与把 `character.js` 的胶囊占位换成 traveler 模型，是拿到 glb 后的下一步。
+
 ---
 
 ## 4. Phase C · Tripo 生成参数
@@ -175,12 +196,14 @@ blender --background --python tools/review_shots.py -- assembled.glb shots/
 ```
 odyssey-witch/3d/
   PIPELINE.md            ← 本文档
+  refs/                  ← Phase A 多视角参考表（§2，已产出）
   tools/                 ← Blender 脚本
   app/                   ← Vite + three（下一步搭建）
     index.html
     src/main.js          ← 场景组装、循环
     src/world.js         ← 岛体/海/天/草（程序化，贴色板）
     src/character.js     ← 控制器（WASD + E，第三人称跟随）
+    src/props.js         ← Tripo 资产加载/贴地/阴影/预算统计（§3.1 契约）
     src/dialogue.js      ← 对话 UI（复用 concept-art 立绘，四选一分支）
     public/assets/*.glb  ← clean_asset.py 的产物
 ```
