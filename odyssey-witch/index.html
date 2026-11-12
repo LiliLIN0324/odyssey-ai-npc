@@ -2160,7 +2160,7 @@ function gainXp(n){
     /* 新手保护期收束（Steam 化引导）：Lv2 起海不再护着你——饥饿/干渴开始真正伤人 */
     if (state.level>=2 && state.survivalGrace!==false){
       state.survivalGrace=false;
-      setTimeout(()=>toast("你的名声开始在海上传开——新手的海不再护着你：往后饿与渴都会真的伤身。备好干粮和淡水再出达。"), 1600);
+      setTimeout(()=>toast("你的名声开始在海上传开——新手的海不再护着你：往后饿与渴都会真的伤身。备好干粮和淡水再出发。"), 1600);
     }
   }
   renderHUD();
@@ -2260,8 +2260,13 @@ function ensureState(){
   /* P1.1 船员账本：旧档回补——挂点 flag 由既有进度推导，账本未点亮则静默入账（无横幅无 toast） */
   if (state.crew===undefined) state.crew=0;
   if (state.crewLit===undefined) state.crewLit=false;
-  if (!Array.isArray(state.crewList)) state.crewList = CREW_ROSTER.slice(0, state.crew||0);
-  else state.crewList = state.crewList.slice(0, state.crew||0);
+  /* P1 修复：账本未点亮时名册必须留 null（由 crewLedgerLight 在出海时播种）。
+     原先这里先把 crew=0 的空数组造出来/截断，crewLedgerLight 的 !Array.isArray 守卫失效 →
+     任何加载的存档名册永远为空（折损无点名、终章无存活者名单） */
+  if (!state.crewLit){ state.crewList = null; }
+  else if (!Array.isArray(state.crewList) || state.crewList.length !== (state.crew||0)){
+    state.crewList = CREW_ROSTER.slice(0, state.crew||0);   /* 折损语义＝名册前 crew 个名字；长度不符即按语义修复 */
+  }
   if (state.crewCyclops===undefined) state.crewCyclops=!!state.polHeard;
   if (state.crewScylla===undefined) state.crewScylla=!!(state.straitStage>=2&&!state.scyllaDebtPaid);
   if (state.crewSun===undefined) state.crewSun=!!state.sunWrath;
@@ -2298,7 +2303,7 @@ function ensureState(){
    if (state.ramHide===undefined) state.ramHide=false;
    if (!Array.isArray(state.paidMem)) state.paidMem=[];
   if (!Array.isArray(state.rumors)) state.rumors=[];   /* 传闻账本：旧档补空表，随后按 flag 幂等派生 */
-  crewLedgerLight();
+  if (state.troyDone) crewLedgerLight();   /* P1 修复：只在出了特洛伊后才点亮账本——原先无条件调用，加载任意未出海的旧档都会立即 ⚑12/12，破坏「十二个名字都在甲板上」的出海拍 */
   if (state.tookWine===undefined) state.tookWine=false;
   if (state.targetHits===undefined) state.targetHits=0;
   if (state.lotusAte===undefined) state.lotusAte=false;
@@ -2577,7 +2582,7 @@ function drawFloatTexts(){
 
 /* ==================== 昼夜（生存-crafting：时间驱动威胁；visual.md 光照色卡） ==================== */
 const DAY_LEN = 480;                      /* 现实 8 分钟 = 游戏一昼夜 */
-const CLOCK_NAMES = [[5,"黎明"],[8,"清晨"],[11,"上午"],[13,"正午"],[17,"黄昏"],[20,"夜晚"],[24,"深夜"]];
+const CLOCK_NAMES = [[5,"黎明"],[8,"清晨"],[11,"上午"],[13,"正午"],[17,"午后"],[20,"黄昏"],[24,"夜晚"]];   /* P2 修复：与昼夜光照对齐——isDusk=17..20 →「黄昏」，isNight=20.. →「夜晚」（原表 13 点就进黄昏、冻结的金色黄昏显示「夜晚」） */
 function clockTick(dt){
   const prev = state.clock;
   state.clock = (state.clock + dt/DAY_LEN*1440) % 1440;
@@ -4456,6 +4461,40 @@ function scheriaShipAsk(){
     },
   });
 }
+/* 奥吉吉亚正题（第五章必经拍）：日志作答 + 永生的锁二选一。
+   P0 修复：recallMemories 返回的是字符串数组，原调用方按对象取 m.text → TypeError，
+   正题永远无法渲染、且 stage 已置 3 → 受影响档主线永久卡死；此处改按字符串处理，
+   并抽成函数供点位与对话兜底（其他意图）两处复用。 */
+function oggiaMainAsk(){
+  state.calypsoStage = 3;
+  const mems = recallMemories(3);
+  const answer = mems.length>=3
+    ? mems.map(s=>String(s||"").replace(/^旅人/,"")).join("；")
+    : "";
+  const quote = answer
+    ? `她把你自己的日子念给你听：「${answer}。」——「看，你早就答过了。现在只差亲口承认。」`
+    : "她替你答了一半：「家是有人等你的地方。」——「剩下的一半，我不替你说。到了该认的地方，你自己补。」";
+  showChapter("concept-art/06-奥吉吉亚-卡吕普索.jpg","第 五 章","正 题","她终于问了那个问题",quote);
+  setTimeout(()=>{
+    const settle = (stay)=>{
+      state.calypsoStage = 4;
+      if (stay){
+        state.calypsoChoice = "stay";
+        addMemory("旅人答应留在奥吉吉亚——永生的锁合上了", 5);
+        toast("她说：好。（那天晚上，时间重新开始流动——想走的时候，筏台在海湾等你。）");
+      } else {
+        state.calypsoChoice = "raft";
+        addMemory("旅人拒绝了永生——他要自己造一艘筏", 5);
+        toast("她点头，眼睛却湿了：「筏台在海湾。木料、时辰、储粮——把你一路学的全用上吧。」");
+      }
+      renderHUD(); save();
+    };
+    showAsk("第 五 章 · 正 题","永 生 的 锁","她的提议躺在空气里：留下来——永生，不死，每天都是同样的好天气。","「你走了那么多海，难道没有一个岛值得停下？」",[
+      {label:"留下来 · 永生的锁", hint:"每天都是同样的好天气", fn:()=>settle(true)},
+      {label:"我要走 · 造筏", hint:"亲手把筏造出来", fn:()=>settle(false)},
+    ]);
+  }, 600);
+}
 function interact(){
   if (titleOn||chapterOn||mapOpen) return;
   if (scene==="world"){
@@ -4728,38 +4767,10 @@ function interact(){
       ]);
       return;
     }
-    if (state.calypsoStage>=3){ return openDlg("calypso"); }
+    /* P0 修复：崩溃档（stage=3 且 choice=null）必须能重入正题——原先一律 openDlg，主线永久卡死 */
+    if (state.calypsoStage>=3 && state.calypsoChoice){ return openDlg("calypso"); }
     if (state.ogygiaDay<2){ return openDlg("calypso"); }
-    /* 问正题：日志作答（锚点=记忆流；≥3 条她用你的日志作答，不足则她替你答一半） */
-    state.calypsoStage = 3;
-    const mems = recallMemories(3);
-    const answer = mems.length>=3
-      ? mems.map(m=>m.text.replace(/^旅人/,"")).join("；")
-      : "";
-    const quote = answer
-      ? `她把你自己的日子念给你听：「${answer}。」——「看，你早就答过了。现在只差亲口承认。」`
-      : "她替你答了一半：「家是有人等你的地方。」——「剩下的一半，我不替你说。到了该认的地方，你自己补。」";
-    showChapter("concept-art/06-奥吉吉亚-卡吕普索.jpg","第 五 章","正 题","她终于问了那个问题",quote);
-    setTimeout(()=>{
-      const settle = (stay)=>{
-        state.calypsoStage = 4;
-        if (stay){
-          state.calypsoChoice = "stay";
-          addMemory("旅人答应留在奥吉吉亚——永生的锁合上了", 5);
-          toast("她说：好。（那天晚上，时间重新开始流动——想走的时候，筏台在海湾等你。）");
-        } else {
-          state.calypsoChoice = "raft";
-          addMemory("旅人拒绝了永生——他要自己造一艘筏", 5);
-          toast("她点头，眼睛却湿了：「筏台在海湾。木料、时辰、储粮——把你一路学的全用上吧。」");
-        }
-        renderHUD(); save();
-      };
-      showAsk("第 五 章 · 正 题","永 生 的 锁","她的提议躺在空气里：留下来——永生，不死，每天都是同样的好天气。","「你走了那么多海，难道没有一个岛值得停下？」",[
-        {label:"留下来 · 永生的锁", hint:"每天都是同样的好天气", fn:()=>settle(true)},
-        {label:"我要走 · 造筏", hint:"亲手把筏造出来", fn:()=>settle(false)},
-      ]);
-    }, 600);
-    return;
+    return oggiaMainAsk();
   }
   if (s.type==="fruit"){
     if (state.appleTaken){ toast("枝头上最后一枚金苹果已经摘了——剩下的还青着。"); return; }
@@ -8053,7 +8064,7 @@ function bagText(){ const ks=Object.keys(state.backpack); return ks.length?ks.ma
 function shopPrice(n){
   const p = SHOP[n]; if (p===undefined) return undefined;
   const d = state.affinity>=85 ? 0.8 : state.affinity>=60 ? 0.9 : 1;
-  return Math.max(1, Math.round(p*d));
+  return Math.max(1, Math.floor(p*d));   /* P3 修复：折扣向下取整让利玩家（原 Math.round 把 13.5 收成 14，「让一成」实收只让 6.7%） */
 }
 function shopTier(){ return state.affinity>=85 ? "托付价（八折）" : state.affinity>=60 ? "熟人价（九折）" : null; }
 
@@ -8064,7 +8075,15 @@ function handleSeer(category, args){
   switch(category){
   case "查询神谕":
     if (!state.offered) return {text:"（他把杖往沟的方向一点）血未入沟，亡者不听活人说话。蜂蜜酒、面包、淡水——倒进沟里，再回来问我。"};
-    return null;   /* 已献祭 → 交给人格模型发预言 */
+    /* P2 修复：已献祭的神谕是二章必经拍——原 return null 离线死循环（人格模型不可用→兜底台词→建议 chip 再循环）。神谕是 lore 锁定文案，交本地，不上模型 */
+    return {text:"（他抬起没有瞳孔的眼）……两条路。阿喀琉斯的捷径：荣耀来得快，也走得快——浪头最高的地方等它。我的长路：困顿，疲惫，但每一步都朝着灯火。想好了，对我说「我选长路」或「我选捷径」。"};
+  case "查询地点信息":   /* P2 修复：菜单示例「这里都有些谁？」离线原落兜底死循环 */
+    return {text: state.offered
+      ? "沟那边……一个抱着空襁褓的妇人，一个持矛的影子，一个戴金面的王。走近了，他们自会开口。"
+      : "亡者的国不接待问询。先献祭——蜂蜜酒、面包、淡水，倒进沟里。"};
+  case "其他意图":
+    if (state.offered) return {text:"（他把杖点了两下石面）……活人的话太散。想问路，就说「我该走哪条路」；想选，就说「我选长路」或「我选捷径」。"};
+    return {text:"（他把杖往沟的方向一点）血未入沟，亡者不听活人说话。蜂蜜酒、面包、淡水——倒进沟里，再回来问我。"};
   case "接取任务": {
     const t=g("任务名称")||g("求助内容")||"";
     if (/长路|归乡/.test(t)){
@@ -8277,6 +8296,11 @@ function handleCalypso(category, args){
     return {text:"（她低下头继续织）问吧。反正你都要走了——人要走的时候，说话最大声。"};
   case "告别":
     return {text:"（她没抬头，线却停了一拍）……嗯。风口站着，容易着凉。"};
+  case "其他意图":   /* P2 修复：离线菜单示例语（我想回家 等）原落 NPC_FALLBACK 且建议 chip 死循环 */
+    if (state.calypsoChoice==="stay") return {text:"（她放下织物）留下的人不需要新话题。想再坐一会儿，或想走了——来洞窟口找我。"};
+    if (state.calypsoStage>=3 && !state.calypsoChoice) return {text:"（她放下织梭，第一次正面看你）……正题还没谈完。到洞窟口来，我再问一遍——这次，你要亲口回答。"};
+    if (state.ogygiaDay<2) return {text:"（她朝洞窟外抬抬下巴）果子熟了就摘，织机在那边——这岛上的日子，够你慢慢看。"};
+    return {text:"（她停下织梭，第一次正面看你）……坐吧。有些话，再不说，你就真的住下了。到洞窟口来，我们谈正题。"};
   }
   return null;   /* 其余落人格 */
 }
