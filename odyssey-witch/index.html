@@ -5569,8 +5569,49 @@ function drawWorld(et){
   }
   ctx.font="600 11px 'Segoe UI','Microsoft YaHei'";
   drawWorldClouds(et);   /* 视差云影（两层速度差 → 航行时的空间纵深） */
+  drawDolphins2D(et);    /* 批次 H8：海豚伴航（奥德修斯被海豚所救的本命意象） */
+  drawGulls2D(et);       /* 批次 H8：岛际鸥群 */
   drawStonePillar(et);   /* P2.3 石化石柱（world 图层内，W3D 关闭时由 2D 承担） */
   drawBoat(et);
+}
+/* ---------- 批次 H8：海的生命（2D 侧）——海豚伴航 + 岛际鸥群 ---------- */
+const DOLPHIN_PODS = [
+  {x:25*WTS+30, y:7*WTS+20, r:30},   // 爱琴海
+  {x:9*WTS+10,  y:9*WTS+10, r:26},   // 第勒尼安西
+  {x:30*WTS+10, y:11*WTS,   r:34},   // 东地中海开阔水
+];
+function drawDolphins2D(et){
+  if (scene!=="world" || w3dActive()) return;   /* 3D 世界图有 3D 版海豚（world3d.js） */
+  for (const pod of DOLPHIN_PODS){
+    for (let i=0;i<3;i++){
+      const a = et*0.55 + i*2.1 + pod.r*0.01;
+      const dx = pod.x + Math.cos(a)*pod.r, dy = pod.y + Math.sin(a)*pod.r*0.6;
+      const face = Math.atan2(Math.cos(a)*0.6, -Math.sin(a));
+      const hop = Math.max(0, Math.sin(et*2.4 + i*2.1))*3;
+      ctx.save(); ctx.translate(dx, dy - hop); ctx.rotate(face);
+      ctx.fillStyle="#3d4c5c";
+      ctx.beginPath(); ctx.ellipse(0,0,7,2.2,0,0,7); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-2,-2); ctx.lineTo(1,-5); ctx.lineTo(3,-1.6); ctx.closePath(); ctx.fill();
+      ctx.fillStyle="rgba(255,255,255,.45)"; ctx.beginPath(); ctx.ellipse(-9,1.5,6,1.6,0,0,7); ctx.fill();
+      ctx.restore();
+    }
+  }
+}
+function drawGulls2D(et){
+  if (scene!=="world" || w3dActive()) return;
+  for (const is of ISLANDS){
+    const cx = is.gx*WTS+WTS/2, cy = is.gy*WTS+WTS/2 - 6;
+    for (let i=0;i<2;i++){
+      const a = et*0.8*(i?1:-1) + i*2.4 + is.gx*0.1;
+      const gx = cx + Math.cos(a)*(12+(i?6:0)), gy = cy + Math.sin(a)*7;
+      const flap = Math.sin(et*9 + i*3)*2.4;
+      ctx.strokeStyle="rgba(250,252,255,.85)"; ctx.lineWidth=1.6;
+      ctx.beginPath();
+      ctx.moveTo(gx-4, gy-flap*0.4); ctx.quadraticCurveTo(gx-1.5, gy-flap, gx, gy);
+      ctx.quadraticCurveTo(gx+1.5, gy-flap, gx+4, gy-flap*0.4);
+      ctx.stroke();
+    }
+  }
 }
 /* ---------- 世界图视差云影（procedural-gen：种子随机确定可复现） ---------- */
 const CLOUDS = (()=>{
@@ -5593,16 +5634,19 @@ const boatTrail = []; let _trailLast = null;
 function drawEscortFleet(et){
   const n = Math.max(0, Math.min(11, (state.fleet||0)-1));
   if (!n || !boatTrail.length) return;
+  const ES = 0.66;   /* 批次 H8：护航船随主船缩放 */
   for (let i=0;i<n;i++){
     const p = boatTrail[Math.max(0, boatTrail.length-1-(i+1)*14)];
     if (!p) break;
     const rock=Math.sin(et*1.9+i*1.3)*1.2;
-    ctx.fillStyle="rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(p.x,p.y+6,9,3.4,0,0,7); ctx.fill();
+    ctx.save(); ctx.translate(p.x, p.y+rock); ctx.scale(ES,ES);
+    ctx.fillStyle="rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(0,6,9,3.4,0,0,7); ctx.fill();
     ctx.fillStyle = i%2 ? "#5d3f24" : "#77522f";   /* 深浅两色剪影，前后可辨 */
-    ctx.beginPath(); ctx.moveTo(p.x-9,p.y+2+rock); ctx.quadraticCurveTo(p.x,p.y+5+rock,p.x+9,p.y+2+rock);
-    ctx.lineTo(p.x+6.5,p.y-0.5+rock); ctx.lineTo(p.x-6.5,p.y-0.5+rock); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-9,2); ctx.quadraticCurveTo(0,5,9,2);
+    ctx.lineTo(6.5,-0.5); ctx.lineTo(-6.5,-0.5); ctx.closePath(); ctx.fill();
     ctx.fillStyle="rgba(238,232,216,.72)"; ctx.beginPath();
-    ctx.moveTo(p.x+0.8,p.y-7+rock); ctx.quadraticCurveTo(p.x+5.5,p.y-3+rock,p.x+0.8,p.y-0.5+rock); ctx.closePath(); ctx.fill();
+    ctx.moveTo(0.8,-7); ctx.quadraticCurveTo(5.5,-3,0.8,-0.5); ctx.closePath(); ctx.fill();
+    ctx.restore();
   }
 }
 /* ---------- P2.3 石化送客船（2D 世界图：白石柱立于斯克里东南海面，stonePillarDone 后永久可见） ---------- */
@@ -5840,7 +5884,7 @@ function salvageDrift(d){
 }
 function driftTick(now){
   if (scene !== "world") return;
-  if (drifts.length < 4 && now > driftNextAt){ spawnDrift(); driftNextAt = now + 150000 + Math.random()*60000; }
+  if (drifts.length < 7 && now > driftNextAt){ spawnDrift(); driftNextAt = now + 95000 + Math.random()*55000; }   /* 批次 H8：海上可遇可捞物加密（4→7 上限，间隔 150-210s→95-150s） */
 }
 function drawDrifts(et){
   const w3dOn = !!w3dActive();   /* 2D 海图偏好/自动降级时走 2D 绘制 */
@@ -5911,6 +5955,9 @@ function drawBoat(et){
   }
   drawEscortFleet(et);
   const x=boat.x, y=boat.y, rock=Math.sin(et*1.6)*1.5;
+  /* 批次 H8：船视尺度 ×0.62——旧比例船占 1.6 瓦（世界才 46×18 瓦），地中海读成澡盆；
+     缩船=世界等效放大 1.6 倍，航行距离感/海面空旷感同步回归。逻辑坐标（碰撞/交互半径）不动。 */
+  const BS = 0.62;
   const tw = performance.now() < (state.tailwindUntil||0);   /* 顺风中：尾迹加速线 */
   if (tw){
     ctx.strokeStyle="rgba(255,255,255,.75)"; ctx.lineWidth=2;
@@ -5921,8 +5968,8 @@ function drawBoat(et){
     }
     ctx.globalAlpha=1;
   }
-  ctx.fillStyle="rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(x,y+8,14,5,0,0,7); ctx.fill();
-  ctx.save(); ctx.translate(x,y+rock);
+  ctx.fillStyle="rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(x,y+8*BS,14*BS,5*BS,0,0,7); ctx.fill();
+  ctx.save(); ctx.translate(x,y+rock); ctx.scale(BS,BS);
   ctx.fillStyle="#8a5a33"; ctx.beginPath();
   ctx.moveTo(-16,2); ctx.quadraticCurveTo(0,9,16,2); ctx.lineTo(12,-2); ctx.lineTo(-12,-2); ctx.closePath(); ctx.fill();
   ctx.fillStyle="#a97a4d"; ctx.fillRect(-2,-16,3,15);

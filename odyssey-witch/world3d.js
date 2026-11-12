@@ -87,6 +87,11 @@ let labelSprites = [];   /* 岛名标签（Sprite+CanvasTexture）：随相机�
 let fitFn = null;   /* init 内 fit 的稳定引用（setDPR 重算尺寸用） */
 let driftG = null, driftSlots = [];   /* 漂流物（Steam 化玩法批）：预建 4 槽，随 __game.drifts 同步 */
 let worldGroup = null, waterMesh = null, skyGroup = null, cloudGroup = null, troyGroup = null;
+/* 批次 H8：海的生命——海豚伴航（奥德修斯获救的本命意象）+ 岛际鸥群。
+   轨迹全部由 et 参数化（无状态、rAF 冻结环境也能在 grabFrame 里正确呈现）。 */
+const SEA_PODS = [ {x:25*20+30, y:7*20+20, r:30}, {x:9*20+10, y:9*20+10, r:26}, {x:30*20+10, y:11*20, r:34} ];
+let dolphinsG = null, dolphinFins = [];
+let gullsG = null, gullWings = [];
 let yawCur = 0; let ready = false; let failed = false; let lastEt = -1;
 
 /* ---------- 岛屿网格（顶点色 + flatShading，P1 同款风格） ---------- */
@@ -634,6 +639,49 @@ function buildEscortFleet() {
   return g;
 }
 
+/* ---------- 批次 H8：海的生命（3D）——海豚伴航 + 岛际鸥群 ---------- */
+function buildSeaLife() {
+  const g = new THREE.Group();
+  const finMat = new THREE.MeshStandardMaterial({ color: 0x3d4c5c, roughness: 0.85, flatShading: true });
+  for (const pod of SEA_PODS) for (let i = 0; i < 3; i++) {
+    const fin = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 6), finMat);
+    fin.scale.set(0.5, 0.11, 0.16);
+    g.add(fin);
+    dolphinFins.push({ m: fin, pod, i });
+  }
+  const gullMat = new THREE.MeshBasicMaterial({ color: 0xf6f8fa, side: THREE.DoubleSide });
+  const wingGeo = new THREE.PlaneGeometry(0.34, 0.1);
+  for (const is of (window.ISLANDS || [])) {
+    for (let i = 0; i < 2; i++) {
+      const body = new THREE.Group();
+      const wl = new THREE.Mesh(wingGeo, gullMat); wl.position.x = -0.17;
+      const wr = new THREE.Mesh(wingGeo, gullMat); wr.position.x = 0.17;
+      body.add(wl); body.add(wr);
+      g.add(body);
+      gullWings.push({ body, wl, wr, is, i });
+    }
+  }
+  return g;
+}
+function seaLifeTick(et) {
+  for (const f of dolphinFins) {
+    const a = et * 0.55 + f.i * 2.1 + f.pod.r * 0.01;
+    const px = f.pod.x + Math.cos(a) * f.pod.r, py = f.pod.y + Math.sin(a) * f.pod.r * 0.6;
+    const hop = Math.max(0, Math.sin(et * 2.4 + f.i * 2.1)) * 0.16;
+    f.m.position.set(px2x(px), hop + Math.sin(et * 2.2 + f.i) * 0.03, px2z(py));
+    f.m.rotation.y = Math.atan2(-(Math.cos(a) * 0.6), -Math.sin(a));
+  }
+  for (const g of gullWings) {
+    const a = et * 0.8 * (g.i ? 1 : -1) + g.i * 2.4 + g.is.gx * 0.1;
+    const px = g.is.gx * 20 + 20 / 2 + Math.cos(a) * (12 + (g.i ? 6 : 0));
+    const py = g.is.gy * 20 + 20 / 2 - 6 + Math.sin(a) * 7;
+    g.body.position.set(px2x(px), 5.2 + Math.sin(et * 1.7 + g.i * 2) * 0.5, px2z(py));
+    g.body.rotation.y = Math.atan2(-(Math.cos(a) * 7 * (g.i ? 1 : -1)), -Math.sin(a) * (12 + (g.i ? 6 : 0)));
+    const flap = Math.sin(et * 9 + g.i * 3) * 0.45;
+    g.wl.rotation.z = flap; g.wr.rotation.z = -flap;
+  }
+}
+
 /* ---------- 漂流物（Steam 化玩法批：漂流瓶/木箱 3D 浮标，位置与类型随主脚本 drifts 数组同步） ---------- */
 function buildDrifts() {
   const g = new THREE.Group();
@@ -801,12 +849,16 @@ function init() {
   waterMesh = buildWater(); scene3.add(waterMesh);
   cloudGroup = buildClouds(); scene3.add(cloudGroup);
   boatG = buildBoat();
-  boatG.scale.setScalar(1.8);
+  /* 批次 H8：船视尺度——旧值 setScalar(1.8) 把 1.7 单位长的船放大到 3 单位 ≈ 1.5 瓦，
+     地中海读成澡盆；降到 1.12（等效缩小 0.62），海面纵深与距离感同步回归。
+     逻辑坐标/碰撞/交互半径不动。 */
+  boatG.scale.setScalar(1.12);
   scene3.add(boatG);
-  escortG = buildEscortFleet();
+  escortG = buildEscortFleet();   /* 批次 H8：护航船裸网格 1.3 单位 vs 主船 1.12×1.7≈1.9——旗舰带小艇的自然比例，不再另加缩放 */
   scene3.add(escortG);
   driftG = buildDrifts();
   scene3.add(driftG);
+  dolphinsG = buildSeaLife(); worldGroup.add(dolphinsG);   /* 批次 H8：海的生命挂 worldGroup（特洛伊场景随组隐藏） */
   troyGroup = buildTroy(); troyGroup.visible = false; scene3.add(troyGroup);
 
   const cv = renderer.domElement;
@@ -914,6 +966,7 @@ function frame(et) {
     pillarG.position.set(px2x(G.scheriaExit.x + 92), 0, px2z(G.scheriaExit.y + 58));
   }
   /* 漂流物：随主脚本 drifts 数组同步（瓶/箱形态切换 + 浮沉摇摆；最多 4 个） */
+  seaLifeTick(et);   /* 批次 H8：海豚伴航 + 岛际鸥群（et 参数化轨迹） */
   if (driftG) {
     const ds = (G && G.drifts && G.drifts()) || [];
     for (let i = 0; i < driftSlots.length; i++) {
@@ -927,7 +980,7 @@ function frame(et) {
       s.g.rotation.z = Math.sin(et * 1.6 + d.y) * 0.12;
     }
   }
-  _camTarget.set(bx, 12.2, bz + 14.5);   /* 批次 H6：相机略降拉近（14/17 → 12.2/14.5）——视野收窄后海面更有纵深，
+  _camTarget.set(bx, 11.6, bz + 13.8);   /* 批次 H6/H8：相机略降拉近（14/17 → 11.6/13.8）——船缩小后进一步贴近海面，
                                             「池塘感」缓解；导航可读性由岛名标签与 M 海图承担 */
   camera3.position.lerp(_camTarget, 1 - Math.exp(-4 * dt));
   camera3.lookAt(bx, 0.8, bz - 2.5);
