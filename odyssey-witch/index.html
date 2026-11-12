@@ -609,7 +609,7 @@
  * ================================================================== */
 
 /* ==================== 世界地图（地中海） ==================== */
-const WCOLS = 46, WROWS = 18, WTS = 20;
+const WCOLS = 46, WROWS = 18, WTS = 40;   /* 批次 H9：世界物理尺寸翻倍（920×360→1840×720px）——航程时间×2，视角内瓦数减半；地理形状（46×18 格）不变 */
 function buildMediterranean(){
   /* 批次 H7：分段重建海岸线——旧版希腊是一整块矩形、意大利靴子只有半只、北非一条横贯实心带、
      塞浦路斯被安纳托利亚吞掉、东地中海整体封死——玩家「不像地中海」。
@@ -1259,7 +1259,7 @@ function enterPrologue(key){
 const MALEA_SPOT = {x:19.5*WTS, y:10.5*WTS};
 function maleaTick(){
   if (state.maleaDone || scene!=="world") return;
-  if (Math.hypot(boat.x-MALEA_SPOT.x, boat.y-MALEA_SPOT.y) < 95){
+  if (Math.hypot(boat.x-MALEA_SPOT.x, boat.y-MALEA_SPOT.y) < 190){   /* 批次 H9：同瓦距翻倍 */
     state.maleaDone = true; markLeg("malea"); gainXp(15);
     addMemory("旅人在马里阿角的风暴里学会了读风——海记得每一次转向", 2, "storm");
     toast("海雾骤起，双重风暴前后夹来——你贴着风向转了九次，船头终于咬住了浪缝。（听风试炼 · 历练 +15 · 航序 #2 点亮）");
@@ -1360,7 +1360,7 @@ function raftStormTick(dt){
   if (dlgOpen || titleOn || chapterOn || mapOpen) return;   /* 界面全清才蓄力（海遇/malea 同款门控） */
   const ch = worldTile(Math.floor(boat.x/WTS), Math.floor(boat.y/WTS));
   if (ch==="#"||ch==="X"||ch==="G") return;                 /* 陆地/贴岛不触发 */
-  if (Math.hypot(boat.x-OGGIA_EXIT.x, boat.y-OGGIA_EXIT.y) < 170) return;
+  if (Math.hypot(boat.x-OGGIA_EXIT.x, boat.y-OGGIA_EXIT.y) < 340) return;   /* 批次 H9：同瓦距翻倍 */
   _raftStormT += dt;
   if (_raftStormT >= 1.2){ _raftStormT = 0; doRaftStorm(); }
 }
@@ -1464,7 +1464,7 @@ let _pillarT = 0;
 function pillarTick(dt){
   if (scene!=="world" || !state.scheriaFarewell || state.stonePillarDone){ _pillarT=0; return; }
   if (dlgOpen || titleOn || chapterOn || mapOpen || askOn) return;   /* 界面全清才蓄力（海遇/掀筏同款门控） */
-  if (Math.hypot(boat.x-SCHERIA_EXIT.x, boat.y-SCHERIA_EXIT.y) < 300){ _pillarT=0; return; }
+  if (Math.hypot(boat.x-SCHERIA_EXIT.x, boat.y-SCHERIA_EXIT.y) < 600){ _pillarT=0; return; }   /* 批次 H9：同瓦距翻倍 */
   _pillarT += dt;
   if (_pillarT >= 1.6){ _pillarT = 0; stonePillarEvent(); }
 }
@@ -2423,7 +2423,7 @@ const boat  = { x: 22*WTS+WTS/2, y: 11*WTS+WTS/2 };   /* 爱琴海南口开阔�
                                                          旧值 (9,7) 落在意大利半岛陆地格上，开局四方向全卡死、3D 下相机埋进岛体 */
 const aiaPlayer = { x: 4*ATS+ATS/2, y: 8*ATS+ATS/2, w: 24, h: 14, face: "down", moving:false, step:0 };
 
-const SAVE_KEY = "odyssey-med-v2", SAVE_VERSION = 3;
+const SAVE_KEY = "odyssey-med-v2", SAVE_VERSION = 4;   /* 批次 H9：v4=世界尺寸翻倍（船位 px ×2） */
 function save(){ try{
   const cur = localStorage.getItem(SAVE_KEY);
   if (cur) localStorage.setItem(SAVE_KEY+".bak", cur);   /* 原子写双份：主档覆盖前先留上一版（save-systems） */
@@ -2441,7 +2441,9 @@ function load(){
   /* 主档损坏/截断 → 回退上一版备份（save-systems 原子写） */
   const d = parseSave(localStorage.getItem(SAVE_KEY)) || parseSave(localStorage.getItem(SAVE_KEY+".bak"));
   if (!d) return false;
-  /* 版本迁移链：v<current 逐级跑纯函数迁移（v2→v3 无结构断裂，字段默认值由 ensureState 兑底） */
+  /* 版本迁移链：v<current 逐级跑纯函数迁移（v2→v3 无结构断裂，字段默认值由 ensureState 兑底）。
+     批次 H9：v<4 的船位建于 20px 网格——世界尺寸翻倍后船位 px ×2（落点偏差由既有最近水瓦回捞兜底） */
+  if ((d.v||2) < 4 && d.boat){ d.boat.x*=2; d.boat.y*=2; }
   while ((d.v||2) < SAVE_VERSION) d.v = SAVE_VERSION;
   if (d.v > SAVE_VERSION) return false;   /* 未来版本存档：拒绝而不是静默清字段 */
   state = d.state;
@@ -3653,7 +3655,7 @@ function tickMove(dt){
   else if (dy<0) p.face="up"; else p.face="down";
   /* 风袋顺风：海上航速倍增（暗线③：用风=快旅，贪念=用光） */
   const tail = scene==="world" && performance.now() < (state.tailwindUntil||0);
-  const sp = (scene==="aia"?150:scene==="hades"?120:scene==="aeolia"?130:scene==="strait"?135:scene==="sun"?140:scene==="ogggia"?125:scene==="scheria"?150:scene==="ithaca"?140:PROLOGUE_SITES[scene]?135:tail?230:110)*dt;
+  const sp = (scene==="aia"?150:scene==="hades"?120:scene==="aeolia"?130:scene==="strait"?135:scene==="sun"?140:scene==="ogggia"?125:scene==="scheria"?150:scene==="ithaca"?140:PROLOGUE_SITES[scene]?135:tail?130:62)*dt;   /* 批次 H9：世界尺寸翻倍后航速校准 110→62（横渡全海 ~30s），顺风 230→130 */
   const mover = scene==="aia" ? tryMoveAia : scene==="hades" ? tryMoveHades : scene==="aeolia" ? tryMoveAeolia : scene==="strait" ? tryMoveStrait : scene==="sun" ? tryMoveSun : scene==="ogggia" ? tryMoveOggia : scene==="scheria" ? tryMoveScheria : scene==="ithaca" ? tryMoveIthaca : PROLOGUE_SITES[scene] ? tryMovePrologue : tryMoveWorld;
   p.vx = dx*sp/dt; p.vy = dy*sp/dt;   /* 实际速度（px/s），相机前瞻用 */
   /* 碰撞顺滑（游戏手感批）：先按原方向轴分离移动；全被挡时自动尝试 45° 绕行——
@@ -4476,7 +4478,7 @@ function islandNear(){
   for (const is of ISLANDS){
     const cx = is.gx*WTS+WTS/2, cy = is.gy*WTS+WTS/2;
     const d = Math.hypot(boat.x-cx, boat.y-cy);
-    if (d < 90 && d < bd){ bd=d; best=is; }
+    if (d < 180 && d < bd){ bd=d; best=is; }   /* 批次 H9：180px=WTS40 下的 4.5 瓦（与旧 90px@WTS20 同瓦距） */
   }
   return best;
 }
@@ -5652,7 +5654,7 @@ function drawEscortFleet(et){
 /* ---------- P2.3 石化送客船（2D 世界图：白石柱立于斯克里东南海面，stonePillarDone 后永久可见） ---------- */
 function drawStonePillar(et){
   if (scene!=="world" || !state.stonePillarDone) return;
-  const px=SCHERIA_EXIT.x+92, py=SCHERIA_EXIT.y+58, sw=Math.sin(et*0.7)*1.2;
+  const px=SCHERIA_EXIT.x+184, py=SCHERIA_EXIT.y+116, sw=Math.sin(et*0.7)*1.2;   /* 批次 H9：石柱偏移同瓦距翻倍 */
   ctx.fillStyle="rgba(255,255,255,.30)"; ctx.beginPath(); ctx.ellipse(px,py+14,15+sw,4.5,0,0,7); ctx.fill();   /* 柱脚白沫 */
   ctx.fillStyle="#9aa4ab"; ctx.fillRect(px+2,py-28+sw*.4,5,42);                                               /* 柱身暗侧 */
   ctx.fillStyle="#cfd6da"; ctx.fillRect(px-6,py-28+sw*.4,9,42);                                               /* 柱身 */
@@ -7804,7 +7806,7 @@ function fastVoyage(is){
   if (!open){ const g=GATES[is.scene]; toast((g&&g.hint)||`${is.name} —— ${is.note}`); return; }
   const cx = is.gx*WTS+WTS/2, cy = is.gy*WTS+WTS/2;
   const dist = Math.hypot(boat.x-cx, boat.y-cy);
-  const mins = Math.max(40, Math.min(360, Math.round(dist/23.3/10)*10));   /* 与 70px/s × 3 游戏分/现实秒 的航速经济对齐 */
+  const mins = Math.max(40, Math.min(720, Math.round(dist/20.7/10)*10));   /* 批次 H9：与 62px/s × 3 游戏分/现实秒 的航速经济对齐；世界翻倍后上限提到 720 分 */
   const costH = Math.max(3, Math.round(mins*0.14)), costT = Math.max(3, Math.round(mins*0.17));
   askConfirm("快 速 直 航","扬 帆 直 去 "+is.name,
     `把帆吃满，一路不靠岸——约 ${Math.round(mins/60*10)/10} 个时辰。船上省下的力气都交给风。`,

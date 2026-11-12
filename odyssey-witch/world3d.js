@@ -89,7 +89,7 @@ let driftG = null, driftSlots = [];   /* 漂流物（Steam 化玩法批）：预
 let worldGroup = null, waterMesh = null, skyGroup = null, cloudGroup = null, troyGroup = null;
 /* 批次 H8：海的生命——海豚伴航（奥德修斯获救的本命意象）+ 岛际鸥群。
    轨迹全部由 et 参数化（无状态、rAF 冻结环境也能在 grabFrame 里正确呈现）。 */
-const SEA_PODS = [ {x:25*20+30, y:7*20+20, r:30}, {x:9*20+10, y:9*20+10, r:26}, {x:30*20+10, y:11*20, r:34} ];
+const SEA_PODS = [ {x:25*40+60, y:7*40+40, r:60}, {x:9*40+20, y:9*40+20, r:52}, {x:30*40+20, y:11*40, r:68} ];   /* 批次 H9：坐标随世界翻倍 */
 let dolphinsG = null, dolphinFins = [];
 let gullsG = null, gullWings = [];
 let yawCur = 0; let ready = false; let failed = false; let lastEt = -1;
@@ -401,7 +401,7 @@ function buildIslands() {
 
 /* ---------- 海面（P1 shader 移植：三档色按"到最近岸线距离"，金色光路保留） ---------- */
 function buildWater() {
-  const geo = new THREE.PlaneGeometry(220, 170, 72, 60);
+  const geo = new THREE.PlaneGeometry(420, 300, 96, 72);   /* 批次 H9：世界翻倍（1840×720px→±92×±36u），水面扩到 ±210×±150 盖住天际线 */
   geo.rotateX(-Math.PI / 2);
   /* 岸距纹理（对齐批）：按碰撞格烘焙「到陆地格的距离」，海面近岸色/浪花沿真实海岸线（不再用圆形近似） */
   const G0 = window.__game;
@@ -561,7 +561,7 @@ function buildClouds() {
   const dummy = new THREE.Object3D();
   let idx = 0;
   for (let c = 0; c < CLUSTERS; c++) {
-    const cx = (rand() * 2 - 1) * 48, cz = (rand() * 2 - 1) * 20, cy = 12 + rand() * 5;
+    const cx = (rand() * 2 - 1) * 95, cz = (rand() * 2 - 1) * 40, cy = 12 + rand() * 5;   /* 批次 H9：云幕随世界翻倍铺开 */
     const s = 0.5 + rand() * 0.5;
     for (let l = 0; l < LOBES; l++) {
       dummy.position.set(cx + (rand() * 2 - 1) * s * 1.4, cy + (rand() * 2 - 1) * s * 0.22, cz + (rand() * 2 - 1) * s * 0.9);
@@ -828,7 +828,7 @@ function init() {
      远岸轮廓一眼见底，海图读成小池塘。0.0135 时：40 单位约 24%、60 约 46%、100+ 近全没入，
      水面 220×170 大平面的远端与 uHorizon 同色的天空无缝衔接 → 「 endless sea 」的体感；
      近景（船周 15~25 单位）仍 6~15% 清晰可航 */
-  scene3.fog = new THREE.FogExp2(PAL.oceanMid, 0.017);
+  scene3.fog = new THREE.FogExp2(PAL.oceanMid, 0.012);   /* 批次 H9：世界翻倍后重调——60u 40%、100u 76%、140u 94%，近景仍清 */
 
   camera3 = new THREE.PerspectiveCamera(48, 1000 / 600, 0.1, 600);
   camera3.position.set(0, 20, 26);
