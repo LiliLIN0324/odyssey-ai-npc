@@ -1157,6 +1157,8 @@ function legsVisitedCount(){ return Object.keys(state.legs).filter(k=>LEG_SEQ[k]
 /* ==================== P1.1 船员账本（17g 原著对齐：状态/HUD/横幅/记忆四件套的唯一入口） ====================
    语义：crew=旗舰班底 12 人（特洛伊出海点亮）。沉船折算进船队账（fleet），班底随旗舰走——
    原著减员三挂点：独眼巨人 -6 → 斯库拉 -6 → 太阳岛雷劈清零；终章判词「你带回来 N 个人」。 */
+/* 船员名册：旗舰班底十二人的静态名单（复活段判词点名；折损从名册末尾除名） */
+const CREW_ROSTER = ["欧律洛科斯","厄尔珀诺耳","波利忒斯","欧律巴忒斯","门托耳","吕孔","安菲翁","堤丢斯","瑙西托斯","埃托洛斯","克瑞翁","波吕多罗斯"];
 function crewLedgerLight(){
   if (state.crewLit) return;
   state.crewLit = true;
@@ -1165,23 +1167,27 @@ function crewLedgerLight(){
   if (state.crewScylla) c -= 6;                              /* 出海前已硬闯海峡的旧账 */
   if (state.sunWrath) c = 0;                                 /* 雷劈清零 */
   state.crew = Math.max(0, c);
+  if (!Array.isArray(state.crewList)) state.crewList = CREW_ROSTER.slice(0, state.crew);
+  state.crewList = state.crewList.slice(0, state.crew);
 }
 function loseCrew(n, why){
   const before = state.crew||0;
   const lost = Math.min(before, n);
   if (lost<=0) return 0;
+  if (!Array.isArray(state.crewList)) state.crewList = CREW_ROSTER.slice(0, before);
+  const removed = state.crewList.splice(-lost);
   state.crew = before - lost;
   sfx("die");
-  showCrewBanner(lost, why);
-  addMemory(`${why}——${lost} 名船员没能回来（船员 ${state.crew}/12）`, 5, "crew");
+  showCrewBanner(lost, why, removed);
+  addMemory(`${why}——${lost} 名船员没能回来${removed.length?`（${removed.join("、")}）`:""}（船员 ${state.crew}/12）`, 5, "crew");
   renderHUD(); save();
   return lost;
 }
 let crewBannerTimer=null;
-function showCrewBanner(lost, why){
+function showCrewBanner(lost, why, names){
   let el=document.getElementById("crewBanner");
   if (!el){ el=document.createElement("div"); el.id="crewBanner"; document.getElementById("stage").appendChild(el); }
-  el.innerHTML = `<b>⚑ 折损 · 船员 −${lost}</b><span>${why}</span>`;
+  el.innerHTML = `<b>⚑ 折损 · 船员 −${lost}</b><span>${why}${names&&names.length?`（${names.join("、")}）`:""}</span>`;
   el.classList.remove("show"); void el.offsetWidth;          /* 重启动画 */
   el.classList.add("show");
   clearTimeout(crewBannerTimer);
@@ -2038,6 +2044,7 @@ let state = {
   /* —— P1.1 船员账本（17g 原著对齐）：旗舰班底 12 人，与船队双账并行（沉船不折算班底——保 P1.3 鼓噪/P2.4 猪变回人前提）—— */
   crew: 0,                /* 船员 0..12（特洛伊出海点亮；独眼 -6 / 斯库拉 -6 / 太阳岛清零） */
   crewLit: false,         /* 账本已点亮（出海时结算此前已触发的挂点债务） */
+  crewList: null,          /* 存活船员名册（CREW_ROSTER 子集；折损从末尾除名） */
   crewCyclops: false,     /* 挂点①独眼巨人 -6 已触发 */
   crewScylla: false,      /* 挂点②斯库拉 -6 已触发 */
   crewSun: false,         /* 挂点③太阳岛清零已触发 */
@@ -2253,6 +2260,8 @@ function ensureState(){
   /* P1.1 船员账本：旧档回补——挂点 flag 由既有进度推导，账本未点亮则静默入账（无横幅无 toast） */
   if (state.crew===undefined) state.crew=0;
   if (state.crewLit===undefined) state.crewLit=false;
+  if (!Array.isArray(state.crewList)) state.crewList = CREW_ROSTER.slice(0, state.crew||0);
+  else state.crewList = state.crewList.slice(0, state.crew||0);
   if (state.crewCyclops===undefined) state.crewCyclops=!!state.polHeard;
   if (state.crewScylla===undefined) state.crewScylla=!!(state.straitStage>=2&&!state.scyllaDebtPaid);
   if (state.crewSun===undefined) state.crewSun=!!state.sunWrath;
@@ -2724,6 +2733,10 @@ function addMemory(text, imp, who){
   state.memory.push({t: Date.now(), imp: imp||2, who: who||"witch", text});
   if (state.memory.length > 40) state.memory.shift();
 }
+/* 序幕锚点：新航程第一条记忆——刻字船板「记得回家」（英雄之旅·平凡世界地基） */
+function seedPrologue(){
+  addMemory("漂来的船板上刻着一行字：记得回家。你把它翻过来又翻回去——海把你送到哪，这句话就跟到哪。", 2, "any");
+}
 function recallMemories(k, who){
   const w = who || currentNPC || "witch";
   return state.memory.filter(m=>m.who===w || m.who==="any").slice(-14)
@@ -3048,6 +3061,8 @@ aeolus: [
                   line:()=>"木料要三根。斧头在你手里——你一路学的东西，用得上了。"},
     {id:"stay",   w:0.7, cond:()=>state.calypsoChoice==="stay",
                   line:()=>"（她把门开着）夜里的海声，就当是摇篮曲。想走的时候，筏台没拆。"},
+    {id:"same_day", w:0.6, cond:()=>state.calypsoChoice==="stay",
+                  line:()=>`（她织着永远拆不完的布）今天和昨天没什么两样——岛上第 ${state.ogygiaDay||1} 个好天气。`},
     {id:"alone",  w:0.9, cond:()=>state.crewLit&&(state.crew||0)===0,
                   line:()=>"（她看了看你身后的空滩）只有你一个人上岸。……海把其他人都留在浪里了？"},
     {id:"debt",  w:1.0, cond:()=>state.raftStormFail&&!state.raftStormDone,
@@ -4064,19 +4079,29 @@ function updateCompassArrow(){
   const html = compassHTML(obj);
   if (html !== _compassCache){ _compassCache = html; cp.style.display=""; cp.innerHTML = html; }
 }
+function visitedIsland(scene){ return !!(state.legs[scene] || state.legs["seen_"+scene]); }
+/* 可选旧路回勾：未访的序章岛（贪/忘/名/风/险），主线引导里挂一句，不阻断流程 */
+function optionalSkipped(){
+  return ISLANDS.filter(i=>i.opt && i.scene!=="troy" && !visitedIsland(i.scene)).map(i=>i.name);
+}
 function nextObjective(){
+  let obj;
   const q=getQuest("witch_grass");
-  if (!q) return {k:"aia", text:"去埃阿亚岛找喀耳刻接下委托"};
-  if (!q.done) return {k:"aia", text:q.ready?"回埃阿亚岛向喀耳刻复命":`采玛草 ${q.have}/${q.need}（岛东北草丛）`};
-  if (!state.prophecy) return {k:"hades", text:"去冥界之岸：献上蜂蜜酒、面包、淡水，向特瑞西阿斯问路"};
-  if (state.straitStage<2 && !state.straitCleared) return {k:"strait", text:"穿过声之海峡（先处置塞壬的歌：蜡，或桅杆）"};
-  if (!state.sunStage && !state.sunBlessed && !state.sunWrath) return {k:"sun", text:"去太阳岛——守住圣牛，或付出代价"};
-  if (!state.epilogueDone && !state.farewellHint) return {k:"aia", text:"回埃阿亚岛——喀耳刻等你复命"};
-  if (!state.ogygiaLeft) return {k:"ogggia", text:"雾外还有一座岛——完美的天气，完美的一天"};
-  if (!state.scheriaFarewell) return {k:"scheria", text:"把你的故事讲给愿意听的人（斯克里岛）"};
-  if (!state.finaleDone) return {k:"ithaca", text:"雾散了——伊萨卡。回家，或者不归"};
-  if (!state.troyDone) return {k:"troy", text:"航程之外——特洛伊海岸还欠一场夜袭（十二艘船的起点）"};
-  return {k:null, text:state.freeSail?"自由漂流 · 海图全开":"航程已完——想漂去哪就去哪"};
+  if (!q) obj={k:"aia", text:"去埃阿亚岛找喀耳刻接下委托"};
+  else if (!q.done) obj={k:"aia", text:q.ready?"回埃阿亚岛向喀耳刻复命":`采玛草 ${q.have}/${q.need}（岛东北草丛）`};
+  else if (!state.prophecy) obj={k:"hades", text:"去冥界之岸：献上蜂蜜酒、面包、淡水，向特瑞西阿斯问路"};
+  else if (state.straitStage<2 && !state.straitCleared) obj={k:"strait", text:"穿过声之海峡（先处置塞壬的歌：蜡，或桅杆）"};
+  else if (!state.sunStage && !state.sunBlessed && !state.sunWrath) obj={k:"sun", text:"去太阳岛——守住圣牛，或付出代价"};
+  else if (!state.epilogueDone && !state.farewellHint) obj={k:"aia", text:"回埃阿亚岛——喀耳刻等你复命"};
+  else if (!state.ogygiaLeft) obj={k:"ogggia", text:"雾外还有一座岛——完美的天气，完美的一天"};
+  else if (!state.scheriaFarewell) obj={k:"scheria", text:"把你的故事讲给愿意听的人（斯克里岛）"};
+  else if (!state.finaleDone) obj={k:"ithaca", text:"雾散了——伊萨卡。回家，或者不归"};
+  else if (!state.troyDone) obj={k:"troy", text:"航程之外——特洛伊海岸还欠一场夜袭（十二艘船的起点）"};
+  else obj={k:null, text:state.freeSail?"自由漂流 · 海图全开":"航程已完——想漂去哪就去哪"};
+  const skipped = optionalSkipped();
+  if (skipped.length && obj.k && obj.k!=="troy" && !state.ogygiaLeft)
+    obj.text += ` · 旧路未访：${skipped.slice(0,3).join("、")}`;
+  return obj;
 }
 /* 终章判词（圣经 §六 结局矩阵拼装，认名后触发；showEnding 从"四章后"迁移至此）
    mode: "a"=认名归乡（默认）| "b"=码头转身 | "stay"=滞留奥吉吉亚 | "guest"=客卿斯克里 */
@@ -4131,6 +4156,8 @@ function showFinale(mode, way, name){
     if (way==="old") paras.push("相认的那一刻，你答了旧名——那个亡者替你记住的名字。它领你进门，像替别人开门。");
     else if (way==="sun" && name) paras.push(`相认时你说：「${name}。」——太阳记过的名字，王后也认。`);
     else if (way==="calypso" && name) paras.push(`相认时你说：「${name}。」——那是连永生都没能换走的名字。`);
+    else if (way==="noone") paras.push("相认时你用回那个假名——「无人」赢了一夜，却空了十年。最安全的名字，也是最空的；此刻你终于不再需要它。");
+    else if (way==="sung") paras.push("相认时你说：「歌里唱过的那个名字。」——被歌手唱进诗行的人，回得去自己的家。");
     else if (way==="circe") paras.push("相认时你说出了炉火旁的名字——埃阿亚岛留灯那夜的呼唤。它暖过你一整年，也留了一道血脉在极西的海岸上：岛上的孩子会问，父亲的海在哪边。");
     else if (way==="input" && name) paras.push(`相认时你说：「${name}。」——这名字不在任何族谱上。是你自己挣来的。`);
     else if (way==="none") paras.push("相认时你沉默了。无名者进了无名门——王后却认得这份沉默：她等的就是不靠名字的人。");
@@ -4163,6 +4190,8 @@ function showFinale(mode, way, name){
     : crewN>=7
     ? `你带回来 ${crewN} 个人。甲板空了一半，但活着回家的每一个，都会把死者的名字唱下去。`
     : `你带回来 ${crewN} 个人。${crewN===1?"那一个名字跟着你走过了火与浪——他比十二个都重。":"他们和你一样，在怪物中间学会了活着回家。"}`);
+  if (crewN>0 && Array.isArray(state.crewList) && state.crewList.length)
+    paras.push(`活着回来的：${state.crewList.join("、")}。`);
   /* 掀筏判词（P1.6 原著第 5 卷）：波塞冬的那一记，史诗也记一笔 */
   if (state.raftStormDone) paras.push(state.raftStormFail
     ? "波塞冬掀翻过你的筏——你曾把面纱推回去一次，海收了筏，没收你；第二次，白手圣母的手接住了下沉的人。（原著 · 毁筏的人游了三天）"
@@ -4290,6 +4319,8 @@ function showNameCard(){
   else if (state.prophecy) frags.push({way:"old", label:"那个亡者替你记住的旧名", tip:"答旧名——被亡者认领的名字"});
   if (state.sunName) frags.push({way:"sun", label:`「${state.sunName}」`, tip:"太阳记过的名字"});
   if (state.calypsoName) frags.push({way:"calypso", label:`「${state.calypsoName}」`, tip:"你在永生面前报过的名字"});
+  if (/无人|no\s*one/i.test(state.polNameGiven||"")) frags.push({way:"noone", label:"「无人」", tip:"洞里骗过巨人的假名——最安全的名字，也是最空的"});
+  if (state.selfRevealed) frags.push({way:"sung", label:"歌里被唱出的名字", tip:"德摩多科斯的歌里有你——被唱出来，就是被记住"});
   if (state.circeLeft) frags.push({way:"circe", label:"炉火旁的名字", tip:"你在埃阿亚岛留过冬——那夜她唤你的名，会一直暖到终章"});
   document.getElementById("ncFrags").innerHTML =
     frags.map((f,i)=>`<button class="ncFrag" data-i="${i}" title="${f.tip}">${f.label}</button>`).join("")+
@@ -4297,7 +4328,11 @@ function showNameCard(){
   c.querySelectorAll(".ncFrag").forEach(b=>{
     b.onclick = ()=>{
       if (b.classList.contains("none")){ c.classList.remove("open"); showFinale("a","none",null); return; }
-      const f=frags[+b.dataset.i]; c.classList.remove("open"); showFinale("a",f.way,f.label.replace(/[「」]/g,""));
+      const f=frags[+b.dataset.i]; c.classList.remove("open");
+      let nm = f.label.replace(/[「」]/g,"");
+      if (f.way==="sung") nm = "奥德修斯";
+      if (f.way==="noone") nm = "无人";
+      showFinale("a",f.way,nm);
     };
   });
   c.classList.add("open");
@@ -4679,7 +4714,11 @@ function interact(){
     if (state.calypsoChoice==="stay"){
       /* 软锁修复：选「留下」后补回切入口——可再留，也可改主意回到造筏线；否则栈桥/木料/筏台全按非 raft 拒绝，主线连锁卡住 */
       showAsk("第 五 章 · 永 生","改 主 意 了 吗","永生的锁合上了——可门还开着。她坐在织机前，没有回头。","（留下，就再坐一会儿；想走，筏台一直在海湾等你。）",[
-        {label:"再留一会儿", hint:"享受这完美的一天", fn:()=>toast("她没回头，指尖的经纬却慢了半拍：「日子还长。」")},
+        {label:"再留一会儿", hint:"享受这完美的一天", fn:()=>{
+          state.ogygiaDay = (state.ogygiaDay||0)+1;
+          if (state.ogygiaDay%3===1) addMemory("奥吉吉亚又一个一模一样的好天气——果子是昨天的甜，海是昨天的蓝，只有日子在往后拖", 2, "calypso");
+          toast("她没回头，指尖的经纬却慢了半拍：「日子还长。」"); renderHUD(); save();
+        }},
         {label:"改主意——我要走", hint:"重新把筏造出来", fn:()=>{
           state.calypsoChoice="raft";
           addMemory("旅人推开永生，改了主意——回到海上", 4, "calypso");
@@ -9510,7 +9549,8 @@ function loop(t){
 (function init(){
   loadAudioPrefs(); applyVolumes();   /* Steam 化：恢复音频偏好（静音状态+音量档） */
   loadQualityPrefs(); applyQuality(true);   /* 性能批：恢复画质偏好（3D/2D 海图） */
-  load();
+  const hadSave = load();
+  if (!hadSave) seedPrologue();
   touchInit();   /* Steam 化：触屏设备启用虚拟摇杆 */
   renderHUD();
   fetch("/api/schema").then(r=>r.json()).then(s=>{

@@ -835,6 +835,18 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 - **校验（本批次末）**：`check_inline_js.py` OK blocks=1 chars≈440660；`world3d.js` `node --check` 0；rumors 单测 **23/23** fail 0；`server.py` `py_compile` 0；`eval.py --backend mock` **323 条**：类别准确率 1.0000、参数 F1 1.0000、完全正确 1.0000、负例误触发 0.0000（30 条兜底）。
 - **仍登记未做（下轮）**：U-10 其余 NPC 闲聊/求助仍走人格模型委托（离线兜底已接，小对话不强制落状态/好感）；U-12 首航方向分裂为引导观察项；B-10 无限重试属宽容设计；3D 线 D1–D29 未碰 `3d/app`（同 §27）。
 
+### 29. 批次 F · 英雄之旅复盘缺口收口（11-12，分支 `feat/rumor-mongering`；接续 §28 提交 `3db8c6e`）
+
+- **背景**：从英雄之旅十二阶段对照复盘主游戏叙事，把本地可闭环的缺口五项落地；外部依赖（3D 资产、模型 key）仍登记，不阻断主线。
+- **F-1 认名卡碎片收口**：`showNameCard()` 在既有碎片（亡母旧名/太阳名/永生名/炉火名/自由输入/无名）外补两个名字来源——`way:"noone"`（`polNameGiven` 命中 `/无人|no\s*one/i`，洞里骗过巨人的假名）、`way:"sung"`（`state.selfRevealed`，斯克里歌里被唱出的名）；碎片点击传名映射 `sung→奥德修斯`、`noone→无人`；`showFinale` 补两条对应判词。圣经 §一.5 五来源至此全部可回终章认名。
+- **F-2 序幕刻字船板锚点**：新增 `seedPrologue()` 落一条 `who:"any"` 记忆（「漂来的船板上刻着一行字：记得回家……」）；`init()` 中 `const hadSave = load(); if(!hadSave) seedPrologue();`——仅新开局播种，旧档不重复落，补平凡世界情绪地基。
+- **F-3 奥吉吉亚滞留循环体感**：calypso AMBIENT 新增 `same_day`（stay 时按 `ogygiaDay` 报「第 N 个好天气」）；「再留一会儿」分支 `ogygiaDay+1`，每满 3 天落一条「果子/海和昨天一样，日子在往后拖」的滞留记忆。日志作答、三天日历原有逻辑未动。
+- **F-4 船员名册与折损点名**：新增 `CREW_ROSTER` 十二人静态名单；`state.crewList`（init `null`，`ensureState` 旧档按当前 `crew` 兜底/裁剪）；`crewLedgerLight()` 点亮时初始化；`loseCrew` 从名册末尾 `splice(-lost)` 除名，横幅 `showCrewBanner(lost,why,names)` 与记忆带点名；终章船员判词后追加「活着回来的：……」一行。
+- **F-5 可选旧路回勾**：新增 `visitedIsland(scene)` 与 `optionalSkipped()`；`nextObjective()` 重写为先定 `obj`，再在主线引导文本末尾挂「旧路未访：…」（最多 3 个，排除 troy、`ogygiaLeft` 后不再挂），只提示不阻断，避免直走主线漏掉贪/忘/名/风/险铺垫。
+- **校验（本批次末）**：`check_inline_js.py` OK blocks=1 chars=443062；`world3d.js` `node --check` 0；rumors 单测 **23/23** fail 0；`server.py` `py_compile` 0；`eval.py --backend mock` **323 条**：类别准确率 1.0000、参数 F1 1.0000、完全正确 1.0000、负例误触发 0.0000（30 条兜底）。
+- **过程备注**：代码写完后收尾体检前主会话一度被切到云主机、客户端 shell/文件通道断开；回到客户端后闸门复跑全绿，改动未丢失。批次 F 全程未推 main、未开 PR。
+- **仍登记未做（下轮）**：①**provider 无关改造**——`server.py` 地址/模型/key 正则/`chat_template_kwargs` 仍硬编码天翼；换火山方舟需改环境变量可配 + 条件化私有参数 + 放宽 key 正则，换完重跑 323 条闸门对账；②3D 线 D1–D29 未碰 `3d/app`（同 §27/§28）；③终章 B 路「回埃亚/出海」仍是判词文案，仅客卿落点已接通；④真机复核清单同 §27（渲染帧路径/到港卡/3D 标签/护航船队/快反手感/罗盘叠压/传闻跨零点/海遇二选一卡/可选徽章配色/no-store 硬刷新）。
+
 
 ---
 
