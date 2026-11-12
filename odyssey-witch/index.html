@@ -1280,7 +1280,9 @@ function doSeaEncounter(){
   if (!state.freeSail) return;
   const sx = Math.floor(boat.x/WTS), sy = Math.floor(boat.y/WTS);
   const seed = (((sx*73856093) ^ (sy*19349663) ^ ((state.seaEncCount||0)*83492791))) >>> 0;
-  const pool = SEA_ENCOUNTS.filter(function(e){ return e.id!==state.seaLastEnc; });
+  const doneMap = state.seaEncDone || {};
+  const freshPool = SEA_ENCOUNTS.filter(function(e){ return e.id!==state.seaLastEnc && !doneMap[e.id]; });
+  const pool = freshPool.length ? freshPool : SEA_ENCOUNTS.filter(function(e){ return e.id!==state.seaLastEnc; });
   const e = pool[seed % pool.length];
   state.seaLastEnc = e.id;
   state.seaEncCount = (state.seaEncCount||0)+1;
@@ -1548,7 +1550,8 @@ function endSuitorCombat(fled){
   SU.on=false;
   if (fled){
     addMemory("血糊了眼睛——你且战且退出了大厅。求婚者的刀还亮着：先去补点状态，再回来算账", 3);
-    toast("你且战且退出了大厅。刀还亮着，弓还在——先去补点状态，回来把账算完。（血量太低）");
+    const healHint = (state.backpack["治疗草药"]||state.backpack["金露"]) ? "背包里还有药，先用上再回来算账。" : "先找地方治好伤，再回来算账。";
+    toast("你且战且退出了大厅。刀还亮着，弓还在——"+healHint+"（血量太低）");
     sfx("die"); renderHUD(); save(); return;
   }
   state.suitorsSwept = true; state.ithacaStage = Math.max(state.ithacaStage, 4);
@@ -1611,7 +1614,8 @@ function campEnd(){
     achivTick(); renderHUD(); save();
   } else {
     addMemory("伊斯玛洛斯的夜，城民的酒疯把你的人带走了几个——这回你没能守住", 3, "ismaros");
-    toast("火把落进酒桶，营火塌了半边——你没守住这一夜。（再点营火，重新守）");
+    const healHintC = (state.backpack["治疗草药"]||state.backpack["金露"]) ? "背包里还有药，用上再守。" : "先治好伤，再点营火。";
+    toast("火把落进酒桶，营火塌了半边——你没守住这一夜。"+healHintC+"（再点营火，重新守）");
     renderHUD(); save();
   }
 }
@@ -1658,7 +1662,8 @@ function ramEnd(fail){
   HIDE.on=false;
   if (fail){
     addMemory("羊腹下的潜行失败了——巨人攥住了你的手腕，你被提回羊栏边", 3, "polyphemus");
-    toast("巨人抓住了你，一把把你从羊肚下拎出来——「敢在洞这头算计我？滚回去剪你的毛！」（伤势 · 想好再来）");
+    const healHintR = (state.backpack["治疗草药"]||state.backpack["金露"]) ? "背包里还有药，用上再潜。" : "先治伤，再回来剪你的毛。";
+    toast("巨人抓住了你，一把把你从羊肚下拎出来——「敢在洞这头算计我？滚回去剪你的毛！」"+healHintR);
     renderHUD(); save(); return;
   }
   state.ramHide = true;
@@ -2125,6 +2130,7 @@ let state = {
    boarRewarded: false,     /* 野猪赏金已兑（防重复领 3 枚 + 好感） */
    suitorsFooled: false,    /* 终章乞丐骗过求婚者 */
   rumors: [],              /* 传闻账本 [{id,t,imp,place,who,summary,heard:[]}]（活的社会：名声事件横向传播） */
+  ambientGiven: {},        /* B-8：ambient 一次性承诺物资发放记录 {npc.id:true} */
 };
 
 /* ---------- 派生数值：从基础属性重算，绝不存为真值（rpg Pattern 1） ---------- */
@@ -2196,6 +2202,7 @@ function ensureState(){
   /* 自由航行·海遇字段：旧档补默认值 */
   if (state.seaEncCount===undefined) state.seaEncCount=0;
   if (!state.seaEncDone) state.seaEncDone={};
+  if (!state.ambientGiven) state.ambientGiven={};
   if (state.seaThreshold===undefined) state.seaThreshold=900;
   if (state.seaThreshold<900) state.seaThreshold=900;   /* 旧档归一化：老阈值(300~420)整体抬到新节奏基线，幂等 */
   if (state.epilogueDone===undefined) state.epilogueDone=false;
@@ -2946,7 +2953,7 @@ const AMBIENT = {
                    line:()=>`嘴唇都起皮了。后院井水甘甜——${state.thirst<=12?"别撑到天黑":"先去解渴"}。`},
     {id:"care_hurt",    w:1.0, cond:()=>state.hp<=30&&state.hp>0,
                    line:()=>"（她皱眉看你）伤成这样还乱跑？药草在架子上——自己拿，别客气。"},
-    {id:"care_broke",   w:0.6, cond:()=>state.coins<=2&&state.affinity>=50,
+    {id:"care_broke",   w:0.6, cond:()=>state.coins<=2&&state.affinity>=50, give:{coins:1},
                    line:()=>"（她往你手心塞了一枚银币）……先花着。饿着肚子上路，不算旅人。"},
     {id:"care_night",   w:0.5, cond:()=>isNight()&&state.hp>40&&state.hunger>40&&state.thirst>40,
                    line:()=>"（她扒拉着炉火）夜里野猪最凶。要躺就在屋里躺。"},
@@ -2958,7 +2965,7 @@ const AMBIENT = {
                   line:()=>"天要沉了。灶上还热着——别在野地里过夜。"},
     {id:"warm",   w:0.5, cond:()=>state.affinity>=60&&!state.circeMessage,
                   line:()=>"（她搅着药，忽然）……海峡那边，替我留意一个人。"},
-    {id:"gift",   w:0.6, cond:()=>state.affinity>=85&&!state.backpack["蜂蜜"],
+    {id:"gift",   w:0.6, cond:()=>state.affinity>=85&&!state.backpack["蜂蜜"], give:{item:"蜂蜜"},
                   line:()=>"灶台边有蜜，拿去——别说是我给的。"},
     {id:"sunlit", w:0.8, cond:()=>state.sunlit, line:()=>"晨光不错。今天的药比哪天都香。"},
     {id:"care_crew", w:0.8, cond:()=>state.crewLit&&(state.crew||0)>0&&(state.crew||0)<12,
@@ -3049,7 +3056,7 @@ aeolus: [
                  line:()=>"（她看了一眼你的手腕）白手圣母的面纱。……她从她的海里捞过很多人——捞你的那一下，最用力。"},
   ],
   nausicaa: [
-    {id:"care_hungry", w:0.9, cond:()=>state.hunger<=30,
+    {id:"care_hungry", w:0.9, cond:()=>state.hunger<=30, give:{item:"面包"},
                    line:()=>"（她递来一块烙饼）宫里有的是。饿着肚子讲故事，故事会短一截。"},
     {id:"washed", w:1.0, cond:()=>state.scheriaStage===0,
 line:()=>"你醒的时候，海把你的船推上了我们的滩——别怕，费埃克斯人不问来历。"},
@@ -3161,6 +3168,15 @@ function npcAmbientTick(dt){
   cands.sort((a,b)=>b.w-a.w);
   const pick = cands[0];
   if (pick._rumor) R.markHeard(state.rumors, pick._rumor, npc);
+  if (pick.give){   /* B-8：关怀承诺的物资一次性落账，flag 防重复刷 */
+    state.ambientGiven = state.ambientGiven || {};
+    const gk = npc+"."+pick.id;
+    if (!state.ambientGiven[gk]){
+      state.ambientGiven[gk] = true;
+      if (pick.give.coins) state.coins = (state.coins||0) + pick.give.coins;
+      if (pick.give.item) addItem(pick.give.item);
+    }
+  }
   ambientCooldown[npc+"."+pick.id] = now;
   ambActive = pick.id; ambUntil = now + 5200;
   ambAnchor = anchor;
@@ -4377,6 +4393,34 @@ function aiaNear(){
   }
   return best;
 }
+function scheriaShipAsk(){
+  askText({
+    kicker:"第 六 章 · 送 行", title:"家 在 哪",
+    body: state.selfRevealed
+      ? "送行的水手蹲在船头，按规矩再问一遍：「奥德修斯，家在哪？」"
+      : "送行的水手蹲在船头，头一次开口问：「旅人，家在哪？」",
+    quote: state.selfRevealed
+      ? "（你当着全厅说过——答案已经定了，他只是要听你亲口再说一次。）"
+      : "（世界不接谎：说不出口，船不开；说一个假的地方，雾会把你送回原点。）",
+    placeholder: state.selfRevealed ? "伊萨卡" : "……", okLabel:"回 答 他",
+    onOk:(ans)=>{
+      const a = (ans||"").trim();
+      if (!a || /说不出|不知道|没有/.test(a)){ toast("船安静着。说不出口的话——去讲给篝火听，或者去见她。"); return; }
+      state.homeAnswer = a;
+      if (!/伊萨卡/.test(a)){
+        toast(`「${a}，是吧。」水手点头，船开了。……雾散时，船头正对出发的滩涂。世界不接谎——但它也不惩罚。（再试试，说真话）`);
+        addMemory(`旅人对送行船说了「${a}」——雾把船送回了原点`, 3);
+        renderHUD(); save(); return;
+      }
+      state.scheriaFarewell = true; scene = "world";
+      boat.x = 17*WTS+WTS/2+40; boat.y = 7*WTS+WTS/2+30;
+      gainXp(40); sfx("bless"); feedback("large");
+      addMemory("费埃克斯人的船送旅人回家——全城安静，没有人回头念出这座岛的名字", 5);
+      renderHUD(); save();
+      showChapter("concept-art/08-斯克里岛.jpg","第 六 章","送 行","水手低语：别回头念出这座岛的名字","送行船上全城安静。只有桅杆的风声，和越来越远的、她站在码头上的那一点白。（历练 +40 · 伊萨卡已解锁——雾在散）");
+    },
+  });
+}
 function interact(){
   if (titleOn||chapterOn||mapOpen) return;
   if (scene==="world"){
@@ -4803,32 +4847,15 @@ function interact(){
   }
   if (s.type==="ship"){
     if (state.scheriaStage<2){ toast("船缆系得整整齐齐，像在等一个还没被看见的人。（先去篝火，把你的故事讲完）"); return; }
-    askText({
-      kicker:"第 六 章 · 送 行", title:"家 在 哪",
-      body: state.selfRevealed
-        ? "送行的水手蹲在船头，按规矩再问一遍：「奥德修斯，家在哪？」"
-        : "送行的水手蹲在船头，头一次开口问：「旅人，家在哪？」",
-      quote: state.selfRevealed
-        ? "（你当着全厅说过——答案已经定了，他只是要听你亲口再说一次。）"
-        : "（世界不接谎：说不出口，船不开；说一个假的地方，雾会把你送回原点。）",
-      placeholder: state.selfRevealed ? "伊萨卡" : "……", okLabel:"回 答 他",
-      onOk:(ans)=>{
-        const a = (ans||"").trim();
-        if (!a || /说不出|不知道|没有/.test(a)){ toast("船安静着。说不出口的话——去讲给篝火听，或者去见她。"); return; }
-        state.homeAnswer = a;
-        if (!/伊萨卡/.test(a)){
-          toast(`「${a}，是吧。」水手点头，船开了。……雾散时，船头正对出发的滩涂。世界不接谎——但它也不惩罚。（再试试，说真话）`);
-          addMemory(`旅人对送行船说了「${a}」——雾把船送回了原点`, 3);
-          renderHUD(); save(); return;
-        }
-        state.scheriaFarewell = true; scene = "world";
-        boat.x = 17*WTS+WTS/2+40; boat.y = 7*WTS+WTS/2+30;
-        gainXp(40); sfx("bless"); feedback("large");
-        addMemory("费埃克斯人的船送旅人回家——全城安静，没有人回头念出这座岛的名字", 5);
-        renderHUD(); save();
-        showChapter("concept-art/08-斯克里岛.jpg","第 六 章","送 行","水手低语：别回头念出这座岛的名字","送行船上全城安静。只有桅杆的风声，和越来越远的、她站在码头上的那一点白。（历练 +40 · 伊萨卡已解锁——雾在散）");
-      },
-    });
+    if (state.guest){   /* C-8：客卿线在码头给「留下做客 / 改主意回家」二选一，接上 showFinale("guest") 变体 */
+      showAsk("第 六 章 · 客 卿","留 下 还 是 登 船",
+        "瑙西亚娅留你做费埃克斯的客人——码头上的船也备好了。","你当初点了头留下；改主意也不怪你。",[
+        {label:"留下做客 · 客卿", hint:"终章：斯克里白港", fn:()=>showFinale("guest")},
+        {label:"还是想回家", hint:"解缆回伊萨卡", fn:()=>{ state.guest=false; scheriaShipAsk(); }},
+      ]);
+      return;
+    }
+    scheriaShipAsk();
     return;
   }
   if (s.type==="scDock"){
