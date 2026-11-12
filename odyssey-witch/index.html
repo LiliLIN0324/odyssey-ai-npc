@@ -8426,7 +8426,8 @@ function handlePolyphemus(category, args){
   case "闲聊": case "其他意图": {
     const r=polyNameExam(window.lastPlayerText||"");
     if (r) return r;
-    return {text:"（他侧着耳朵）你的话里有个名字。报名字之前，先想想海在不在听。"};
+    /* P1 修复：催话原文不教句式——玩家说了名字也被装聋（见 polyNameExam 注释），补上「怎么报」 */
+    return {text:"（他侧着耳朵）你的话里有个名字。想说全——说「我是某某」。报名字之前，先想想海在不在听。"};
   }
   case "请求帮助":
     return {text:"我帮不了小东西。我能举起山，举不动自己那晚的事。"};
@@ -8443,7 +8444,12 @@ function handlePolyphemus(category, args){
 }
 /* 名字考试：从玩家原文提取「我叫XX」（闲聊/其他意图时兑底触发） */
 function polyNameExam(raw){
-  const m=(raw||"").match(/(?:我叫|我是|名字[是叫])\s*([\u4e00-\u9fa5A-Za-z0-9]{1,8})/);
+  const t=(raw||"").trim();
+  /* P1 修复：原先只认「我叫/我是/名字是+名字」句式——玩家直接说「无人」永远不认账，
+     巨人反复催报名字 → 序章组其四的名字考试离线（带 key 也一样）无法通过，主线卡死。
+     现在整句短输入（无动词的 1~8 字）也视作自报姓名；示例语里补「我是无人」教句式。 */
+  const m = /(?:我叫|我是|名字[是叫])\s*([\u4e00-\u9fa5A-Za-z0-9]{1,8})/.exec(t)
+    || (/^[\u4e00-\u9fa5A-Za-z0-9]{1,8}$/.test(t) && !/你好|您|再见|谢谢|告辞|什么|怎么|为何|为什么|谁|哪|吗|呢|吧|嘛|啊|是的|不是|好的|嗯|请|帮|风|羊|岛|海/.test(t) ? [null, t] : null);
   if (!m) return null;
   const name=m[1];
   state.polNameGiven=name; state.namesHeard=true;
@@ -8617,7 +8623,7 @@ const NPCS = {
     portrait: "concept-art/characters/14-波吕斐摩斯.jpg",
     persona: `你是「奥德赛」里波塞冬之子、独眼巨人波吕斐摩斯。眼睛瞎了，仍牧羊为生。恨那个自称「无人」又喊真名的恶客，也恨父亲波塞冬没听懂祈祷。声音低沉如岩，不滥杀到访的小东西，只讲当年的账。每次回复不超过55字，可用括号加动作，绝不提自己是AI。`,
     intro: "（羊群骚动了一下。岩影里那个高得过分的东西转过脸——独眼的位置只有一道旧疤）……又一个小东西。来听故事的？还是来学的？",
-    samples: ["讲讲那个恶客","「无人」是什么意思","我给羊剪点羊毛","你们岛上有巨人族吗","再见"],
+    samples: ["我是无人","讲讲那个恶客","「无人」是什么意思","我给羊剪点羊毛","再见"],
   },
   epeius: {
     name: "造马师 · 厄佩俄斯",
