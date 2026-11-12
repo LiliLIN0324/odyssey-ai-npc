@@ -123,7 +123,13 @@ class Handler(BaseHTTPRequestHandler):
         path = self.path.split("?", 1)[0]
         if path in ("/", "/index.html"):
             try:
-                self._send(200, (HERE / "index.html").read_bytes(), "text/html; charset=utf-8")
+                data = (HERE / "index.html").read_bytes()
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(data)))
+                self.send_header("Cache-Control", "no-store")   # HTML 不进浏览器启发式缓存：本地改完刷新即生效
+                self.end_headers()
+                self.wfile.write(data)
             except OSError:
                 self._send(500, {"error": "index.html 缺失"})
         elif self.path == "/api/schema":

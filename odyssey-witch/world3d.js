@@ -714,7 +714,8 @@ function buildLabels() {
     const ctx = cnv.getContext("2d");
     ctx.font = 'bold 54px "Noto Serif SC","Songti SC",serif';
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    const label = is.open ? is.name : "待开放";   /* 未开放岛画灰字「待开放」 */
+    const open = (G && typeof G.islandOpen==="function") ? G.islandOpen(is) : !!is.open;   /* U-5：走 2D 同款剧情门控，不再按静态 is.open 显白色真名 */
+    const label = open ? is.name : "待开放";
     const tw = Math.min(ctx.measureText(label).width + 48, 500);
     /* 深色半透明圆角底（保证亮海面/白帆上也能读清） */
     ctx.fillStyle = "rgba(10,18,28,0.62)";
@@ -726,7 +727,7 @@ function buildLabels() {
     ctx.arcTo(bx0, by0 + bh, bx0, by0, rr);
     ctx.arcTo(bx0, by0, bx0 + tw, by0, rr);
     ctx.closePath(); ctx.fill();
-    ctx.fillStyle = is.open ? "#ffffff" : "#9aa7b2";
+    ctx.fillStyle = open ? "#ffffff" : "#9aa7b2";
     ctx.fillText(label, 256, 66);
     const tex = new THREE.CanvasTexture(cnv);
     tex.colorSpace = THREE.SRGBColorSpace;
@@ -734,7 +735,7 @@ function buildLabels() {
     sp.position.set(px2x(is.gx * WTS + WTS / 2), 8, px2z(is.gy * WTS + WTS / 2));   /* 岛心上方 */
     sp.scale.set(6.4, 1.6, 1);   /* 与 512:128 画布同比（4:1） */
     g.add(sp);
-    labelSprites.push({ sp, x: sp.position.x, y: 8, z: sp.position.z });
+    labelSprites.push({ sp, x: sp.position.x, y: 8, z: sp.position.z, scene: is.scene });
   }
   return g;
 }
@@ -907,7 +908,8 @@ function frame(et) {
     const L = labelSprites[i];
     const dxl = camera3.position.x - L.x, dyl = camera3.position.y - L.y, dzl = camera3.position.z - L.z;
     const op = 1 - sstep(Math.sqrt(dxl * dxl + dyl * dyl + dzl * dzl), 20, 60);
-    L.sp.visible = op > 0.02;
+    const locked = (G && typeof G.islandOpen==="function") ? !G.islandOpen({scene:L.scene}) : false;
+    L.sp.visible = !locked && op > 0.02;
     if (L.sp.visible) L.sp.material.opacity = op;
   }
   renderer.render(scene3, camera3);

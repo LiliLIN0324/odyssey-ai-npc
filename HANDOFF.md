@@ -785,6 +785,47 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 - **验收**：`node --test tools/rumors.test.cjs` **23/23**；`check_inline_js.py` OK（blocks=1）；`server.py` `py_compile` 0；`eval.py --backend mock` 323 条全绿（含 10 条新用例链路通）；离线实机（临时假 key 起服，验完已删）：页面 0 JS error、「E·了望/登陆」hint 恢复显示、G/M/Esc 键全通、购买链路通（离线兜底→本地解析→真扣款 15 德拉克）、w3d 失败自动降级实走（qualityDegrade=2）、`splitClauseHint` 四态 ✓、到港卡渲染 ✓。资源 200：/、/src/rumors.js?v=2（12.1KB）、world3d、three、地图图。
 - **3D 子智能体批**（world3d.js + 3d/app/src，`node --check` 绿 + esbuild 四文件过）：①`webglcontextlost/restored` 监听（lost→failed+藏 cv3d+派发 `w3d-failed`；restored→恢复 ready 重跑 fit）；②init 防崩 `canvas: renderer ? renderer.domElement : null`；③热路径零分配（escPrev 原地改/_camTarget 复用/character.js 每帧 new Vector3×2→0/手柄遍历去 spread）；④draw call 60-75→**≈30-45**：岛体全连通块并单 geometry+共享材质+FrontSide（先核实 quadUp 四向绕序守卫在位才改）+删死 shadow 旗标、云 10→1 InstancedMesh、护航船 22→2（hull/sail 各一 InstancedMesh，折损用 count 控制）；⑤**3D 岛名标签** CanvasTexture Sprite（512×128 圆角底，open:false 灰字「待开放」，20 内全显/>60 隐没省 call）——补齐 3D 下导航信息缺口；⑥frameTroy flick 接进 PointLight、死变量 amb 删；⑦3d/app：DPR 上限 1.5、阴影盒 140→80 且 sun 位置/目标随角色（顺带修 `updateProjectionMatrix()` 从未重投影的隐性失效）、props 串行 await→Promise.allSettled。未做：BufferGeometryUtils 合并（vendor 无此模块）、漂流物 16 call（不在清单）。
 
+### 27. 好玩+地图有趣优化批 v3——三轮只读深审 P1/P2 分批落地（11-12，分支 `feat/rumor-mongering`；接续 §26，用户拍板「你定个目标继续完成：使其变得好玩、地图有趣」）
+
+- **审计基线**：待机 organizer `o_000GKrsCV46` 三轮只读深审落盘 `.temp/audit-round3.md`（主游戏 P0×0 / P1×8 / P2×23；3D 独立 D1–D29）。`85d310e` 十二项修复逐条在位，未发现本轮回归，确诊问题均为历史既有。所有改动仅本地分支，未推 main、未开 PR。
+- **批次 A · 主线不卡关**：
+  1. **C-1 离线冥界选路**：`localFallbackParse` 泛化规则前补两条正则——`/长路|归乡的路/`→接取任务 `{任务名称:"长路"}`、`/捷径|荣耀|近路/`→`{捷径}`，复用 `handleSeer` 选路结算写 `state.prophecy`。根因：prophecy 只在先知接取分支写入，离线「我选长路/捷径」落其他意图→null，海峡/风神岛门控连锁卡住。
+  2. **C-2 奥吉吉亚 stay 软锁**：`calypsoChoice==="stay"` 时由单一 toast 改 `showAsk` 二选一（再留一会儿 / 改主意要走：回切 `raft`、写记忆、引导造筏），消除栈桥/木料/听风石/筏台全按 `!=="raft"` 拒绝且无回切入口的死锁。
+  3. **B-3 面包渠道**：`SHOP` 补「面包:5」，堵献祭硬要面包但仅初始 1 个 + 漂流箱 7.5% RNG 的软锁。
+  4. **B-2 治疗草药回血**：女巫侧/太阳岛牛群侧两处使用消耗品草药分支 `hp +20`（封顶 `derived().maxHp`），浮字「血 +20」；对齐烤野猪肉 +40 / 药膏 +30 / 金露回满。
+- **批次 B · 经济漏洞 + 存档兜底**：
+  - **B-1 玛草一次性**：`state.grassNodes{g0/g1/g2}` 判重，已采返回「采光了」提示，堵无限采刷币（4 枚/株）+赠草刷好感（+6/株）。
+  - **B-4 岛内采集防刷**：海藻 `seaweedTaken`、金苹果 `appleTaken` 一次性；礁滩钓鱼 70s 冷却 `reefFishUntil`（`performance.now()` 戳记，对齐海上 `FISH.cdUntil` 70000ms）。
+  - **C-5 存档兜底**：`ensureState` 补 `equipped/boarKilled/boarRewarded/suitorsFooled/offered/grassNodes/seaweedTaken/appleTaken/reefFishUntil/nausicaaGift` 归一化；`raft` 整对象判空改子字段浅合并（wood/wind/food）；初始 state 同步补字段。
+  - **C-3 旗标错配**：羊腹潜行守卫误读从未赋值的 `ramUnder` → 改 `ramHide`，胜局不可重复刷历练 +40。
+  - **C-4 献祭沟防重**：`trench` 开头 `state.offered` 守卫，已献返回提示，不重复扣物发历练。
+  - **B-7 信物白名单**：`PROTECTED_ITEMS` Set（魔草/歌词残页/幸存者的绳结/风袋/走得过黑暗的光/玛草/喀科恩酒）+ `isProtectedItem()`；女巫侧丢弃/给予命中即拦截，堵赠予 +6 好感漏洞。
+  - **U-7 购买任务品同步**：购买玛草后 `questEvent("collect",{item:"玛草"})`，任务本/罗盘不再显 0/3。
+  - **C-6 离线地点信息**：兜底正则 `/故事|讲讲你|你是谁|洞里|那晚|这里都有些谁|怎么回事|说说你的经历|你的经历/`→查询地点信息，独眼巨人支线离线可达。
+  - 另：**C-7** 旧任务槽迁移 id 兜底由精确名匹配改 `/风/` 宽松匹配 `aeolia_winds`；**B-5** 守船战擦伤空集区间 `[46,30+16)`（=`[46,46)`）改非空 `[46,60)`；**B-9** 悬崖滚石 `cliffHurt` 一次性标记防反复 -15 血。
+- **批次 C · 上手反馈 + 好玩度**：
+  - **U-1 离线死路**：`send()` 中 `fbUsed && offlineUsed` 回复末尾追加「（可以试着说：…）」取当前 NPC 前 3 条示例语，不再只回「没听清」。
+  - **U-2 动态示例语**：`dynamicSamples()` 替代静态 `NPCS.samples`——女巫玛草任务中优先交草/采草/买草药；先知已献未选路优先选长路/捷径；牛群有鱼换样例；`renderSamples` 改用之。
+  - **U-3 图例补键**：常驻图例 + 标题屏提示补登 F（捕鱼/打捞）、G（3D/2D）、B（背包）、Q（任务）。
+  - **U-6 空按反馈**：`pressE` 无可交互目标时节流（`lastEmptyE` 2.5s）可读 toast「附近没有可互动的东西…」+轻音。
+  - **U-9 askText 空提交**：空内容时有 `onCancel` 走取消，无则标红留焦，不再空值直交。
+  - **U-8 面板快捷键**：B=背包 `bagBtn.click()`、Q=任务本 `questBtn.click()`，图例登记。
+  - **U-11 罗盘门控**：HUD 直刷罗盘处补 `!chapterOn` 判定，与帧刷 `updateCompassArrow` 一致，防章节卡叠压。
+  - **U-10** 女巫 switch 补 `闲聊`/`请求帮助` 本地回复，离线不再落 null 空转。
+- **批次 D · 地图有趣**：
+  - **U-4 岛名统一**：海图「西西里」→「独眼巨人之岛」（note 同步）。
+  - **海图主线/可选角标**：`ISLANDS` 可选岛加 `opt:true`（ismaros/lotus/cyclops/aeolia/telepylos/troy）；`buildMapMarks` 渲染绿色「可选」徽章 + 支线文案，可选 pin 绿色，主线岛显「已到过」；新增 `.mapMark.opt` CSS。
+  - **U-5 3D 标签门控**：`world3d.js` `buildLabels` 改用 `G.islandOpen(is)` 运行时判定开放/「待开放」；`labelSprites` 存 `scene`；帧循环锁定岛 sprite `visible=false`，不再按静态 `is.open` 显白色真名。
+  - **海遇二选一**：新增 `id:"wreckboat"`（遇难小艇）`choices` 两选项（登艇搜刮：金币 +6 / 淡水 +1 / 历练 +3；放生绕行：历练 +4）；`doSeaEncounter` 拆出 `finishSeaEncounter(e,r)`，有 `choices` 走 `showAsk`，选项回调里落状态/记忆/阈值/存档。
+  - **B-6 经济微调**：商船草药价 6→12（对齐货架，压缩低买高卖套利）；海鸟白得治疗草药 → 改白得面包（免费回血件不可海上反复刷）。
+  - **B-8 干粮落账**：斯克里提交任务一次性赠面包（`state.nausicaaGift` 守卫），文本「干粮 · 面包 +1」。
+  - **B-11 斯库拉二次结算防御**：`loseCrew(6)` 前加 `!state.crewScylla` 守卫，防未来门控改动后双重扣船员。
+  - **server.py**：HTML 响应补 `Cache-Control: no-store`（原来无缓存头，浏览器启发式缓存导致改完刷新仍是旧页；JS/图既有 60s / 86400s 不动）。
+- **校验（本批次末）**：`check_inline_js.py` OK blocks=1 chars≈439258；`world3d.js` `node --check` 0；rumors 单测 **23/23** fail 0；`server.py` `py_compile` 0；`eval.py --backend mock` **323 条**：参数 F1 1.0000、完全正确 1.0000、负例误触发 0.0000（30 条兜底）。
+- **未处理 P2（登记，下轮）**：B-6 海遇事件仍可重复触发（`seaEncDone` 仅降记忆权重不阻断）；B-8 ambient 台词承诺的银币/蜂蜜/烙饼不落背包（2949/3052 为 AMBIENT 氛围行，重复触发不可直接发件）；B-10 三场快反战失败可无限重试、早期回血渠道偏薄；C-8 `showFinale("guest")` 客卿变体无调用方（`state.guest` 风味段已在 normal finale 4101 行接上，分支备好不可达，不锁流程）；U-12 首航方向分裂（toast 已解释特洛伊在东为可选、罗盘指西主线，可选岛本批海图已标可选）。
+- **3D 垂直切片线 D1–D29 本轮未碰 `3d/app`**（P2 资产卡用户侧）：P5 交互注册表/E 触发/叙事状态量/四选一面板/采草交付链/石碑阅读均不存在，E 键边沿检测缺席为 P5 阻塞前置，缺口记账即可。
+- **待真机复核**（自动化 rAF 冻结，§二.10 旧坑仍在）：渲染帧路径、到港卡、3D 岛名 Sprite 标签门控、护航船队、快反窗口手感与 hitStop、U-11 罗盘叠压、传闻跨零点传播、海遇二选一卡、海图可选徽章配色、no-store 后硬刷新拿到新页。自动化浏览器本轮实测：旧缓存页残留导致探针读到旧 compiled 函数；`fetch(...,{cache:'no-store'})` 直拉服务端为新源码（磁盘/服务端一致），真机硬刷新即可，非代码缺陷。
+
 ---
 
 ## 二、卡住的问题
