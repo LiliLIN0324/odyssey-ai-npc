@@ -21,13 +21,14 @@
   canvas{width:100%; height:100%; display:block; border-radius:14px; box-shadow:0 12px 44px rgba(0,0,0,.5);}
   /* 2D 画布定位化：确保压在 3D 世界图（cv3d，DOM 更早）之上合成昼夜/浮字 */
   #cv{position:absolute; inset:0;}
-  .hud{position:absolute; top:12px; left:12px; right:12px; display:flex; gap:8px; align-items:center; pointer-events:none;}
+  .hud{position:absolute; top:12px; left:12px; right:12px; display:flex; gap:6px; align-items:center; pointer-events:none; flex-wrap:nowrap;}
   .hud .pill{pointer-events:auto; background:rgba(255,255,255,.92); border:1px solid var(--line);
-    border-radius:20px; padding:5px 13px; font-size:12.5px; color:var(--deep); box-shadow:0 2px 8px rgba(0,0,0,.18);}
+    border-radius:18px; padding:4px 10px; font-size:12px; color:var(--deep); box-shadow:0 2px 8px rgba(0,0,0,.18);
+    white-space:nowrap; flex:0 0 auto;}
   .hud .pill b{color:var(--blue-ink);}
-  .hud .spacer{flex:1;}
+  .hud .spacer{flex:0 0 8px;}
   .hud button{pointer-events:auto; cursor:pointer; border:1px solid var(--line); background:rgba(255,255,255,.92);
-    color:var(--sub); border-radius:20px; padding:5px 12px; font-size:12px; box-shadow:0 2px 8px rgba(0,0,0,.18);}
+    color:var(--sub); border-radius:18px; padding:4px 9px; font-size:12px; box-shadow:0 2px 8px rgba(0,0,0,.18);}
   .hud button:hover{color:var(--blue-ink); border-color:var(--blue);}
   /* 批次 I1：设置下拉面板——设置类按钮（音效/音量/节奏/画质/重新开始）收进 ⚙，顶栏只留主操作 */
   #settingsPanel{position:absolute; top:52px; right:12px; width:240px; background:var(--panel);
@@ -413,7 +414,8 @@
   .mapMark.next .pin{background:#ffd66b; box-shadow:0 0 0 2px rgba(255,214,107,.35), 0 0 12px 3px rgba(255,214,107,.55); animation:pulseNext 1.6s ease-in-out infinite;}
   .mapMark.next .st{color:#ffd66b;}
   @keyframes pulseNext{0%,100%{transform:scale(1)}50%{transform:scale(1.45)}}
-  #hudCompass{background:#f2f8ff; border:1px solid #bcd6ee; color:#0f4c81; font-size:11px;}
+  #hudCompass{background:#f2f8ff; border:1px solid #bcd6ee; color:#0f4c81; font-size:11px;
+    max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1 1 auto; min-width:150px;}   /* 批次 I1b：航向收窄省略，全文悬停 */
   #endingCard{position:absolute; inset:0; z-index:40; display:none; align-items:center; justify-content:center;
     background:linear-gradient(175deg,#0d1b2c 0%,#16283e 45%,#0d1b2c 100%); border-radius:14px; overflow:hidden;}
   #endingCard.show{display:flex; animation:ecIn .6s cubic-bezier(.23,1,.32,1);}
@@ -460,18 +462,18 @@
   <canvas id="cv" width="1000" height="600"></canvas>
   <div id="zone"></div>
   <div class="hud">
-    <span class="pill">钱袋 <b id="hudCoins"></b> 德拉克马</span>
-    <span class="pill">血 <b id="hudHp"></b><span id="hudHpBarWrap" style="display:inline-block;width:52px;height:7px;background:#e8eef5;border-radius:4px;vertical-align:middle;margin-left:6px;overflow:hidden"><i id="hudHpBar" style="display:block;height:100%;background:#3fae6a;border-radius:4px"></i></span></span>
-    <span class="pill">食 <span style="display:inline-block;width:34px;height:7px;background:#e8eef5;border-radius:4px;vertical-align:middle;margin-left:4px;overflow:hidden"><i id="hudHungerBar" style="display:block;height:100%;background:#c9933f;border-radius:4px"></i></span><b id="hudHungerVal" style="margin-left:3px;font-size:11px;color:#8fa0b5">80</b> 水 <span style="display:inline-block;width:34px;height:7px;background:#e8eef5;border-radius:4px;vertical-align:middle;margin-left:4px;overflow:hidden"><i id="hudThirstBar" style="display:block;height:100%;background:#3f8fae;border-radius:4px"></i></span><b id="hudThirstVal" style="margin-left:3px;font-size:11px;color:#8fa0b5">80</b></span>
+    <span class="pill" title="钱袋（德拉克马）">🪙 <b id="hudCoins"></b></span>
+    <span class="pill" title="血量">❤ <b id="hudHp"></b><span id="hudHpBarWrap" style="display:inline-block;width:34px;height:7px;background:#e8eef5;border-radius:4px;vertical-align:middle;margin-left:4px;overflow:hidden"><i id="hudHpBar" style="display:block;height:100%;background:#3fae6a;border-radius:4px"></i></span></span>
+    <span class="pill" title="饱食 / 饮水">🍖<span style="display:inline-block;width:26px;height:7px;background:#e8eef5;border-radius:4px;vertical-align:middle;margin-left:3px;overflow:hidden"><i id="hudHungerBar" style="display:block;height:100%;background:#c9933f;border-radius:4px"></i></span><b id="hudHungerVal" style="margin-left:2px;font-size:10.5px;color:#8fa0b5">80</b> 💧<span style="display:inline-block;width:26px;height:7px;background:#e8eef5;border-radius:4px;vertical-align:middle;margin-left:3px;overflow:hidden"><i id="hudThirstBar" style="display:block;height:100%;background:#3f8fae;border-radius:4px"></i></span><b id="hudThirstVal" style="margin-left:2px;font-size:10.5px;color:#8fa0b5">80</b></span>
     <span class="pill">Lv.<b id="hudLv">1</b><span style="display:inline-block;width:34px;height:7px;background:#e8eef5;border-radius:4px;vertical-align:middle;margin-left:5px;overflow:hidden"><i id="hudXpBar" style="display:block;height:100%;background:#7c6fd0;border-radius:4px"></i></span></span>
     <span class="pill" id="hudClock"></span>
     <span class="pill" id="hudQuest" style="display:none"></span>
     <span class="pill" id="hudCompass" style="display:none"></span>
     <span class="pill" id="hudWind" style="display:none"></span>
     <span class="spacer"></span>
-    <button id="mapBtn">海图</button>
-    <button id="questBtn">任务</button>
-    <button id="bagBtn">背包</button>
+    <button id="mapBtn" title="海图（M）">🗺</button>
+    <button id="questBtn" title="任务清单（Q）">📋</button>
+    <button id="bagBtn" title="背包（B）">🎒</button>
     <button id="windBtn" style="display:none">风袋</button>
     <button id="shotBtn" onclick="shareShot()" title="生成航迹分享卡片">📸</button>
     <button id="settingsBtn" onclick="settingsToggle()" title="设置（音效/音量/节奏/画质/重新开始）">⚙</button>
@@ -4189,12 +4191,14 @@ function objectiveIsland(obj){
   return ISLANDS.find(is => is.scene===obj.k) || null;
 }
 function compassHTML(obj){
+  /* 批次 I1b：顶栏只显示短航向（obj.short），完整文案挪到 title 悬停 */
   const is = objectiveIsland(obj);
-  if (!is || scene!=="world") return `⛵ 航向 · ${obj.text}`;
+  const short = obj.short || obj.text;
+  if (!is || scene!=="world") return `⛵ ${short}`;
   const dx = is.gx*WTS+WTS/2 - boat.x, dy = is.gy*WTS+WTS/2 - boat.y;
-  if (Math.hypot(dx, dy) < 90) return `⛵ 航向 · ${obj.text}（就在附近，按 E 登陆）`;
+  if (Math.hypot(dx, dy) < 180) return `⛵ ${short}（按 E 登陆）`;
   const d = DIR8[(Math.round(Math.atan2(dy, dx)/(Math.PI/4))+8)%8];
-  return `⛵ ${d.g} 航向 · ${obj.text}（${d.n}方）`;
+  return `⛵ ${d.g} ${short}`;
 }
 let _compassCache = "";
 function updateCompassArrow(){
@@ -4203,7 +4207,7 @@ function updateCompassArrow(){
   const obj = nextObjective();
   if (!obj){ if (_compassCache){ _compassCache=""; cp.style.display="none"; } return; }
   const html = compassHTML(obj);
-  if (html !== _compassCache){ _compassCache = html; cp.style.display=""; cp.innerHTML = html; }
+  if (html !== _compassCache){ _compassCache = html; cp.style.display=""; cp.innerHTML = html; cp.title = obj.text; }   /* 批次 I1b：悬停看完整航向文案 */
 }
 function visitedIsland(scene){ return !!(state.legs[scene] || state.legs["seen_"+scene]); }
 /* 可选旧路回勾：未访的序章岛（贪/忘/名/风/险），主线引导里挂一句，不阻断流程 */
@@ -4213,20 +4217,18 @@ function optionalSkipped(){
 function nextObjective(){
   let obj;
   const q=getQuest("witch_grass");
-  if (!q) obj={k:"aia", text:"去埃阿亚岛找喀耳刻接下委托"};
-  else if (!q.done) obj={k:"aia", text:q.ready?"回埃阿亚岛向喀耳刻复命":`采玛草 ${q.have}/${q.need}（岛东北草丛）`};
-  else if (!state.prophecy) obj={k:"hades", text:"去冥界之岸：献上蜂蜜酒、面包、淡水，向特瑞西阿斯问路"};
-  else if (state.straitStage<2 && !state.straitCleared) obj={k:"strait", text:"穿过声之海峡（先处置塞壬的歌：蜡，或桅杆）"};
-  else if (!state.sunStage && !state.sunBlessed && !state.sunWrath) obj={k:"sun", text:"去太阳岛——守住圣牛，或付出代价"};
-  else if (!state.epilogueDone && !state.farewellHint) obj={k:"aia", text:"回埃阿亚岛——喀耳刻等你复命"};
-  else if (!state.ogygiaLeft) obj={k:"ogggia", text:"雾外还有一座岛——完美的天气，完美的一天"};
-  else if (!state.scheriaFarewell) obj={k:"scheria", text:"把你的故事讲给愿意听的人（斯克里岛）"};
-  else if (!state.finaleDone) obj={k:"ithaca", text:"雾散了——伊萨卡。回家，或者不归"};
-  else if (!state.troyDone) obj={k:"troy", text:"航程之外——特洛伊海岸还欠一场夜袭（十二艘船的起点）"};
-  else obj={k:null, text:state.freeSail?"自由漂流 · 海图全开":"航程已完——想漂去哪就去哪"};
-  const skipped = optionalSkipped();
-  if (skipped.length && obj.k && obj.k!=="troy" && !state.ogygiaLeft)
-    obj.text += ` · 旧路未访：${skipped.slice(0,3).join("、")}`;
+  if (!q) obj={k:"aia", text:"去埃阿亚岛找喀耳刻接下委托", short:"埃阿亚岛 · 接委托"};
+  else if (!q.done) obj={k:"aia", text:q.ready?"回埃阿亚岛向喀耳刻复命":`采玛草 ${q.have}/${q.need}（岛东北草丛）`, short:q.ready?"埃阿亚岛 · 复命":`埃阿亚岛 · 玛草 ${q.have}/${q.need}`};
+  else if (!state.prophecy) obj={k:"hades", text:"去冥界之岸：献上蜂蜜酒、面包、淡水，向特瑞西阿斯问路", short:"冥界之岸 · 问路"};
+  else if (state.straitStage<2 && !state.straitCleared) obj={k:"strait", text:"穿过声之海峡（先处置塞壬的歌：蜡，或桅杆）", short:"声之海峡"};
+  else if (!state.sunStage && !state.sunBlessed && !state.sunWrath) obj={k:"sun", text:"去太阳岛——守住圣牛，或付出代价", short:"太阳岛 · 圣牛"};
+  else if (!state.epilogueDone && !state.farewellHint) obj={k:"aia", text:"回埃阿亚岛——喀耳刻等你复命", short:"埃阿亚岛 · 复命"};
+  else if (!state.ogygiaLeft) obj={k:"ogggia", text:"雾外还有一座岛——完美的天气，完美的一天", short:"奥吉吉亚 · 正题"};
+  else if (!state.scheriaFarewell) obj={k:"scheria", text:"把你的故事讲给愿意听的人（斯克里岛）", short:"斯克里岛 · 讲故事"};
+  else if (!state.finaleDone) obj={k:"ithaca", text:"雾散了——伊萨卡。回家，或者不归", short:"伊萨卡 · 归乡"};
+  else if (!state.troyDone) obj={k:"troy", text:"航程之外——特洛伊海岸还欠一场夜袭（十二艘船的起点）", short:"特洛伊 · 夜袭"};
+  else obj={k:null, text:state.freeSail?"自由漂流 · 海图全开":"航程已完——想漂去哪就去哪", short:"自由漂流"};
+  /* 批次 I1b：旧路未访清单撤出顶栏（顶栏只留一行短航向）——可选旧路的完整视图在任务面板（H2） */
   return obj;
 }
 /* 终章判词（圣经 §六 结局矩阵拼装，认名后触发；showEnding 从"四章后"迁移至此）
@@ -7700,7 +7702,7 @@ function renderHUD(){
   /* 航向引导（闭环）：当前该去哪，一行说清（纯规则零模型） */
   const cp=document.getElementById("hudCompass");
   const obj=nextObjective();
-  if (obj && !titleOn && !dlgOpen && !mapOpen && !chapterOn){ cp.style.display=""; cp.innerHTML=compassHTML(obj); }
+  if (obj && !titleOn && !dlgOpen && !mapOpen && !chapterOn){ cp.style.display=""; cp.innerHTML=compassHTML(obj); cp.title=obj.text; }   /* 批次 I1b：悬停看全文 */
   else cp.style.display="none";
   /* 风袋快捷键（有风袋才出现） */
   const wb=document.getElementById("windBtn");

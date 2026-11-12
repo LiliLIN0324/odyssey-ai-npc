@@ -649,13 +649,13 @@ function buildSeaLife() {
     g.add(fin);
     dolphinFins.push({ m: fin, pod, i });
   }
-  const gullMat = new THREE.MeshBasicMaterial({ color: 0xf6f8fa, side: THREE.DoubleSide });
-  const wingGeo = new THREE.PlaneGeometry(0.34, 0.1);
+  const gullMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+  const wingGeo = new THREE.PlaneGeometry(0.55, 0.16);
   for (const is of (window.ISLANDS || [])) {
     for (let i = 0; i < 2; i++) {
       const body = new THREE.Group();
-      const wl = new THREE.Mesh(wingGeo, gullMat); wl.position.x = -0.17;
-      const wr = new THREE.Mesh(wingGeo, gullMat); wr.position.x = 0.17;
+      const wl = new THREE.Mesh(wingGeo, gullMat); wl.position.x = -0.26;
+      const wr = new THREE.Mesh(wingGeo, gullMat); wr.position.x = 0.26;
       body.add(wl); body.add(wr);
       g.add(body);
       gullWings.push({ body, wl, wr, is, i });
