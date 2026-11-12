@@ -1,6 +1,9 @@
 // Cloudflare Pages Function：POST /api/chat
 // 契约与 server.py 完全一致：入参 {messages:[...]}，出参 {content}。
 // 重试/退避/密钥处理同 parse.js（逻辑抽出复用同款模式，见 parse.js 注释）。
+// 2026-11-12 新增：调用前扣一格 D1 日额度（超额 429 → 前端用罐头台词兜底）。
+
+import { checkQuota } from "../_lib/quota.js";
 
 const API_URL = "https://api-maas.teleai.com.cn/v1/chat/completions";
 const MODEL_CHAT = "TeleChat3-438B-A24B";
@@ -71,9 +74,11 @@ export async function onRequestPost(context) {
   let req;
   try { req = await context.request.json(); }
   catch (e) { return json({ error: "bad request" }, 400); }
+  const quota = await checkQuota(context.env, context.request);
+  if (!quota.ok) return json({ error: quota.reason }, 429);
   try {
     const content = await callChat(context.env, req.messages);
-    return json({ content });
+    return json({ content, remaining: quota.left });
   } catch (e) {
     return json({ error: `HTTP ${e.status || 502}｜${e.message}` }, e.status || 502);
   }

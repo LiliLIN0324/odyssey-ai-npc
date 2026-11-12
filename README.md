@@ -30,6 +30,8 @@
 双击 odyssey-witch\启动游戏.bat
 ```
 
+**线上版（推荐分享）**：<https://odyssey-1c9.pages.dev> —— 浏览器直接打开就能玩，不需要装 Python、不需要 key；key 存在 Cloudflare secret 里，额度全站 500 次调用/天、单 IP 40 次/天，超额自动降级为离线兜底。发布方式见 `HANDOFF.md` §七。
+
 会自动起本地服务（默认 http://localhost:8765，需 `odyssey-witch` 或上级目录有 `key.txt`，即天翼 API key）。服务端分工：
 
 - `/api/parse` —— Xing4.0-29B-Intent，把玩家输入解析成意图+参数

@@ -1,0 +1,15 @@
+# Cloudflare Pages 项目配置（项目名 odyssey → https://odyssey-1c9.pages.dev）
+# 站点根就是这个目录：index.html + world3d.js + island3d.js + vendor/ + concept-art/
+# functions/api/*.js 自动编译成 /api/*
+# 发布：wrangler pages deploy . --project-name odyssey
+#
+# 2026-11-12 新增 D1 绑定：日额度计数（表 usage(day, ip, n)，见 functions/_lib/quota.js）
+# key 不在配置里：TELEAI_API_KEY 是 Pages secret，只写在 production 环境
+name = "odyssey"
+pages_build_output_dir = "."
+compatibility_date = "2026-11-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "odyssey-quota"
+database_id = "55af6fd9-285e-49c0-877c-b549db9f210b"

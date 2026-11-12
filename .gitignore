@@ -20,3 +20,7 @@ odyssey-witch/3d/tools/shots/
 
 # wrangler 本地状态（部署缓存/页面项目元数据）
 odyssey-witch/.wrangler/
+.wrangler/
+
+# 线上部署产物（build.ps1 生成，不入库）
+odyssey-witch/deploy/dist/
