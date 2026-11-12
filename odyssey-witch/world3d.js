@@ -546,16 +546,24 @@ function buildSky() {
    draw call 减半②：10 朵独立 sphere → 1 个 InstancedMesh（10→1 条 call）；
    大小差异改逐实例缩放，随机数消费顺序不变，云的分布与旧版逐位一致 */
 function buildClouds() {
-  const mat = new THREE.MeshStandardMaterial({ color: 0xf4f7fa, roughness: 1, flatShading: true, transparent: true, opacity: 0.92 });
+  /* 批次 H6：云层重做——旧版 10 朵直径 2~5 单位的大灰盘压在 6.5~10.5 低空（山体才 3.4 高、
+     船才 1 单位长），玩家读成「飘在天上的岛」。改为 9 簇×3 瓣的小云团：单瓣 0.5~1.0、
+     高度 12~17（远在山体与相机之上）、纯白微透，远簇随雾淡出——读作天空，不再读作岛。 */
+  const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, flatShading: true, transparent: true, opacity: 0.72 });
   const rand = mulberry32(777);
-  const inst = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 10, 7), mat, 10);
+  const CLUSTERS = 9, LOBES = 3;
+  const inst = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 10, 7), mat, CLUSTERS * LOBES);
   const dummy = new THREE.Object3D();
-  for (let i = 0; i < 10; i++) {
-    const r = 1.3 + rand() * 1.7;   /* 原半径随机值 → 缩放系数（扁比例 1.7/0.4/1.0 保持） */
-    dummy.position.set((rand() * 2 - 1) * 42, 6.5 + rand() * 4, (rand() * 2 - 1) * 17);
-    dummy.scale.set(r * 1.7, r * 0.4, r * 1.0);
-    dummy.updateMatrix();
-    inst.setMatrixAt(i, dummy.matrix);
+  let idx = 0;
+  for (let c = 0; c < CLUSTERS; c++) {
+    const cx = (rand() * 2 - 1) * 48, cz = (rand() * 2 - 1) * 20, cy = 12 + rand() * 5;
+    const s = 0.5 + rand() * 0.5;
+    for (let l = 0; l < LOBES; l++) {
+      dummy.position.set(cx + (rand() * 2 - 1) * s * 1.4, cy + (rand() * 2 - 1) * s * 0.22, cz + (rand() * 2 - 1) * s * 0.9);
+      dummy.scale.set(s * (1.35 + rand() * 0.3), s * 0.42, s * (0.85 + rand() * 0.2));
+      dummy.updateMatrix();
+      inst.setMatrixAt(idx++, dummy.matrix);
+    }
   }
   inst.instanceMatrix.needsUpdate = true;
   inst.frustumCulled = false;   /* 实例散布全图，按单位球包围盒会整片误剔除 */
@@ -768,7 +776,11 @@ function init() {
 
   scene3 = new THREE.Scene();
   scene3.background = new THREE.Color(PAL.oceanMid);
-  scene3.fog = new THREE.FogExp2(PAL.oceanMid, 0.0062);
+  /* 批次 H6·大气纵深：旧密度 0.0062 在本图尺度（±40~50 单位）只产生 <10% 雾效——
+     远岸轮廓一眼见底，海图读成小池塘。0.0135 时：40 单位约 24%、60 约 46%、100+ 近全没入，
+     水面 220×170 大平面的远端与 uHorizon 同色的天空无缝衔接 → 「 endless sea 」的体感；
+     近景（船周 15~25 单位）仍 6~15% 清晰可航 */
+  scene3.fog = new THREE.FogExp2(PAL.oceanMid, 0.017);
 
   camera3 = new THREE.PerspectiveCamera(48, 1000 / 600, 0.1, 600);
   camera3.position.set(0, 20, 26);
@@ -915,7 +927,8 @@ function frame(et) {
       s.g.rotation.z = Math.sin(et * 1.6 + d.y) * 0.12;
     }
   }
-  _camTarget.set(bx, 14, bz + 17);   /* 模块级复用向量：相机跟随热路径不再每帧 new Vector3 */
+  _camTarget.set(bx, 12.2, bz + 14.5);   /* 批次 H6：相机略降拉近（14/17 → 12.2/14.5）——视野收窄后海面更有纵深，
+                                            「池塘感」缓解；导航可读性由岛名标签与 M 海图承担 */
   camera3.position.lerp(_camTarget, 1 - Math.exp(-4 * dt));
   camera3.lookAt(bx, 0.8, bz - 2.5);
   /* 岛名标签随相机距离淡出：20 内全显，>60 隐没（淡透后顺带 visible=false 省掉无谓 sprite call） */
