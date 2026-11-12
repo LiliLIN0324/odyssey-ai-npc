@@ -1,7 +1,9 @@
 // Cloudflare Pages Function：POST /api/parse
 // 契约与 server.py 完全一致：入参 {prompt}，出参 {content}（或 {error} + 上游状态码）。
-// 相比旧版新增：上游 403/429/5xx 时服务端退避重试两次（玩家无感）；
-// 密钥只从环境变量 TELEAI_API_KEY 读取，绝不进前端。
+// 相比旧版新增：上游 403/429/5xx 时服务端退避重试两次（玩家无感）；密钥只从环境变量读取。
+// 2026-11-12 新增：调用前扣一格 D1 日额度（超额 429 → 前端自动走离线兜底），见 _lib/quota.js。
+
+import { checkQuota } from "../_lib/quota.js";
 
 const API_URL = "https://api-maas.teleai.com.cn/v1/chat/completions";
 const MODEL_PARSE = "Xing4.0-29B-Intent";
@@ -73,9 +75,11 @@ export async function onRequestPost(context) {
   try { req = await context.request.json(); }
   catch (e) { return json({ error: "bad request" }, 400); }
   if (typeof req.prompt !== "string" || !req.prompt) return json({ error: "bad request" }, 400);
+  const quota = await checkQuota(context.env, context.request);
+  if (!quota.ok) return json({ error: quota.reason }, 429);
   try {
     const content = await callModel(context.env, MODEL_PARSE, [{ role: "user", content: req.prompt }], 256, 0.0);
-    return json({ content });
+    return json({ content, remaining: quota.left });
   } catch (e) {
     return json({ error: `HTTP ${e.status || 502}｜${e.message}` }, e.status || 502);
   }

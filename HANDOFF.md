@@ -1,4 +1,4 @@
-# HANDOFF — xing4-npc-eval 跨会话交接
+# HANDOFF — odyssey-ai-npc 跨会话交接
 
 > **更新**: 2026-11-07 · 五次修订（**v0.2.0 发版门实测**：第二章冥界词表 14 条并入评测集（227 条/12 组）→ 首跑 50% 判据深红 → schema v2.2 补丁复测 85.7% 仍差判据线 2.2pp → **不打 tag**；通用岛基线对照首跑，结论入 README；五次微补：体检复核发现游戏正式地名「俄刻阿诺斯之岸」无评测用例，列入 v2.3 候选，见 §三.3）；**六次微补（内容级对账）**：§一.3 两处计数漂移修正（index.html 1127→1656 行、场景图 6→7），「献祭之沟」变体与世界地图地名导航零覆盖并入 v2.3 顺手项，见 §三.3/§六）；**七次微补（内容级对账·第二轮）**：§2.5 补丁口径修正（「8 处描述」实为 7 类描述+1 类 args）、multi 组「三轮不动」修正为 53.8%↔61.5% 五轮交替（7/13↔8/13，上限未破）；其余硬计数/地名/快照数字/PRODUCT/README 交叉复核全部一致；**八次微补（内容级对账·第三轮，11-07）**：30+ 项声明复核全绿（cases 227/12 组、index.html 1656 行、六快照 summary+延迟逐值、multi 五轮交替 53.8↔61.5、弱组四组、concept-art 7+6+3+3、地名计数、story 八章+勘误在案、PLAN/PRODUCT/README 交叉一致），仅两处口径修正——存档「version 字段」实为 key 名版本化（`odyssey-med-v2`，对象内无字段）、§一.2 v2.2 指路笔误（§一.6→§一.2.5）；**九次微补（内容级对账·第四轮，11-07）**：机械体检 8 项全绿 + 30+ 项硬声明逐值复核全绿（六快照 summary/延迟/multi 五轮/弱组/cases 227·12 组·hades 14 条/index.html 1656 行/地名计数/story 八章+勘误/schema 30+29 类/文件在场性/results 对照表六行），唯一缺口是 §五 文件地图漏记 `concept-art/characters/`（角色图 6 张在子目录、场景图在根目录），已补记；发版门判据复核仍 **RED（85.7% < 87.9%）**，维持不打 tag；**十次微补（内容级对账·第五轮，11-07）**：零缺口轮——机械体检 8 项全绿 + 第五轮自动断言全绿（六快照 summary/延迟逐值、multi 五轮 53.8↔61.5、弱组四组、cases 227·12 组·hades 14 条、index.html 1656 行·地名计数·存档 key、schema 30+29 类、资产 7+6+3+3、story 八章+勘误、README/PRODUCT/results-README 交叉），另抽查死亡复活逻辑（index.html:455-459 扣 5 币送女巫屋外）与 odyssey-witch 目录逐文件比对 §五 无漏记；发版门第三次复核仍 RED（85.7% < 87.9%，差 1 条）维持不打 tag；**十一次微补（内容级对账·第六轮，11-07）**：零缺口轮——机械体检 8 项全绿 + 五轮断言复跑 0 不一致，另用 v3/v21/v22 原始快照把前五轮未逐条核过的声明坐实（hades 失败身份 = hades_07"怎么渡过冥河"期望请求帮助答导航 + hades_14"献祭沟在哪"期望查询附近目标答查询地点信息，与 §2.5 定性一致；boundary_18"喝"v21 对→v22 错，§四.11 扰动坐实；v22 唯一误触发 = oov_12；完全正确 181/227 = 79.74% 差 0.26pp）；results/ 六快照+README 与账面一致、远端 v0.1.0 tag 在场；发版门第四次复核仍 RED（85.7% < 87.9%，差 1 条）维持不打 tag；**十二次微补（11-07 傍晚，本会话）**：接手时发现并行会话 16:01 在 index.html 落了一批**未记录**的新工作（§一.7：风神岛场景+WebAudio 音效系统+多任务账本+M 海图+favicon，1656→2819 行）——按 §二.4 教训先查清再入库：JS 语法体检（node --check）✅、实机冒烟 ✅（启航/世界图渲染/E 登陆风神岛/风神岛渲染/M 海图全绿；两处非阻塞小瑕疵见 §二.9）；对账第七轮：机械体检 8 项除"工作区未提交"外全绿，第五轮断言复跑 123 项仅 3 红且恰好全是该批次（行数 2819、献祭之沟 ×2、brand+favicon）、第六轮断言复跑全绿=评测侧零漂移；该批次已回填 §一.7/§二.9/§三.3/§五；发版门第五次复核仍 RED（85.7% < 87.9%，差 1 条）维持不打 tag；**十三次微补（11-07 16:42 终局，本会话）**：并行会话批次于 16:37 静默、最终规模远超十二次微补时点——index.html 2819→**3343 行**（新增：风袋玩法全量实装「放风=航速倍增/贪念用光写记忆流」、**第三章声之海峡场景部分实装**（scene `strait`、siren NPC、塞壬立绘已接）、标题屏改全幅概念图双按钮（继续航程/从头开始））；cases 227→**257 条 14 组**（wind_oov 14 已随 v4 首跑 **100%**；hades_15/16（正是 §三.3 两个顺手项：俄刻阿诺斯之岸/献祭之沟变体）+ ch3_oov 14 共 **16 条 16:36 增补、尚未评测**，v4 快照为 241 条时点）；schema v2.3（使用消耗品 args 补"风袋"）；**剧情圣经已补「插章·风神岛·风的账」**（十二次微补"圣经缺岛"一项已被其自行修复）；新资产：characters/07-塞壬、08-斯库拉、09-埃俄罗斯 + maps/04-风神岛图（**后三张尚未被 index.html 接线**，NPCS.aeolus portrait 仍 SVG 兜底）；3D 线 world.js/3d index.html 有改动+polish 截图（细节待 3d/HANDOFF 下轮记账）；本会话终局复跑冒烟全绿（语法/启航/海图/E 登陆风神岛/风袋按钮/4 NPC）；评测侧复跑第六轮断言全绿、v4 数字与 results/README 声明逐项一致（wind_oov 100%、误触发 3.7%、无 429）；README 计数由 241/13 修正为 257/14 并补 ch3_oov 行；**发版门第六次复核仍 RED（v4 全量再证 hades_oov 85.7% < 87.9%）维持不打 tag** ｜ **用法**: 新会话第一句说"先读HANDOFF.md" ｜ 总计划看 `PLAN.md`，**产品定位/路线图/成本账看 `PRODUCT.md`**，评测细节看 `README.md`，剧情看 `odyssey-witch/odyssey-story.md`
 > **仓库**: https://github.com/LiliLIN0324/odyssey-ai-npc （public）｜ 3D 线总控账本：`odyssey-witch/3d/HANDOFF.md`
@@ -856,5 +856,67 @@ py -3 tools/handoff_check.py
 4. commit + push 收尾——HANDOFF 不许领先远端过夜。
 
 > **内容级对账（机械 8 项之外的定期项）**：改动 index.html / 资产 / 用例后，对一遍 §一 的硬计数（index.html 行数、concept-art 图数、cases 总数与分组）和 README/PRODUCT 里的关键数字——11-07 曾漂移两处（1127→1656 行、6→7 场景图）。可参照 `.temp/` 历轮审计脚本（本机，不入库）的思路：`audit_handoff.py` + `audit_1107_second/third/fourth/fifth/sixth.py`——计数 + 地名在场性 grep + 快照 summary/延迟逐值断言（fifth 版已把六快照数字做成自动 PASS/FAIL，可直接复跑；sixth 版补失败用例身份/扰动/误触发/远端 tag 四类逐条核验）。
+
+---
+
+## 七、线上公开版（11-12 补账：额度 + 自查端点）
+
+**地址**：<https://odyssey-1c9.pages.dev> —— 浏览器直接打开就能玩，无需装 Python、无需 key，本机不用开着。
+
+> 项目真名是 `odyssey`（`odyssey-1c9` 只是子域），在 Lily 账号下（`CLOUDFLARE_ACCOUNT_ID=f0273e54d22c215389dd6065a802ddae`）。线上部署本身在 11-10 由 `fe4d84f` 完成，本节补的是 11-12 的日额度与自查。
+
+### 架构（key 永不出服务端）
+
+```
+浏览器 ──同源──> Pages Functions ──Bearer key──> api-maas.teleai.com.cn
+  index.html        /api/parse  (Xing4.0-29B-Intent)
+                    /api/chat   (TeleChat3-438B-A24B)
+                    /api/schema (schema 副本，10 分钟边缘缓存)
+                    /api/health (11-12 新增：额度余量 + key/DB 是否就位)
+```
+
+- 前端只打同源 `/api/*`，所以本机 `server.py` 与云端 Functions 共用同一份 `index.html`，改前端不需要改两处。
+- Functions 在 `odyssey-witch/functions/api/`：`parse.js` / `chat.js` 带服务端退避重试（403/429/5xx，专治上游对数据中心出口 IP 的间歇限制，见 `DEPLOY-403-FIX.md`）；`_lib/quota.js` 是 11-12 新增的额度记账，`api/health.js` 是自查端点。
+- key 存 Pages secret `TELEAI_API_KEY`（production），**不进 git、不进浏览器**；本机 `key.txt` 仍是唯一原文来源。
+
+### 额度（防刷，不是计费）
+
+- D1 库 `odyssey-quota`（绑定名 `DB`），表 `usage(day, ip, n)`，按北京时间自然日重置；`odyssey-witch/wrangler.toml` 里声明绑定。
+- 全站 **500 次模型调用/天**（一次玩家发言 ≈ 2 次：parse + chat，约 250 轮对话）；单 IP **40 次/天**。
+- 超额返回 429 → 前端 `apiParse` 抛错 → 自动落到**既有**的「离线兜底」关键词解析（灰色 chip，游戏仍可玩）；`/api/chat` 超额则用罐头台词兜底。
+- 为什么不用 KV：KV 的 `get()` 有最多 60 秒边缘缓存，瞬时洪水能在窗口内绕过限额（实测把 total 写成 500 后接口仍返回 200）。D1 单库原子自增没有这个窗口。
+- 记账不可用时不放行（宁可降级离线）；`DB` 绑定缺失时放行并在 `/api/health` 暴露 `dbConfigured:false`。
+
+### 发布 / 运维
+
+```powershell
+cd odyssey-witch
+node ../tools/sync_schema.mjs     # 部署前必跑（根 schema.json 是唯一源，Functions 不能跨目录 import）
+wrangler pages deploy             # 读 wrangler.toml：name=odyssey / 站点根=. / D1 绑定
+
+# 换 key（轮换时）
+Get-Content key.txt -Raw | wrangler pages secret put TELEAI_API_KEY --project-name odyssey
+
+# 看今天用了多少
+curl.exe https://odyssey-1c9.pages.dev/api/health
+```
+
+- 改限额：`odyssey-witch/functions/_lib/quota.js` 顶部 `DAILY_LIMIT` / `IP_LIMIT`，改完重新部署。
+- 只发布 production：secret 只写在 production，**preview 部署没有 key**（预览链接会走离线兜底）。
+- 11-12 验证明细：`/api/health` 200 且 `keyConfigured=true` / `dbConfigured=true`；首页 200 = **611,472 B**（与最新代码一致）；`/api/parse` 200 且额度计数递增；把 total 写成 500 后 `/api/parse` 返回 **429**，清理后恢复。
+
+### 踩坑：重复部署（11-12 本次）
+
+一次本该「检查是否已有线上版」的部署，因**没先 `git fetch` 对齐远端**，另建了 `odyssey-witch` 项目，并拿本地落后的 `index.html`（542,976 B）上线——比线上正确版少了 20 多个提交（打捞/游戏内弹窗/碰撞修复/3D 岛体等），且 Functions 没有 403 重试。
+处置：删除 `odyssey-witch` 项目与重复部署件，把额度合并进既有 `odyssey-witch/functions/`，线上回到单一链接。
+**教训（写给下一个会话）**：任何「上线/交接」动作前先 `git fetch` + `pages project list`，并用 `index.html` 字节数（当前 611,472）核对线上是否最新，别凭本地文件直接发。
+
+### 已知边界
+
+- `/api/*` 无鉴权，靠额度兜底；要收紧就加访问口令。
+- 11-12 还建过一个已弃用的 KV 命名空间 `odyssey-quota`（`789e9a64…`），无任何引用，可随时删除。
+- 上游 403 若在重试后仍高频，下一步是给天翼提工单确认出口 IP 策略（见 `DEPLOY-403-FIX.md`）。
+
+> AI生成
 
 > AI生成
