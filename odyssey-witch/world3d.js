@@ -228,28 +228,40 @@ function buildIslands() {
       /* 体积按陆块面积给上限（大洲隆起、小岛也立得住），高度按离岸距离平滑抬升：
          旧版按格线性叠加会出现「每格跳 1.3 单位」的台阶，改为指数饱和曲线，坡面连续。 */
       const hMax = THREE.MathUtils.clamp(0.9 + cells.length * 0.018, 1.15, 3.4) * mh;
+      /* 单格/双格小陆块（克里特、礁石 X、西西里）：角点普遍只含 1~2 个陆格，
+         水格计入均值后易整块沉到建面阈值以下（3D 里直接消失）——小块岸唇加倍兜住可见性 */
+      const shoreLip = cells.length <= 2 ? 0.7 : 0.35;
       const hCell = (x, y) => {
         const k = x + "," + y;
         if (!set.has(k)) return null;
         const d = depth.get(k) || 1;
-        if (d <= 1) return 0.35;   /* 岸唇高于浪峰（±0.21），避免海面波浪穿入陆地 */
-        return 0.35 + hMax * (1 - Math.exp(-(d - 1) / 2.4));
+        if (d <= 1) return shoreLip;   /* 岸唇高于浪峰（±0.21），避免海面波浪穿入陆地 */
+        return shoreLip + hMax * (1 - Math.exp(-(d - 1) / 2.4));
       };
-      /* 角点高度（4 格平均；全水则按到陆块的距离下沉） */
+      /* 角点高度（4 格平均；全水则按到陆块的距离下沉）。
+         对齐批修复：水格原先被整格剔除（只均陆格）→ 边界角点直接拿满岸唇高 0.35，
+         沙唇漫过碰撞边界半格到一格——贴岸的船（合法水瓦片，吃水 y≈0）骑在沙台上，看着像搁浅。
+         现在水格以海底高 SEA_BED 计入均值：直岸边界角点 = (0.35*2 + (-0.18)*2)/4 ≈ 0.09，
+         水线基本落回碰撞边界（余量被浪峰 ±0.21 盖住）；凸出角点微沉、单格岛退成贴水岩洲，
+         不再有悬空沙台。 */
+      const SEA_BED = -0.18;
       const vh = (cx, cy) => {
-        let sum = 0, n = 0;
+        let sum = 0, land = 0;
         for (const [dx, dy] of [[-1, -1], [0, -1], [-1, 0], [0, 0]]) {
           const h = hCell(cx + dx, cy + dy);
-          if (h !== null) { sum += h; n++; }
+          if (h !== null) { sum += h; land++; }
         }
-        if (n) return sum / n;
-        let dmin = 1e9;
-        for (const [x, y] of cells) {
-          const ddx = Math.max(cx - (x + 1), x - cx, 0);
-          const ddy = Math.max(cy - (y + 1), y - cy, 0);
-          dmin = Math.min(dmin, Math.hypot(ddx, ddy));
+        if (!land) { /* 全水角点：按到陆块的距离下沉（深水海床） */
+          let dmin = 1e9;
+          for (const [x, y] of cells) {
+            const ddx = Math.max(cx - (x + 1), x - cx, 0);
+            const ddy = Math.max(cy - (y + 1), y - cy, 0);
+            dmin = Math.min(dmin, Math.hypot(ddx, ddy));
+          }
+          return -0.32 - Math.min(dmin, 3) * 0.5;
         }
-        return -0.32 - Math.min(dmin, 3) * 0.5;
+        /* 部分水角点：水格以海底高计入（见上注释），水线落回碰撞边界 */
+        return (sum + (4 - land) * SEA_BED) / 4;
       };
       /* 三角化：包围盒外扩 2 格（水下裙边） */
       const P1 = new THREE.Color(look.grass), P2 = new THREE.Color(look.grassDeep);
@@ -309,9 +321,12 @@ function buildIslands() {
           const ax = (x + a[0]) * WTS, ay = (y + a[1]) * WTS;
           const bx2 = (x + b[0]) * WTS, by2 = (y + b[1]) * WTS;
           const o = 2.2 * WTS;   /* 向水下延伸 1.1 格左右，水线之上留出可见沙坡 */
-          /* 裙边内沿高度＝岛顶同点高度（vh 在整数格角与顶面完全一致），彻底消除接缝发丝缝 */
-          const hA = Math.max(vh(x + a[0], y + a[1]), 0.35);
-          const hB = Math.max(vh(x + b[0], y + b[1]), 0.35);
+          /* 裙边内沿高度＝岛顶同点高度（vh 在整数格角与顶面完全一致），彻底消除接缝发丝缝。
+             对齐批修复：不再钳到 0.35——边界角点 vh 已随水格计入降到 ~0（见 vh 注释），
+             再钳高会重新立起一道漫过水瓦片的悬唇，且与顶面同点高度错开成缝。
+             波峰以上的岸唇由顶面陆格内侧（全陆角点 0.35）承担，水线外的沙坡照旧没入水下。 */
+          const hA = vh(x + a[0], y + a[1]);
+          const hB = vh(x + b[0], y + b[1]);
           /* (b-a)×out 的 y 分量决定绕序：为负则这套顶点顺序会朝下，需要翻转 */
           const flip = ((b[1] - a[1]) * out[0] - (b[0] - a[0]) * out[1]) < 0;
           const oxo = out[0] * o, oyo = out[1] * o, ox2 = out[0] * 3.0 * WTS, oy2 = out[1] * 3.0 * WTS;
