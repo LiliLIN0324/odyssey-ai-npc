@@ -293,6 +293,11 @@
   #mapBoard::after{content:""; position:absolute; inset:0;
     background:linear-gradient(180deg, rgba(10,20,36,.16), rgba(10,20,36,0) 30%, rgba(10,20,36,0) 70%, rgba(10,20,36,.22));}
   .mapMark{position:absolute; transform:translate(-50%,-100%); text-align:center; pointer-events:none; z-index:2;}
+  /* 批次 H1 快速直航：已点亮航序且门开的岛标记可点击 */
+  .mapMark.ftok{pointer-events:auto; cursor:pointer;}
+  .mapMark.ftok .nm{color:#ffe9b8;}
+  .mapMark.ftok:hover .nm{text-shadow:0 0 10px rgba(255,233,184,.95), 0 1px 4px rgba(0,0,0,.85);}
+  .mapMark .ft{font-size:8.5px; color:#123a26; background:rgba(143,208,160,.94); border:1px solid rgba(255,255,255,.75); border-radius:6px; padding:0 4px; line-height:13px; display:inline-block; margin-top:2px; text-shadow:none;}
   .mapMark .pin{width:11px; height:11px; border-radius:50%; margin:0 auto 3px;
     background:#e8a84a; box-shadow:0 0 0 2.5px rgba(255,255,255,.75), 0 2px 8px rgba(0,0,0,.5);}
   .mapMark.locked .pin{background:rgba(210,220,232,.55); box-shadow:0 0 0 2px rgba(255,255,255,.4);}
@@ -355,7 +360,8 @@
   /* ---- 任务日志面板 ---- */
   #questPanel{position:absolute; top:52px; right:12px; width:250px; background:var(--panel);
     border:1px solid var(--line); border-radius:12px; padding:12px 14px; display:none;
-    box-shadow:0 10px 30px rgba(0,0,0,.3); z-index:5;}
+    box-shadow:0 10px 30px rgba(0,0,0,.3); z-index:5;
+    max-height:calc(100vh - 120px); overflow-y:auto;}   /* 批次 H2：清单变长后限高滚动 */
   #questPanel h3{font-size:12px; color:var(--sub); margin-bottom:8px; letter-spacing:1px;}
   #questPanel .q{padding:6px 0; border-bottom:1px dashed #eef2f7; font-size:12.5px; line-height:1.55;}
   #questPanel .q:last-child{border-bottom:none;}
@@ -365,6 +371,14 @@
   #questPanel .q.done{color:#9aa7b8;}
   #questPanel .q.done b{color:#7f8c99; text-decoration:line-through;}
   #questPanel .empty{color:#b6c2d2; font-size:12px;}
+  /* 批次 H2：目标清单版式 */
+  #questPanel .secT{font-size:10.5px; letter-spacing:2px; color:#8a7a5c; border-bottom:1px solid #e8e0cc;
+    padding:8px 0 3px; margin-bottom:2px;}
+  #questPanel .q .sub{color:#6b7a8c; font-size:11.5px; line-height:1.5;}
+  #questPanel .q.now{background:linear-gradient(90deg, rgba(124,111,208,.08), transparent); border-left:2px solid #7c6fd0; padding-left:6px;}
+  #questPanel .q.now b{color:#5a4fb0;}
+  #questPanel .q.now .sub{color:#5a6b80;}
+  #questPanel .curTag{float:right; font-size:9.5px; color:#fff; background:#7c6fd0; border-radius:7px; padding:0 6px; line-height:14px;}
   /* ---- 风神岛立绘兜底（保留：立绘加载失败时仍可用） ---- */
   .aeolusPortrait{background:linear-gradient(160deg,#dfe8f2 0%,#a8bed4 38%,#5d7fa3 72%,#2c4a68 100%) !important;}
   .aeolusPortrait::before{content:""; position:absolute; inset:0; z-index:1; opacity:.5;
@@ -446,6 +460,7 @@
     <span class="spacer"></span>
     <button id="sndBtn" onclick="sndToggle()">🔊 音效</button>
     <button id="audioCfgBtn" onclick="audioPanelToggle()" title="音量设置">音量</button>
+    <button id="paceBtn" onclick="paceCycle()" title="生存节奏：悠闲（需求减半）/ 标准 / 硬核（需求加速）——只影响饿渴衰减，不动剧情">节奏·标准</button>
     <button id="qualBtn" onclick="qualityCycle()" title="画质：3D 海图 / 2D 海图（卡就切 2D）">画质</button>
     <button id="shotBtn" onclick="shareShot()" title="生成航迹分享卡片">📸 航迹</button>
     <button id="mapBtn">海图</button>
@@ -2668,9 +2683,21 @@ function drawDaylight(et){
 const NEED_RATE = {hunger: 0.13, thirst: 0.17};   /* 每秒衰减：满值约 13/10 分钟 */
 function survivalGraceOn(){ return state.survivalGrace!==false && state.level<2; }
 let needHurtT = 0, lastNeedToast = 0;
+/* 批次 H3：生存节奏三档（玩家可调，localStorage 持久化）——只乘在饿渴衰减上，不动剧情时钟 */
+const PACE_MULT = { easy:0.6, std:1, hard:1.4 };
+const PACE_LABEL = { easy:"悠闲", std:"标准", hard:"硬核" };
+let paceMode = "std";
+try{ const p=localStorage.getItem("odysseyPace"); if (p && PACE_MULT[p]) paceMode = p; }catch(e){}
+function paceCycle(){
+  const order = ["std","easy","hard"];
+  paceMode = order[(order.indexOf(paceMode)+1) % order.length];
+  try{ localStorage.setItem("odysseyPace", paceMode); }catch(e){}
+  const el = document.getElementById("paceBtn"); if (el) el.textContent = `节奏·${PACE_LABEL[paceMode]}`;
+  toast(`生存节奏：${PACE_LABEL[paceMode]}${paceMode==="easy"?"（饿渴减速，适合慢读剧情）":paceMode==="hard"?"（饿渴加速，老水手自选）":""}。`);
+}
 function tickNeeds(dt){
   const grace = survivalGraceOn();
-  const k = grace ? 0.5 : 1;
+  const k = (grace ? 0.5 : 1) * (PACE_MULT[paceMode]||1);
   state.hunger = Math.max(0, state.hunger - NEED_RATE.hunger*k*dt);
   state.thirst = Math.max(0, state.thirst - NEED_RATE.thirst*k*dt);
   const starving = state.hunger<=20, parched = state.thirst<=15;
@@ -2709,10 +2736,14 @@ function faintPlayer(reason){
   state.hunger = Math.max(state.hunger, 55); state.thirst = Math.max(state.thirst, 55);
   state.status["伤势"] = "轻伤";
   if (scene==="aia"){
-    state.hp = 50; state.coins = Math.max(0, state.coins-5);
+    /* 批次 H5：医药费随好感减免——熟人她不收钱（Witcher 式关系回报），不再是无差别罚款 */
+    const fee = state.affinity>=60 ? 0 : 5;
+    state.hp = 50; state.coins = Math.max(0, state.coins-fee);
     aiaPlayer.x = witch.x; aiaPlayer.y = witch.y + 60;
     addMemory(`旅人${reason}晕了过去，被她拖回屋外草垛`, 2);
-    toast(`眼前一黑……醒来时你躺在女巫屋外的草垛上，她把药渣在你鼻子上抹了一把：医药费，五枚德拉克马。（血量恢复至 50，还剩 ${state.coins} 枚）`);
+    toast(fee
+      ? `眼前一黑……醒来时你躺在女巫屋外的草垛上，她把药渣在你鼻子上抹了一把：医药费，五枚德拉克马。（血量恢复至 50，还剩 ${state.coins} 枚）`
+      : `眼前一黑……醒来时你躺在女巫屋外的草垛上。她瞟了一眼你空空的钱袋又收了回去：「熟人的账，记下辈子。」（血量恢复至 50）`);
   } else if (scene==="world"){
     state.hp = 60;
     addMemory(`旅人${reason}晕了过去，被一阵浪拍醒`, 2);
@@ -7673,11 +7704,63 @@ function buildMapMarks(){
     const isNext = !!(obj && obj.k && is.scene===obj.k);
     const legBadge = (typeof is.leg==="number") ? `<div class="lg">#${is.leg}</div>` : "";
     const optBadge = is.opt ? `<div class="opt">可选</div>` : "";
+    /* 批次 H1 快速直航：航序已点亮 + 门已开 → 海图上可点直航（Wind Waker 传送鱼 / 80 Days 航线惯例：
+       去过才解锁、直航耗时间与补给、门控不绕过） */
+    const visited = !!state.legs[is.scene];
+    const canFT = visited && open && is.scene!=="strait";
+    const ftBadge = canFT ? `<div class="ft">⛵ 直航</div>` : "";
     const stText = isNext ? "▶ 航向" : open ? (is.opt?"支线":"已到过") : "？待开放";
-    return `<div class="mapMark${open?"":" locked"}${isNext?" next":""}${is.opt?" opt":""}" style="left:${is.mp[0]}%; top:${is.mp[1]}%;">
-      ${legBadge}${optBadge}<div class="pin"></div><div class="nm">${is.name}</div>
+    return `<div class="mapMark${open?"":" locked"}${isNext?" next":""}${is.opt?" opt":""}${canFT?" ftok":""}" data-scene="${is.scene}" style="left:${is.mp[0]}%; top:${is.mp[1]}%;">
+      ${legBadge}${optBadge}${ftBadge}<div class="pin"></div><div class="nm">${is.name}</div>
       <div class="st">${stText}</div>
     </div>`;}).join("");
+}
+/* 批次 H1 快速直航：确认后跳过摇桨——按真实航程折算游戏时间，需求照常消耗，途中 25% 遭遇；
+   门控未开的岛直航按钮根本不出现（不绕过剧情门） */
+function fastVoyage(is){
+  if (scene!=="world"){ toast("人不在船上——先回到甲板再翻海图。"); return; }
+  const open = islandOpen(is);
+  if (!open){ const g=GATES[is.scene]; toast((g&&g.hint)||`${is.name} —— ${is.note}`); return; }
+  const cx = is.gx*WTS+WTS/2, cy = is.gy*WTS+WTS/2;
+  const dist = Math.hypot(boat.x-cx, boat.y-cy);
+  const mins = Math.max(40, Math.min(360, Math.round(dist/23.3/10)*10));   /* 与 70px/s × 3 游戏分/现实秒 的航速经济对齐 */
+  const costH = Math.max(3, Math.round(mins*0.14)), costT = Math.max(3, Math.round(mins*0.17));
+  askConfirm("快 速 直 航","扬 帆 直 去 "+is.name,
+    `把帆吃满，一路不靠岸——约 ${Math.round(mins/60*10)/10} 个时辰。船上省下的力气都交给风。`,
+    `（消耗：饱食约 ${costH} · 饮水约 ${costT}；途中两成半的可能遇上点事）`,
+    "⛵ 扬帆直航","交 给 风","我再看看海图","留在原地",
+    ()=>{
+      /* 直航结算：钟表前进 → 需求按等效时长消耗 → 就近水面落船 → 途中遭遇 roll */
+      state.clock = (state.clock + mins) % 1440;
+      const eqDt = mins/1440*DAY_LEN;
+      tickNeeds(eqDt);
+      state.hunger = Math.max(0, state.hunger - costH); state.thirst = Math.max(0, state.thirst - costT);
+      const M = WTS*0.5;
+      let bx = cx, by = cy;
+      if (isSolidTile(Math.floor(bx/WTS), Math.floor(by/WTS))){
+        let best=null, bd=Infinity;
+        for (let y2=0; y2<WROWS; y2++) for (let x2=0; x2<WCOLS; x2++){
+          if (isSolidTile(x2,y2)) continue;
+          const dx=x2*WTS+WTS/2-bx, dy=y2*WTS+WTS/2-by, dd=dx*dx+dy*dy;
+          if (dd<bd){ bd=dd; best={x:x2*WTS+WTS/2, y:y2*WTS+WTS/2}; }
+        }
+        if (best){ bx=best.x; by=best.y; }
+      }
+      boat.x = Math.max(M, Math.min(WCOLS*WTS-M, bx));
+      boat.y = Math.max(M, Math.min(WROWS*WTS-M, by));
+      if (Math.random()<0.25){
+        gainXp(5);
+        addMemory("直航的半路遇上风浪——船咬着浪过去了", 1, "sea");
+        toast(`途中遇风浪，船帆吃了满风——稳住航向，练了一手。（历练 +5）`);
+      } else {
+        toast(`帆吃满了风——${is.name}的影子出现在海平线上。（航程 ${Math.round(mins/60*10)/10} 时辰）`);
+      }
+      closeMap();
+      addMemory(`旅人扬帆直航，一路不靠岸——把船头对准了${is.name}`, 1, "any");
+      renderHUD(); save();
+      sfx("bless");
+    },
+    ()=>{});
 }
 function boatMapPos(){
   /* 反距离加权：海图上船位由最近岛屿描点内插（mp 为海图标定点） */
@@ -7736,6 +7819,13 @@ function closeMap(){
 document.getElementById("mapBtn").onclick = ()=> mapOpen ? closeMap() : openMap();
 document.getElementById("mapOverlay").addEventListener("click", e=>{ if (e.target.id==="mapOverlay") closeMap(); });
 document.getElementById("mapClose").onclick = closeMap;
+/* 批次 H1：海图标记点击 → 快速直航（委托监听，标记随 buildMapMarks 重渲染不丢） */
+document.getElementById("mapMarks").addEventListener("click", e=>{
+  const mark = e.target.closest(".mapMark.ftok");
+  if (!mark) return;
+  const is = ISLANDS.find(i=>i.scene===mark.dataset.scene);
+  if (is) fastVoyage(is);
+});
 
 /* ---------- 塞壬歌词卡（本地拼装：从记忆流唱出你的航程，不烧模型） ---------- */
 let lastLyric = "";
@@ -7817,15 +7907,67 @@ document.getElementById("questBtn").onclick = ()=>{
   p.style.display = p.style.display==="block" ? "none" : "block";
   renderQuests();
 };
+/* 批次 H2：主线航程九步清单（Hades 目标清单 / Spiritfarer 任务板惯例）——
+   数据只读自既有剧情 flag，不改任何流程；当前步给一句「怎么做」，错过/troy 补一条回访提示 */
+const MAIN_STEPS = [
+  {k:"troy",    name:"特洛伊 · 木马之夜", done:()=>!!state.troyDone,
+    hint:"献策→伐木×5→造马→夜袭→抉择→解缆出海", alt:"没走完也能回访——启航之地不关门"},
+  {k:"aia1",    name:"埃阿亚 · 玛草委托", done:()=>{const q=state.quests&&state.quests.witch_grass; return !!(q&&q.done);},
+    hint:"东北草丛采 3 株玛草，回女巫处交差"},
+  {k:"aia2",    name:"喀耳刻立誓", done:()=>!!state.circeSworn,
+    hint:"先去林间金光拿魔草——蜜酒别空着手喝"},
+  {k:"hades",   name:"冥界 · 向特瑞西阿斯问路", done:()=>!!state.prophecy,
+    hint:"蜂蜜酒/面包/淡水倒进献祭之沟，然后选长路或捷径"},
+  {k:"strait",  name:"声之海峡 · 塞壬与斯库拉", done:()=>!!state.straitCleared,
+    hint:"先处置塞壬：蜡封耳（弃歌词）或绑上桅杆（直面）"},
+  {k:"sun",     name:"太阳岛 · 饥饿与誓言", done:()=>!!(state.sunBlessed||state.sunWrath),
+    hint:"撑到黄昏报上名字，或宰牛付代价"},
+  {k:"ogggia",  name:"奥吉吉亚 · 永生的锁", done:()=>!!state.ogygiaLeft,
+    hint:"摘果、看织机，然后谈正题——留下，或造筏离岛"},
+  {k:"scheria", name:"斯克里 · 把故事讲完", done:()=>!!state.scheriaFarewell,
+    hint:"篝火旁讲完故事；送行时要答「家在哪」"},
+  {k:"ithaca",  name:"伊萨卡 · 归乡", done:()=>!!state.finaleDone,
+    hint:"脚疤与婚床两问——用你一路攒下的名字作答"},
+];
+/* 可选旧路（序章组五站 + 风神岛）：点亮即 ✓，未点亮给一句钩子 */
+const OPT_STEPS = [
+  {k:"ismaros",   name:"伊斯玛洛斯（贪）", done:()=>!!state.legs.ismaros, hook:"守营战 · 喀科恩酒"},
+  {k:"lotus",     name:"食莲岛（忘）",     done:()=>!!state.legs.lotus,   hook:"莲子 · 断桨"},
+  {k:"cyclops",   name:"独眼巨人之岛（名）", done:()=>!!state.legs.cyclops, hook:"「无人」之名 · 羊毛披风"},
+  {k:"aeolia",    name:"风神岛（风）",     done:()=>!!state.legs.aeolia,  hook:"四风任务 · 风袋"},
+  {k:"telepylos", name:"忒勒皮洛斯（险）", done:()=>!!state.legs.telepylos, hook:"坠石绕行 · 幸存者的绳结"},
+  {k:"troy",      name:"特洛伊海岸（启航）", done:()=>!!state.legs.troy,   hook:"木马之夜的完整一页"},
+];
 function renderQuests(){
   const box=document.getElementById("questList");
+  /* —— 主线航程：按序找当前步（done 全true → 自由漂流） —— */
+  let curIdx = MAIN_STEPS.findIndex(s=>!s.done());
+  const cur = curIdx>=0 ? MAIN_STEPS[curIdx] : null;
+  const mainRows = MAIN_STEPS.map((s,i)=>{
+    const ok = s.done();
+    const isCur = cur && s.k===cur.k;
+    const showHint = isCur || (ok && s.alt);
+    const sub = isCur ? (s.hint + (s.alt?`（${s.alt}）`:"")) : (ok ? (s.alt||"已点亮") : "");
+    return `<div class="q step${ok?" done":""}${isCur?" now":""}">
+      <b>${ok?"✓":"○"} ${s.name}</b>${isCur?'<span class="curTag">当前</span>':""}${sub?`<br><span class="sub">${sub}</span>`:""}
+    </div>`;}).join("");
+  /* —— 可选旧路 —— */
+  const optRows = OPT_STEPS.map(s=>{
+    const ok = s.done();
+    return `<div class="q opt${ok?" done":""}"><b>${ok?"✓":"○"} ${s.name}</b><br><span class="sub">${ok?"已点亮":s.hook}</span></div>`;
+  }).join("");
+  /* —— 委托账本（原样保留） —— */
   const qs=Object.values(state.quests||{});
-  box.innerHTML = qs.length ? qs.map(v=>`
+  const questRows = qs.length ? qs.map(v=>`
     <div class="q${v.done?" done":""}">
       <b>${v.name}</b> · ${v.who==="aeolus"?"埃俄罗斯":"喀耳刻"}<br>
       ${v.done?(v.turned?"已交付（结清）":"已完成") : v.ready?"<b style='color:#2563eb'>目标达成 · 可交付</b>" : `进度 ${v.have}/${v.need}`}
       ${!v.done?`<span class="bar"><i style="width:${Math.min(100,Math.round(v.have/v.need*100))}%"></i></span>`:""}
-    </div>`).join("") : '<div class="empty">（还没有接下任何委托）</div>';
+    </div>`).join("") : '<div class="empty">（暂无委托在身——支线找 NPC 谈）</div>';
+  box.innerHTML = `
+    <div class="secT">主 线 航 程</div>${mainRows}
+    <div class="secT">可 选 旧 路</div>${optRows}
+    <div class="secT">委 托 账 本</div>${questRows}`;
 }
 document.getElementById("windBtn").onclick = ()=>useWind();
 
@@ -9487,8 +9629,10 @@ setInterval(()=>{
   lastLogic = now;
   timeScale = now < hitStopUntil ? 0.06 : 1;
   const ldt = dt*timeScale;
-  /* Steam 化：海图是全屏界面——打开时暂停需求与时钟（原实现只暂停移动，看图也会饿晕） */
-  if (!dlgOpen && !titleOn && !chapterOn && !mapOpen){
+  /* Steam 化：海图是全屏界面——打开时暂停需求与时钟（原实现只暂停移动，看图也会饿晕）。
+     批次 H4：任务/背包面板同样纳入暂停——读清单/翻背包不该被饿渴惩罚 */
+  const panelUp = document.getElementById("bagPanel").style.display==="block";
+  if (!dlgOpen && !titleOn && !chapterOn && !mapOpen && !panelUp){
     tickMove(ldt);
     if (scene==="aia"){ tickBoar(ldt); witchUtilityTick(ldt); }
     if (scene==="world"){ fishingTick(ldt); driftTick(now); }   /* 钓鱼节奏 + 漂流物慢补（入海即刷一个，其后每 150~210s） */
@@ -9579,6 +9723,7 @@ function loop(t){
 (function init(){
   loadAudioPrefs(); applyVolumes();   /* Steam 化：恢复音频偏好（静音状态+音量档） */
   loadQualityPrefs(); applyQuality(true);   /* 性能批：恢复画质偏好（3D/2D 海图） */
+  const paceBtnEl = document.getElementById("paceBtn"); if (paceBtnEl) paceBtnEl.textContent = `节奏·${PACE_LABEL[paceMode]}`;   /* 批次 H3：恢复节奏档显示 */
   const hadSave = load();
   if (!hadSave) seedPrologue();
   touchInit();   /* Steam 化：触屏设备启用虚拟摇杆 */
