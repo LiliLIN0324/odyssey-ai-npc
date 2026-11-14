@@ -446,6 +446,7 @@ function buildWater() {
     uDeep: { value: new THREE.Color(PAL.oceanDeep) },
     uGold: { value: new THREE.Color(PAL.duskGold) },
     uSunH: { value: LIGHT2D.clone().multiplyScalar(-1) },  /* 光路指向航向前方（否则金光在镜头背后看不见） */
+    uNight: { value: 0 },   /* 锐评：夜色系数——岸线碎沫/浅水亮层夜里不再往纯白混（月亮海面发荧光） */
   };
   const mat = new THREE.ShaderMaterial({
     uniforms: Object.assign(THREE.UniformsUtils.clone(THREE.UniformsLib.fog), waterU),
@@ -470,6 +471,7 @@ function buildWater() {
       #include <fog_pars_fragment>
       varying vec3 vWorld;
       uniform float uTime;
+      uniform float uNight;
       uniform sampler2D uCoast;
       uniform vec4 uCoastRect;
       uniform vec3 uShore;
@@ -491,18 +493,19 @@ function buildWater() {
         float dmin = mix(${FAR.toFixed(1)}, texture2D(uCoast, clamp(cuvRaw, 0.0, 1.0)).r * ${FAR.toFixed(1)}, inside);   /* 海图外一律深水 */
         vec3 col = mix(uShore, uMid, smoothstep(0.0, 6.5, dmin));
         col = mix(col, uDeep, smoothstep(6.5, 26.0, dmin));
-        /* 大尺度海色起伏 + 近岸透亮浅色层（地中海的“看得到沙底”感） */
+        /* 大尺度海色起伏 + 近岸透亮浅色层（地中海的“看得到沙底”感）——夜里随夜色压暗 */
         col = mix(col, uMid, 0.09 * vnoise(vWorld.xz * 0.045 + vec2(3.1, 7.7)));
-        col = mix(col, vec3(0.55, 0.85, 0.88), (1.0 - smoothstep(0.0, 2.6, dmin)) * 0.22);
-        /* 朝太阳方向的金色光路（P1 同款） */
+        col = mix(col, vec3(0.55, 0.85, 0.88), (1.0 - smoothstep(0.0, 2.6, dmin)) * 0.22 * (1.0 - uNight * 0.75));
+        /* 朝太阳方向的金色光路（P1 同款）——夜里没有太阳，光路压掉 */
         float toSun = max(dot(normalize(vWorld.xz), normalize(uSunH)), 0.0);
-        col += uGold * (pow(toSun, 6.0) * 0.24 + pow(toSun, 16.0) * 0.10) * smoothstep(2.0, 14.0, dmin);
-        /* 贴岸碎沫（加宽加清） + 细碎波光（提频去白块感） */
+        col += uGold * (pow(toSun, 6.0) * 0.24 + pow(toSun, 16.0) * 0.10) * smoothstep(2.0, 14.0, dmin) * (1.0 - uNight * 0.85);
+        /* 贴岸碎沫（加宽加清） + 细碎波光（提频去白块感）——夜里改月光灰蓝，不再发荧光 */
         float band = smoothstep(-0.12, 0.06, dmin) * (1.0 - smoothstep(0.10, 0.75, dmin));
         float foam = band * (0.3 + 0.7 * vnoise(vWorld.xz * 1.4 + vec2(uTime * 0.22, -uTime * 0.16)));
-        col = mix(col, vec3(0.94, 0.97, 1.0), foam * 0.85);
+        vec3 foamCol = mix(vec3(0.94, 0.97, 1.0), vec3(0.52, 0.62, 0.78), uNight);
+        col = mix(col, foamCol, foam * 0.85);
         float sparkle = vnoise(vWorld.xz * 1.6 + vec2(uTime * 0.1, -uTime * 0.08));
-        col += vec3(0.05, 0.05, 0.045) * smoothstep(0.78, 0.96, sparkle) * 0.7;
+        col += vec3(0.05, 0.05, 0.045) * smoothstep(0.78, 0.96, sparkle) * 0.7 * (1.0 - uNight * 0.8);
         float alpha = 1.0;   /* 不透明海面：岛体方形裙边不再透出（根治黑方块伪影） */
         gl_FragColor = vec4(col, alpha);
         #include <fog_fragment>
@@ -542,11 +545,17 @@ function buildSky() {
         vec3 col = mix(uHorizon, uZenith, smoothstep(0.0, 0.4, d.y));
         float sunDot = max(dot(d, normalize(uSunDir)), 0.0);
         col += uSunColor * (pow(sunDot, 40.0) * 0.85 + pow(sunDot, 6.0) * 0.2);
-        /* 批次 J1：深夜星空——上半球程序化星点，密度随 uNight */
+        /* 批次 J1：深夜星空——上半球程序化星点，密度随 uNight。
+           锐评（用户报：天上白色方块）：原实现按 hash 网格 smoothstep，星点是方块亮斑。
+           改为「格子内随机圆点」：在格心到随机偏移点的距离上开圆，星点是圆的。 */
         if (uNight > 0.01 && d.y > 0.02) {
-          vec3 sd = floor(d * 160.0);
-          float h1 = fract(sin(dot(sd, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
-          col += vec3(0.92, 0.95, 1.0) * smoothstep(0.994, 1.0, h1) * uNight * 0.85;
+          vec3 cell = floor(d * 160.0);
+          vec3 f = fract(d * 160.0) - 0.5;
+          float h1 = fract(sin(dot(cell, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+          vec2 off = vec2(fract(h1 * 57.13) - 0.5, fract(h1 * 131.7) - 0.5);
+          float dist2 = length(f.xy - off * 0.7) + abs(f.z) * 0.9;
+          float star = smoothstep(0.16, 0.02, dist2) * step(0.992, h1);
+          col += vec3(0.92, 0.95, 1.0) * star * uNight * 0.85;
         }
         gl_FragColor = vec4(col, 1.0);
         #include <colorspace_fragment>
@@ -612,10 +621,11 @@ function buildBoat() {
   );
   mast.position.set(0, 0.82, 0.1);
   g.add(mast);
-  /* 横桁帆：始终正对南方相机，任何航向都看得见帆（背桅帆侧对镜头会消失） */
+  /* 横桁帆：始终正对南方相机，任何航向都看得见帆（背桅帆侧对镜头会消失）。
+     锐评：原帆 1.10 宽比船体（1.04）还宽，俯视角读成「白三角大于船」；收到船体内。 */
   const sailGeo = new THREE.BufferGeometry();
   sailGeo.setAttribute('position', new THREE.Float32BufferAttribute([
-    -0.55, 0.30, 0.06,  0.55, 0.30, 0.06,  0.0, 1.38, 0.06,
+    -0.42, 0.32, 0.06,  0.42, 0.32, 0.06,  0.0, 1.30, 0.06,
   ], 3));
   sailGeo.computeVertexNormals();
   const sail = new THREE.Mesh(sailGeo, new THREE.MeshBasicMaterial({ color: 0xf5eeda, side: THREE.DoubleSide }));  /* 无光照恒亮：背光面不发暗 */
@@ -632,11 +642,22 @@ function buildEscortFleet() {
   const g = new THREE.Group();
   const hullMat = new THREE.MeshStandardMaterial({ color: 0x6d4a2b, roughness: 1, flatShading: true });
   const sailMat = new THREE.MeshBasicMaterial({ color: 0xe8e0cc, side: THREE.DoubleSide });
-  const hullGeo = new THREE.BoxGeometry(0.46, 0.24, 1.3);
-  hullGeo.translate(0, 0.12, 0);   /* 原子节点 hull.position.y=0.12 烘进几何，实例矩阵即可直接用船位 */
+  /* 锐评（用户报：船队像方块上飘白纸）：护航船体原来是纯 BoxGeometry——夜里压成黑方块，
+     帆(0.68宽)却比船体(0.46宽)还宽，读成「黑块上挂白三角」。改用与主船同款的挤压船形
+     （尖艏艉轮廓，烘进几何供 InstancedMesh 复用），帆收窄到船体内，不再出圈。 */
+  const hullShape = new THREE.Shape();
+  hullShape.moveTo(-0.42, -0.75);
+  hullShape.quadraticCurveTo(0.52, -0.55, 0.34, 0.1);
+  hullShape.quadraticCurveTo(0.18, 0.85, 0.0, 0.95);
+  hullShape.quadraticCurveTo(-0.18, 0.85, -0.34, 0.1);
+  hullShape.quadraticCurveTo(-0.52, -0.55, -0.42, -0.75);
+  const hullGeo = new THREE.ExtrudeGeometry(hullShape, { depth: 0.24, bevelEnabled: false });
+  hullGeo.rotateX(-Math.PI / 2);       /* 与主船一致：XZ 平面铺开，挤出方向为高度 */
+  hullGeo.scale(0.72, 0.85, 0.72);     /* 护航船比旗舰小一号（宽0.75×长1.22×高0.20） */
+  hullGeo.translate(0, 0.12, 0);       /* 原子节点 hull.position.y=0.12 烘进几何，实例矩阵即可直接用船位 */
   const sailGeo = new THREE.BufferGeometry();
   sailGeo.setAttribute('position', new THREE.Float32BufferAttribute([
-    -0.34, 0.24, 0.04,  0.34, 0.24, 0.04,  0.0, 0.98, 0.04,
+    -0.26, 0.24, 0.04,  0.26, 0.24, 0.04,  0.0, 0.72, 0.04,
   ], 3));
   sailGeo.computeVertexNormals();
   escortHull = new THREE.InstancedMesh(hullGeo, hullMat, ESCORT_MAX);
@@ -734,6 +755,15 @@ function atmosphereTick(){
     waterU.uShore.value.copy(new THREE.Color(PAL.oceanShore)).lerp(NIGHT_WATER_SHORE, night*0.6);
     waterU.uMid.value.copy(new THREE.Color(PAL.oceanMid)).lerp(NIGHT_WATER_MID, night*0.6);
     waterU.uDeep.value.copy(new THREE.Color(PAL.oceanDeep)).lerp(NIGHT_WATER_DEEP, night*0.6);
+    waterU.uNight.value = night;
+  }
+  /* 锐评（用户报：船帆夜里白得刺眼）：帆是 MeshBasic 恒亮材质，深夜仍满亮 → 读成「黑块上飘白纸」。
+     夜里把帆染成月光灰蓝（与天际夜色同源），黄昏微微染金；白昼恢复本色。 */
+  if (sailMesh){
+    sailMesh.material.color.set(0xf5eeda).lerp(_nightSail, night*0.72);
+  }
+  if (escortSail){
+    escortSail.material.color.set(0xe8e0cc).lerp(_nightSail, night*0.72);
   }
   /* 云染夜色 */
   if (cloudGroup && cloudGroup.material)
@@ -779,6 +809,7 @@ function buildDrifts() {
 let pillarG = null;
 let troyLight = null;   /* 特洛伊营火 PointLight 引用（flick 闪烁乘进 intensity） */
 let boatLantern = null; /* 锐评 B：船桅灯（夜间点亮，随 atmosphereTick 强度驱动） */
+const _nightSail = new THREE.Color(0x8e9ab8);   /* 锐评：帆的夜色目标色（月光灰蓝，与夜天际同源） */
 function buildStonePillar() {
   const g = new THREE.Group();
   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.62, 7.5, 7),
@@ -787,8 +818,10 @@ function buildStonePillar() {
   const cap = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.5, 1.8),
     new THREE.MeshStandardMaterial({ color: 0xdde2e5, roughness: .9, flatShading: true }));
   cap.position.y = 6.6; cap.rotation.y = 0.3; g.add(cap);
-  const foam = new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.2, 6, 18),
-    new THREE.MeshBasicMaterial({ color: 0xeef4f8, transparent: true, opacity: 0.5 }));
+  /* 锐评：漂流物标记环 1.2 半径 × 0.5 透明白圈，开阔海一眼读成「发光水坑」。
+     收小一圈、降透明度，读作轻微的浪花痕即可——漂流瓶本体（瓶/箱）才是主体。 */
+  const foam = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.12, 6, 18),
+    new THREE.MeshBasicMaterial({ color: 0xeef4f8, transparent: true, opacity: 0.28 }));
   foam.rotation.x = Math.PI / 2; foam.position.y = 0.1; g.add(foam);
   g.visible = false;
   return g;
@@ -1012,11 +1045,31 @@ function frame(et) {
     const n = Math.max(0, Math.min(fl - 1, ESCORT_MAX));
     escortG.visible = n > 0;
     const pxh = -escHead.z, pzh = escHead.x;   /* 航向左手垂直向 */
+    /* 锐评（用户报：护航船「开在岛上」）：V 字编队按航向直线外推，主船沿岸线转弯时
+       侧翼会切进陆块。加水面钳制：落点在陆格上时沿「侧翼→主船」方向收缩，直到回到水格。 */
+    const grid = (G && G.worldGrid) ? G.worldGrid() : null;
+    const wts = (G && G.worldTileSize) ? G.worldTileSize() : 40;
+    const isWater = (wx, wz) => {
+      if (!grid) return true;
+      const px = (wx + OX) / SCALE, py = (wz + OZ) / SCALE;
+      const gx = Math.floor(px / wts), gy = Math.floor(py / wts);
+      if (gy < 0 || gy >= grid.length || gx < 0 || gx >= grid[0].length) return true;
+      const ch = grid[gy][gx];
+      return !(ch === "#" || ch === "X" || ch === "G");
+    };
     for (let i = 0; i < n; i++) {
       const back = 2.2 + i * 1.35, side = (i % 2 ? 1 : -1) * (0.9 + Math.floor(i / 2) * 0.8);
-      _ebDummy.position.set(bx - escHead.x * back + pxh * side,
+      let ex = bx - escHead.x * back + pxh * side;
+      let ez = bz - escHead.z * back + pzh * side;
+      if (!isWater(ex, ez)) {
+        /* 收缩回主船：步进 0.3 单位，最多 16 步（≈4.8 单位，V 字最大侧偏 2.5 必然回到水格） */
+        for (let s = 1; s <= 16 && !isWater(ex, ez); s++) {
+          ex += (bx - ex) * 0.3; ez += (bz - ez) * 0.3;
+        }
+      }
+      _ebDummy.position.set(ex,
                       Math.sin(et * 2.1 + i * 1.7) * 0.05,
-                      bz - escHead.z * back + pzh * side);
+                      ez);
       _ebDummy.rotation.set(0, Math.atan2(-escHead.x, -escHead.z), Math.sin(et * 1.7 + i) * 0.03);
       _ebDummy.updateMatrix();
       escortHull.setMatrixAt(i, _ebDummy.matrix);
@@ -1092,5 +1145,8 @@ window.W3D = { get ready() { return ready; }, get failed() { return failed; }, f
   },
   debug: () => renderer ? ({ boat: boatG ? boatG.position.toArray().map(v => Math.round(v * 10) / 10) : null,
                   cam: camera3 ? camera3.position.toArray().map(v => Math.round(v * 10) / 10) : null,
-                  isles: isleList.length, calls: renderer.info.render.calls, tris: renderer.info.render.triangles })
+                  isles: isleList.length, calls: renderer.info.render.calls, tris: renderer.info.render.triangles,
+                  night: (skyU && skyU.uNight) ? Math.round(skyU.uNight.value * 100) / 100 : null,
+                  horizon: (skyU && skyU.uHorizon) ? skyU.uHorizon.value.getHexString() : null,
+                  sail: (sailMesh && sailMesh.material.color) ? sailMesh.material.color.getHexString() : null })
                 : ({ boat: null, cam: null, isles: isleList.length, calls: 0, tris: 0 }) };   /* failed 态也安全可查 */
