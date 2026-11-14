@@ -984,6 +984,65 @@ function buildLabels() {
 /* ---------- 礁石（锐评：X 格有碰撞但 3D 里没有任何可见网格——船停在「空水」上，
    玩家以为没有碰撞。给每块 X 格摆一块深色礁石，碰撞体变成看得见的东西） ---------- */
 let reefG = null;
+
+/* ---------- 地平线大陆剪影（锐评：海图边界外是无尽海 + 一次性 toast——
+   真地中海四周是大陆：北=欧洲/希腊岸、南=非洲低岸、东=黎凡特纵岸、西=泰伦尼安低岸。
+   在可航海域（世界 x −44..+136 / z −16..+52）之外摆一圈低模海岸剪影，
+   顶缘高度场噪声化读作远山轮廓；雾会把它压成剪影——地中海被「围合」了。
+   世界坐标参照：岛群 x −40..+26 / z −15..+13；水 plane ±150。 ---------- */
+let horizonG = null;
+function buildHorizonContinents() {
+  const group = new THREE.Group();
+  const rand = mulberry32(18970302);
+  const mat = new THREE.MeshStandardMaterial({ color: 0x748c92, roughness: 1, side: THREE.DoubleSide });   /* 远山=雾化蓝绿剪影（不抢前景） */
+  const fbm1 = (x, seed) => {
+    let v = 0, amp = 1, frq = 1;
+    for (let o = 0; o < 3; o++) {
+      const xi = Math.floor(x * frq), xf = x * frq - xi;
+      const s = xi + seed * 131;
+      const hsh = (t) => Math.sin(t * 127.1 + s * 311.7) * 43758.5453 % 1;
+      const h0 = Math.abs(hsh(xi)), h1 = Math.abs(hsh(xi + 1));
+      v += (h0 + (h1 - h0) * smooth(xf)) * amp;
+      amp *= 0.5; frq *= 2.1;
+    }
+    return v / 1.75;
+  };
+  /* 一条「海岸墙」：沿线 90 段，顶缘高度 = hMin..hMax 低频噪声（远山轮廓，忌尖齿），
+     平滑着色；顶缘前后再抖动读作岸线起伏 */
+  const strip = (ax, az, bx, bz, hMin, hMax, seed) => {
+    const segs = 90;
+    const dx = bx - ax, dz = bz - az;
+    const len = Math.hypot(dx, dz);
+    const nx = -dz / len, nz = dx / len;   /* 单位法向（朝海一侧再偏移做出岸台宽度） */
+    const pos = [], idx = [];
+    for (let i = 0; i <= segs; i++) {
+      const t = i / segs;
+      const px = ax + dx * t, pz = az + dz * t;
+      const h = hMin + (hMax - hMin) * fbm1(t * 2.4, seed) * 0.85 + fbm1(t * 6.0, seed + 3) * (hMax - hMin) * 0.15;
+      const jit = (fbm1(t * 5.3, seed + 5) - 0.5) * 12;   /* 岸线前后抖动（低频） */
+      const w = 10 + fbm1(t * 3.1, seed + 9) * 10;         /* 岸台宽度 10~20 */
+      pos.push(px + jit, -2.5, pz + jit);                   /* 底：水下 */
+      pos.push(px + jit, h, pz + jit);                      /* 顶：岸线剪影 */
+      pos.push(px + jit + nx * w, h * 0.92, pz + jit + nz * w);   /* 岸台内缘（略低） */
+    }
+    for (let i = 0; i < segs; i++) {
+      const a = i * 3;
+      idx.push(a, a + 1, a + 3, a, a + 3, a + 2, a + 1, a + 4, a + 3, a + 1, a + 3, a + 2);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setIndex(idx);
+    g.computeVertexNormals();
+    return new THREE.Mesh(g, mat);
+  };
+  /* 北 = 欧洲/希腊岸（高，x −120..+180）；南 = 非洲低岸（低平）；东 = 黎凡特纵岸（最高）；
+     西 = 泰伦尼安低岸。全部在可航海域之外 ≥25 单位，雾会压成剪影。 */
+  group.add(strip(-130, -92, 190, -78, 3.0, 5.6, 11));    /* 北：欧洲岸 */
+  group.add(strip(190, -60, 200, 130, 4.0, 7.2, 23));     /* 东：黎凡特纵岸 */
+  group.add(strip(210, 108, -130, 96, 1.6, 3.2, 37));     /* 南：非洲低岸 */
+  group.add(strip(-118, 118, -128, -70, 2.4, 4.6, 53));   /* 西：泰伦尼安岸 */
+  return group;
+}
 function buildReefs() {
   const g = new THREE.Group();
   const G = window.__game;
@@ -1054,6 +1113,7 @@ function init() {
   worldGroup = new THREE.Group();
   worldGroup.add(buildIslands());   /* 先建岛：水 shader 的 uIsle 岸线数组依赖 isleList */
   reefG = buildReefs(); worldGroup.add(reefG);   /* 锐评：X 礁石网格化——碰撞体看得见 */
+  horizonG = buildHorizonContinents(); worldGroup.add(horizonG);   /* 锐评：地平线大陆剪影——地中海被大陆围合 */
   worldGroup.add(buildLabels());    /* 岛名 Sprite 标签：挂 worldGroup（特洛伊场景随组隐藏） */
   scene3.add(worldGroup);
   waterMesh = buildWater(); scene3.add(waterMesh);
