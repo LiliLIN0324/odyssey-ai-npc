@@ -1,0 +1,449 @@
+/* ============================================================
+ * 奥德赛 · 设计令牌层 —— 「爱琴海夜色」
+ * 深墨蓝海面 / 陶土红 / 金箔光 / 羊皮纸文字 / 碑刻衬线
+ * 这一层在 index.html 的内联样式之后加载：同一选择器后者生效，
+ * 因此旧组件无需逐条改样式，只要统一重定义令牌即可换肤。
+ * ============================================================ */
+:root{
+  /* —— 夜色 —— */
+  --od-night:#060f18;
+  --od-ink:#0a1824;
+  --od-ink-2:#102533;
+  --od-sea:#143447;
+  --od-sea-deep:#0b2230;
+  /* —— 陶土红（人的颜色）—— */
+  --od-terra:#b8563c;
+  --od-terra-deep:#8a3a28;
+  --od-terra-soft:rgba(184,86,60,.16);
+  /* —— 金箔（神与光）—— */
+  --od-gold:#d8a54a;
+  --od-gold-bright:#f0cf8a;
+  --od-gold-dim:rgba(216,165,74,.42);
+  /* —— 羊皮纸（文字）—— */
+  --od-parchment:#efe3ca;
+  --od-parchment-dim:#c3b295;
+  --od-mist:#9fb3c2;
+  /* —— 结构与节奏 —— */
+  --od-line:rgba(216,165,74,.22);
+  --od-glass:rgba(7,18,27,.74);
+  --od-glass-strong:rgba(6,14,22,.9);
+  --od-radius:3px;
+  --od-radius-lg:6px;
+  --od-shadow:0 18px 50px rgba(0,0,0,.5);
+  --od-serif:"Songti SC","STSong","Source Han Serif SC","Noto Serif SC","SimSun",Georgia,"Times New Roman",serif;
+  --od-sans:"PingFang SC","Microsoft YaHei UI","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+
+  /* —— 旧令牌重映射：全站组件随之一并换肤 —— */
+  --bg:var(--od-night);
+  --panel:var(--od-ink);
+  --line:var(--od-line);
+  --ink:var(--od-parchment);
+  --sub:var(--od-mist);
+  --blue:var(--od-sea);
+  --blue-soft:rgba(47,111,134,.18);
+  --blue-ink:#8fc7d4;
+  --deep:var(--od-parchment);
+  --font-myth:var(--od-serif);
+}
+
+html,body{background:var(--od-night);}
+body{
+  font-family:var(--od-sans);
+  color:var(--od-parchment);
+  background:
+    radial-gradient(120% 90% at 50% 0%, #0e2434 0%, #081420 46%, #040b12 100%);
+}
+#stage{max-width:1240px;}
+canvas{border-radius:var(--od-radius-lg); box-shadow:var(--od-shadow), 0 0 0 1px rgba(216,165,74,.14);}
+/* 世界图轻微调色：把正午的高饱和青拉回爱琴海的深蓝，UI 与海面不再两套语言 */
+#cv3d{filter:saturate(.8) contrast(1.05) brightness(.92);}
+/* 暗角：把画面边缘收进夜色，中间留给海与船 */
+#stage::after{
+  content:""; position:absolute; inset:0; z-index:2; pointer-events:none;
+  border-radius:var(--od-radius-lg);
+  background:radial-gradient(125% 105% at 50% 44%, rgba(3,8,13,0) 56%, rgba(3,8,13,.42) 100%),
+             linear-gradient(180deg, rgba(3,8,13,.26), rgba(3,8,13,0) 16%);
+}
+.hud{z-index:8;}
+
+/* ============================================================
+ *  1. HUD —— 玻璃 + 金线，只有三条关键状态常驻
+ * ============================================================ */
+.hud{gap:6px; top:14px; left:14px; right:14px; align-items:center;}
+.hud .pill{
+  background:var(--od-glass);
+  border:1px solid var(--od-line);
+  border-radius:var(--od-radius);
+  color:var(--od-parchment);
+  font-size:11.5px;
+  letter-spacing:.06em;
+  padding:5px 10px;
+  box-shadow:0 2px 12px rgba(0,0,0,.35);
+  backdrop-filter:blur(6px);
+  max-width:min(34vw,300px); overflow:hidden; text-overflow:ellipsis;
+}
+#hudQuest{max-width:min(30vw,230px);}
+#hudCompass{
+  background:var(--od-glass) !important; border-color:var(--od-line) !important;
+  color:var(--od-parchment-dim) !important; box-shadow:0 2px 12px rgba(0,0,0,.35);
+  backdrop-filter:blur(6px); letter-spacing:.04em;
+}
+#hudCompass b{color:var(--od-gold-bright);}
+.hud .spacer{flex:1 1 auto; min-width:2px;}
+.hud button{min-width:28px; padding:5px 7px;}
+.hud .pill b{color:var(--od-gold-bright); font-weight:600;}
+.hud button{
+  background:var(--od-glass);
+  border:1px solid var(--od-line);
+  color:var(--od-parchment-dim);
+  border-radius:var(--od-radius);
+  font-size:12px;
+  padding:5px 9px;
+  box-shadow:0 2px 12px rgba(0,0,0,.35);
+  backdrop-filter:blur(6px);
+  transition:color .18s, border-color .18s, background .18s;
+}
+.hud button:hover{color:var(--od-gold-bright); border-color:var(--od-gold); background:rgba(216,165,74,.1);}
+#hudHpPill b,#hudSupplyVal{font-variant-numeric:tabular-nums;}
+#hudHpBarWrap,#hudSupplyPill span{background:rgba(255,255,255,.14) !important;}
+#hudSupplyVal{color:var(--od-parchment); margin-left:5px; font-size:10.5px;}
+
+/* 航海日记：把七条数值收进一张可展开的纸 */
+#hudLog{
+  position:absolute; top:48px; left:14px; width:228px; z-index:6; display:none;
+  background:var(--od-glass-strong); border:1px solid var(--od-line);
+  border-radius:var(--od-radius-lg); padding:12px 14px; color:var(--od-parchment);
+  box-shadow:var(--od-shadow); backdrop-filter:blur(8px);
+}
+#hudLog.open{display:block; animation:odFade .22s ease-out;}
+@keyframes odFade{from{opacity:0; transform:translateY(-4px);} to{opacity:1; transform:translateY(0);}}
+#hudLog .hlT{
+  font-family:var(--od-serif); font-size:11px; letter-spacing:.34em; color:var(--od-gold);
+  border-bottom:1px solid var(--od-line); padding-bottom:6px; margin-bottom:8px;
+}
+#hudLog .hlRow{display:flex; align-items:center; gap:7px; font-size:11.5px; padding:3px 0; color:var(--od-parchment-dim);}
+#hudLog .hlRow b{color:var(--od-parchment); font-weight:600; font-variant-numeric:tabular-nums;}
+#hudLog .hlBar{flex:1; height:4px; background:rgba(255,255,255,.1); border-radius:2px; overflow:hidden;}
+#hudLog .hlBar i{display:block; height:100%; border-radius:2px;}
+#hudLog .pill{background:none; border:none; box-shadow:none; padding:0 0 0 2px; font-size:11px;}
+#hudLog .hlNote{font-size:10.5px; color:var(--od-mist); line-height:1.65; border-top:1px solid var(--od-line); margin-top:8px; padding-top:7px;}
+
+/* ============================================================
+ *  2. 面板 —— 深墨底 + 金线 + 羊皮纸字（原白卡片体系统一收编）
+ * ============================================================ */
+#questPanel,#bagPanel,#settingsPanel,#audioPanel{
+  background:var(--od-glass-strong); border:1px solid var(--od-line);
+  border-radius:var(--od-radius-lg); box-shadow:var(--od-shadow); backdrop-filter:blur(9px);
+  color:var(--od-parchment);
+}
+#questPanel h3,#bagPanel h3{color:var(--od-gold); letter-spacing:.3em; font-family:var(--od-serif); font-size:11px;}
+#settingsPanel .setT{color:var(--od-gold); border-bottom-color:var(--od-line);}
+#settingsPanel button{color:var(--od-parchment); border-color:var(--od-line); background:rgba(255,255,255,.04);}
+#settingsPanel button:hover{color:var(--od-gold-bright); border-color:var(--od-gold);}
+#settingsPanel button.danger{color:#e6a09a; border-color:rgba(184,86,60,.5);}
+#settingsPanel button.danger:hover{background:rgba(184,86,60,.16);}
+#settingsPanel .setDivider{background:var(--od-line);}
+#settingsPanel .setHint{color:var(--od-mist);}
+#questPanel .q{border-bottom-color:rgba(216,165,74,.12); color:var(--od-parchment-dim);}
+#questPanel .q b{color:var(--od-gold-bright);}
+#questPanel .q .bar{background:rgba(255,255,255,.1);}
+#questPanel .q .bar i{background:var(--od-gold);}
+#questPanel .q.done{color:var(--od-mist);}
+#bagPanel .it{border-bottom-color:rgba(216,165,74,.12); color:var(--od-parchment-dim);}
+#bagPanel .it b{color:var(--od-gold-bright);}
+#audioPanel .apRow{color:var(--od-parchment);}
+#audioPanel .apRow span,#audioPanel .apRow b{color:var(--od-mist);}
+#audioPanel .apRow input[type=range]{accent-color:var(--od-gold);}
+#audioPanel .apNote{color:var(--od-mist); border-top-color:var(--od-line);}
+#questPanel .questTabs button{background:rgba(255,255,255,.04); border-color:var(--od-line); color:var(--od-mist);}
+#questPanel .questTabs button.active{background:rgba(216,165,74,.16); border-color:var(--od-gold); color:var(--od-gold-bright);}
+#questPanel .questTabs button:hover{color:var(--od-parchment); border-color:var(--od-gold-dim);}
+#questPanel .crewSummary{padding:7px 0;color:var(--od-parchment-dim);font-size:12px;border-bottom:1px solid var(--od-line);}
+#questPanel .crewSummary span{display:block;margin-top:3px;color:var(--od-mist);font-size:10.5px;}
+#questPanel .q.crew{position:relative;padding-right:48px;}
+#questPanel .q.crew .crewState{position:absolute;right:2px;top:7px;font-size:10px;color:#9fd3df;}
+#questPanel .q.crew.lost b{color:#c98677;text-decoration:none;}
+#questPanel .q.crew.lost .crewState{color:#e6a09a;}
+#questPanel .q.codex.locked{min-height:24px;color:var(--od-mist);}
+#questPanel .q.codex .codexRisk{color:var(--od-parchment-dim);}
+#questPanel .q.codex.island.done{border-left:2px solid var(--od-gold-dim);padding-left:7px;}
+#questPanel{max-height:calc(100% - 64px); overflow-y:auto;}
+#questPanel::-webkit-scrollbar,#hudLog::-webkit-scrollbar,#msgs::-webkit-scrollbar{width:6px;}
+#questPanel::-webkit-scrollbar-thumb,#hudLog::-webkit-scrollbar-thumb,#msgs::-webkit-scrollbar-thumb{background:rgba(216,165,74,.3); border-radius:3px;}
+
+/* ============================================================
+ *  3. 对话 —— 深海羊皮纸，去掉白卡片与蓝气泡的拼贴感
+ * ============================================================ */
+#dlg{
+  background:var(--od-glass-strong); border:1px solid var(--od-line);
+  border-radius:var(--od-radius-lg); box-shadow:var(--od-shadow);
+  backdrop-filter:blur(10px); color:var(--od-parchment);
+}
+#dlgPortrait{border-right-color:var(--od-line);}
+#dlgPortrait::after{background:linear-gradient(180deg, rgba(6,14,22,0) 46%, var(--od-ink) 97%);}
+#dlg .head{border-bottom-color:var(--od-line);}
+#dlg .head .t{color:var(--od-gold-bright); letter-spacing:.1em;}
+#dlg .head .s{color:var(--od-mist);}
+#dlg .head .dot{background:linear-gradient(135deg, rgba(216,165,74,.24), rgba(184,86,60,.24));}
+#dlg .head .x{color:var(--od-mist);}
+#dlg .head .x:hover{color:var(--od-parchment);}
+.bubble{font-size:13px; letter-spacing:.01em;}
+.bubble.witch{background:rgba(239,227,202,.07); border:1px solid rgba(216,165,74,.18); color:var(--od-parchment);}
+.bubble.me{background:linear-gradient(135deg, var(--od-terra), var(--od-terra-deep)); color:#fdf3e6; border:1px solid rgba(240,207,138,.28);}
+.chip{background:rgba(47,111,134,.2); color:#9fd3df; border-color:rgba(47,111,134,.5);}
+.chip.err{background:rgba(184,86,60,.18); color:#f0b3a6; border-color:rgba(184,86,60,.5);}
+.chip.tip{background:rgba(216,165,74,.14); color:var(--od-gold-bright); border-color:rgba(216,165,74,.45);}
+#inp{background:rgba(255,255,255,.05); border-color:var(--od-line); color:var(--od-parchment);}
+#inp::placeholder{color:var(--od-mist);}
+#inp:focus{border-color:var(--od-gold); box-shadow:0 0 0 3px rgba(216,165,74,.14);}
+#sendBtn{background:var(--od-terra); border-radius:var(--od-radius); color:#fdf3e6;}
+#sendBtn:hover{background:var(--od-terra-deep);}
+#samples button{background:rgba(255,255,255,.04); border-color:var(--od-line); color:var(--od-mist);}
+#samples button:hover{background:rgba(216,165,74,.12); border-color:var(--od-gold); color:var(--od-gold-bright);}
+
+/* ============================================================
+ *  4. 提示 / 过场 / 选择 —— 同一套金线语言
+ * ============================================================ */
+#toast{background:var(--od-glass-strong); border:1px solid var(--od-line); color:var(--od-parchment); border-radius:var(--od-radius);}
+#hint{background:var(--od-glass-strong); border:1px solid var(--od-line); color:var(--od-parchment); border-radius:var(--od-radius);}
+#hint b{color:var(--od-gold-bright);}
+#ambient{background:var(--od-glass-strong); border:1px solid var(--od-line); color:var(--od-parchment); border-radius:var(--od-radius);}
+#keys{color:rgba(239,227,202,.62); letter-spacing:.08em; text-shadow:0 1px 4px rgba(0,0,0,.9), 0 0 12px rgba(0,0,0,.7);}
+#zone{font-family:var(--od-serif); color:rgba(239,227,202,.7); letter-spacing:.4em;}
+#perfBadge{background:rgba(6,14,22,.7); color:#9fd3df;}
+#crewBanner{background:linear-gradient(90deg, rgba(120,32,26,0), rgba(120,32,26,.94) 16%, rgba(120,32,26,.94) 84%, rgba(120,32,26,0));}
+#crewBanner b{color:#ffc9b8;}
+.ccKicker,.askBox .ccKicker{color:var(--od-gold);}
+.ccTitle,.askBox .ccTitle{font-family:var(--od-serif); letter-spacing:.24em;}
+.askBox{background:linear-gradient(180deg, rgba(10,24,36,.96), rgba(5,12,19,.98)); border-color:var(--od-line); border-radius:var(--od-radius-lg);}
+.askBtn{background:rgba(216,165,74,.08); border-color:rgba(216,165,74,.28); color:var(--od-parchment); border-radius:var(--od-radius);}
+.askBtn:hover{background:rgba(216,165,74,.18); border-color:var(--od-gold);}
+.ecBody{background:rgba(239,227,202,.05); border-color:var(--od-line); color:var(--od-parchment);}
+.ecKicker{color:var(--od-gold);}
+.ecPara{color:var(--od-parchment-dim);}
+.ecStats .stx{border-color:var(--od-line); color:var(--od-mist);}
+#endingCard{background:linear-gradient(175deg,#08131e 0%,#122a3a 45%,#08131e 100%);}
+#nameCard{background:rgba(4,10,16,.82);}
+#ncBody{background:var(--od-glass-strong); border-color:var(--od-line); color:var(--od-parchment);}
+#ncInp{background:rgba(255,255,255,.05); border-color:var(--od-line); color:var(--od-parchment);}
+#lyricCard{background:rgba(4,10,16,.8);}
+#lyricSheet{background:linear-gradient(160deg,#efe3ca,#e3d3b3); color:#2a2016; border-radius:var(--od-radius-lg); box-shadow:var(--od-shadow);}
+#lyricSheet h3{color:#7a5a2a; font-family:var(--od-serif);}
+#lyricSheet button{border-color:rgba(122,90,42,.4); color:#5a431f; background:rgba(255,255,255,.4);}
+#mapBoard{box-shadow:0 18px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(216,165,74,.24);}
+/* 图廓：压住原图右下角的生成水印，换成手绘海图该有的题记 */
+.mapCartouche{
+  position:absolute; right:8px; bottom:8px; z-index:2; pointer-events:none;
+  min-width:178px; padding:8px 16px 7px; text-align:center;
+  font-family:var(--od-serif); font-size:10px; letter-spacing:.3em;
+  color:#5b4326; background:linear-gradient(160deg, rgba(238,224,196,.98), rgba(220,202,166,.98));
+  border:1px solid rgba(122,90,42,.45); box-shadow:0 2px 8px rgba(60,40,20,.25);
+}
+#mapOverlay{background:rgba(4,10,16,.78);}
+#mapHead .t{font-family:var(--od-serif); letter-spacing:.28em; color:var(--od-gold-bright);}
+#onboardingCard{
+  background:var(--od-glass-strong); border:1px solid var(--od-line); border-radius:var(--od-radius-lg);
+  color:var(--od-parchment); backdrop-filter:blur(8px);
+}
+#onboardingStep{color:var(--od-gold-bright); letter-spacing:.14em;}
+#onboardingText{color:var(--od-parchment-dim);}
+#onboardingCard .obDot.on{background:var(--od-gold);}
+#onboardingSkip{color:var(--od-mist);}
+#onboardingSkip:hover{color:var(--od-gold-bright);}
+
+/* ============================================================
+ *  5. 开场微节拍（序章：先给一个动作，再给故事）
+ * ============================================================ */
+#openingCard{
+  position:absolute; right:14px; bottom:34px;
+  width:min(430px, 44%); z-index:7; display:none;
+  padding:14px 18px 15px; color:var(--od-parchment);
+  background:linear-gradient(180deg, rgba(8,20,30,.92), rgba(5,12,19,.96));
+  border:1px solid var(--od-line); border-top:2px solid var(--od-gold-dim);
+  border-radius:var(--od-radius-lg); box-shadow:var(--od-shadow);
+  backdrop-filter:blur(10px); animation:odRise .45s cubic-bezier(.23,1,.32,1);
+}
+#openingCard.show{display:block;}
+/* 打开任务/背包/海图/对话时让开航路：序章只在真正看着海的时候出现 */
+#stage:has(#questPanel[style*="display: block"]) #openingCard,
+#stage:has(#bagPanel[style*="display: block"]) #openingCard,
+#stage:has(#settingsPanel[style*="display: block"]) #openingCard,
+#stage:has(#dlg.open) #openingCard,
+#stage:has(#mapOverlay.open) #openingCard{display:none;}
+@keyframes odRise{from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);}}
+#openingCard .opTop{display:flex; align-items:center; justify-content:space-between; gap:12px;}
+#opKicker{font-family:var(--od-serif); font-size:11px; letter-spacing:.3em; color:var(--od-gold);}
+#opSkip{background:none; border:none; color:var(--od-mist); font-size:11px; cursor:pointer; padding:2px 0 2px 8px;}
+#opSkip:hover{color:var(--od-parchment);}
+#opText{margin-top:8px; font-size:12.5px; line-height:1.8; color:var(--od-parchment-dim); letter-spacing:.02em;}
+#opHint{margin-top:9px; font-size:11.5px; color:var(--od-gold-bright); letter-spacing:.1em; min-height:16px;}
+#opBtns{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;}
+#opBtns button{
+  cursor:pointer; font-family:inherit; font-size:12px; padding:7px 14px; border-radius:var(--od-radius);
+  background:rgba(216,165,74,.1); border:1px solid rgba(216,165,74,.34); color:var(--od-parchment);
+  transition:background .18s, border-color .18s, color .18s;
+}
+#opBtns button:hover{background:rgba(216,165,74,.2); border-color:var(--od-gold); color:var(--od-gold-bright);}
+#opBtns button.primary{background:var(--od-terra); border-color:var(--od-terra-deep); color:#fdf3e6;}
+#opBtns button.primary:hover{background:var(--od-terra-deep); color:#fff3e4;}
+#opSong{
+  margin-top:10px; padding:11px 14px; border-left:2px solid var(--od-gold-dim);
+  background:rgba(239,227,202,.05); font-family:var(--od-serif); font-size:12.5px;
+  line-height:2; color:var(--od-parchment); letter-spacing:.04em; display:none;
+}
+#opSong.show{display:block; animation:odFade .3s ease-out;}
+#opSong em{font-style:normal; color:var(--od-gold-bright);}
+#opDots{display:flex; gap:5px; margin-top:10px;}
+#opDots i{width:20px; height:2px; background:rgba(255,255,255,.16); border-radius:1px;}
+#opDots i.on{background:var(--od-gold);}
+
+/* ============================================================
+ *  6. 标题屏 —— 单屏电影感：海、月、船、金线
+ * ============================================================ */
+#titleScreen{
+  background:linear-gradient(180deg,#050d15 0%, #081a27 34%, #0b2434 58%, #07161f 100%);
+  background-size:cover; animation:none;
+}
+#titleScreen::after{
+  background:
+    radial-gradient(90% 60% at 50% 8%, rgba(216,165,74,.10), transparent 62%),
+    linear-gradient(180deg, rgba(4,10,16,.55) 0%, rgba(4,10,16,0) 30%, rgba(3,8,13,.86) 100%);
+  z-index:1;
+}
+#titleScreen::before{display:none;}
+.tsScene{position:absolute; inset:0; z-index:0; overflow:hidden;}
+.tsSky{position:absolute; inset:0; background:radial-gradient(70% 46% at 62% 18%, rgba(47,111,134,.28), transparent 68%);}
+.tsMoon{
+  position:absolute; right:22%; top:17%; width:76px; height:76px; border-radius:50%;
+  background:radial-gradient(circle at 38% 34%, #fdf0cd 0%, #f0cf8a 42%, #d8a54a 70%, rgba(216,165,74,0) 72%);
+  box-shadow:0 0 60px 22px rgba(240,207,138,.18), 0 0 140px 60px rgba(216,165,74,.08);
+  animation:tsMoon 12s ease-in-out infinite alternate;
+}
+@keyframes tsMoon{from{transform:translateY(0); opacity:.92;} to{transform:translateY(-8px); opacity:1;}}
+.tsSea{position:absolute; left:0; right:0; bottom:0; height:52%; overflow:hidden;}
+.tsSea::before{
+  content:""; position:absolute; left:0; right:0; top:0; height:2px;
+  background:linear-gradient(90deg, rgba(216,165,74,0), rgba(240,207,138,.55) 38%, rgba(184,86,60,.5) 68%, rgba(216,165,74,0));
+  filter:blur(.4px);
+}
+.tsSea::after{
+  content:""; position:absolute; left:0; right:0; top:0; height:22%;
+  background:linear-gradient(180deg, rgba(216,165,74,.12), transparent);
+}
+.tsWave{position:absolute; left:-10%; right:-10%; height:46%; border-radius:46% 54% 0 0 / 100% 100% 0 0;}
+.tsWave.w1{bottom:0; background:linear-gradient(180deg, #10405a, #061620 62%); opacity:1; box-shadow:inset 0 1px 0 rgba(240,207,138,.18);}
+.tsWave.w2{bottom:14%; height:34%; background:linear-gradient(180deg, rgba(46,110,134,.62), rgba(9,32,44,.16)); animation:tsSway 9s ease-in-out infinite alternate;}
+.tsWave.w3{bottom:30%; height:22%; background:linear-gradient(180deg, rgba(86,152,176,.34), rgba(9,32,44,0)); opacity:.8; animation:tsSway 13s ease-in-out infinite alternate-reverse;}
+@keyframes tsSway{from{transform:translateX(-2.2%) scaleY(1);} to{transform:translateX(2.2%) scaleY(1.06);}}
+.tsPath{
+  position:absolute; right:17%; bottom:0; width:190px; height:64%;
+  background:radial-gradient(ellipse at 50% 0%, rgba(255,232,178,.55), rgba(240,207,138,.18) 42%, transparent 74%);
+  filter:blur(3px); opacity:.95;
+}
+.tsBoat{position:absolute; right:20%; bottom:17%; width:120px; height:86px; z-index:2; opacity:.98;
+  filter:drop-shadow(0 0 14px rgba(240,207,138,.22));}
+.tsBoat .hull{
+  position:absolute; left:0; bottom:0; width:120px; height:17px;
+  background:linear-gradient(180deg,#0a1a24,#040b11);
+  border-bottom:2px solid rgba(216,165,74,.7);
+  clip-path:polygon(2% 0, 98% 0, 84% 100%, 16% 100%);
+}
+.tsBoat .sail{
+  position:absolute; left:34px; bottom:15px; width:56px; height:66px;
+  background:linear-gradient(170deg, rgba(250,242,222,.96), rgba(198,180,148,.7));
+  clip-path:polygon(46% 0, 100% 100%, 0 100%);
+  animation:tsSail 6s ease-in-out infinite alternate;
+}
+.tsBoat .mast{position:absolute; left:44px; bottom:14px; width:2px; height:74px; background:rgba(3,9,14,.9);}
+@keyframes tsSail{from{transform:skewY(-1deg);} to{transform:skewY(1.4deg);}}
+.tsGrain{
+  position:absolute; inset:0; z-index:3; pointer-events:none; opacity:.5;
+  background-image:radial-gradient(1.4px 1.4px at 18% 72%, rgba(240,207,138,.7), transparent 60%),
+    radial-gradient(1.2px 1.2px at 66% 58%, rgba(240,207,138,.5), transparent 60%),
+    radial-gradient(1px 1px at 42% 84%, rgba(239,227,202,.45), transparent 60%),
+    radial-gradient(1.4px 1.4px at 84% 76%, rgba(240,207,138,.4), transparent 60%);
+  animation:tsMotes 14s ease-in-out infinite alternate;
+}
+.tsBody{left:7%; bottom:13%; z-index:4; max-width:60%;}
+.tsBody::before{
+  content:""; display:block; width:54px; height:1px; margin-bottom:14px;
+  background:linear-gradient(90deg, var(--od-gold), rgba(216,165,74,0));
+}
+.tsKicker{font-size:11px; letter-spacing:.52em; color:var(--od-gold); margin-bottom:12px;}
+.tsBody h1{font-family:var(--od-serif); font-size:60px; letter-spacing:.2em; color:var(--od-parchment); font-weight:600;}
+.tsBody h1 span{font-size:16px; letter-spacing:.34em; vertical-align:16px; margin-left:14px; color:var(--od-gold-bright); font-weight:400;}
+.tsSub{margin:16px 0 26px; font-size:13px; color:var(--od-parchment-dim); letter-spacing:.16em;}
+.tsBtns{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+#tsGo,#tsNew{border-radius:var(--od-radius); letter-spacing:.28em; font-family:var(--od-serif);}
+#tsGo{
+  background:linear-gradient(135deg, var(--od-gold-bright), var(--od-gold));
+  color:#1a1204; font-size:14px; font-weight:600; padding:12px 34px;
+  box-shadow:0 8px 28px rgba(216,165,74,.28); animation:none;
+}
+#tsGo:hover{transform:translateY(-1px); box-shadow:0 12px 34px rgba(240,207,138,.4);}
+#tsNew{border:1px solid rgba(239,227,202,.34); background:rgba(239,227,202,.06); color:var(--od-parchment);}
+#tsNew:hover{background:rgba(239,227,202,.14); border-color:var(--od-gold);}
+#tsSaveCard,#tsRuns{
+  background:rgba(7,18,27,.62); border:1px solid var(--od-line); border-radius:var(--od-radius);
+  backdrop-filter:blur(6px); max-width:440px;
+}
+#tsSaveCard .t1,#tsRuns .t1{color:var(--od-gold-bright); letter-spacing:.12em; font-size:12px;}
+#tsSaveCard .t2,#tsRuns .t2{color:var(--od-parchment-dim); font-size:11.5px;}
+.tsTip{color:rgba(239,227,202,.4); font-size:10.5px; letter-spacing:.06em; margin-top:26px;}
+.demoBtn{background:rgba(239,227,202,.06); border-color:var(--od-line); color:var(--od-parchment-dim); border-radius:var(--od-radius);}
+.demoBtn:hover{border-color:var(--od-gold); color:var(--od-gold-bright);}
+.tsMark{
+  position:absolute; right:22px; top:16%; transform:none;
+  writing-mode:vertical-rl; font-family:var(--od-serif); font-size:11px; letter-spacing:.4em;
+  color:rgba(216,165,74,.5); z-index:4;
+}
+.tsMeta{
+  position:absolute; right:11%; top:41%; z-index:4;
+  font-family:var(--od-serif); font-size:12px; letter-spacing:.34em; color:rgba(239,227,202,.55);
+}
+.tsMeta::after{
+  content:""; display:block; width:100%; height:1px; margin-top:12px;
+  background:linear-gradient(90deg, rgba(216,165,74,.5), rgba(216,165,74,0));
+}
+
+/* ============================================================
+ *  7. 核心循环 —— 靠岸合同与抉择回执
+ * ============================================================ */
+#landfallBrief{
+  position:absolute; right:14px; bottom:38px; z-index:5; display:none;
+  width:min(370px,44%); padding:13px 16px 12px;
+  color:var(--od-parchment); background:linear-gradient(165deg,rgba(10,25,36,.94),rgba(5,13,21,.96));
+  border:1px solid var(--od-line); border-left:2px solid var(--od-gold-dim);
+  border-radius:var(--od-radius-lg); box-shadow:var(--od-shadow); backdrop-filter:blur(9px);
+  pointer-events:none;
+}
+#landfallBrief.show{display:block; animation:odRise .3s ease-out;}
+.lfKicker,.crKicker{font-family:var(--od-serif); font-size:9.5px; letter-spacing:.3em; color:var(--od-gold);}
+.lfName{margin:5px 0 9px; font-family:var(--od-serif); font-size:21px; letter-spacing:.16em; color:var(--od-gold-bright);}
+.lfRow{display:grid; grid-template-columns:34px 1fr; gap:8px; padding:5px 0; border-top:1px solid rgba(216,165,74,.12);}
+.lfRow>span{font-size:10px; letter-spacing:.14em; color:#d8957e; padding-top:2px;}
+.lfRow.reward>span{color:var(--od-gold);}
+.lfRow p{font-size:11px; line-height:1.65; color:var(--od-parchment-dim);}
+.lfAction{margin-top:8px; padding-top:8px; border-top:1px solid var(--od-line); font-size:10.5px; line-height:1.55; color:var(--od-gold-bright);}
+#choiceReceipt{
+  position:absolute; left:14px; bottom:38px; z-index:17; display:none;
+  width:min(350px,42%); padding:11px 15px 12px; pointer-events:none;
+  color:var(--od-parchment); background:var(--od-glass-strong);
+  border:1px solid var(--od-line); border-left:2px solid var(--od-terra);
+  border-radius:var(--od-radius-lg); box-shadow:var(--od-shadow); backdrop-filter:blur(8px);
+}
+#choiceReceipt.show{display:block; animation:odRise .28s ease-out;}
+.crChoice{margin-top:5px; font-family:var(--od-serif); font-size:13px; line-height:1.55; color:var(--od-parchment);}
+.crResult{margin-top:5px; font-size:11px; line-height:1.65; color:var(--od-gold-bright);}
+#questPanel .q.choice{border-left:2px solid var(--od-terra); padding-left:8px;}
+#questPanel .q.choice .sub{color:var(--od-parchment-dim);}
+#questPanel .q.decision{border-left:2px solid var(--od-gold); padding-left:8px; font-size:12px;}
+#questPanel .q.decision b{color:var(--od-gold-bright);}
+@media (max-width:760px){
+  #landfallBrief{width:48%; right:8px; bottom:30px; padding:9px 11px;}
+  #choiceReceipt{width:45%; left:8px; bottom:30px;}
+  .lfName{font-size:17px;} .lfRow p,.lfAction,.crResult{font-size:9.5px;}
+}
+@media (prefers-reduced-motion: reduce){
+  #titleScreen, #titleScreen::before, #tsGo, .tsMoon, .tsWave, .tsBoat .sail, .tsGrain{animation:none !important;}
+}

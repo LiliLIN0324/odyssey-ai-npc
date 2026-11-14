@@ -87,6 +87,7 @@ let labelSprites = [];   /* 岛名标签（Sprite+CanvasTexture）：随相机�
 let fitFn = null;   /* init 内 fit 的稳定引用（setDPR 重算尺寸用） */
 let driftG = null, driftSlots = [];   /* 漂流物（Steam 化玩法批）：预建 4 槽，随 __game.drifts 同步 */
 let worldGroup = null, waterMesh = null, skyGroup = null, cloudGroup = null, troyGroup = null;
+let skyU = null, sunLight = null, hemiLight = null;   /* 批次 J1：昼夜调色引用 */
 /* 批次 H8：海的生命——海豚伴航（奥德修斯获救的本命意象）+ 岛际鸥群。
    轨迹全部由 et 参数化（无状态、rAF 冻结环境也能在 grabFrame 里正确呈现）。 */
 const SEA_PODS = [ {x:25*40+60, y:7*40+40, r:60}, {x:9*40+20, y:9*40+20, r:52}, {x:30*40+20, y:11*40, r:68} ];   /* 批次 H9：坐标随世界翻倍 */
@@ -521,6 +522,7 @@ function buildSky() {
     uZenith: { value: new THREE.Color(0x4a9fd8) },
     uSunColor: { value: new THREE.Color(PAL.duskGold) },
     uSunDir: { value: SUN_DIRECTION.clone().normalize() },
+    uNight: { value: 0 },   /* 批次 J1：夜色系数（0 白昼→1 深夜），驱动星空 */
   };
   const mat = new THREE.ShaderMaterial({
     uniforms, side: THREE.BackSide, depthWrite: false, fog: false,
@@ -534,11 +536,18 @@ function buildSky() {
       uniform vec3 uZenith;
       uniform vec3 uSunColor;
       uniform vec3 uSunDir;
+      uniform float uNight;
       void main() {
         vec3 d = normalize(vDir);
         vec3 col = mix(uHorizon, uZenith, smoothstep(0.0, 0.4, d.y));
         float sunDot = max(dot(d, normalize(uSunDir)), 0.0);
         col += uSunColor * (pow(sunDot, 40.0) * 0.85 + pow(sunDot, 6.0) * 0.2);
+        /* 批次 J1：深夜星空——上半球程序化星点，密度随 uNight */
+        if (uNight > 0.01 && d.y > 0.02) {
+          vec3 sd = floor(d * 160.0);
+          float h1 = fract(sin(dot(sd, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+          col += vec3(0.92, 0.95, 1.0) * smoothstep(0.994, 1.0, h1) * uNight * 0.85;
+        }
         gl_FragColor = vec4(col, 1.0);
         #include <colorspace_fragment>
       }
@@ -680,6 +689,51 @@ function seaLifeTick(et) {
     const flap = Math.sin(et * 9 + g.i * 3) * 0.45;
     g.wl.rotation.z = flap; g.wr.rotation.z = -flap;
   }
+}
+
+/* ---------- 批次 J1：3D 昼夜大气——天空/雾/光照/水色随游戏时刻变化 ----------
+   色彩曲线对齐 2D drawDaylight 的时段定义：night(20-5) / dusk(17-20 熔金) / dawn(5-7 金粉)。
+   全部 lerp 无跳变；雾色跟天际色走（水面永远融入天际线）。 */
+const DAY_HORIZON = new THREE.Color(PAL.oceanMid), DAY_ZENITH = new THREE.Color(0x4a9fd8);
+const NIGHT_HORIZON = new THREE.Color(0x14243a), NIGHT_ZENITH = new THREE.Color(0x0a1526);
+const DUSK_HORIZON = new THREE.Color(0xd88a50), DUSK_ZENITH = new THREE.Color(0x6a6aa8);
+const NIGHT_WATER_SHORE = new THREE.Color(0x1a4a66), NIGHT_WATER_MID = new THREE.Color(0x14304a), NIGHT_WATER_DEEP = new THREE.Color(0x0c1e30);
+const _atmoH = new THREE.Color(), _atmoZ = new THREE.Color(), _atmoS = new THREE.Color();
+function gameHourNow(){ const G = window.__game; return (G && G.state) ? G.state.clock/60 : 9; }
+function atmosphereTick(){
+  if (!skyU) return;
+  const h = gameHourNow();
+  /* 夜量：对齐 index.html nightAmount 的时段（20-5 深夜 / 19-21 与 4-6 平滑过渡） */
+  let night = 0;
+  if (h>=21 || h<4) night = 1;
+  else if (h>=19 && h<21) night = (h-19)/2;
+  else if (h>=4 && h<6) night = 1-(h-4)/2;
+  /* 黄昏/黎明的熔金辉光：18:3 与 5:9 各一个钟形峰 */
+  const dusk = Math.exp(-Math.pow((h-18.3)/0.9, 2)) + Math.exp(-Math.pow((h-5.9)/0.9, 2)) * 0.75;
+  _atmoH.copy(DAY_HORIZON).lerp(NIGHT_HORIZON, night).lerp(DUSK_HORIZON, Math.min(1, dusk*0.75));
+  _atmoZ.copy(DAY_ZENITH).lerp(NIGHT_ZENITH, night).lerp(DUSK_ZENITH, Math.min(1, dusk*0.5));
+  _atmoS.set(0xfff2d8).lerp(new THREE.Color(0xff9a50), Math.min(1, dusk*1.1)).lerp(new THREE.Color(0x9aa8cc), night*0.85);
+  skyU.uHorizon.value.copy(_atmoH);
+  skyU.uZenith.value.copy(_atmoZ);
+  skyU.uSunColor.value.copy(_atmoS);
+  skyU.uNight.value = Math.max(0, Math.min(1, night*1.15 - dusk*0.45));
+  if (scene3.fog) scene3.fog.color.copy(_atmoH);          /* 雾色跟天际——任何时刻水面都融入天际线 */
+  if (scene3.background) scene3.background.copy(_atmoH);
+  /* 光照：白昼金白 → 深夜月色微光 */
+  if (sunLight){
+    sunLight.color.copy(_atmoS).lerp(new THREE.Color(0xffffff), 0.3);
+    sunLight.intensity = 1.35 * (1 - night*0.55) + dusk * 0.15;
+  }
+  if (hemiLight) hemiLight.intensity = 0.65 * (1 - night*0.45);
+  /* 水色三档随夜色压暗 */
+  if (waterU){
+    waterU.uShore.value.copy(new THREE.Color(PAL.oceanShore)).lerp(NIGHT_WATER_SHORE, night*0.75);
+    waterU.uMid.value.copy(new THREE.Color(PAL.oceanMid)).lerp(NIGHT_WATER_MID, night*0.75);
+    waterU.uDeep.value.copy(new THREE.Color(PAL.oceanDeep)).lerp(NIGHT_WATER_DEEP, night*0.75);
+  }
+  /* 云染夜色 */
+  if (cloudGroup && cloudGroup.material)
+    cloudGroup.material.color.copy(new THREE.Color(0xffffff)).lerp(new THREE.Color(0x2a3a52), night*0.8);
 }
 
 /* ---------- 漂流物（Steam 化玩法批：漂流瓶/木箱 3D 浮标，位置与类型随主脚本 drifts 数组同步） ---------- */
@@ -830,7 +884,7 @@ function init() {
      近景（船周 15~25 单位）仍 6~15% 清晰可航 */
   scene3.fog = new THREE.FogExp2(PAL.oceanMid, 0.012);   /* 批次 H9：世界翻倍后重调——60u 40%、100u 76%、140u 94%，近景仍清 */
 
-  camera3 = new THREE.PerspectiveCamera(48, 1000 / 600, 0.1, 600);
+  camera3 = new THREE.PerspectiveCamera(54, 1000 / 600, 0.1, 600);   /* 批次 J2：fov 48→54——更开阔的视野（配合雾，远岛半隐） */
   camera3.position.set(0, 20, 26);
 
   const hemi = new THREE.HemisphereLight(PAL.oceanShore, PAL.cliffLight, 0.65);
@@ -840,8 +894,10 @@ function init() {
   );
   sun.position.copy(SUN_DIRECTION).multiplyScalar(90);
   scene3.add(sun);
+  hemiLight = hemi; sunLight = sun;   /* 批次 J1：昼夜调色引用 */
 
   skyGroup = buildSky(); scene3.add(skyGroup);
+  skyU = skyGroup.material.uniforms;   /* 批次 J1：天穹 uniforms 引用（昼夜 tick 每帧写色） */
   worldGroup = new THREE.Group();
   worldGroup.add(buildIslands());   /* 先建岛：水 shader 的 uIsle 岸线数组依赖 isleList */
   worldGroup.add(buildLabels());    /* 岛名 Sprite 标签：挂 worldGroup（特洛伊场景随组隐藏） */
@@ -967,6 +1023,7 @@ function frame(et) {
   }
   /* 漂流物：随主脚本 drifts 数组同步（瓶/箱形态切换 + 浮沉摇摆；最多 4 个） */
   seaLifeTick(et);   /* 批次 H8：海豚伴航 + 岛际鸥群（et 参数化轨迹） */
+  atmosphereTick();  /* 批次 J1：昼夜大气（天空/雾/光照/水色随游戏时刻） */
   if (driftG) {
     const ds = (G && G.drifts && G.drifts()) || [];
     for (let i = 0; i < driftSlots.length; i++) {
@@ -980,8 +1037,8 @@ function frame(et) {
       s.g.rotation.z = Math.sin(et * 1.6 + d.y) * 0.12;
     }
   }
-  _camTarget.set(bx, 11.6, bz + 13.8);   /* 批次 H6/H8：相机略降拉近（14/17 → 11.6/13.8）——船缩小后进一步贴近海面，
-                                            「池塘感」缓解；导航可读性由岛名标签与 M 海图承担 */
+  _camTarget.set(bx, 13.2, bz + 15.6);   /* 批次 J2：相机抬高拉远（11.6/13.8→13.2/15.6）——更开阔的海平视野；
+                                            远岛半隐在雾里，岛名标签与 M 海图承担导航 */
   camera3.position.lerp(_camTarget, 1 - Math.exp(-4 * dt));
   camera3.lookAt(bx, 0.8, bz - 2.5);
   /* 岛名标签随相机距离淡出：20 内全显，>60 隐没（淡透后顺带 visible=false 省掉无谓 sprite call） */

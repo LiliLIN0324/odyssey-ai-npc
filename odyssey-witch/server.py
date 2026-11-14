@@ -70,7 +70,8 @@ def call_model(model: str, messages: list, max_tokens: int, temperature: float,
 
 
 STATIC_TYPES = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}
-JS_TYPES = {".js": "text/javascript; charset=utf-8", ".mjs": "text/javascript; charset=utf-8"}
+JS_TYPES = {".js": "text/javascript; charset=utf-8", ".mjs": "text/javascript; charset=utf-8",
+            ".css": "text/css; charset=utf-8"}
 
 
 class Handler(BaseHTTPRequestHandler):
