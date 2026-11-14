@@ -18,6 +18,7 @@ NODE_TESTS = [
     "tests/phase2-loop.test.cjs",
     "tests/phase3-systems.test.cjs",
     "tests/phase4-release.test.cjs",
+    "tests/local-intent.test.cjs",
 ]
 
 

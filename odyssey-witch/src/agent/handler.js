@@ -374,7 +374,23 @@ function extractJSON(text){
 
 
 // --- localFallbackParse (was main+2136-2176, 41 lines) ---
-function localFallbackParse(text){
+/* 批次 K1：旧的「有序正则 if-else 链」已换成 src/agent/localIntent.js 的打分制引擎
+   （累加打分不短路 + 独立槽位抽取 + 低于阈值不硬猜）。
+   下面那张旧表保留为 localFallbackLegacy——只在引擎异常时兜底，正常路径不再走它；
+   tests/local-intent.test.cjs 里有一组差分断言，保证新引擎不弱于旧表。 */
+function localFallbackParse(text, npcKey){
+  /* 批次 K1：名字考试（polyNameExam）读的是 window.lastPlayerText，
+     而那东西原先只在 apiParse() 里赋值——离线兜底路径永远拿不到，
+     巨人「报名字」考离线彻底失效。这里补上，离线与在线口径一致。 */
+  try{ window.lastPlayerText = text; }catch(e){}
+  try{
+    const preds = localIntentParse(text);
+    if (preds && preds.length) return preds;
+  }catch(e){ console.warn("[localIntent] 引擎异常，落旧表：", e); }
+  return localFallbackLegacy(text);
+}
+/* 旧表（兜底 + 差分测试基准） */
+function localFallbackLegacy(text){
   const t=(text||"").trim();
   const hit=re=>re.test(t);
   const argsOf=()=>{
@@ -660,7 +676,7 @@ async function send(preset){
   try{
     let preds;
     try{ preds = await apiParse(text); }
-    catch(offlineErr){ preds = localFallbackParse(text); }   /* 兑底：服务不可用时本地关键词归意图 */
+    catch(offlineErr){ preds = localFallbackParse(text, currentNPC); }   /* 批次 K1：离线走打分制意图引擎（src/agent/localIntent.js） */
     const parts=[],chips=[],pq=[];
     const splitHint = splitClauseHint(text, preds);   /* multi 引导：拆不齐时提示分句说，拆齐了给正反馈 */
     if (splitHint) chips.push(`<span class="chip tip">${splitHint}</span>`);

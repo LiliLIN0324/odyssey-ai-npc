@@ -1155,6 +1155,61 @@ def main():
             )
             phone_context.close()
 
+            # ============ 批次 K · 离线意图引擎的回归锁 ============
+            # 真实协议入口的 key 失效（HTTP 401）时 apiParse 必抛错——
+            # 玩家说的每一句话都会落到离线引擎。所以引擎在**真实浏览器**里的
+            # 行为必须是可断言的，不能只在 node 里自证。
+            intent_context, intent_page = new_page(browser, errors)
+            open_game(intent_page)
+            intent_page.locator("#opSkip").click()
+            intent_page.wait_for_timeout(700)
+            probe = intent_page.evaluate(
+                """() => {
+                    const p = (t) => {
+                        const r = localFallbackParse(t);
+                        const a0 = (r[0] && Array.isArray(r[0].args)) ? (r[0].args[0] || {}) : null;
+                        return {cats: r.map(x => x.category), isArr: !!(r[0] && Array.isArray(r[0].args)), a0: a0};
+                    };
+                    return {
+                        hasEngine: typeof window.LOCAL_INTENT === 'object',
+                        buy: p('我想买一瓶治疗草药'),
+                        submit: p('交玛草给她'),
+                        road: p('我选长路'),
+                        who: p('这里都有些谁？'),
+                        junk: p('asdfghjkl'),
+                    };
+                }"""
+            )
+            check(probe["hasEngine"], "离线意图引擎在真实浏览器里已加载")
+            check(
+                probe["buy"]["cats"][0] == "购买物品"
+                and probe["buy"]["a0"].get("物品") == "治疗草药"
+                and probe["buy"]["a0"].get("数量") == 1,
+                "离线引擎能听懂「我想买一瓶治疗草药」并抽出物品与数量",
+            )
+            check(
+                probe["submit"]["cats"][0] == "提交任务",
+                "离线引擎把「交玛草给她」判成交任务（旧版落「其他意图」）",
+            )
+            check(
+                probe["road"]["cats"][0] == "接取任务"
+                and probe["road"]["a0"].get("任务名称") == "长路",
+                "离线引擎能听懂「我选长路」并带出任务名",
+            )
+            check(
+                probe["who"]["cats"][0] == "查询地点信息",
+                "离线引擎能听懂「这里都有些谁？」",
+            )
+            check(
+                probe["junk"]["cats"][0] == "其他意图",
+                "离线引擎接不住时落「其他意图」，不硬猜",
+            )
+            check(
+                all(item["isArr"] for item in [probe["buy"], probe["submit"], probe["road"]]),
+                "离线引擎返回的 args 是数组（否则 send() 会丢掉全部参数）",
+            )
+            intent_context.close()
+
             check(not errors, "浏览器无 pageerror 与 console error；\n" + "\n".join(errors))
         except Exception:
             if errors:
