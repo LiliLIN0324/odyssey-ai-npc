@@ -146,7 +146,14 @@ function showFinale(mode, way, name){
   if (dec.sea_storm) decEcho.push(`风暴里你「${dec.sea_storm}」`);
   if (dec.sea_wreckboat) decEcho.push(`遇难小艇前你「${dec.sea_wreckboat}」`);
   if (dec.calypso) decEcho.push(`卡吕普索的永生你选了「${dec.calypso}」`);
+  /* B2 六段旧路：这些选择现在一定发生过 */
+  if (dec.ismaros_plunder) decEcho.push(`伊斯玛洛斯你「${dec.ismaros_plunder}」`);
+  if (dec.lotus_fruit) decEcho.push(`食莲岛的莲子你「${dec.lotus_fruit}」`);
+  if (dec.cyclops_name) decEcho.push(`巨人问名时你「${dec.cyclops_name}」`);
+  if (dec.telepylos_ship) decEcho.push(`忒勒皮洛斯的最后一条船你「${dec.telepylos_ship}」`);
+  if (dec.aeolia_winds) decEcho.push(`风神岛的袋口你「${dec.aeolia_winds}」`);
   if (decEcho.length) paras.push("这一路你的选择——"+decEcho.join("；")+"。没有一个是白选的：它们在每一片海都留了回声。");
+  if (state.songsSung && state.songsSung.length) paras.push(`有 ${state.songsSung.length} 段路你没亲自走完，是德摩多科斯在篝火边替你唱的——歌比人诚实，它把那几页补上了。`);
   if (stay){
     paras.push("你留在了奥吉吉亚。永生的锁合上，日历重新开始走——第一件要数清的，是你为了什么留下来。没有归乡，只有滞留。她不提这件事，她也什么都不提。");
   } else if (guest){
@@ -720,11 +727,17 @@ function interact(){
       toast("火塘边的位置还空着——故事已经讲完了，歌也记下了。"); return;
     }
     const CH = [
+      ["troy","第零章 · 木马之夜","火把、城墙，和十二艘船"],
+      ["ismaros","第一站 · 伊斯玛洛斯","喀科恩人的酒，和酒瓮边的伤者"],
+      ["lotus","第三站 · 食莲岛","一颗莲子，和一个不想走的人"],
+      ["cyclops","第四站 · 独眼巨人","羊腹、火桩，和你说出口的名字"],
+      ["telepylos","第六站 · 忒勒皮洛斯","崖上的石头，和最后一条船"],
       ["witch","第一章 · 女巫的账","玛草、野猪，和一个把门留给你的女巫"],
       ["hades","第二章 · 亡者之言","献祭之沟，和两条路的预言"],
       ["aeolia","插章 · 风的账","四阵被囚的风，和一只风袋"],
       ["strait","第三章 · 声之海峡","蜡、桅杆，和六头怪开出的价"],
       ["sun","第四章 · 太阳岛","饥饿、誓言，和一个名字"],
+      ["ogggia","第五章 · 完美的天气","金苹果、织机，和一条永远走不完的海岸"],
     ];
     /* 抉择回声：把一路的关键抉择揉进篝火引言——她听见的不只是章节，还有你的选择 */
     const dec = state.decisions||{};
@@ -733,8 +746,36 @@ function interact(){
     if (dec.mead) decBits.push(`蜜酒前你选了「${dec.mead}」`);
     if (dec.sea_wreckboat) decBits.push(`遇难小艇前你选了「${dec.sea_wreckboat}」`);
     const decLine = decBits.length ? "\n\n（她还记得你路上的选择："+decBits.join("；")+"。如实讲，这些都会进歌里。）" : "";
+    /* 到访判定：航迹 + 各段自己的结算痕迹（兼容老档没记 legs 的情况） */
+    const wasThere = (id)=>{
+      const leg = {witch:"aia"}[id] || id;
+      if (state.legs[leg]) return true;
+      if (id==="troy") return !!state.troyDone;
+      if (id==="ismaros") return !!state.ismarosDone;
+      if (id==="lotus") return !!state.lotusDone;
+      if (id==="cyclops") return !!state.cyclopDone;
+      if (id==="telepylos") return !!state.telepylosDone;
+      if (id==="witch") return !!getQuest("witch_grass");
+      if (id==="hades") return !!(state.prophecy || state.prophetMet);
+      if (id==="aeolia") return !!state.aeoliaDone;
+      if (id==="strait") return !!(state.straitCleared || state.straitStage>=2);
+      if (id==="sun") return state.sunStage!=null || !!state.sunBlessed || !!state.sunWrath;
+      if (id==="ogggia") return !!state.ogygiaLeft;
+      return false;
+    };
     (async ()=>{
       for (const [id,title,hint] of CH){
+        /* C 方案兜底：没到过的段，由德摩多科斯替你唱完——故事不因跳岛而缺页 */
+        if (!wasThere(id)){
+          if (!state.songsSung.includes(id)) state.songsSung.push(id);
+          await askChoice("篝 火 · 别 人 的 歌", title,
+            "你没有到过这里——火塘对面的盲歌手替你唱了这一段。",
+            "（德摩多科斯替你唱：不必答，听着就好。没走过的路，歌里替你走。）", [
+            {label:"听下去", hint:"进歌", v:1},
+          ]);
+          addMemory(`德摩多科斯替旅人唱完了没到过的「${title}」`, 3, "nausicaa");
+          continue;
+        }
         const v = await askChoice("篝 火 · 一 路 讲 来", title, hint, "（她托着腮等你开口——如实讲的段落才会进德摩多科斯的歌；吹牛，歌里不唱。）"+decLine, [
           {label:"如实讲", hint:"进歌", v:1},
           {label:"吹牛讲", hint:"更好听，但歌里不唱", v:0},
@@ -747,7 +788,7 @@ function interact(){
       state.scheriaStage = 2;
       gainXp(30); feedback("large");
       addMemory(`旅人在篝火边讲完了这一路——如实讲的段落共 ${state.talesTold.length} 段`, 4, "nausicaa");
-      toast(`故事讲完了。她安静了很久：「都记下了。」（如实讲的 ${state.talesTold.length}/5 段会进德摩多科斯的歌 · 历练 +30）`, 4200);
+      toast(`故事讲完了。她安静了很久：「都记下了。」（如实讲的 ${state.talesTold.length}/${CH.length} 段会进德摩多科斯的歌${state.songsSung.length?` · 替你唱了 ${state.songsSung.length} 段`:""} · 历练 +30）`, 4200);
       renderHUD(); save();
       setTimeout(trojanSongEvent, 900);   /* P1.5 特洛伊段：盲歌手唱到木马——你落泪（原著第8卷），插在回顾与告白之间 */
     })();
@@ -920,6 +961,34 @@ if (s.type==="mother"){
     save(); return;
   }
   if (s.type==="dock" && scene==="aeolia"){
+    /* B2 必经短章：四风没放完不能走；走之前把「袋口」这一次抉择问掉 */
+    const freed = (state.windFreed||[]).filter(Boolean).length;
+    if (freed < 4){
+      toast("四座石牢还锁着风——先把它们都放出来。（放满四阵风，埃俄罗斯才把风袋交给你）");
+      return;
+    }
+    if (!state.aeoliaDone){
+      showAsk("第 五 站 · 风 神 岛","袋 口 朝 哪",
+        "四阵风都收进了牛皮袋。埃俄罗斯把袋口递到你手里，自己退开一步。",
+        "「风是借的，不是给的。」——袋口现在归你。",
+        [
+          {label:"系紧袋口，留到真需要时", hint:"风袋 4 阵 · 原样带走", fn:()=>{
+            state.aeoliaDone = true;
+            addMemory("旅人把风袋系紧——四阵风一声不响地跟着船走了", 3, "aeolus");
+            renderHUD(); save();
+            toast("（这一段已经记进航程。再按 E 离岛。）");
+          }},
+          {label:"先松一松，讨个好风", hint:"风袋 −1 · 士气 振奋", fn:()=>{
+            state.aeoliaDone = true;
+            if (state.backpack["风袋"]) delItem("风袋",1);
+            state.status["士气"]="振奋";
+            addMemory("旅人松开袋口，放走一缕风——船身立刻轻了，埃俄罗斯没有回头", 3, "aeolus");
+            renderHUD(); save();
+            toast("（这一段已经记进航程。再按 E 离岛。）");
+          }},
+        ], "aeolia_winds");
+      return;
+    }
     scene = "world";
     boat.x = 17*WTS+10; boat.y = 8*WTS+10;
     toast("你顺着云梯回到海面，风神岛在头顶渐渐远了");
@@ -1176,6 +1245,7 @@ function openMap(){
   }
   document.getElementById("mapOverlay").classList.add("open");
   document.getElementById("stage").classList.add("mapOpen");   /* 常驻层让位浮层（game-ui-ux） */
+  if (window.WorldMap) window.WorldMap.open();   /* 海图增强层：缩放/拖动/洋流/航迹/岛屿笔记 */
   sfx("pick");
 }
 
@@ -1183,6 +1253,7 @@ function openMap(){
 // --- closeMap (was main+2656-2660, 5 lines) ---
 function closeMap(){
   mapOpen = false;
+  if (window.WorldMap) window.WorldMap.close();
   document.getElementById("mapOverlay").classList.remove("open");
   document.getElementById("stage").classList.remove("mapOpen");
 }
@@ -1592,6 +1663,7 @@ function openDlg(npc){
   const N = NPCS[currentNPC];
   if (!history[currentNPC]) history[currentNPC] = [];   /* 新 NPC 历史 lazy init（修 aeolia/siren 首开崩溃） */
   dlgOpen=true;
+  document.body.classList.add("dlgOpen");
   document.getElementById("dlg").classList.add("open");
   /* 按当前 NPC 切换标题、副标与立绘（无立绘时用云海渐变兑底） */
   document.getElementById("dlgName").textContent = N.name;
@@ -1629,6 +1701,7 @@ function openDlg(npc){
 // --- closeDlg (was main+3705-3709, 5 lines) ---
 function closeDlg(){
   dlgOpen=false;
+  document.body.classList.remove("dlgOpen");
   document.getElementById("dlg").classList.remove("open");
   document.getElementById("inp").blur();
 }

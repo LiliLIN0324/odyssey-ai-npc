@@ -24,3 +24,7 @@ odyssey-witch/.wrangler/
 
 # 线上部署产物（build.ps1 生成，不入库）
 odyssey-witch/deploy/dist/
+
+# H5 构建产物 / TapTap 发布物料（由 scripts/build_h5.py、capture_taptap.py 重建，不入库）
+odyssey-witch/dist/
+odyssey-witch/release/

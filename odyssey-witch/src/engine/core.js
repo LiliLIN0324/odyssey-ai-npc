@@ -162,7 +162,10 @@ function tickMove(dt){
   /* 风袋顺风：海上航速倍增（暗线③：用风=快旅，贪念=用光） */
   const tail = scene==="world" && performance.now() < (state.tailwindUntil||0);
   /* 批次 I2：风向系数——世界航行读风做决策（顺 1.3 / 侧 1.0 / 逆 0.78）；风袋自带顺风不受自然风影响 */
-  const sp = (scene==="aia"?150:scene==="hades"?120:scene==="aeolia"?130:scene==="strait"?135:scene==="sun"?140:scene==="ogggia"?125:scene==="scheria"?150:scene==="ithaca"?140:PROLOGUE_SITES[scene]?135:tail?130:Math.round(62*windFactor()))*dt;   /* 批次 H9：世界尺寸翻倍后航速校准 110→62（横渡全海 ~30s），顺风 230→130 */
+  /* 海图玩法：航路姿态（沿岸 0.94 / 外海 1.0 / 迷雾 1.14）× 洋流（顺 1.18 / 逆 0.88） */
+  const routeMul = scene==="world" ? (typeof seaRouteSpeed==="function" ? seaRouteSpeed() : 1) : 1;
+  const curMul = scene==="world" ? (typeof currentFactor==="function" ? currentFactor(dx,dy) : 1) : 1;
+  const sp = (scene==="aia"?150:scene==="hades"?120:scene==="aeolia"?130:scene==="strait"?135:scene==="sun"?140:scene==="ogggia"?125:scene==="scheria"?150:scene==="ithaca"?140:PROLOGUE_SITES[scene]?135:tail?Math.round(130*routeMul*curMul):Math.round(62*windFactor()*routeMul*curMul))*dt;   /* 批次 H9：世界尺寸翻倍后航速校准 110→62（横渡全海 ~30s），顺风 230→130；风袋快旅同样吃航路/洋流 */
   const mover = scene==="aia" ? tryMoveAia : scene==="hades" ? tryMoveHades : scene==="aeolia" ? tryMoveAeolia : scene==="strait" ? tryMoveStrait : scene==="sun" ? tryMoveSun : scene==="ogggia" ? tryMoveOggia : scene==="scheria" ? tryMoveScheria : scene==="ithaca" ? tryMoveIthaca : PROLOGUE_SITES[scene] ? tryMovePrologue : tryMoveWorld;
   p.vx = dx*sp/dt; p.vy = dy*sp/dt;   /* 实际速度（px/s），相机前瞻用 */
   /* 碰撞顺滑（游戏手感批）：先按原方向轴分离移动；全被挡时自动尝试 45° 绕行——
@@ -458,14 +461,9 @@ function toast(msg){
 
 // --- boatMapPos (moved from main script, was main+5072-5081) ---
 function boatMapPos(){
-  /* 反距离加权：海图上船位由最近岛屿描点内插（mp 为海图标定点） */
-  let wx=0, wy=0, wsum=0;
-  for (const is of ISLANDS){
-    const dx=boat.x-(is.gx*WTS+WTS/2), dy=boat.y-(is.gy*WTS+WTS/2);
-    const w=1/Math.max(dx*dx+dy*dy, 400);
-    wx+=w*is.mp[0]; wy+=w*is.mp[1]; wsum+=w;
-  }
-  return [wx/wsum, wy/wsum];
+  /* 精确投影：世界像素 → 海图百分比。WORLD（46×18）与底图（3312×1296）同宽高比，
+     岛屿标记也由 mapPct(gx,gy) 派生 —— 船位、岛位、海岸线共用一套坐标，不再近似内插。 */
+  return [ boat.x/(WCOLS*WTS)*100, boat.y/(WROWS*WTS)*100 ];
 }
 
 

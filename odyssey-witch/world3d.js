@@ -10,9 +10,9 @@ import * as THREE from './vendor/three.module.min.js';
 
 /* ---------- 色板（唯一来源 odyssey-visual.md，与 3d/app/src/palette.js 同源） ---------- */
 const PAL = {
-  oceanDeep: 0x17618f, oceanMid: 0x2e96c4, oceanShore: 0x59c8dc,
+  oceanDeep: 0x123c58, oceanMid: 0x2f6590, oceanShore: 0x4f8fb5,
   cliffLight: 0xe0bd84, cliffDark: 0x7c5c38,
-  grassMain: 0xa8cf8e, grassDeep: 0x7d9c66,
+  grassMain: 0x95a773, grassDeep: 0x7a8a5c,
   duskGold: 0xe8a84a, nightBase: 0x0c1018,
 };
 const SUN_DIRECTION = new THREE.Vector3(-0.55, 0.7, 0.45).normalize();
@@ -60,21 +60,21 @@ const px2z = (px) => px * SCALE - OZ;
 
 /* ---------- 岛屿视觉定义（与 ISLANDS 顺序一一对应，运行时按 scene 名匹配） ---------- */
 const ISLE_LOOK = {
-  aia:     { r: 3.4, grass: 0xa8cf8e, grassDeep: 0x7d9c66, seed: 20261107, mh: 1.15 },
+  aia:     { r: 3.4, grass: 0x95a773, grassDeep: 0x7a8a5c, seed: 20261107, mh: 1.15 },
   hades:   { r: 2.5, grass: 0x8a9a8c, grassDeep: 0x5d6f66, seed: 20261108, ash: true, mh: 0.9 },
   aeolia:  { r: 2.7, grass: 0xe8ecef, grassDeep: 0xc3d2da, seed: 20261109, floatY: 3.4, cloud: true, mh: 1.0 },
   strait:  { r: 2.9, grass: 0x5d6b74, grassDeep: 0x3e4a52, seed: 20261110, spires: true, mh: 1.1 },
   sun:     { r: 2.7, grass: 0xd8bd76, grassDeep: 0xb09250, seed: 20261111, gold: true, mh: 0.75 },
   /* 圣经收官三岛：奥吉吉亚暮紫 / 斯克里白亮橄榄 / 伊萨卡黎明青灰 */
   ogggia:  { r: 2.4, grass: 0xb08890, grassDeep: 0x8a6878, seed: 20261113, mh: 0.8 },
-  scheria: { r: 2.6, grass: 0xc8d8a8, grassDeep: 0x9ab088, seed: 20261114, mh: 0.7 },
+  scheria: { r: 2.6, grass: 0xb3bf92, grassDeep: 0x8c9a74, seed: 20261114, mh: 0.7 },
   ithaca:  { r: 2.8, grass: 0x8a9a88, grassDeep: 0x6a7a68, seed: 20261115, mh: 1.0 },
   /* 特洛伊（17h）：战火余烬——焦土黄褐 + 灰烬 */
   troy:    { r: 2.6, grass: 0xb09870, grassDeep: 0x8a7250, seed: 20261116, ash: true, mh: 0.9 },
 };
 const LOCKED_LOOK = { r: 1.3, grass: 0x93a3ad, grassDeep: 0x6d7d88, seed: 20261112, mist: true };
 /* 大陆默认地貌（地中海橄榄绿）：不属于任何剧情岛的陆块用它，避免被邻近小岛的焦土/黄金色污染 */
-const MAINLAND_LOOK = { r: 2.0, grass: 0x9dbf82, grassDeep: 0x78925f, seed: 20261120, mh: 1.0 };
+const MAINLAND_LOOK = { r: 2.0, grass: 0x93a06f, grassDeep: 0x76825a, seed: 20261120, mh: 1.0 };
 
 let renderer, scene3, camera3, waterU, boatG, sailMesh, isleList = [];
 let escortG = null, escortHull = null, escortSail = null, escPrev = { x: 0, z: 0 }, escPrevOk = false, escHead = { x: 0, z: -1 };

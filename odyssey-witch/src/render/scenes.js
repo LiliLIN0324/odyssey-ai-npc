@@ -249,16 +249,22 @@ function compassHTML(obj){
 function nextObjective(){
   let obj;
   const q=getQuest("witch_grass");
-  if (!q) obj={k:"aia", text:"去埃阿亚岛找喀耳刻接下委托", short:"埃阿亚岛 · 接委托"};
+  /* B2：六段旧路并入主线——13 段故事全部必经，开局就是特洛伊的木马之夜 */
+  if (!state.troyDone) obj={k:"troy", text:"特洛伊 · 木马之夜——十二艘船的起点", short:"特洛伊 · 夜袭"};
+  else if (!state.ismarosDone) obj={k:"ismaros", text:"伊斯玛洛斯——天亮前把这一站走完", short:"伊斯玛洛斯 · 战利品"};
+  else if (!state.lotusDone) obj={k:"lotus", text:"食莲岛——尝一颗莲子，还是拖一个人上船", short:"食莲岛 · 莲子"};
+  else if (!state.cyclopDone) obj={k:"cyclops", text:"独眼巨人岛——洞里那个声音还在问你的名字", short:"独眼巨人 · 名字"};
+  else if (!state.telepylosDone) obj={k:"telepylos", text:"忒勒皮洛斯——最后一条船，守还是弃", short:"忒勒皮洛斯 · 船"};
+  else if (!q) obj={k:"aia", text:"去埃阿亚岛找喀耳刻接下委托", short:"埃阿亚岛 · 接委托"};
   else if (!q.done) obj={k:"aia", text:q.ready?"回埃阿亚岛向喀耳刻复命":`采玛草 ${q.have}/${q.need}（岛东北草丛）`, short:q.ready?"埃阿亚岛 · 复命":`埃阿亚岛 · 玛草 ${q.have}/${q.need}`};
   else if (!state.prophecy) obj={k:"hades", text:"去冥界之岸：献上蜂蜜酒、面包、淡水，向特瑞西阿斯问路", short:"冥界之岸 · 问路"};
+  else if (!state.aeoliaDone) obj={k:"aeolia", text:"风神岛——四阵风还锁在石牢里，风袋等着你", short:"风神岛 · 四风"};
   else if (state.straitStage<2 && !state.straitCleared) obj={k:"strait", text:"穿过声之海峡（先处置塞壬的歌：蜡，或桅杆）", short:"声之海峡"};
   else if (!state.sunStage && !state.sunBlessed && !state.sunWrath) obj={k:"sun", text:"去太阳岛——守住圣牛，或付出代价", short:"太阳岛 · 圣牛"};
   else if (!state.epilogueDone && !state.farewellHint) obj={k:"aia", text:"回埃阿亚岛——喀耳刻等你复命", short:"埃阿亚岛 · 复命"};
   else if (!state.ogygiaLeft) obj={k:"ogggia", text:"雾外还有一座岛——完美的天气，完美的一天", short:"奥吉吉亚 · 正题"};
   else if (!state.scheriaFarewell) obj={k:"scheria", text:"把你的故事讲给愿意听的人（斯克里岛）", short:"斯克里岛 · 讲故事"};
   else if (!state.finaleDone) obj={k:"ithaca", text:"雾散了——伊萨卡。回家，或者不归", short:"伊萨卡 · 归乡"};
-  else if (!state.troyDone) obj={k:"troy", text:"航程之外——特洛伊海岸还欠一场夜袭（十二艘船的起点）", short:"特洛伊 · 夜袭"};
   else obj={k:null, text:state.freeSail?"自由漂流 · 海图全开":"航程已完——想漂去哪就去哪", short:"自由漂流"};
   /* 批次 I1b：旧路未访清单撤出顶栏（顶栏只留一行短航向）——可选旧路的完整视图在任务面板（H2） */
   return obj;
@@ -700,17 +706,31 @@ function drawAia(et){
     const ch=aiaTile(cx,cy); if (ch==="~") continue;
     const x=cx*ATS, y=cy*ATS;
     if (ch===","){
-      ctx.fillStyle="#e0d2ae"; ctx.fillRect(x,y,ATS,ATS);
+      ctx.fillStyle=SAND; ctx.fillRect(x,y,ATS,ATS);
       ctx.fillStyle="#cbb98d"; ctx.fillRect(x,y+ATS-4,ATS,4);
+      ctx.fillStyle="rgba(126,106,66,.22)";
+      ctx.fillRect(x+8+((cx*13)%9), y+9+((cy*7)%11), 3, 2);
+      ctx.fillRect(x+29-((cx*5)%7), y+27-((cy*3)%9), 2, 2);
       ctx.fillStyle="rgba(255,255,255,.5)";
       const ph=Math.sin(et*2+cx)*1.5;
       ctx.fillRect(x+4+ph, y+ATS+TH+4, 6, 2); ctx.fillRect(x+24-ph, y+ATS+TH+4, 5, 2);
       continue;
     }
     ctx.fillStyle = ((cx*7+cy*13)%5===0)?GRASS_D:GRASS_C; ctx.fillRect(x,y,ATS,ATS);
-    ctx.fillStyle="#8fbd78"; ctx.fillRect(x+9,y+24,7,4);
-    ctx.fillStyle="rgba(255,255,255,.2)"; ctx.fillRect(x,y,ATS,3);
-    ctx.fillStyle="rgba(0,0,0,.06)"; ctx.fillRect(x,y+ATS-3,ATS,3);
+    /* 羊皮纸底纹：每格几笔干草与墨点，破掉纯色方格；同一格位置固定，不会闪 */
+    ctx.fillStyle="rgba(60,68,44,.16)";
+    const g1=(cx*17+cy*29)%7, g2=(cx*31+cy*11)%7;
+    ctx.fillRect(x+6+g1, y+10+g2, 6, 2);
+    ctx.fillRect(x+24-g2, y+21+g1, 5, 2);
+    if ((cx+cy)%2===0){
+      ctx.strokeStyle="rgba(44,58,38,.16)"; ctx.lineWidth=1;
+      const bx=x+8+((cx*5)%9), by=y+ATS-7;
+      ctx.beginPath(); ctx.moveTo(bx,by); ctx.lineTo(bx+2,by-7); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x+30+((cy*7)%7), y+ATS-6); ctx.lineTo(x+27+((cy*7)%7), y+ATS-13); ctx.stroke();
+    }
+    if ((cx*3+cy*5)%7===0){ ctx.fillStyle="rgba(176,164,110,.26)"; ctx.fillRect(x+12,y+16,15,6); }
+    ctx.fillStyle="rgba(255,255,255,.10)"; ctx.fillRect(x,y,ATS,2);
+    ctx.fillStyle="rgba(30,36,26,.12)"; ctx.fillRect(x,y+ATS-2,ATS,2);
     if (ch==="F"){
       ctx.fillStyle="#463828"; ctx.fillRect(x+5,y+5,ATS-10,ATS-10);
       ctx.fillStyle="#5a4a35"; ctx.fillRect(x+9,y+9,ATS-18,ATS-18);
@@ -731,18 +751,21 @@ function drawAia(et){
       continue;
     }
   }
-  /* 岸线亮边 */
-  ctx.strokeStyle="rgba(255,255,255,.8)"; ctx.lineWidth=2;
-  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
-    if (aiaTile(cx,cy)==="~") continue;
-    const x=cx*ATS, y=cy*ATS;
-    ctx.beginPath();
-    if (aiaTile(cx,cy+1)==="~"){ ctx.moveTo(x,y+ATS); ctx.lineTo(x+ATS,y+ATS); }
-    if (aiaTile(cx,cy-1)==="~"){ ctx.moveTo(x,y); ctx.lineTo(x+ATS,y); }
-    if (aiaTile(cx-1,cy)==="~"){ ctx.moveTo(x,y); ctx.lineTo(x,y+ATS); }
-    if (aiaTile(cx+1,cy)==="~"){ ctx.moveTo(x+ATS,y); ctx.lineTo(x+ATS,y+ATS); }
-    ctx.stroke();
-  }
+  /* 岸线：先压一条暗墨刻线，再点亮细白浪——向海图的铜版刻线靠拢 */
+  const coastPath = ()=>{
+    for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+      if (aiaTile(cx,cy)==="~") continue;
+      const x=cx*ATS, y=cy*ATS;
+      ctx.beginPath();
+      if (aiaTile(cx,cy+1)==="~"){ ctx.moveTo(x,y+ATS); ctx.lineTo(x+ATS,y+ATS); }
+      if (aiaTile(cx,cy-1)==="~"){ ctx.moveTo(x,y); ctx.lineTo(x+ATS,y); }
+      if (aiaTile(cx-1,cy)==="~"){ ctx.moveTo(x,y); ctx.lineTo(x,y+ATS); }
+      if (aiaTile(cx+1,cy)==="~"){ ctx.moveTo(x+ATS,y); ctx.lineTo(x+ATS,y+ATS); }
+      ctx.stroke();
+    }
+  };
+  ctx.strokeStyle="rgba(26,38,42,.42)"; ctx.lineWidth=4; coastPath();
+  ctx.strokeStyle="rgba(246,238,214,.75)"; ctx.lineWidth=1.5; coastPath();
 
   /* ---------- 实体层：y-sort ---------- */
   const ents = [];
@@ -753,11 +776,13 @@ function drawAia(et){
       ctx.fillStyle="rgba(20,40,25,.3)"; ctx.beginPath(); ctx.ellipse(x+7,ty+4,17,6,0,0,7); ctx.fill();
       ctx.fillStyle="#7a5230"; ctx.beginPath();
       ctx.moveTo(x-4.5,ty-2); ctx.lineTo(x-3,ty-20); ctx.lineTo(x+3,ty-20); ctx.lineTo(x+4.5,ty-2); ctx.closePath(); ctx.fill();
-      ctx.fillStyle="#2f6b41";
+      ctx.fillStyle="#3f5c39";
       ctx.beginPath(); ctx.arc(x+sway,ty-38,19,0,7); ctx.arc(x-13+sway,ty-27,12,0,7); ctx.arc(x+13+sway,ty-29,12,0,7); ctx.fill();
-      ctx.fillStyle="#49955d";
+      ctx.strokeStyle="rgba(22,38,26,.35)"; ctx.lineWidth=1.4;
+      ctx.beginPath(); ctx.arc(x+sway,ty-38,19,0,7); ctx.arc(x-13+sway,ty-27,12,0,7); ctx.arc(x+13+sway,ty-29,12,0,7); ctx.stroke();
+      ctx.fillStyle="#5f7d4f";
       ctx.beginPath(); ctx.arc(x-7+sway,ty-39,8.5,0,7); ctx.arc(x+8+sway,ty-35,7,0,7); ctx.fill();
-      ctx.fillStyle="rgba(255,255,255,.14)"; ctx.beginPath(); ctx.arc(x-4+sway,ty-43,5,0,7); ctx.fill();
+      ctx.fillStyle="rgba(226,232,196,.18)"; ctx.beginPath(); ctx.arc(x-4+sway,ty-43,5,0,7); ctx.fill();
     }});
   }
   ents.push({y:3*ATS+ATS, draw(){
@@ -2205,7 +2230,12 @@ function renderHUD(){
       const f = windFactor();
       const deg = Math.round(windDir*180/Math.PI);
       const tag = f>1.15 ? ["顺风 ×1.3","#2e7d52"] : f<0.95 ? ["逆风 ×0.78","#a04a4a"] : ["侧风","#4a6b8a"];
-      hw.innerHTML = `<span style="display:inline-block;transform:rotate(${deg}deg)">➤</span> ${windFromLabel(windDir)} · ${tag[0]}`;
+      const route = (typeof seaRoute==="function") ? seaRoute() : null;
+      const cur = (typeof currentAt==="function") ? currentAt() : null;
+      const routeTxt = route ? ` · ${route.label}` : "";
+      const curTxt = cur ? ` <span style="color:#1f6f7a">· ${cur.name}</span>` : "";
+      hw.innerHTML = `<span style="display:inline-block;transform:rotate(${deg}deg)">➤</span> ${windFromLabel(windDir)} · ${tag[0]}${routeTxt}${curTxt}`;
+      hw.title = `风：${windFromLabel(windDir)}（${tag[0]}）` + (route?` ｜ 航路：${route.name}`:"") + (cur?` ｜ 洋流：${cur.name}`:"");
       hw.style.color = tag[1];
     }
   }
@@ -2346,17 +2376,20 @@ function renderQuests(){
   if (questTab==="crew"){ box.innerHTML=renderCrew(); return; }
   if (questTab==="fate"){ box.innerHTML=renderFate(); return; }
   if (questTab==="runs"){ box.innerHTML=renderRuns(); return; }
-  /* —— 主线航程：按序找当前步（done 全true → 自由漂流） —— */
+  /* —— 主线航程：只露已走完的路与眼前这一步，后面的海留给罗盘 —— */
   let curIdx = MAIN_STEPS.findIndex(s=>!s.done());
   const cur = curIdx>=0 ? MAIN_STEPS[curIdx] : null;
   const mainRows = MAIN_STEPS.map((s,i)=>{
     const ok = s.done();
     const isCur = cur && s.k===cur.k;
-    const showHint = isCur || (ok && s.alt);
-    const sub = isCur ? (s.hint + (s.alt?`（${s.alt}）`:"")) : (ok ? (s.alt||"已点亮") : "");
+    if (!ok && !isCur) return "";             /* 不在前方报站：未到的岛连名字都不给 */
+    const sub = isCur ? (s.hint + (s.alt?`（${s.alt}）`:"")) : (s.alt||"已点亮");
     return `<div class="q step${ok?" done":""}${isCur?" now":""}">
       <b>${ok?"✓":"○"} ${s.name}</b>${isCur?'<span class="curTag">当前</span>':""}${sub?`<br><span class="sub">${sub}</span>`:""}
     </div>`;}).join("");
+  const sealedRow = (cur && MAIN_STEPS.length-curIdx-1 > 0)
+    ? `<div class="q step sealed"><b>○ 未命名的海域</b><br><span class="sub">罗盘只说下一段</span></div>`
+    : "";
   /* —— 近期抉择：保留选择及其真实代价，跨存档可回看 —— */
   const choiceRows = (state.choiceLog||[]).slice(0,3).map(entry=>`
     <div class="q choice"><b>${entry.title} · ${entry.choice}</b><br>
@@ -2380,7 +2413,7 @@ function renderQuests(){
       ${!v.done?`<span class="bar"><i style="width:${Math.min(100,Math.round(v.have/v.need*100))}%"></i></span>`:""}
     </div>`).join("") : '<div class="empty">（暂无委托在身——支线找 NPC 谈）</div>';
   box.innerHTML = `
-    <div class="secT">主 线 航 程</div>${mainRows}
+    <div class="secT">主 线 航 程</div>${mainRows}${sealedRow}
     ${choiceRows?`<div class="secT">近 期 抉 择</div>${choiceRows}`:""}
     ${decRows?`<div class="secT">抉 择 回 声（持久）</div>${decRows}`:""}
     <div class="secT">可 选 旧 路</div>${optRows}

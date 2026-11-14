@@ -58,6 +58,12 @@ class Handler(SimpleHTTPRequestHandler):
         super().end_headers()
 
 
+class Server(ThreadingHTTPServer):
+    # Chrome 一次并发拉取多个资源时，默认 backlog=5 会在多页回归中偶发拒绝连接
+    request_queue_size = 128
+    daemon_threads = True
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=ROOT / "dist/odyssey-h5")
@@ -66,7 +72,7 @@ if __name__ == "__main__":
     root = args.root.resolve()
     if not (root / "index.html").is_file():
         raise SystemExit(f"缺少 H5 入口：{root / 'index.html'}")
-    server = ThreadingHTTPServer(("127.0.0.1", args.port), lambda *a, **kw: Handler(*a, directory=str(root), **kw))
+    server = Server(("127.0.0.1", args.port), lambda *a, **kw: Handler(*a, directory=str(root), **kw))
     print(f"ODYSSEY_H5_PORT={server.server_port}", flush=True)
     print(f"http://127.0.0.1:{server.server_port}/", flush=True)
     try:

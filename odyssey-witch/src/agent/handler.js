@@ -3,8 +3,22 @@
 // 依赖 src/data/* + src/engine/core.js + src/render/scenes.js + src/interact/handlers.js
 // ============================================================
 
+/* 离岛归途：离线时也得有人接得住「我怎么回家」——每座岛的 NPC 各给一句真话 */
+const WAY_HOME = {
+  seer:"（盲眼先知没有抬头，杖尖朝河面一点）……回程不在西边，在你脚下。先渡河，再问名字。",
+  aeolus:"（风袋在他指间鼓胀了一下）回去？风不认路，只认代价。往东南，先把耳朵堵上。",
+  siren:"（歌声低下去，像在水下笑）……回家的人，得先活着穿过我们。往东南，别停船。",
+  calypso:"（织机上的线停了一寸）……回程？海图上有。西边俄刻阿诺斯，东南声之海峡。我这里只有留，没有路。",
+  nausicaa:"（她把湿发别到耳后）往西问那位瞎眼先知，往东南要过声之海峡。船和淡水我们能给，路得你自己认。",
+  lotusman:"（他从花丛里翻了个身，声音闷闷的）回去？……别问我。我本来也是要回去的。",
+  epeius:"（他用手背蹭了蹭鼻子）路我不懂，船我懂。你要走，先让我看看你的船。",
+  telemachus:"（他站起来，脸上有被海风吹裂的痕）我也在找回去的路。西边问先知，东南过海峡。同行一段？",
+};
+
 // --- handle (was main+1729-1931, 203 lines) ---
 function handle(category, args){
+  if (category==="请求帮助" && currentNPC!=="witch" && WAY_HOME[currentNPC]
+      && !(HANDLED[currentNPC]||[]).includes("请求帮助")) return {text:WAY_HOME[currentNPC]};
   if (currentNPC === "seer") return handleSeer(category, args);
   if (currentNPC === "aeolus") return handleAeolus(category, args);
   if (currentNPC === "siren") return handleSiren(category, args);
@@ -115,7 +129,9 @@ function handle(category, args){
   case "闲聊":
     return {text:"（她添了根柴，火舌舔着锅底）……说吧。海上来的人，嘴里总压着点事。不想说也行，炉边暖和。"};
   case "请求帮助":
-    return {text:"（她用勺背敲了敲锅沿）能帮的：买药、打听路，或者屋后东北角那几丛发光的玛草。说清楚要哪样。"};
+    if (state.circeSworn)
+      return {text:"（她把空杯倒扣在桌上）路还是那条路：往西，俄刻阿诺斯之岸，找那个瞎眼的先知；往东南，声之海峡，把耳朵堵上。别指望我把你送到伊萨卡——这一段得你自己付账。"};
+    return {text:"（她往锅里添了一撮灰，火苗矮了半截）回家？先弄明白你在哪儿。往西是俄刻阿诺斯之岸，特瑞西阿斯知道所有回去的水路；往东南是声之海峡，过不去，就什么也别谈。海图上都画着。"};
   case "导航到地点":{
     const d=g("目的地"); if(!d) return {text:PH[category]};
     /* 暗线②：对她说起斯库拉/海峡，托付三个字（需先结清玛草委托） */
@@ -203,7 +219,7 @@ function handle(category, args){
       ? "（她挥挥手，重新搅动坩埚）去吧。风大了就回来——锅一直是热的。"
       : "（她挥挥手，重新搅动坩埚）去吧。路上小心——别在海峡附近听歌。"};
   case "其他意图":
-    return {text:"（她挑起一边眉毛）这句我可听不懂。买药、问路、听预言——挑一样，说人话。"};
+    return {text:"（她挑起一边眉，火光在她眼下晃了晃）……你这句话，问得太远。近一点：药、路，还是海上的传言？"};
   }
   return null;
 }
@@ -335,6 +351,12 @@ function contextBrief(){
   if (dec.mead) echoes.push(`蜜酒前他选了「${dec.mead}」`);
   if (dec.crew_noise) echoes.push(`太阳岛鼓噪他选了「${dec.crew_noise}」`);
   if (dec.calypso) echoes.push(`卡吕普索的永生他选了「${dec.calypso}」`);
+  /* B2 新并入主线的六段旧路 */
+  if (dec.ismaros_plunder) echoes.push(`伊斯玛洛斯他选了「${dec.ismaros_plunder}」`);
+  if (dec.lotus_fruit) echoes.push(`食莲岛的莲子他选了「${dec.lotus_fruit}」`);
+  if (dec.cyclops_name) echoes.push(`独眼巨人问他名字时，他选了「${dec.cyclops_name}」`);
+  if (dec.telepylos_ship) echoes.push(`忒勒皮洛斯的最后一条船他选了「${dec.telepylos_ship}」`);
+  if (dec.aeolia_winds) echoes.push(`风神岛袋口他选了「${dec.aeolia_winds}」`);
   if (echoes.length) parts.push("他一路的抉择："+echoes.join("；")+"——这些选择塑造了他，你说话时会带上你对这些选择的看法");
   return parts.join("。");
 }
@@ -381,6 +403,8 @@ function localFallbackParse(text){
   if (hit(/饿不饿|渴不渴|血量|伤势|士气|状态如何/)) return mk("查询自身状态");
   if (hit(/钓鱼|取水|捡|砍点|采|弄点/)) return mk("获取物资");
   if (hit(/生火|搭帐篷|扎营|做把桨/)) return mk("营地准备");
+  /* 归途：玩家最自然会问的一句话，不能再掉进「其他意图」的拒绝里 */
+  if (hit(/回家|回乡|回去|归途|归乡|离开(?:这里|这座岛|这儿|这)|出路|怎么出岛|逃出去|走不掉|伊萨卡/)) return mk("请求帮助");
   if (hit(/怎么走|带我去|我要去|往哪边|怎么去/)) return mk("导航到地点",{目的地:(t.match(/(?:去|往)([^，．！？\s]{2,8})/)||[])[1]||""});
   if (hit(/附近|在哪|哪里有/)) return mk("查询附近目标");
   if (hit(/风向|浪|天气|雾|危险吗/)) return mk("查询环境状况");
@@ -568,7 +592,7 @@ const PERSONA_JOB = {"闲聊":"陪她闲聊，顺着她的话头接","请求帮�
 
 // --- HANDLED (migrated from main script) ---
 const HANDLED = {
-  witch: ["购买物品","卖出物品","查询价格","查询库存","查询背包","丢弃物品","给予物品","装备物品","卸下装备","使用消耗品","查询自身状态","获取物资","营地准备","导航到地点","查询附近目标","查询环境状况","船只操作","接取任务","查询任务线索","查询任务进度","提交任务","放弃任务","威胁或攻击","告别","其他意图"],
+  witch: ["购买物品","卖出物品","查询价格","查询库存","查询背包","丢弃物品","给予物品","装备物品","卸下装备","使用消耗品","查询自身状态","获取物资","营地准备","闲聊","请求帮助","导航到地点","查询附近目标","查询环境状况","船只操作","接取任务","查询任务线索","查询任务进度","提交任务","放弃任务","威胁或攻击","告别","其他意图"],
   seer: ["查询神谕","接取任务","查询任务进度","查询任务线索","购买物品","卖出物品","查询价格","查询库存","给予物品","提交任务","放弃任务","告别"],
   aeolus: ["接取任务","查询任务进度","查询任务线索","提交任务","使用消耗品","查询环境状况","购买物品","卖出物品","查询价格","查询库存","给予物品","放弃任务","告别"],
   siren: ["购买物品","卖出物品","查询价格","查询库存","接取任务","提交任务","查询任务进度","放弃任务","给予物品","查询环境状况","告别"],
@@ -634,11 +658,10 @@ async function send(preset){
      实测 P50 ≥ 0.8s、P99 ≥ 2.8s，没有等待反馈时玩家会重复发送或以为卡死 */
   const thinkRow=addThinkRow();
   try{
-    let preds, offlineUsed=false;
+    let preds;
     try{ preds = await apiParse(text); }
-    catch(offlineErr){ preds = localFallbackParse(text); offlineUsed = true; }   /* 兑底：服务不可用时本地关键词归意图 */
+    catch(offlineErr){ preds = localFallbackParse(text); }   /* 兑底：服务不可用时本地关键词归意图 */
     const parts=[],chips=[],pq=[];
-    if (offlineUsed) chips.push('<span class="chip err">离线模式</span>');
     const splitHint = splitClauseHint(text, preds);   /* multi 引导：拆不齐时提示分句说，拆齐了给正反馈 */
     if (splitHint) chips.push(`<span class="chip tip">${splitHint}</span>`);
     for(const p of preds){
@@ -651,19 +674,20 @@ async function send(preset){
     if(pq.length){
       const jobs=pq.map(p=>npcJob(p.category)).join("；");
       try{ parts.push(await apiChat(`玩家刚说：「${text}」。涉及话题：${jobs}。`)); }
-      catch(e){ parts.push(npcFallbackLine()); fbUsed=true; }
+      catch(e){ parts.push(npcFallbackLine(text)); fbUsed=true; }
     }
     if (!parts.length){ parts.push(currentNPC==="seer"?"（他静默着，像一块黑石。）":"（对方看了你一眼，没说话。）"); fbUsed=true; }
-    if (fbUsed && offlineUsed){   /* U-1：离线死路给下一步出口，不再只回「没听清再说一遍」 */
+    if (fbUsed){   /* 接不住时给一个叙事化的出口，不把系统限制甩到玩家脸上 */
       const hints=(NPCS[currentNPC]&&NPCS[currentNPC].samples||[]).slice(0,3);
-      if (hints.length) parts.push("（可以试着说："+hints.join("、")+"）");
+      const who=(NPCS[currentNPC]&&NPCS[currentNPC].name)||"对方";
+      if (hints.length) parts.push(`（${who}没有接这句话，只把话头递回来：${hints.join("、")}。）`);
     }
     const reply=parts.join("\n");
     addMsg("witch",reply,chips,false,recallMention(reply),fbUsed);
     history[currentNPC].push({role:"assistant",content:reply,fb:fbUsed});   /* fb=true：兑底台词，回传模型前过滤（不污染上下文） */
   }catch(e){
     addMsg("witch",(currentNPC==="seer"?"（杖声顿了顿）黑暗里一阵骚动。":"（炉火猛地晃了一下）……刚才那阵风不对劲。")+"再说一次？",
-      [`<span class="chip err">解析异常：${String(e.message).slice(0,60)}</span>`],false,null,true);
+      [],false,null,true);
     history[currentNPC].push({role:"assistant",content:"（刚才那阵风不对劲。再说一次？）",fb:true});
   }
   thinkRow.remove();

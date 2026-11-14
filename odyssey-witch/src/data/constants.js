@@ -64,21 +64,129 @@ function buildMediterranean(){
 }
 const WORLD = buildMediterranean();
 const ISLANDS = [
-  {gx:34, gy:5,  name:"伊斯玛洛斯", note:"喀科恩人的城 · 第一次劫掠的遗址", stake:"守营火把与伤者：药品、伤势，以及是否再劫一次", reward:"战斗手感 · 喀科恩酒 · 守营历练", open:true, scene:"ismaros",   leg:1,  mp:[52,25], opt:true},
-  {gx:8,  gy:13, name:"食莲岛",    note:"食莲人的滩 · 忘忧的甜",           stake:"甜会换走一段记忆；强拖幸存者也可能只留下断桨", reward:"补给与士气 · 带幸存者归船的可能", open:true, scene:"lotus",     leg:3,  mp:[14,82], opt:true},
-  {gx:12, gy:14, name:"独眼巨人之岛", note:"无人之名 · 巨人的羊栏",       stake:"名字会招灾；羊腹潜行与六名船员的命都押在这里", reward:"羊毛披风 · 无人之名 · 原著或改写命运", open:true, scene:"cyclops",   leg:4,  mp:[28,57], opt:true},
+  {gx:34, gy:5,  name:"伊斯玛洛斯", note:"喀科恩人的城 · 第一次劫掠的遗址", stake:"守营火把与伤者：药品、伤势，以及是否再劫一次", reward:"战斗手感 · 喀科恩酒 · 守营历练", open:true, scene:"ismaros",   leg:1,  mp:[52,25]},
+  {gx:8,  gy:13, name:"食莲岛",    note:"食莲人的滩 · 忘忧的甜",           stake:"甜会换走一段记忆；强拖幸存者也可能只留下断桨", reward:"补给与士气 · 带幸存者归船的可能", open:true, scene:"lotus",     leg:3,  mp:[14,82]},
+  {gx:12, gy:14, name:"独眼巨人之岛", note:"无人之名 · 巨人的羊栏",       stake:"名字会招灾；羊腹潜行与六名船员的命都押在这里", reward:"羊毛披风 · 无人之名 · 原著或改写命运", open:true, scene:"cyclops",   leg:4,  mp:[28,57]},
   {gx:6,  gy:11, name:"埃阿亚岛",    note:"喀耳刻的领地 · 第勒尼安海",       stake:"蜜酒、魔草与立誓：空手饮酒可能再变不回人", reward:"玛草委托 · 药品补给 · 冥界航向", open:true, scene:"aia",       leg:7,  mp:[24,62]},
   {gx:2,  gy:8,  name:"冥界之岸",  note:"俄刻阿诺斯之岸 · 亡者之言",       stake:"蜂蜜酒、面包、淡水作献祭；珍贵记忆也能付给亡者", reward:"返乡预言 · 海峡路线", open:true, scene:"hades",     leg:8,  mp:[10,47]},
-  {gx:12, gy:8,  name:"风神岛",    note:"埃俄罗斯的浮岛 · 十二风在此听差", stake:"四阵顺风有限；用光后再来求助会被逐出浮岛", reward:"风袋 · 顺风快旅", open:true, scene:"aeolia",    leg:5,  mp:[30,47], opt:true},
-  {gx:15, gy:8,  name:"忒勒皮洛斯", note:"悬崖之城 · 十一艘船只剩一艘",     stake:"滚石与守船战：伤势和整支船队都暴露在崖下", reward:"幸存者的绳结 · 食莲岛的另一种解法", open:true, scene:"telepylos", leg:6,  mp:[34,50], opt:true},
+  {gx:12, gy:8,  name:"风神岛",    note:"埃俄罗斯的浮岛 · 十二风在此听差", stake:"四阵顺风有限；用光后再来求助会被逐出浮岛", reward:"风袋 · 顺风快旅", open:true, scene:"aeolia",    leg:5,  mp:[30,47]},
+  {gx:15, gy:8,  name:"忒勒皮洛斯", note:"悬崖之城 · 十一艘船只剩一艘",     stake:"滚石与守船战：伤势和整支船队都暴露在崖下", reward:"幸存者的绳结 · 食莲岛的另一种解法", open:true, scene:"telepylos", leg:6,  mp:[34,50]},
   {gx:29, gy:12, name:"奥吉吉亚",  note:"卡吕普索的岛 · 完美的一天",       stake:"留下就没有归乡；造筏要备齐木料、听风与储粮", reward:"自己的名字 · 亲手造的筏 · 斯克里航路", open:true, scene:"ogggia",    leg:12, mp:[57,68]},
   {gx:17, gy:7,  name:"斯克里岛",  note:"费埃克斯人的岛 · 有人性的驿站",   stake:"故事若只吹牛，歌不唱；留下做客或说出家在哪里", reward:"被听见的歌 · 送行 · 伊萨卡解锁", open:true, scene:"scheria",   leg:13, mp:[38,38]},
   {gx:16, gy:13, name:"伊萨卡",    note:"归乡 · 爱奥尼亚海 · 雾正在散",    stake:"化名、伤疤、婚床与求婚者：认名决定你如何回来", reward:"归乡或不归的结局 · 航程归档 · 自由的海", open:true, scene:"ithaca",    leg:14, mp:[40,63]},
-  {gx:31, gy:6,  name:"特洛伊海岸", note:"启航之地 · 木马之夜 · 十二艘船从这里出发", stake:"烧城或放下火把：这一夜决定你带着什么离开战争", reward:"十二艘船与完整船队 · 真正的启航", open:true, scene:"troy", leg:0, mp:[71,38], opt:true},
+  {gx:31, gy:6,  name:"特洛伊海岸", note:"启航之地 · 木马之夜 · 十二艘船从这里出发", stake:"烧城或放下火把：这一夜决定你带着什么离开战争", reward:"十二艘船与完整船队 · 真正的启航", open:true, scene:"troy", leg:0, mp:[71,38]},
   {gx:21, gy:9,  name:"声之海峡",  note:"塞壬的歌 · 斯库拉的六头 · 代价",  stake:"封耳失去记忆，听歌损士气；斯库拉还会索取行囊与船员", reward:"歌词残页 · 带话解债 · 出峡航路", open:true, scene:"strait",    leg:9,  mp:[30,64]},
   {gx:26, gy:9,  name:"太阳岛",    note:"赫利俄斯的圣牛 · 饥饿与誓言",     stake:"饥饿与誓言只能守一个；宰牛会招来雷劈与船员清零", reward:"守住圣牛可得黑暗之光 · 返乡继续推进", open:true, scene:"sun",       leg:11, mp:[47,60]},
 ];
 window.ISLANDS = ISLANDS;   /* 挂载给 world3d.js：ES 模块读不到经典脚本顶层 const（缺它 → 岛屿不装配 + 水体 shader uIsle[0] 编译失败） */
+
+/* ==================== 海图玩法层：洋流 / 航路姿态 / 航迹与海面回声 ====================
+   这一层是「海图不只是画」的唯一真源：世界海图 canvas 画它，航速与海遇也结算它。
+
+   【坐标唯一真源】海图坐标一律由实际可航世界（WORLD 的 46×18 格）投影而来：
+   mapPct(gx,gy) = 格心 → 海图百分比。底图（scripts/build_seamap.py）用同一份
+   land/cell 数据渲染，岛屿标记也在这里派生——不再有「手填 mp 与实际地形两套坐标」。 */
+function mapPct(gx, gy){ return [(gx+0.5)/WCOLS*100, (gy+0.5)/WROWS*100]; }
+/* 岛屿标记 = 实际登陆水域的格心；海图上的小岛图形由底图生成器画在同一格心 */
+for (const is of ISLANDS){
+  const p = mapPct(is.gx, is.gy);
+  is.mp = [ +p[0].toFixed(2), +p[1].toFixed(2) ];
+}
+
+/* 洋流：用网格坐标描述（跟着实际海域走），运行时投影成海图百分比 */
+const SEA_CURRENTS = [
+  {id:"north", name:"爱琴海暖流", cells:[[31,5],[29,6],[27,7],[25,7.5],[23,8],[22,9],[20,10]]},
+  {id:"west",  name:"西地中海流", cells:[[1,6],[4,6],[7,6],[9,7.5],[10,9],[12,10.5],[13,12],[14,12.5]]},
+  {id:"south", name:"南岸回流",   cells:[[28,12],[26,12],[24,12],[22,12],[20,12.5],[18,13],[15,13],[12,13],[9,13],[8,13]]},
+  {id:"east",  name:"黎凡特沿岸流", cells:[[43,10.5],[42,9.5],[40,10],[38,10],[36,9],[34,8.5],[33,7.5],[31.5,7]]},
+].map(c=>({id:c.id, name:c.name, cells:c.cells, pts:c.cells.map(p=>mapPct(p[0],p[1]))}));
+window.SEA_CURRENTS = SEA_CURRENTS;
+/* 航路姿态：同一片海，三种走法。速度 / 海遇频率 / 海遇凶险度三轴互换。 */
+const SEA_ROUTES = {
+  coast:{label:"沿岸", name:"沿岸航线", speed:0.94, encounter:1.45, hazard:0.15,
+    blurb:"贴着海岸走：稳，海遇少；绕远，慢一点。"},
+  open:{label:"外海", name:"外海航线", speed:1.0, encounter:1.0, hazard:0.34,
+    blurb:"常规航道：速度与遭遇均衡。"},
+  mist:{label:"迷雾", name:"迷雾航线", speed:1.14, encounter:0.62, hazard:0.72,
+    blurb:"钻进雾里抄近路：快，但海遇频繁、事情更凶。"},
+};
+function seaRouteKey(){ return (state && SEA_ROUTES[state.seaRoute]) ? state.seaRoute : "open"; }
+function seaRoute(){ return SEA_ROUTES[seaRouteKey()]; }
+function seaRouteSpeed(){ return seaRoute().speed; }
+function seaEncounterMul(){ return seaRoute().encounter; }
+function seaRouteHazard(){ return seaRoute().hazard; }
+function setSeaRoute(k){
+  if (!SEA_ROUTES[k] || seaRouteKey()===k) return;
+  state.seaRoute = k; save();
+  toast(`航路改为「${SEA_ROUTES[k].name}」——${SEA_ROUTES[k].blurb}`);
+  if (typeof renderHUD==="function") renderHUD();
+  if (window.WorldMap && WorldMap.syncRoute) WorldMap.syncRoute();
+}
+/* 船当前是否在洋流带里：返回 {id,name,tx,ty,strength}；不在则 null。
+   距离按海图宽高比折算（底图 3312×1296：横向 1% = 33.1px，纵向 1% = 13px）。 */
+const CURRENT_RADIUS = 3.0, CURRENT_ASPECT = 1296/3312;
+function currentAt(){
+  if (typeof scene!=="undefined" && scene!=="world") return null;
+  if (typeof boatMapPos!=="function") return null;
+  const mp = boatMapPos();
+  if (!mp) return null;
+  const px = mp[0], py = mp[1];
+  let best = null;
+  for (const c of SEA_CURRENTS){
+    for (let i=1;i<c.pts.length;i++){
+      const a=c.pts[i-1], b=c.pts[i];
+      const vx=b[0]-a[0], vy=b[1]-a[1];
+      const len2=vx*vx+vy*vy; if (!len2) continue;
+      let t=((px-a[0])*vx+(py-a[1])*vy)/len2;
+      t=Math.max(0,Math.min(1,t));
+      const d=Math.hypot(px-(a[0]+vx*t), (py-(a[1]+vy*t))*CURRENT_ASPECT);
+      if (d>CURRENT_RADIUS) continue;
+      if (!best || d<best.d){
+        const len=Math.sqrt(len2);
+        best={id:c.id, name:c.name, tx:vx/len, ty:vy/len, d, strength:1-d/CURRENT_RADIUS};
+      }
+    }
+  }
+  return best;
+}
+/* 航速洋流系数：顺着流 1.18，逆着流 0.88，横穿 1.0（dx/dy 为本次移动方向） */
+function currentFactor(dx,dy){
+  const c = currentAt();
+  if (!c) return 1;
+  const len = Math.hypot(dx||0, dy||0);
+  if (!len) return 1;
+  const dot = (dx/len)*c.tx + (dy/len)*c.ty;
+  if (dot >= 0.35) return 1.18;
+  if (dot <= -0.35) return 0.88;
+  return 1.0;
+}
+function currentTag(dx,dy){
+  const f = currentFactor(dx,dy);
+  return f>1.1 ? "顺流 ×1.18" : f<0.95 ? "逆流 ×0.88" : "横流";
+}
+/* 真实到访序列：航迹回看的唯一来源（旧档没有它时由 worldmap 按航序兜底） */
+function recordTrail(k){
+  if (!Array.isArray(state.trail)) state.trail=[];
+  const is = ISLANDS.find(x=>x.scene===k);
+  if (!is) return;
+  const last = state.trail[state.trail.length-1];
+  if (last && last.k===k) return;                 /* 连续重入同一岛不重复落点 */
+  state.trail.push({k, leg:is.leg, t:Math.round(state.clock||0)});
+  if (state.trail.length>80) state.trail.shift();
+}
+/* 海面事件回声：事件发生的位置落一枚可回看的标记 */
+function recordSeaEcho(e){
+  if (!e) return;
+  if (!Array.isArray(state.seaEchoes)) state.seaEchoes=[];
+  const mp = (typeof boatMapPos==="function") ? boatMapPos() : [50,50];
+  const x = +mp[0].toFixed(2), y = +mp[1].toFixed(2);
+  const last = state.seaEchoes[state.seaEchoes.length-1];
+  if (last && last.id===e.id && Math.hypot(last.x-x, last.y-y)<2.5) return;
+  state.seaEchoes.push({id:e.id, name:e.name, x, y, t:Math.round(state.clock||0)});
+  if (state.seaEchoes.length>40) state.seaEchoes.shift();
+}
+/* ==================== 海图玩法层结束 ==================== */
+
 const SEAS = [
   {x:23,y:2,label:"欧洲"}, {x:4,y:16,label:"非洲"}, {x:40,y:8,label:"黎凡特海"},
   {x:5,y:12,label:"第勒尼安海"}, {x:14,y:16,label:"爱奥尼亚海"},
@@ -582,6 +690,7 @@ function markLeg(k){
   if (!k || !state.legs) return;
   if (state.legs[k]) return;
   state.legs[k]=1;
+  recordTrail(k);
   addMemory(`旅人把 ${LEG_NAME[k]||k} 走进了自己的航程（航序点亮）`, 1, "sea");
   arrivalSplash(k);   /* 到港仪式感：首航到港＝奖励时刻（岛名+一句注脚+号角，3.2s 自散） */
   save();
@@ -757,7 +866,8 @@ function seaEncounterTick(){
   const step=Math.hypot(dx,dy);
   if (step>60){ _seaAcc=0; return; }   /* 读档/直航/调试落点不算真实划过的海 */
   if (step) _seaAcc += step;
-  if (_seaAcc >= (state.seaThreshold||900)){ _seaAcc = 0; doSeaEncounter(); }
+  const mul = (typeof seaEncounterMul==="function") ? seaEncounterMul() : 1;   /* 航路姿态：沿岸 1.45（更少）/ 迷雾 0.62（更密） */
+  if (_seaAcc >= (state.seaThreshold||900) * mul){ _seaAcc = 0; doSeaEncounter(); }
 }
 function finishSeaEnc(e, r){
   if (!state.seaEncDone) state.seaEncDone = {};
@@ -765,7 +875,10 @@ function finishSeaEnc(e, r){
   state.seaEncDone[e.id] = 1;
   addMemory(e.memo, fresh?2:1, "sea");
   state.seaThreshold = Math.min(1600, (state.seaThreshold||900)+60);   /* 节奏批：300px≈2.7s 一遇太密（110px/s 航速）；900px≈8s 起步、上限 1600≈15s，风暴不再滚雪球 */
-  toast((fresh?e.name:(e.name+"（又遇）")) + " · " + r);
+  if (typeof recordSeaEcho==="function") recordSeaEcho(e);   /* 海图上的事件回声：位置可回看 */
+  let bonus = "";
+  if (typeof seaRouteKey==="function" && seaRouteKey()==="mist"){ gainXp(2); bonus = " · 迷雾航路 历练 +2"; }
+  toast((fresh?e.name:(e.name+"（又遇）")) + " · " + r + bonus);
   sfx(e.id==="storm"?"warn":"alert"); renderHUD(); save();
 }
 function doSeaEncounter(){
@@ -774,7 +887,15 @@ function doSeaEncounter(){
   const seed = (((sx*73856093) ^ (sy*19349663) ^ ((state.seaEncCount||0)*83492791))) >>> 0;
   const doneMap = state.seaEncDone || {};
   const freshPool = SEA_ENCOUNTS.filter(function(e){ return e.id!==state.seaLastEnc && !doneMap[e.id]; });
-  const pool = freshPool.length ? freshPool : SEA_ENCOUNTS.filter(function(e){ return e.id!==state.seaLastEnc; });
+  let pool = freshPool.length ? freshPool : SEA_ENCOUNTS.filter(function(e){ return e.id!==state.seaLastEnc; });
+  /* 航路姿态影响「遇见什么」：迷雾里多半是风暴/逆风/遇难艇，沿岸则多是商船/海鸟/海豚 */
+  if (typeof seaRouteKey==="function" && typeof seaRouteHazard==="function"){
+    const HAZARD_IDS = ["storm","headwind","wreckboat"];
+    const hazard = pool.filter(function(e){ return HAZARD_IDS.indexOf(e.id)>=0; });
+    const calm = pool.filter(function(e){ return HAZARD_IDS.indexOf(e.id)<0; });
+    if (seaRouteKey()==="mist" && hazard.length && Math.random() < seaRouteHazard()) pool = hazard;
+    else if (seaRouteKey()==="coast" && calm.length && Math.random() > seaRouteHazard()) pool = calm;
+  }
   const e = pool[seed % pool.length];
   state.seaLastEnc = e.id;
   state.seaEncCount = (state.seaEncCount||0)+1;
@@ -1203,7 +1324,8 @@ const DIR8 = [
 ];
 
 // --- SAND (migrated from main script) ---
-const SAND="#e6d3a3", GRASS_C="#a8cf8e", GRASS_D="#93c17c", CLIFF="#c9a06a", CLIFF_D="#a37d4e";
+/* 美术统一（2026-11-14）：陆地色向海图的羊皮纸/橄榄墨色靠拢，不再用糖果绿 */
+const SAND="#dfcaa0", GRASS_C="#95a773", GRASS_D="#84955f", CLIFF="#c4a071", CLIFF_D="#9a7a4e";
 
 // --- DOLPHIN_PODS (migrated from main script) ---
 const DOLPHIN_PODS = [

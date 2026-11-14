@@ -255,3 +255,130 @@ test("抉择回声：pickAsk 把带 decId 的选择写入 state.decisions",()=>{
   assert.equal(s.decisions.sea_storm,"压浪硬闯","decId 对应的抉择必须写入 decisions");
   assert.ok(s.choiceLog[0].choice.includes("压浪硬闯"),"choiceLog 仍保留原结算");
 });
+
+test("B2：六段旧路并入主线，特洛伊是开局第一段",()=>{
+  const consts=source("src/data/constants.js");
+  assert.ok(!/opt:true/.test(consts),"海图不应再有「可选」标记");
+  const scenes=source("src/render/scenes.js");
+  const at=scenes.indexOf("function nextObjective");
+  const body=scenes.slice(at, at+2600);
+  const order=["!state.troyDone","!state.ismarosDone","!state.lotusDone","!state.cyclopDone","!state.telepylosDone","else if (!q)"];
+  let last=-1;
+  for (const k of order){
+    const i=body.indexOf(k);
+    assert.ok(i>last,`主线顺序必须依次经过 ${k}`);
+    last=i;
+  }
+  assert.ok(body.indexOf("state.aeoliaDone")<body.indexOf("state.straitStage"),"风神岛必须排在声之海峡之前");
+  const ev=source("src/game/events.js");
+  for (const k of ["ismaros","lotus","cyclops","telepylos","aia"]){
+    assert.match(ev,new RegExp(`${k}:\\s*\\{ cond:`),`GATES 缺少 ${k} 的门控`);
+  }
+  assert.match(source("src/ui/panels.js"),/不再有「可选」徽章/);
+});
+
+test("B2：必经短章各有抉择卡与 decId，旧档按痕迹点亮",()=>{
+  const ev=source("src/game/events.js");
+  assert.match(ev,/LEGACY_DOCK_CARDS/);
+  for (const id of ["ismaros_plunder","lotus_fruit","cyclops_name","telepylos_ship"]){
+    assert.ok(ev.includes(`decId:"${id}"`)||ev.includes(`"${id}"`),`缺少抉择 ${id}`);
+  }
+  assert.match(source("src/interact/handlers.js"),/"aeolia_winds"/);
+  const c=loadState();
+  loadCrew(c);
+  vm.runInContext(`state={coins:20,hp:100,lotusAte:true,polHeard:true,ropeTaken:true}; ensureState();`,c);
+  const s=getState(c);
+  assert.equal(s.lotusDone,true,"旧档吃过莲子应视为已过食莲岛");
+  assert.equal(s.cyclopDone,true,"旧档问过名字应视为已过独眼巨人");
+  assert.equal(s.telepylosDone,true,"旧档拿过绳结应视为已过忒勒皮洛斯");
+  assert.ok(Array.isArray(s.songsSung),"songsSung 必须初始化为数组");
+});
+
+test("C：斯克里回顾章扩到 11 段，未到访段由德摩多科斯替唱",()=>{
+  const h=source("src/interact/handlers.js");
+  const start=h.indexOf("const CH = [");
+  const end=h.indexOf("];",start);
+  assert.ok(start>0&&end>start,"找不到回顾章 CH");
+  const ids=[...h.slice(start,end).matchAll(/\["([a-z]+)","/g)].map(m=>m[1]);
+  assert.deepEqual(ids,["troy","ismaros","lotus","cyclops","telepylos","witch","hades","aeolia","strait","sun","ogggia"]);
+  assert.match(h,/德摩多科斯替你唱/);
+  assert.match(h,/state\.songsSung\.push/);
+  assert.ok(!/talesTold\.length\}\/5/.test(h),"回顾章分母不能写死 5");
+  assert.match(h,/CH\.length/);
+});
+
+/* ---------- 海图玩法层：洋流 / 航路 / 航迹 / 海面回声 ---------- */
+
+function loadSeaPlay(c){
+  const src=source("src/data/constants.js");
+  const start=src.indexOf("/* ==================== 海图玩法层");
+  const end=src.indexOf("/* ==================== 海图玩法层结束",start);
+  assert.ok(start>=0&&end>start,"海图玩法层代码块必须存在");
+  vm.runInContext(src.slice(start,end),c,{filename:"constants.sea.js"});
+}
+
+test("海图 · 洋流带真实结算：落流中顺流加速、逆流减速、横穿不变",()=>{
+  const c=loadState();
+  loadSeaPlay(c);
+  vm.runInContext("scene='world'; boatMapPos=()=>SEA_CURRENTS[0].pts[0];",c);
+  const cur=vm.runInContext("currentAt()",c);
+  assert.ok(cur,"洋流起点应判定在流带内");
+  assert.equal(cur.id,"north");
+  const tangent=vm.runInContext("[currentAt().tx, currentAt().ty]", c);
+  assert.ok(vm.runInContext(`currentFactor(${tangent[0]},${tangent[1]})`,c)>1.1,"顺流方向应加速");
+  assert.ok(vm.runInContext(`currentFactor(${-tangent[0]},${-tangent[1]})`,c)<0.95,"逆流方向应减速");
+  assert.equal(vm.runInContext(`currentFactor(${-tangent[1]},${tangent[0]})`,c),1,"横穿洋流不加不减");
+  vm.runInContext("boatMapPos=()=>[60,88];",c);
+  assert.equal(vm.runInContext("currentAt()",c),null,"远离流带应为 null");
+});
+
+test("海图 · 岛屿标记由实际网格派生，与海图/实航同一套坐标",()=>{
+  const c=loadState();
+  /* 注入带旧手写 mp 的岛屿：加载海图玩法层后必须被格心投影覆盖 */
+  vm.runInContext("ISLANDS=[{gx:31,gy:6,mp:[71,38]},{gx:12,gy:14,mp:[28,57]}];",c);
+  loadSeaPlay(c);
+  const mp=JSON.parse(vm.runInContext("JSON.stringify(ISLANDS.map(i=>i.mp))",c));
+  assert.deepEqual(mp,[[68.48,36.11],[27.17,80.56]],"mp 必须等于格心投影");
+  const viaFn=JSON.parse(vm.runInContext(
+    "JSON.stringify(ISLANDS.map(i=>mapPct(i.gx,i.gy).map(v=>+v.toFixed(2))))",c));
+  assert.deepEqual(mp,viaFn,"标记坐标与 mapPct 完全一致");
+});
+
+test("海图 · 航路姿态三档：速度与海遇频率互换，写入存档",()=>{
+  const c=loadState();
+  loadSeaPlay(c);
+  assert.equal(vm.runInContext("seaRouteKey()",c),"open");
+  assert.equal(vm.runInContext("seaRouteSpeed()",c),1);
+  assert.equal(vm.runInContext("seaEncounterMul()",c),1);
+  vm.runInContext("setSeaRoute('mist')",c);
+  assert.equal(getState(c).seaRoute,"mist");
+  assert.ok(vm.runInContext("seaRouteSpeed()",c)>1.1,"迷雾更快");
+  assert.ok(vm.runInContext("seaEncounterMul()",c)<0.7,"迷雾海遇更密");
+  assert.ok(vm.runInContext("seaRouteHazard()",c)>0.6,"迷雾更凶");
+  vm.runInContext("setSeaRoute('coast')",c);
+  assert.ok(vm.runInContext("seaRouteSpeed()",c)<1,"沿岸更慢");
+  assert.ok(vm.runInContext("seaEncounterMul()",c)>1.3,"沿岸海遇更少");
+});
+
+test("海图 · 航迹按真实到访顺序落点，连续重入去重",()=>{
+  const c=loadState();
+  loadIslands(c);
+  loadSeaPlay(c);
+  vm.runInContext("state.legs={}; state.trail=[];",c);
+  vm.runInContext("recordTrail('troy'); recordTrail('troy'); recordTrail('lotus'); recordTrail('troy');",c);
+  const trail=[...getState(c).trail];
+  assert.deepEqual(trail.map(x=>x.k),["troy","lotus","troy"],"航迹应保留真实回访顺序");
+  assert.ok(trail.every(x=>typeof x.leg==="number"),"每一站带航序");
+});
+
+test("海图 · 海面事件回声落点，原地同事件去重",()=>{
+  const c=loadState();
+  loadSeaPlay(c);
+  vm.runInContext("scene='world'; state.seaEchoes=[]; boatMapPos=()=>[40,40];",c);
+  vm.runInContext("recordSeaEcho({id:'storm',name:'风暴'}); recordSeaEcho({id:'storm',name:'风暴'});",c);
+  assert.equal(getState(c).seaEchoes.length,1,"同地同事件不重复落点");
+  vm.runInContext("boatMapPos=()=>[62,61]; recordSeaEcho({id:'storm',name:'风暴'});",c);
+  assert.equal(getState(c).seaEchoes.length,2,"换一片海再遇应另落一枚");
+  const e=getState(c).seaEchoes[1];
+  assert.equal(e.x,62); assert.equal(e.y,61);
+});

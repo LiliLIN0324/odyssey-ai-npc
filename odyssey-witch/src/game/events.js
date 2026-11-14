@@ -34,6 +34,100 @@ function skipOnboarding(){
 }
 
 // --- prologueSpot (was main+4-195, 192 lines) ---
+/* ==================== 必经短章：六段旧路并入主线（B2） ====================
+   13 段故事全部必经。这些岛原本可以整段跳过，现在离岛前必须结算一次抉择；
+   抉择经 showAsk 的 decId 写入 state.decisions，后续对话、回顾章与判词据此回响。 */
+const LEGACY_DOCK_CARDS = {
+  ismaros: {
+    kicker:"第 一 站 · 伊 斯 玛 洛 斯",
+    title:"战 利 品 与 伤 者",
+    sub:"喀科恩人的城烧了一半。酒瓮边还躺着一个没断气的，正看着你。",
+    quote:"「船装得下了。人也还救得动。」——天亮前必须走。",
+    decId:"ismaros_plunder", flag:"ismarosDone",
+    options:[
+      {label:"留下救治", hint:"草药 −1 · 好感 +5", fn:()=>{
+        if (state.backpack["治疗草药"]) delItem("治疗草药",1);
+        state.ismarosSpared=true; addAffinity(5); gainXp(10);
+        state.status["士气"]="尚可";
+        addMemory("伊斯玛洛斯的天亮前，旅人选择了救人不劫船", 3, "ismaros");
+      }},
+      {label:"再劫一次", hint:"金币 +80 · 士气 低落", fn:()=>{
+        state.coins=(state.coins||0)+80; state.status["士气"]="低落"; gainXp(10);
+        addMemory("伊斯玛洛斯被再一次洗劫——这次连伤者的船也不放过", 4, "ismaros");
+      }},
+      {label:"只取酒，不碰人", hint:"获得 喀科恩酒", fn:()=>{
+        state.tookWine=true;
+        if (!state.backpack["喀科恩酒"]) addItem("喀科恩酒");
+        addMemory("旅人只带走了喀科恩人的酒，没再碰人", 2, "ismaros");
+      }},
+    ],
+  },
+  lotus: {
+    kicker:"第 三 站 · 食 莲 岛",
+    title:"一 颗 莲 子",
+    sub:"他坐在沙上，把一颗莲子递给你，笑得很轻，像什么都不用还。",
+    quote:"「尝一颗吧。尝过的人都不急着回家。」",
+    decId:"lotus_fruit", flag:"lotusDone",
+    options:[
+      {label:"尝一颗", hint:"士气 昂扬 · 饥饿缓解 · 记忆变淡", fn:()=>{
+        state.lotusAte=true; state.status["士气"]="昂扬";
+        state.hunger=Math.min(100,(state.hunger||0)+40);
+        addMemory("旅人尝了食莲岛的莲子——甜是真的，有段记忆跟着甜味淡了", 3, "lotus");
+      }},
+      {label:"拖他上船", hint:"获得 断桨", fn:()=>{
+        state.lotusDragged=true; addItem("断桨"); gainXp(10);
+        addMemory("旅人想强拖食莲者上船，只捞到一支断桨", 2, "lotus");
+      }},
+      {label:"让他留在甜里", hint:"什么也不改变", fn:()=>{
+        addMemory("旅人没有碰莲子，也没有碰那个人——船开时他还坐在沙上笑", 3, "lotus");
+      }},
+    ],
+  },
+  cyclops: {
+    kicker:"第 四 站 · 独 眼 巨 人",
+    title:"你 叫 什 么 名 字",
+    sub:"洞口的风停了。巨人捂着刚被灼瞎的眼，问外面的人是谁。",
+    quote:"名字一旦说出口，海就会记住。——而海记什么都不要钱。",
+    decId:"cyclops_name", flag:"cyclopDone",
+    options:[
+      {label:"报出真名：奥德修斯", hint:"原著之夜 · 海神记账", fn:()=>{
+        state.polNameGiven="奥德修斯";
+        if (!state.polWrathMark){ state.polWrathMark=true; state.poseidonWrath=(state.poseidonWrath||0)+1; }
+        addMemory("旅人朝洞里喊出了自己的真名——波塞冬在浪底下听见了", 4, "polyphemus");
+      }},
+      {label:"报「没有人」", hint:"最安全的名字，也是最空的", fn:()=>{
+        state.polNameGiven="没有人"; state.namesHeard=true;
+        addMemory("旅人对巨人说：没有人。洞里传来一声闷响，像谁在笑", 3, "polyphemus");
+      }},
+      {label:"不答", hint:"什么也不给", fn:()=>{
+        state.polNameGiven="（未报）";
+        addMemory("旅人没有回答巨人——名字留在了自己嘴里", 3, "polyphemus");
+      }},
+    ],
+  },
+  telepylos: {
+    kicker:"第 六 站 · 忒 勒 皮 洛 斯",
+    title:"最 后 一 条 船",
+    sub:"崖顶的石头还在往下落。滩上泊着的船，比来时少了。",
+    quote:"「守船，还是守人？」——这句问话，你迟早要答。",
+    decId:"telepylos_ship", flag:"telepylosDone",
+    options:[
+      {label:"守住船队", hint:"伤势 −15 · 船一艘不少", fn:()=>{
+        state.hp=Math.max(1,(state.hp||100)-15); state.status["士气"]="低落";
+        addMemory("忒勒皮洛斯的崖下，旅人用肩膀顶住了船缆——石头砸在背上", 4, "telepylos");
+      }},
+      {label:"弃三条船，先保人", hint:"船队 −3 · 士气 昂扬", fn:()=>{
+        state.fleet=Math.max(0,(state.fleet||0)-3); state.status["士气"]="昂扬";
+        addMemory("旅人砍断了三条船的缆，把人全塞进剩下的船里——海面上漂着空船", 4, "telepylos");
+      }},
+      {label:"什么都不说，开船", hint:"不救，也不弃", fn:()=>{
+        state.status["士气"]="低落";
+        addMemory("旅人没有下令——船自己离了岸，谁也没回头看", 3, "telepylos");
+      }},
+    ],
+  },
+};
+
 function prologueSpot(s){
   const P = PROLOGUE_SITES[scene];
   if (scene==="telepylos" && FD.on && s.type!=="fleetguard"){ toast("石头还在落——先守住船队！"); return; }
@@ -205,7 +299,19 @@ function prologueSpot(s){
     ], "troy_fire");
     return;
   }
-  case "dock":
+  case "dock": {
+    /* 必经短章：离岛前把这一段的核心抉择问掉（每段只问一次，写入 decisions） */
+    const card = LEGACY_DOCK_CARDS[scene];
+    if (card && !state[card.flag]){
+      showAsk(card.kicker, card.title, card.sub, card.quote,
+        card.options.map(o=>({ label:o.label, hint:o.hint, fn:()=>{
+          o.fn();
+          state[card.flag]=true;
+          renderHUD(); save();
+          toast("（这一段已经记进航程。再按 E 离岛。）");
+        }})), card.decId);
+      return;
+    }
     if (scene==="troy" && state.troyStage<5) return toast("船在滩上等着——可城里的账还没结完。（先把这一夜走完）");
     if (scene==="troy"){
       state.troyDone=true;
@@ -223,6 +329,7 @@ function prologueSpot(s){
     scene = "world"; save(); sfx("pick");
     toast("船头调向外海——岛的影子在船尾慢慢合上。");
     return;
+  }
   }
   return toast("（这里没什么可碰的。）");
 }
@@ -985,6 +1092,17 @@ function borrowCattle(){
 
 // --- GATES (migrated from main script) ---
 const GATES = {
+  /* —— B2：六段旧路并入主线，前五站按序解锁 —— */
+  ismaros:   { cond:()=>!!state.troyDone || !!state.legs.ismaros,
+               hint:"特洛伊的夜还没走完——十二艘船还在滩上等着。" },
+  lotus:     { cond:()=>!!state.ismarosDone || !!state.legs.lotus,
+               hint:"伊斯玛洛斯还没收尾——天亮前那一站得先走完。" },
+  cyclops:   { cond:()=>!!state.lotusDone || !!state.legs.cyclops,
+               hint:"船还没到独眼巨人的海岸——先过食莲岛。" },
+  telepylos: { cond:()=>!!state.cyclopDone || !!state.legs.telepylos,
+               hint:"独眼巨人的洞里还有话没答——名字得先给出去。" },
+  aia:       { cond:()=>!!state.telepylosDone || !!getQuest("witch_grass") || !!state.legs.aia,
+               hint:"喀耳刻的岛还在东南——六段旧路得先走完才靠得上去。" },
   hades:  { cond:()=>{ const q=getQuest("witch_grass"); return !!(q&&q.done) || progressHades(); },
             hint:"雾还没散——喀耳刻的委托还没结清。（先在埃阿亚岛采满 3 株玛草交给她）" },
   aeolia: { cond:()=>progressHades(),

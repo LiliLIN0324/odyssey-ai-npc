@@ -234,6 +234,63 @@ def stage_storm(page):
     page.evaluate("() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))")
 
 
+def stage_map(page):
+    """真实海图：已访航迹 / 抉择回声 / 海面事件 / 迷雾航路 / 航迹回看全部点亮。"""
+    page.evaluate(
+        """() => {
+            const G = window.__game;
+            G.setScene('world');
+            const visited = [
+                'troy', 'ismaros', 'lotus', 'cyclops', 'telepylos',
+                'aeolia', 'strait', 'sun', 'ogggia',
+            ];
+            const byScene = {};
+            ISLANDS.forEach(is => { byScene[is.scene] = is; });
+            G.state.legs = {};
+            G.state.trail = [];
+            visited.forEach((k, i) => {
+                const is = byScene[k];
+                if (!is) return;
+                G.state.legs[k] = 1;
+                G.state.trail.push({k, leg: is.leg, t: i * 70 + 40});
+            });
+            Object.assign(G.state, {
+                troyDone: true, ismarosDone: true, lotusDone: true,
+                cyclopsDone: true, telepylosDone: true, aeoliaDone: true,
+                prophecy: 'long', straitStage: 0, straitCleared: false,
+                seaRoute: 'mist',
+                decisions: {
+                    troy_fire: '烧了城',
+                    ismaros_plunder: '留下救治',
+                    lotus_fruit: '不碰莲子',
+                    cyclops_name: '报了假名「无人」',
+                    telepylos_ship: '留下最后一条船',
+                    aeolia_winds: '没有打开风袋',
+                    calypso: '造木筏',
+                },
+                seaEchoes: [
+                    {id: 'storm', name: '风暴', x: 38, y: 31, t: 80},
+                    {id: 'headwind', name: '逆风', x: 55, y: 41, t: 160},
+                    {id: 'wreckboat', name: '遇难小艇', x: 66, y: 58, t: 240},
+                    {id: 'dolphin', name: '海豚群', x: 81, y: 37, t: 320},
+                ],
+            });
+            G.state.quests = G.state.quests || {};
+            G.state.quests.witch_grass = {
+                id: 'witch_grass', name: '玛草', have: 3, need: 3, done: true,
+            };
+            if (typeof buildMapMarks === 'function') buildMapMarks();
+        }"""
+    )
+    page.keyboard.press("m")
+    page.wait_for_function("mapOpen === true")
+    page.wait_for_timeout(900)
+    page.evaluate("() => window.WorldMap.focus(34, 49, 1.82)")
+    page.wait_for_timeout(600)
+    page.locator("#mzTrail").click()
+    page.wait_for_timeout(3200)
+
+
 def capture_gameplay(browser, base):
     screenshots = OUT / "screenshots"
     screenshots.mkdir(parents=True, exist_ok=True)
@@ -309,6 +366,14 @@ def capture_gameplay(browser, base):
         page.wait_for_timeout(3000)
         page.screenshot(path=str(screenshots / "05-named-crew.png"))
 
+        page.keyboard.press("q")
+        page.wait_for_function("document.getElementById('questPanel').style.display !== 'block'")
+        stage_map(page)
+        page.screenshot(path=str(screenshots / "06-sea-chart.png"))
+        page.keyboard.press("Escape")
+        page.wait_for_function("mapOpen === false")
+        page.wait_for_timeout(1200)
+
         video = page.video
         context.close()
         raw_video = Path(temp) / "gameplay.webm"
@@ -357,6 +422,7 @@ def write_manifest():
         ("screenshots/03-storm-choice.png", "真实键盘航行触发的主航程风暴抉择"),
         ("screenshots/04-choice-receipt.png", "风暴选择后的真实结算回执与航海日志抉择记录"),
         ("screenshots/05-named-crew.png", "十二人具名船员名册与各自职责"),
+        ("screenshots/06-sea-chart.png", "可缩放世界海图：真实航迹回看、洋流、抉择回声与迷雾航路"),
     ]
     assets = [asset(kind, name, source) for kind, name, source in static]
     assets.extend(asset("screenshot", name, "real-chrome-gameplay", caption) for name, caption in shots)

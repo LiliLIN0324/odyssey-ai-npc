@@ -94,6 +94,9 @@ let state = {
   nameWay: null,         /* 认名方式：old/sun/calypso/input/none */
   /* —— 序章组·奥德修斯的航迹（#1/#2/#3/#4/#6 旧路重访）—— */
   legs: {},                /* 航序点亮 {sceneKey|malea|seen_x:1}（海图「奥德修斯航迹」计数） */
+  trail: [],               /* 海图航迹回看：真实到访顺序 [{k,leg,t}] */
+  seaRoute: "open",        /* 航路姿态 coast 沿岸 / open 外海 / mist 迷雾 */
+  seaEchoes: [],           /* 海面事件回声 [{id,name,x,y,t}]（海图上的可回看标记） */
   maleaDone: false,        /* 马里阿角：听风试炼完成 */
   ismarosSpared: false,    /* 伊斯玛洛斯：给伤者上过药 */
   tookWine: false,         /* 拾了喀科恩酒 */
@@ -109,6 +112,13 @@ let state = {
   polNameGiven: null,      /* 自报名字（名字考试） */
   namesHeard: false,       /* 「被留下的名」解锁（“无人”——终章认名候选预埋） */
    ropeTaken: false,        /* 忒勒皮洛斯：幸存者的绳结 */
+  /* —— 必经短章：六段旧路改为主线必经，离岛前必须结算一次抉择 —— */
+  ismarosDone: false,      /* 伊斯玛洛斯：战利品与伤者已抉择 */
+  lotusDone: false,        /* 食莲岛：一颗莲子已抉择 */
+  cyclopDone: false,       /* 独眼巨人：名字已抉择 */
+  telepylosDone: false,    /* 忒勒皮洛斯：最后一条船已抉择 */
+  aeoliaDone: false,       /* 风神岛：袋口已抉择（离岛） */
+  songsSung: [],           /* 德摩多科斯替你唱过的段 id（未到访的回顾兜底） */
    lotusDraggedOk: false,   /* P2.2：持绳强拖成功（canon：绑上凳带回船） */
    gazeDone: false,         /* P2.7：奥吉吉亚望海（无用但真） */
    stonePillarDone: false,  /* P2.3：费埃克斯送客船石化（石柱已升） */
@@ -243,8 +253,18 @@ function ensureState(){
   if (state.nameWay===undefined) state.nameWay=null;
   /* 序章组字段：旧档补默认值（奥德修斯的航迹） */
   if (!state.legs) state.legs={};
+  if (!Array.isArray(state.trail)) state.trail=[];
+  if (!state.seaRoute || !["coast","open","mist"].includes(state.seaRoute)) state.seaRoute="open";
+  if (!Array.isArray(state.seaEchoes)) state.seaEchoes=[];
   if (state.maleaDone===undefined) state.maleaDone=false;
   if (state.ismarosSpared===undefined) state.ismarosSpared=false;
+  /* 必经短章：旧档补默认值（老档已走过这些岛的，按既有进度点亮，避免卡在离岛口） */
+  if (state.ismarosDone===undefined) state.ismarosDone=!!(state.ismarosSpared||state.campHeld||state.tookWine);
+  if (state.lotusDone===undefined) state.lotusDone=!!(state.lotusAte||state.lotusDragged||state.lotusGift);
+  if (state.cyclopDone===undefined) state.cyclopDone=!!(state.polHeard||state.ramHide||state.polNameGiven);
+  if (state.telepylosDone===undefined) state.telepylosDone=!!(state.ropeTaken||state.cliffHurt);
+  if (state.aeoliaDone===undefined) state.aeoliaDone=!!(state.windFreed||[]).every(Boolean)&&!!(state.windFreed||[]).length;
+  if (!Array.isArray(state.songsSung)) state.songsSung=[];
   if (state.fleet===undefined) state.fleet=0;
   if (state.troyStage===undefined) state.troyStage=0;
   if (state.troyWood===undefined) state.troyWood=0;

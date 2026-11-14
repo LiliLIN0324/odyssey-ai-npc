@@ -824,6 +824,197 @@ def main():
             check(not imported_leaks, f"导入后未到访岛屿仍零剧透（泄露：{imported_leaks}）")
             systems_context.close()
 
+            legacy_context, legacy_page = new_page(browser, errors)
+            legacy_page.goto(BASE_URL, wait_until="networkidle", timeout=45000)
+            legacy_page.evaluate("() => localStorage.clear()")
+            open_game(legacy_page)
+            legacy_page.wait_for_function("window.__game && window.__game.nextObjective")
+            check(
+                legacy_page.evaluate("window.__game.nextObjective().short")
+                == "特洛伊 · 夜袭",
+                "清档新档的必经第一站是特洛伊夜袭",
+            )
+            legacy_page.locator("#opSkip").click()
+            legacy_page.locator("#onboardingSkip").click()
+            legacy_page.wait_for_function("chapterOn === false")
+
+            legacy_page.evaluate(
+                """() => {
+                    const G = window.__game;
+                    const dock = PROLOGUE_SITES.ismaros.spots()
+                        .find(spot => spot.type === 'dock');
+                    Object.assign(G.state, {
+                        hp: 100,
+                        coins: 60,
+                        xp: 0,
+                        level: 1,
+                        fleet: 12,
+                        ismarosDone: false,
+                        ismarosSpared: false,
+                        tookWine: false,
+                        decisions: {},
+                    });
+                    if (!G.state.backpack) G.state.backpack = {};
+                    if (!G.state.status) G.state.status = {};
+                    if (!Array.isArray(G.state.memory)) G.state.memory = [];
+                    G.setScene('ismaros');
+                    G.player.x = dock.x;
+                    G.player.y = dock.y;
+                }"""
+            )
+            legacy_page.keyboard.press("e")
+            legacy_page.wait_for_function(
+                "document.getElementById('askCard').classList.contains('show')"
+            )
+            check(
+                legacy_page.locator("#askCard").is_visible()
+                and "战 利 品 与 伤 者"
+                in legacy_page.locator("#askCard .ccTitle").inner_text(),
+                "伊斯玛洛斯离岛前必先弹出战利品抉择卡",
+            )
+            legacy_page.locator("#askCard .askBtn").first.click()
+            legacy_after = legacy_page.evaluate(
+                """() => ({
+                    done: window.__game.state.ismarosDone,
+                    decision: window.__game.state.decisions.ismaros_plunder,
+                    scene: window.__game.getScene(),
+                })"""
+            )
+            check(
+                legacy_after["done"] is True
+                and legacy_after["decision"] == "留下救治"
+                and legacy_after["scene"] == "ismaros",
+                "选中战利品选项后写入旗标与抉择，且首次按 E 不离岛",
+            )
+            legacy_page.keyboard.press("e")
+            legacy_page.wait_for_function("window.__game.getScene() === 'world'")
+            check(
+                legacy_page.evaluate("window.__game.getScene()") == "world",
+                "结算后再次按 E 才真正离岛",
+            )
+            legacy_context.close()
+
+            map_context, map_page = new_page(browser, errors)
+            open_game(map_page)
+            map_page.locator("#opSkip").click()
+            map_page.locator("#onboardingSkip").click()
+            map_page.wait_for_function("chapterOn === false")
+            map_page.evaluate("window.__game.setScene('world')")
+            map_page.keyboard.press("m")
+            map_page.wait_for_function("mapOpen === true")
+            check(
+                map_page.locator("#mapRoute").is_visible()
+                and map_page.locator("#mapRoute [data-route]").count() == 3,
+                "海图提供沿岸/外海/迷雾三档航路姿态",
+            )
+            map_page.locator("#mapRoute [data-route='mist']").click()
+            map_page.wait_for_function(
+                "window.__game.state.seaRoute === 'mist'"
+            )
+            check(
+                map_page.evaluate(
+                    "document.querySelector('#mapRoute [data-route=\"mist\"]').classList.contains('on')"
+                ),
+                "选择迷雾航路后按钮态与存档同步",
+            )
+            check(
+                map_page.evaluate(
+                    f"JSON.parse(localStorage.getItem('{SAVE_KEY}')).state.seaRoute === 'mist'"
+                ),
+                "航路姿态写入存档",
+            )
+            current_probe = map_page.evaluate(
+                """() => {
+                    const old = boatMapPos;
+                    window.boatMapPos = () => SEA_CURRENTS[0].pts[0];
+                    const at = currentAt();
+                    const result = {
+                        id: at && at.id,
+                        fwd: currentFactor(at.tx, at.ty),
+                        back: currentFactor(-at.tx, -at.ty),
+                    };
+                    window.boatMapPos = old;
+                    return result;
+                }"""
+            )
+            check(
+                current_probe["id"] == "north"
+                and current_probe["fwd"] > 1.1
+                and current_probe["back"] < 0.95,
+                "船入洋流带后顺流加速、逆流减速（真实航速结算）",
+            )
+            map_page.evaluate(
+                """() => {
+                    const G = window.__game;
+                    G.state.trail = [
+                        {k: 'troy', leg: 1, t: 0},
+                        {k: 'lotus', leg: 6, t: 90},
+                        {k: 'cyclops', leg: 7, t: 120},
+                    ];
+                    G.state.decisions = {troy_fire: '烧了城'};
+                    G.state.seaEchoes = [
+                        {id: 'storm', name: '风暴', x: 50, y: 45, t: 200},
+                    ];
+                }"""
+            )
+            map_page.locator("#mzTrail").click()
+            map_page.wait_for_function(
+                "document.getElementById('mapTrailTip').classList.contains('show')"
+            )
+            check(
+                "航迹回看" in map_page.locator("#mapTrailTip").inner_text(),
+                "航迹回看沿真实到访顺序推进并报出站点",
+            )
+            pixels = map_page.evaluate(
+                """() => {
+                    const cv = document.getElementById('mapFx');
+                    const ctx = cv.getContext('2d');
+                    const data = ctx.getImageData(0, 0, cv.width, cv.height).data;
+                    let lit = 0;
+                    for (let i = 3; i < data.length; i += 4 * 97) {
+                        if (data[i] > 0) lit += 1;
+                    }
+                    return {lit, w: cv.width, h: cv.height};
+                }"""
+            )
+            check(
+                pixels["lit"] > 40 and pixels["w"] > 600,
+                "海图叠加层真实绘制洋流/航迹/回声（canvas 有像素）",
+            )
+            weather = map_page.evaluate(
+                """() => {
+                    const w = window.WorldMap.weather();
+                    const stormCells = w.storms;
+                    const phases = ['night', 'dawn', 'day', 'dusk'];
+                    const okPhase = phases.includes(w.phase);
+                    const oldClock = window.__game.state.clock;
+                    window.__game.state.clock = 23 * 60;
+                    const night = window.WorldMap.weather().phase;
+                    window.__game.state.clock = oldClock;
+                    return {stormCells, okPhase, night, label: w.windLabel,
+                            strength: w.strength, reduced: w.reducedMotion};
+                }"""
+            )
+            check(
+                weather["okPhase"],
+                "动态天气暴露合法昼夜相位",
+            )
+            check(
+                weather["stormCells"] >= 1,
+                "真实风暴海遇在海图上生成风暴单体（会转、会下雨）",
+            )
+            check(
+                weather["night"] == "night",
+                "天气昼夜跟随游戏时钟：23 时为夜",
+            )
+            check(
+                bool(weather["label"]),
+                "风纹方向与风名读同一份 windDir",
+            )
+            map_page.keyboard.press("Escape")
+            map_page.wait_for_function("mapOpen === false")
+            map_context.close()
+
             check(not errors, "浏览器无 pageerror 与 console error；\n" + "\n".join(errors))
         except Exception:
             if errors:

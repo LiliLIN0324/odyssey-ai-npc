@@ -10,6 +10,13 @@ function touchInit(){
   const coarse = matchMedia && matchMedia("(pointer: coarse)").matches || ("ontouchstart" in window && navigator.maxTouchPoints > 0);
   if (!coarse) return;
   ui.style.display = "block";
+  document.body.classList.add("touch");
+  /* 触屏不该看到键盘键位；把提示换成手上的操作 */
+  const keysEl = document.getElementById("keys");
+  if (keysEl) keysEl.textContent = "左下摇杆移动 · 右侧按钮互动 / 海图 / 背包 · 点地面也能走";
+  document.querySelectorAll(".tsTip").forEach(el=>{
+    el.textContent = "触屏：左下摇杆移动 · 右下按钮互动 · 海图在右上";
+  });
   const base = document.getElementById("joyBase"), knob = document.getElementById("joyKnob");
   const joyKeys = {up:"w", down:"s", left:"a", right:"d"};
   const clearJoy = ()=>{ for (const k of Object.values(joyKeys)) keys.delete(k); knob.style.left="50%"; knob.style.top="50%"; };
@@ -431,15 +438,15 @@ function buildMapMarks(){
     const open = islandOpen(is);
     const isNext = !!(obj && obj.k && is.scene===obj.k);
     const legBadge = (typeof is.leg==="number") ? `<div class="lg">#${is.leg}</div>` : "";
-    const optBadge = is.opt ? `<div class="opt">可选</div>` : "";
+    /* B2：六段旧路已并入主线，海图上不再有「可选」徽章 */
     /* 批次 H1 快速直航：航序已点亮 + 门已开 → 海图上可点直航（Wind Waker 传送鱼 / 80 Days 航线惯例：
        去过才解锁、直航耗时间与补给、门控不绕过） */
     const visited = !!state.legs[is.scene];
     const canFT = visited && open && is.scene!=="strait";
     const ftBadge = canFT ? `<div class="ft">⛵ 直航</div>` : "";
-    const stText = isNext ? "▶ 航向" : open ? (is.opt?"支线":"已到过") : "？待开放";
-    return `<div class="mapMark${open?"":" locked"}${isNext?" next":""}${is.opt?" opt":""}${canFT?" ftok":""}" data-scene="${is.scene}" style="left:${is.mp[0]}%; top:${is.mp[1]}%;">
-      ${legBadge}${optBadge}${ftBadge}<div class="pin"></div><div class="nm">${is.name}</div>
+    const stText = isNext ? "▶ 航向" : visited ? "已到过" : "";
+    return `<div class="mapMark${open?"":" locked"}${isNext?" next":""}${canFT?" ftok":""}" data-scene="${is.scene}" style="left:${is.mp[0]}%; top:${is.mp[1]}%;">
+      ${legBadge}${ftBadge}<div class="pin"></div><div class="nm">${is.name}</div>
       <div class="st">${stText}</div>
     </div>`;}).join("");
 }

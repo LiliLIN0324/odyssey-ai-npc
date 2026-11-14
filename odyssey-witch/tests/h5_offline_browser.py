@@ -54,7 +54,7 @@ def main():
                 send('背包里有什么');
             }""")
             page.wait_for_function("busy === false")
-            check(page.locator("#msgs .chip.err").last.inner_text() == "离线模式", "无密钥服务会明确进入离线模式")
+            check(page.locator("#msgs .chip.err").count() == 0, "离线时不再暴露「离线模式」等系统标签")
             page.wait_for_function(
                 """() => {
                     const bubbles = document.querySelectorAll('#msgs .bubble.witch');
