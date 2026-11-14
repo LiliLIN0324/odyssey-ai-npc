@@ -107,6 +107,14 @@ const isSolidTile = (cx,cy)=>{ const c=worldTile(cx,cy); return c==="#"||c==="X"
 
 // --- tryMoveWorld (moved from main script, was main+759-772) ---
 function tryMoveWorld(nx,ny){
+  /* 锐评（用户体感「没有碰撞体积」）：原判定只有船中心一个点——船头能怼进岸线半格，
+     观感上等于没有船体。补船头前探：沿运动方向往前探 0.22 瓦（≈半个船身 8.5px），
+     船头碰岸即挡——船停岸后留出可见的水缝；只探中轴不探两舷，1 瓦窄航道仍可通行。 */
+  const r = WTS*0.22;
+  const solid = (cx,cy)=>{ const c=worldTile(cx,cy); return c==="#"||c==="X"||c==="G"; };
+  const dirX = Math.sign(nx - boat.x), dirY = Math.sign(ny - boat.y);
+  if (dirX !== 0 && solid(Math.floor((nx + dirX*r)/WTS), Math.floor(ny/WTS))) return false;
+  if (dirY !== 0 && solid(Math.floor(nx/WTS), Math.floor((ny + dirY*r)/WTS))) return false;
   const ch = worldTile(Math.floor(nx/WTS), Math.floor(ny/WTS));
   if (ch==="#"||ch==="X"||ch==="G") return false;
   /* Steam 化：世界边界钳制——海图之外是没人回来讲过的海，不让船驶出可航行水域

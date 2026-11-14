@@ -77,6 +77,7 @@ const LOCKED_LOOK = { r: 1.3, grass: 0x93a3ad, grassDeep: 0x6d7d88, seed: 202611
 const MAINLAND_LOOK = { r: 2.0, grass: 0x93a06f, grassDeep: 0x76825a, seed: 20261120, mh: 1.0 };
 
 let renderer, scene3, camera3, waterU, boatG, sailMesh, isleList = [];
+let wakeMesh = null, wakeMat = null, shadowMesh = null;   /* 锐评画质批：尾流航迹 + 船底接触阴影 */
 let escortG = null, escortHull = null, escortSail = null, escPrev = { x: 0, z: 0 }, escPrevOk = false, escHead = { x: 0, z: -1 };
 /* 热路径零分配：护航船实例矩阵 / 相机目标点 / 主船兜底字面量全部模块级复用 */
 const ESCORT_MAX = 11;
@@ -92,7 +93,7 @@ let skyU = null, sunLight = null, hemiLight = null;   /* 批次 J1：昼夜调�
    轨迹全部由 et 参数化（无状态、rAF 冻结环境也能在 grabFrame 里正确呈现）。 */
 const SEA_PODS = [ {x:25*40+60, y:7*40+40, r:60}, {x:9*40+20, y:9*40+20, r:52}, {x:30*40+20, y:11*40, r:68} ];   /* 批次 H9：坐标随世界翻倍 */
 let dolphinsG = null, dolphinFins = [];
-let gullsG = null, gullWings = [];
+let gullsG = null, gullWings = [], gullMatRef = null;
 let yawCur = 0; let ready = false; let failed = false; let lastEt = -1;
 
 /* ---------- 岛屿网格（顶点色 + flatShading，P1 同款风格） ---------- */
@@ -571,7 +572,9 @@ function buildSky() {
 function buildClouds() {
   /* 批次 H6：云层重做——旧版 10 朵直径 2~5 单位的大灰盘压在 6.5~10.5 低空（山体才 3.4 高、
      船才 1 单位长），玩家读成「飘在天上的岛」。改为 9 簇×3 瓣的小云团：单瓣 0.5~1.0、
-     高度 12~17（远在山体与相机之上）、纯白微透，远簇随雾淡出——读作天空，不再读作岛。 */
+     纯白微透，远簇随雾淡出——读作天空，不再读作岛。
+     锐评：原高度 12~17 是 J2 抬相机（→13.2）之前定的，云带正好横跨相机——云漂过时
+     半屏糊白。抬到 16.5~21，重新「远在相机与山体之上」。 */
   const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, flatShading: true, transparent: true, opacity: 0.72 });
   const rand = mulberry32(777);
   const CLUSTERS = 9, LOBES = 3;
@@ -579,7 +582,7 @@ function buildClouds() {
   const dummy = new THREE.Object3D();
   let idx = 0;
   for (let c = 0; c < CLUSTERS; c++) {
-    const cx = (rand() * 2 - 1) * 95, cz = (rand() * 2 - 1) * 40, cy = 12 + rand() * 5;   /* 批次 H9：云幕随世界翻倍铺开 */
+    const cx = (rand() * 2 - 1) * 95, cz = (rand() * 2 - 1) * 40, cy = 16.5 + rand() * 4.5;   /* 高于相机 13.2 + 山体 3.4 */
     const s = 0.5 + rand() * 0.5;
     for (let l = 0; l < LOBES; l++) {
       dummy.position.set(cx + (rand() * 2 - 1) * s * 1.4, cy + (rand() * 2 - 1) * s * 0.22, cz + (rand() * 2 - 1) * s * 0.9);
@@ -680,6 +683,7 @@ function buildSeaLife() {
     dolphinFins.push({ m: fin, pod, i });
   }
   const gullMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+  gullMatRef = gullMat;   /* 锐评：夜里压暗海鸥（MeshBasic 恒亮，深夜满白像贴在天上的纸片） */
   const wingGeo = new THREE.PlaneGeometry(0.55, 0.16);
   for (const is of (window.ISLANDS || [])) {
     for (let i = 0; i < 2; i++) {
@@ -764,6 +768,9 @@ function atmosphereTick(){
   }
   if (escortSail){
     escortSail.material.color.set(0xe8e0cc).lerp(_nightSail, night*0.72);
+  }
+  if (gullMatRef){
+    gullMatRef.color.set(0xffffff).lerp(new THREE.Color(0x46536b), night*0.82);   /* 深夜海鸥归巢——不再满白 */
   }
   /* 云染夜色 */
   if (cloudGroup && cloudGroup.material)
@@ -903,15 +910,52 @@ function buildLabels() {
   return g;
 }
 
+/* ---------- 礁石（锐评：X 格有碰撞但 3D 里没有任何可见网格——船停在「空水」上，
+   玩家以为没有碰撞。给每块 X 格摆一块深色礁石，碰撞体变成看得见的东西） ---------- */
+let reefG = null;
+function buildReefs() {
+  const g = new THREE.Group();
+  const G = window.__game;
+  const grid = (G && G.worldGrid) ? G.worldGrid() : null;
+  if (!grid) return g;
+  const WTS = (G.worldTileSize ? G.worldTileSize() : 40);
+  const rand = mulberry32(20261115);
+  const mat = new THREE.MeshStandardMaterial({ color: 0x5f4a33, roughness: 1, flatShading: true });
+  const cells = [];
+  for (let y = 0; y < grid.length; y++) for (let x = 0; x < grid[y].length; x++) {
+    if (grid[y][x] === "X") cells.push([x, y]);
+  }
+  const inst = new THREE.InstancedMesh(new THREE.ConeGeometry(0.5, 1.4, 5), mat, Math.max(1, cells.length * 2));
+  const dummy = new THREE.Object3D();
+  let idx = 0;
+  for (const [gx, gy] of cells) {
+    /* 每块 X 格两块礁石：一大一小错位摆放，读作礁群而不是「一支铅笔」 */
+    for (const [dx, dy, s] of [[-0.18, -0.1, 1.0], [0.22, 0.16, 0.6]]) {
+      const px = gx * WTS + WTS / 2 + dx * WTS;
+      const py = gy * WTS + WTS / 2 + dy * WTS;
+      dummy.position.set(px2x(px), 0.42 * s + Math.sin(px) * 0.04, px2z(py));
+      dummy.rotation.set(Math.sin(px * 3.1) * 0.12, rand() * Math.PI * 2, Math.sin(py * 2.7) * 0.12);
+      dummy.scale.setScalar(s * (0.85 + rand() * 0.3));
+      dummy.updateMatrix();
+      inst.setMatrixAt(idx++, dummy.matrix);
+    }
+  }
+  inst.count = idx;
+  inst.instanceMatrix.needsUpdate = true;
+  g.add(inst);
+  return g;
+}
+
 /* ---------- 初始化 ---------- */
 function init() {
   try {
     /* 性能：去掉 preserveDrawingBuffer（每帧强制拷贝，弱 GPU 掉帧元凶之一）；
        分享卡改用 W3D.grabFrame()（现渲现读，同帧内 toDataURL 不需保留缓冲）。
-       DPR 上限从 1.75 降到 1.25：填充率降 50%+，画面差异在这个美术风格下几乎不可见。 */
+       DPR 上限 1.25 → 1.5：低模场景填充率余量足够（本机实测 27k 三角形），边缘更干净；
+       弱机有自适应降级兜底（<40fps 先降回 1.0，再不行切 2D）。 */
     renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: false });
     renderer.setSize(1000, 600);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   } catch (e) { failed = true; return; }
 
   scene3 = new THREE.Scene();
@@ -938,6 +982,7 @@ function init() {
   skyU = skyGroup.material.uniforms;   /* 批次 J1：天穹 uniforms 引用（昼夜 tick 每帧写色） */
   worldGroup = new THREE.Group();
   worldGroup.add(buildIslands());   /* 先建岛：水 shader 的 uIsle 岸线数组依赖 isleList */
+  reefG = buildReefs(); worldGroup.add(reefG);   /* 锐评：X 礁石网格化——碰撞体看得见 */
   worldGroup.add(buildLabels());    /* 岛名 Sprite 标签：挂 worldGroup（特洛伊场景随组隐藏） */
   scene3.add(worldGroup);
   waterMesh = buildWater(); scene3.add(waterMesh);
@@ -953,6 +998,44 @@ function init() {
   boatLantern = new THREE.PointLight(0xffc46a, 0, 10, 2);
   boatLantern.position.set(0, 1.6, 0);
   boatG.add(boatLantern);
+  /* 锐评画质批：船底接触阴影——半透明椭圆贴着水面，船「压」在水上而不是「浮」在水上。
+     独立网格随船移动（不挂 boatG：不受船体起伏/横摇影响，贴住水面即可）。 */
+  {
+    const shGeo = new THREE.CircleGeometry(0.8, 18);
+    shGeo.rotateX(-Math.PI / 2);
+    shGeo.scale(1, 1, 1.5);   /* 椭圆：沿船长方向拉长 */
+    shadowMesh = new THREE.Mesh(shGeo, new THREE.MeshBasicMaterial({
+      color: 0x0a1a28, transparent: true, opacity: 0.22, depthWrite: false,
+    }));
+    shadowMesh.renderOrder = 2;   /* 水面(1)之上、浪花贴片之下 */
+    scene3.add(shadowMesh);
+  }
+  /* 锐评画质批：尾流航迹——移动时船尾拖一道渐隐的白沫（CanvasTexture 渐变，零依赖）。
+     没有尾流的船像「贴图在滑」，有尾流才像「船在水里走」。
+     贴图两端：画布底部（v=0）=近船端最浓，顶部（v=1）=尾端渐隐；
+     几何 -Y 边（v=0）朝向船尾（见 frame 内 rotation 'YXZ'），透明端拖在身后。 */
+  {
+    const cv = document.createElement("canvas");
+    cv.width = 64; cv.height = 256;
+    const g2 = cv.getContext("2d");
+    const grad = g2.createLinearGradient(0, 0, 0, 256);
+    grad.addColorStop(0.0, "rgba(255,255,255,0)");      /* 尾端渐隐 */
+    grad.addColorStop(0.55, "rgba(255,255,255,0.30)");
+    grad.addColorStop(1.0, "rgba(255,255,255,0.85)");   /* 近船端最浓 */
+    g2.fillStyle = grad;
+    /* 两侧收窄的梯形：中缝略透（船体占据），读成 V 字尾迹 */
+    g2.beginPath();
+    g2.moveTo(18, 0); g2.lineTo(46, 0); g2.lineTo(64, 256); g2.lineTo(0, 256);
+    g2.closePath(); g2.fill();
+    const tex = new THREE.CanvasTexture(cv);
+    wakeMat = new THREE.MeshBasicMaterial({
+      map: tex, transparent: true, opacity: 0, depthWrite: false,
+      side: THREE.DoubleSide, fog: false,
+    });
+    wakeMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 5.5), wakeMat);
+    wakeMesh.renderOrder = 2;
+    scene3.add(wakeMesh);
+  }
   escortG = buildEscortFleet();   /* 批次 H8：护航船裸网格 1.3 单位 vs 主船 1.12×1.7≈1.9——旗舰带小艇的自然比例，不再另加缩放 */
   scene3.add(escortG);
   driftG = buildDrifts();
@@ -1019,17 +1102,36 @@ function frame(et) {
   const bx = px2x(b.x), bz = px2z(b.y);
   const bob = Math.sin(et * 2.1) * 0.05 + Math.cos(et * 1.4) * 0.03;
   boatG.position.set(bx, bob, bz);
-  /* 航向：face(up/down/left/right) → 目标 yaw，平滑转向 */
-  const yawT = b.face === "right" ? Math.PI / 2 : b.face === "down" ? Math.PI : b.face === "left" ? -Math.PI / 2 : 0;
+  /* 航向：face(up/down/left/right) → 目标 yaw，平滑转向。
+     锐评（尾流上线后暴露）：原映射 left/right 与几何朝向相反——船体尖艏在局部 −Z
+     （shape +Y 经 rotateX(−π/2) 映射到 −Z），face "right"（东）给 +π/2 会把艏指向西：
+     上下恰好正确、左右一直「倒着开」，帆是对称三角形所以从未露馅。
+     与护航船同式：yaw = atan2(−hx, −hz)（h=航向单位向量），尖艏恒指运动方向。 */
+  const yawT = b.face === "right" ? -Math.PI / 2 : b.face === "down" ? Math.PI : b.face === "left" ? Math.PI / 2 : 0;
   let dy = yawT - yawCur;
   while (dy > Math.PI) dy -= Math.PI * 2;
   while (dy < -Math.PI) dy += Math.PI * 2;
   yawCur += dy * Math.min(1, fdt * 8);   /* 帧率无关转向（原来 0.12/帧，60fps 时约合 0.12，弱机低帧下不再拖） */
   boatG.rotation.y = yawCur;
   boatG.rotation.z = Math.sin(et * 1.7) * 0.03;
+  if (sailMesh) sailMesh.rotation.x = Math.sin(et * 2.3) * 0.055;   /* 锐评画质批：帆微飘——恒亮白帆不再死板 */
   waterU.uTime.value = et;
   /* 相机跟随：帧率无关指数缓动（低帧下也不拖泥带水） */
   const dt = lastEt < 0 ? 0.016 : Math.min(Math.max(et - lastEt, 0.001), 0.12); lastEt = et;
+  /* 锐评画质批：接触阴影 + 尾流航迹随帧驱动（dt 之后——尾流淡入用帧率无关缓动）。
+     阴影贴水面（y=0.14 高于浪峰 ±0.085，depthWrite off）；尾流只在移动时淡入。 */
+  if (shadowMesh){
+    shadowMesh.position.set(bx, 0.14, bz);
+    shadowMesh.rotation.y = yawCur;
+  }
+  if (wakeMesh && wakeMat){
+    const moving = !!(b && b.moving);
+    const target = moving ? 0.45 : 0;
+    wakeMat.opacity += (target - wakeMat.opacity) * Math.min(1, dt * 5);
+    const sternX = bx + Math.sin(yawCur) * 2.6, sternZ = bz + Math.cos(yawCur) * 2.6;
+    wakeMesh.position.set(sternX, 0.13, sternZ);
+    wakeMesh.rotation.set(-Math.PI / 2, yawCur, 0, 'YXZ');   /* 先平贴水面、再按船头转向；v=0 端朝船尾 */
+  }
   /* 护航船队：航向取运动方向（指数平滑），V 字编队挂在主船尾迹上；折损后队列缩短 */
   if (escPrevOk) {
     const dxh = bx - escPrev.x, dzh = bz - escPrev.z, dl = Math.hypot(dxh, dzh);
