@@ -82,7 +82,7 @@ elif not (ROOT / "key.txt").exists():
 key_files = [
     "HANDOFF.md", "PLAN.md", "PRODUCT.md", "README.md",
     "schema.json", "cases.jsonl", "eval.py", "fake_server.py",
-    "schema-island-generic.json", "result-teleai.json", "key.example.txt",
+    "schema-island-generic.json", "results", "key.example.txt",
     "odyssey-witch/index.html", "odyssey-witch/server.py", "odyssey-witch/启动游戏.bat",
     "odyssey-witch/odyssey-story.md", "odyssey-witch/odyssey-lore.md", "odyssey-witch/odyssey-visual.md",
     "odyssey-witch/concept-art",

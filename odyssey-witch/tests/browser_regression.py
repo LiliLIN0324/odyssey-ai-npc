@@ -1015,6 +1015,146 @@ def main():
             map_page.wait_for_function("mapOpen === false")
             map_context.close()
 
+            # ============ 批次 J · 实玩审计修复的回归锁 ============
+            # ① 出生点的靠岸简报必须讲主线目标岛，不能讲几何上最近的第三章岛
+            spawn_context, spawn_page = new_page(browser, errors)
+            open_game(spawn_page)
+            spawn_page.locator("#opSkip").click()
+            spawn_page.wait_for_timeout(900)
+            spawn_brief = spawn_page.evaluate(
+                """() => ({
+                    name: document.getElementById('lfName').textContent,
+                    kicker: document.querySelector('#landfallBrief .lfKicker').textContent,
+                    action: document.getElementById('lfAction').textContent,
+                    compass: document.getElementById('hudCompass').innerText,
+                })"""
+            )
+            check(
+                spawn_brief["name"] == "特洛伊海岸"
+                and "特洛伊" in spawn_brief["compass"]
+                and "NEXT STOP" in spawn_brief["kicker"],
+                "出生点靠岸简报讲主线目标岛（不再被第三章的声之海峡抢走）",
+            )
+            check(
+                "尚未靠近" in spawn_brief["action"],
+                "未靠近目标岛时简报不谎称「E · 登陆」",
+            )
+
+            # ② 任务/背包面板打开时世界必须暂停（船不动、需求不掉）
+            spawn_page.keyboard.press("q")
+            spawn_page.wait_for_timeout(400)
+            paused_before = spawn_page.evaluate(
+                "() => ({x: window.__game.boat.x, thirst: window.__game.state.thirst})"
+            )
+            spawn_page.keyboard.down("d")
+            spawn_page.wait_for_timeout(1600)
+            spawn_page.keyboard.up("d")
+            paused_after = spawn_page.evaluate(
+                "() => ({x: window.__game.boat.x, thirst: window.__game.state.thirst})"
+            )
+            check(
+                abs(paused_after["x"] - paused_before["x"]) < 0.5
+                and abs(paused_after["thirst"] - paused_before["thirst"]) < 0.05,
+                "任务面板打开时世界暂停（读清单不会被饿渴惩罚）",
+            )
+            scene_before = spawn_page.evaluate("window.__game.getScene()")
+            spawn_page.keyboard.press("e")
+            spawn_page.wait_for_timeout(300)
+            check(
+                spawn_page.evaluate("window.__game.getScene()") == scene_before,
+                "面板打开时 E 键不触发世界交互",
+            )
+            spawn_page.keyboard.press("q")
+            spawn_page.wait_for_timeout(300)
+
+            # ③ 风神埃俄罗斯的 E 键必须能对话（旧版完全无响应 → 风袋永远拿不到）
+            spawn_page.evaluate(
+                """() => {
+                    window.__game.setScene('aeolia');
+                    aiaPlayer.x = 4 * ATS + ATS / 2 + 30;
+                    aiaPlayer.y = 4 * ATS + ATS * 0.55 + 10;
+                }"""
+            )
+            spawn_page.wait_for_timeout(700)
+            spawn_page.keyboard.press("e")
+            spawn_page.wait_for_timeout(1200)
+            check(
+                spawn_page.evaluate("dlgOpen") is True
+                and "埃俄罗斯" in spawn_page.locator("#dlgName").inner_text(),
+                "风神岛的 E 键能打开埃俄罗斯的对话（风袋主线不再断链）",
+            )
+            spawn_page.keyboard.press("Escape")
+            spawn_page.wait_for_timeout(300)
+
+            # ④ 环境台词：冷却判据修正后，NPC 靠近即可开口（此前前 90 秒全哑）
+            spawn_page.evaluate(
+                """() => {
+                    window.__game.setScene('hades');
+                    aiaPlayer.x = 9 * ATS + ATS / 2 + 40;
+                    aiaPlayer.y = 2 * ATS + ATS * 0.6 + 10;
+                }"""
+            )
+            spawn_page.wait_for_timeout(2600)
+            ambient_text = spawn_page.evaluate(
+                """() => {
+                    const el = document.getElementById('ambient');
+                    return getComputedStyle(el).display !== 'none' ? el.innerText.trim() : '';
+                }"""
+            )
+            check(
+                bool(ambient_text),
+                "NPC 靠近即有环境台词（不再被 90 秒冷却判据误伤）",
+            )
+            spawn_context.close()
+
+            # ⑤ 竖屏不再被全屏遮罩锁死：提示不覆盖视口，且所有按钮可点
+            phone_context = browser.new_context(
+                viewport={"width": 390, "height": 844},
+                is_mobile=True,
+                has_touch=True,
+            )
+            phone_page = phone_context.new_page()
+            phone_page.goto(BASE_URL, wait_until="networkidle", timeout=45000)
+            phone_page.wait_for_timeout(900)
+            hint_box = phone_page.evaluate(
+                """() => {
+                    const el = document.getElementById('rotateHint');
+                    const st = getComputedStyle(el);
+                    const r = el.getBoundingClientRect();
+                    return {display: st.display, pe: st.pointerEvents,
+                            covers: r.left <= 0 && r.top <= 0 && r.right >= innerWidth && r.bottom >= innerHeight};
+                }"""
+            )
+            check(
+                not hint_box["covers"] and hint_box["pe"] == "none",
+                "竖屏提示不再全屏遮挡（不锁死游戏）",
+            )
+            try:
+                phone_page.locator("#tsGo").click(timeout=8000)
+                started = True
+            except Exception:
+                started = False
+            check(started, "手机竖屏能真的点下「启航」（旧版被遮罩卡死）")
+            phone_page.evaluate("document.getElementById('opSkip').click()")
+            phone_page.wait_for_timeout(1200)
+            phone_buttons = phone_page.evaluate(
+                """() => {
+                    const out = [];
+                    for (const b of document.querySelectorAll('.hud button, #touchRow button, #touchBtns button')) {
+                        const r = b.getBoundingClientRect();
+                        if (r.width < 1) continue;
+                        const top = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+                        out.push({id: b.id, ok: top === b || b.contains(top)});
+                    }
+                    return out;
+                }"""
+            )
+            check(
+                phone_buttons and all(item["ok"] for item in phone_buttons),
+                "手机竖屏下所有 HUD/触屏按钮都点得到",
+            )
+            phone_context.close()
+
             check(not errors, "浏览器无 pageerror 与 console error；\n" + "\n".join(errors))
         except Exception:
             if errors:

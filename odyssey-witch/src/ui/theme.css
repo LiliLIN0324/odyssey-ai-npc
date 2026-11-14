@@ -451,6 +451,34 @@ canvas{border-radius:var(--od-radius-lg); box-shadow:var(--od-shadow), 0 0 0 1px
   body.touch #landfallBrief{top:52px; bottom:auto; right:10px; width:min(330px,54%);}
   body.touch #choiceReceipt{top:52px; bottom:auto; left:10px; width:min(300px,48%);}
   body.touch #hudQuest{max-width:46vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  /* 区域名挪到底部：窄屏时 HUD 会折行，第二行原本正好压在区域名上（实测叠字） */
+  body.touch #zone{top:auto; bottom:5px; font-size:10.5px; letter-spacing:1px; opacity:.66;}
+  /* 新手引导卡原本占左下角——和虚拟摇杆同一个位置（实测卡片压在摇杆上）。
+     触屏时改为左上角横条，避开摇杆与右侧按钮；宽度再收一点，别和靠岸简报撞上。 */
+  body.touch #onboardingCard{left:10px; top:44px; bottom:auto; width:min(260px,42%); padding:9px 11px;}
+  body.touch #onboardingCard p{font-size:11.5px; line-height:1.6;}
+  body.touch #choiceReceipt{top:auto; bottom:150px;}   /* 回执别压摇杆 */
+}
+/* 竖屏（手机上）：画布本身只有 96vw 宽的一条，HUD 必须瘦身，否则把画布吃光 */
+@media (orientation:portrait) and (pointer:coarse){
+  /* 竖屏时把整个舞台转 90°：玩家把手机一横就是正的（标准转屏做法）。
+     画面转过来后 HUD 有 374px 的高度可用，不再挤成一团；
+     点「仍要竖屏」会去掉 body.rhDismissed → 取消旋转，回到窄版但可玩的布局。 */
+  body:not(.rhDismissed) #stage{
+    position:absolute; left:50%; top:50%;
+    width: calc(min(96vw, 94vh) * 5 / 3);
+    transform: translate(-50%,-50%) rotate(90deg);
+  }
+  .hud{gap:4px; row-gap:4px;}
+  .hud .pill{font-size:10px; padding:3px 7px;}
+  .hud button{font-size:11px; padding:3px 7px;}
+  #hudWind{display:none !important;}   /* 风向在竖屏读不全（实测被裁），改看海图 */
+  #hudQuest{display:none !important;}
+  #hudCompass{max-width:52vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  /* 未旋转的竖屏兜底布局：stage 是一条窄带，所有浮层都挪到屏幕上的空白区，别压画布 */
+  body.rhDismissed #landfallBrief{position:fixed; top:92px; bottom:auto; right:8px; left:auto; width:min(260px,68%);}
+  body.rhDismissed #onboardingCard{position:fixed; top:auto; bottom:14px; left:8px; width:min(250px,66%);}
+  body.rhDismissed #choiceReceipt{position:fixed; top:auto; bottom:150px; left:8px; right:auto; width:min(250px,66%);}
 }
 @media (max-height:430px){
   #landfallBrief{width:min(300px,44%); padding:8px 10px;}
@@ -458,6 +486,9 @@ canvas{border-radius:var(--od-radius-lg); box-shadow:var(--od-shadow), 0 0 0 1px
   #landfallBrief .lfName{font-size:15px;}
   .hud{top:8px; left:8px; right:8px;}
   .hud .pill{padding:3px 8px; font-size:11px;}
+  /* 矮屏（横屏手机）：HUD 两行时区域名要下移，否则第二行压在它身上 */
+  body.touch #zone{bottom:4px;}
+  body.touch #landfallBrief{width:min(290px,46%);}
 }
 @media (prefers-reduced-motion: reduce){
   #titleScreen, #titleScreen::before, #tsGo, .tsMoon, .tsWave, .tsBoat .sail, .tsGrain{animation:none !important;}

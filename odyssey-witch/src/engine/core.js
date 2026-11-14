@@ -22,8 +22,14 @@ function npcAmbientTick(dt){
   const now = performance.now();
   if (ambActive && now < ambUntil) return;   /* 正在说的这句先说完 */
   if (ambActive){ ambActive=null; return; }  /* 说完停一轮，避免无缝接龙 */
-  const cands = (AMBIENT[npc]||[]).filter(a =>
-    now - (ambientCooldown[npc+"."+a.id]||0) > 90000 && a.cond());
+  /* 冷却判据修正：原来写 now-(cooldown||0)>90000 ——「没说过」被当成「冷却中」，
+     而 performance.now() 在页面刚打开时只有几秒，于是**所有 NPC 的环境台词在前 90 秒
+     一句都不会出现**（女巫主动搭话、关怀承诺、传闻口，全都哑着）。
+     正确口径：没有冷却记录＝从未说过＝立刻可用；说过一次才等 90s。 */
+  const cands = (AMBIENT[npc]||[]).filter(a => {
+    const cd = ambientCooldown[npc+"."+a.id];
+    return (cd === undefined || now - cd > 90000) && a.cond();
+  });
   /* 传闻口：海路听来的名声事件纳入环境台词候选（未听过优先；全听过则不抢话） */
   const rumor = rumorNextFor(npc);
   if (rumor && !rumor.heard){

@@ -48,6 +48,15 @@ function touchInit(){
   bindTap("tBtnE", pressE);
   bindTap("tBtnMap", ()=>{ if (!chapterOn){ mapOpen ? closeMap() : openMap(); } });
   bindTap("tBtnBag", ()=>{ document.getElementById("bagBtn").click(); });
+  /* 竖屏提示：给一条「仍要竖屏」的出路——提示只劝不拦，玩家点掉后本次会话不再出现 */
+  const rhGo = document.getElementById("rhGo");
+  if (rhGo){
+    rhGo.addEventListener("click", ()=>{
+      document.body.classList.add("rhDismissed");
+      try{ sessionStorage.setItem("odyssey-rh-dismissed","1"); }catch(e){}
+    });
+  }
+  try{ if (sessionStorage.getItem("odyssey-rh-dismissed")==="1") document.body.classList.add("rhDismissed"); }catch(e){}
   window.addEventListener("blur", clearJoy);
 }
 
@@ -332,7 +341,21 @@ function setAmbience(){
 }
 
 
-// --- 靠岸简报：接近岛屿即亮明这一站的赌注与回报，不新增模态打断 ---
+// --- landfallTarget (was main+1305-1313, 9 lines) ---
+/* 简报该讲哪一站：
+   旧版只看「几何上最近的岛」——出生点(22,11)离声之海峡只有 89px，于是开局第一秒
+   弹出来的靠岸简报是第三章的赌注/回报，还写着「先去冥界问路」，与罗盘
+   「特洛伊 · 夜袭」当场打架。现在：能登的岛 > 主线目标岛 > 最近的岛（锁着就只留一句）。 */
+function landfallTarget(){
+  const near = islandNear();
+  if (near && islandOpen(near)) return {is:near, mode:"near"};
+  const obj = objectiveIsland(nextObjective());
+  if (obj) return {is:obj, mode:"goal"};
+  return near ? {is:near, mode:"locked"} : null;
+}
+
+
+// --- renderLandfallBrief：接近岛屿即亮明这一站的赌注与回报，不新增模态打断 ---
 let _landfallKey="";
 function renderLandfallBrief(is){
   const el=document.getElementById("landfallBrief");
@@ -340,14 +363,27 @@ function renderLandfallBrief(is){
   const questOpen=document.getElementById("questPanel").style.display==="block";
   const show=!!(is && scene==="world" && !titleOn && !dlgOpen && !mapOpen && !chapterOn && !questOpen && state.openingBeat>=3);
   if (!show){ el.classList.remove("show"); el.setAttribute("aria-hidden","true"); _landfallKey=""; return; }
-  const open=islandOpen(is), gate=GATES[is.scene];
-  const action=open ? `E · 登陆 ${is.name}　｜　${is.note}` : `了望 · ${(gate&&gate.hint)||"航路尚未开放"}`;
-  const key=[is.scene,open,action].join("|");
+  const kicker = el.querySelector(".lfKicker");
+  let action;
+  if (is.mode==="goal"){
+    /* 还没靠近目标岛：讲下一站的赌注与回报，但不谎称「E · 登陆」 */
+    action = `尚未靠近 · 跟着罗盘上的航向走 ⛵`;
+    if (kicker) kicker.textContent = "下 一 站 · NEXT STOP";
+  } else if (is.mode==="locked"){
+    /* 锁着的岛：只留一句，不剧透赌注/回报，也不给「先去某某问路」的岔路指引 */
+    action = `航路尚未开放 · ${(GATES[is.is.scene]&&GATES[is.is.scene].hint)||"先去该去的地方"}`;
+    if (kicker) kicker.textContent = "远 处 的 岛 · OFF ROUTE";
+  } else {
+    const open=islandOpen(is.is), gate=GATES[is.is.scene];
+    action = open ? `E · 登陆 ${is.is.name}　｜　${is.is.note}` : `了望 · ${(gate&&gate.hint)||"航路尚未开放"}`;
+    if (kicker) kicker.textContent = "靠 岸 简 报 · LANDFALL";
+  }
+  const key=[is.is.scene,is.mode,action].join("|");
   if (key===_landfallKey) return;
   _landfallKey=key;
-  document.getElementById("lfName").textContent=is.name;
-  document.getElementById("lfStake").textContent=is.stake;
-  document.getElementById("lfReward").textContent=is.reward;
+  document.getElementById("lfName").textContent=is.is.name;
+  document.getElementById("lfStake").textContent = is.mode==="locked" ? "——" : is.is.stake;
+  document.getElementById("lfReward").textContent = is.mode==="locked" ? "——" : is.is.reward;
   document.getElementById("lfAction").textContent=action;
   el.classList.add("show"); el.setAttribute("aria-hidden","false");
 }
@@ -360,9 +396,12 @@ function updateHintDOM(){
   zoneEl.textContent = scene==="world" ? "地中海 · 航行中" : scene==="hades" ? "冥界 · 俄刻阿诺斯之岸" : scene==="aeolia" ? "风神岛 · 十二风的浮狱" : scene==="strait" ? "声之海峡 · 塞壬的歌" : scene==="sun" ? "太阳岛 · 赫利俄斯的牧场" : scene==="ogggia" ? "奥吉吉亚 · 冻结的金色暮光" : scene==="scheria" ? "斯克里岛 · 费埃克斯的白港" : scene==="ithaca" ? "伊萨卡 · 归乡，或者不归" : scene==="ismaros" ? "伊斯玛洛斯 · 贪的第一课" : scene==="lotus" ? "食莲岛 · 忘忧的甜" : scene==="cyclops" ? "独眼巨人之岛 · 无人之名" : scene==="telepylos" ? "忒勒皮洛斯 · 悬崖之城" : scene==="troy" ? "特洛伊海岸 · 木马之夜" : "埃阿亚岛 · 女巫的领地";
   if (scene==="world"){
     const is = islandNear();
-    renderLandfallBrief(is);
+    renderLandfallBrief(landfallTarget());
     if (is && !dlgOpen && !chapterOn && !questOpen){
-      const txt = `<b>E</b> · ${islandOpen(is)?"登陆":"了望"} ${is.name}`;
+      const open = islandOpen(is);
+      /* 锁着的岛要说清「航路未开」：只写「了望 X」会让玩家以为按 E 就能登，
+         实际按下去得到的是「先去某某问路」，两边像在说两件事。 */
+      const txt = open ? `<b>E</b> · 登陆 ${is.name}` : `<b>E</b> · 了望 ${is.name}（航路未开）`;
       if (hintEl.dataset.k !== txt){ hintEl.dataset.k = txt; hintEl.innerHTML = txt; }   /* 去抖：同文案不重写 DOM（每帧 innerHTML 会触发无谓的解析/布局） */
       hintEl.style.display="block";
       if (w3dActive()){ hintEl.style.left="50%"; hintEl.style.top="74%"; }   /* 3D 世界图：2D 投影坐标不适用，固定底部居中 */

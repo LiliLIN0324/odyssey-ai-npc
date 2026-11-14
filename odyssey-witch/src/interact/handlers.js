@@ -60,9 +60,21 @@ function craftOne(name){
 }
 
 
+// --- panelOpen (was main+…, 4 lines) ---
+/* 背包 / 任务 / 设置 任一面板开着？——主循环据此暂停世界，pressE 据此拒绝互动。
+   旧实现只查 bagPanel：开任务本时船照走、饿照扣，E 键还能直接把人送进另一座岛。 */
+function panelOpen(){
+  return ["bagPanel","questPanel","settingsPanel"].some(id=>{
+    const p=document.getElementById(id);
+    return !!(p && p.style.display==="block");
+  });
+}
+
+
 // --- pressE (was main+379-404, 26 lines) ---
 function pressE(){
   if (askOn || titleOn || chapterOn || mapOpen || dlgOpen) return;   /* 与 keydown 门控一致：界面打开时不响应 */
+  if (panelOpen()) return;   /* 面板开着（背包/任务/设置）不响应 E：玩家以为在翻清单，其实在切场景 */
   /* F5 斯库拉快反战：strike 窗口内 E=砍/拉救回，不进普通交互 */
   if (SC.on && SC.phase==="strike"){ scyllaStrike(); return; }
   /* F6 求婚者肃清战：strike 窗口内 E=放箭击杀，不进普通交互 */
@@ -450,6 +462,10 @@ function interact(){
     return openDlg("witch");
   }
   if (s.type==="seer") return openDlg("seer");
+  /* P0：风神埃俄罗斯此前没有任何分支接——走到宫门那个有名字有立绘的 NPC 身上按 E，
+     什么都不发生（连「附近没有可互动的东西」都不提示，因为 aiaNear() 命中了）。
+     结果：风袋（海图上明写着「风袋 · 顺风快旅」）永远拿不到，「释放四风」委托也从未被创建。 */
+  if (s.type==="aeolus") return openDlg("aeolus");
   /* ---------- 声之海峡（第三章）交互 ---------- */
   if (s.type==="mast"){
     if (state.straitStage>=1){ toast(state.mastTied?"你还绑在桅杆上——歌已经听完了。":"耳朵已封上蜡。世界安静了，也包括歌。"); return; }
@@ -1105,6 +1121,10 @@ if (s.type==="mother"){
     toast("你扬帆离开埃阿亚岛，回到地中海");
     save(); return;
   }
+  /* 兜底：新增点位若忘了接分支，不要静默吞掉——玩家按了 E 却毫无反应，
+     连「附近没有可互动的东西」都看不到（因为 aiaNear() 命中了），最无从排查。
+     这里给一句明确提示（回归脚本也能据此断言「点位有分支」）。 */
+  toast("（这里暂时没有可做的事。）");
 }
 
 

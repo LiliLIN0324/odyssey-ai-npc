@@ -12,6 +12,17 @@ function acceptQuest(id){
   const def=QUEST_DEFS[id]; if(!def) return null;
   if (!state.quests[id]){
     state.quests[id]={id, name:def.name, need:def.need, have:0, done:false, turned:false, ready:false, who:def.who};
+    /* 采集类委托：把背包里已经采到的东西先算进去。
+       旧实现 have 从 0 起算——玩家在岛上先采了 2 株玛草再接单，
+       委托进度仍是 0/3（草也采光、只能花 8 德拉克马买草补计数），看起来像任务坏了。 */
+    if (def.on && def.on.indexOf("collect:")===0){
+      const item = def.on.slice(8);
+      const got = state.backpack[item]||0;
+      if (got>0){
+        state.quests[id].have = Math.min(got, def.need);
+        if (state.quests[id].have>=def.need) state.quests[id].ready=true;
+      }
+    }
     renderHUD();
   }
   return state.quests[id];
@@ -38,7 +49,17 @@ const aiaPlayer = { x: 4*ATS+ATS/2, y: 8*ATS+ATS/2, w: 24, h: 14, face: "down", 
 
 const SAVE_KEY = "odyssey-med-v2", SAVE_VERSION = 4;   /* 批次 H9：v4=世界尺寸翻倍（船位 px ×2） */
 function savePayload(){
-  return {v:SAVE_VERSION, state, scene, boat:{x:boat.x,y:boat.y}, aia:{x:aiaPlayer.x,y:aiaPlayer.y}};
+  /* 战斗单位的血量/存活也进存档：野猪与特洛伊卫兵原本是模块级常量，
+     读档后满血复活（猪能再杀一次再掉一块肉、卫兵每只再给一次历练）——进度丢失兼刷分。
+     用 typeof 兜底：单测只加载存档那一段代码，boar / TROY_GUARDS 不在其中。 */
+  const boarState = (typeof boar!=="undefined") ? {hp:boar.hp, alive:boar.alive} : null;
+  const guardState = (typeof TROY_GUARDS!=="undefined") ? TROY_GUARDS.map(g=>({hp:g.hp, alive:g.alive})) : null;
+  return {
+    v:SAVE_VERSION, state, scene,
+    boat:{x:boat.x,y:boat.y}, aia:{x:aiaPlayer.x,y:aiaPlayer.y},
+    ...(boarState ? {boar:boarState} : {}),
+    ...(guardState ? {guards:guardState} : {}),
+  };
 }
 function exportSaveData(){ return JSON.stringify(savePayload()); }
 function save(){ try{
@@ -99,6 +120,18 @@ function load(){
     boat.x = bx; boat.y = by;
   }
   if (d.aia){ aiaPlayer.x=d.aia.x; aiaPlayer.y=d.aia.y; }
+  /* 战斗单位回档（野猪 / 特洛伊卫兵）：老档没有这两个字段就保持初始状态 */
+  if (d.boar && typeof boar!=="undefined"){
+    if (Number.isFinite(d.boar.hp)) boar.hp = d.boar.hp;
+    if (typeof d.boar.alive === "boolean") boar.alive = d.boar.alive;
+  }
+  if (Array.isArray(d.guards) && typeof TROY_GUARDS!=="undefined"){
+    d.guards.forEach((g,i)=>{
+      if (!g || !TROY_GUARDS[i]) return;
+      if (Number.isFinite(g.hp)) TROY_GUARDS[i].hp = g.hp;
+      if (typeof g.alive === "boolean") TROY_GUARDS[i].alive = g.alive;
+    });
+  }
   scene = d.scene === "hades" ? "hades" : d.scene === "aeolia" ? "aeolia" : d.scene === "strait" ? "strait" : d.scene === "sun" ? "sun" : d.scene === "aia" ? "aia" : d.scene === "ogggia" ? "ogggia" : d.scene === "scheria" ? "scheria" : d.scene === "ithaca" ? "ithaca" : PROLOGUE_SITES[d.scene] ? d.scene : "world";
   ensureState();
   return true;
@@ -828,6 +861,32 @@ aeolus: [
                  line:()=>"（她头也不抬，梭子没停）我说过——海记你的账。木料在筏台边等着，时辰没变，海也不会变。"},
     {id:"veil_told", w:0.6, cond:()=>state.raftStormDone&&state.raftVeilTaken,
                  line:()=>"（她看了一眼你的手腕）白手圣母的面纱。……她从她的海里捞过很多人——捞你的那一下，最用力。"},
+  ],
+  /* P2.9 四个哑巴 NPC（补）：先知/风神/重建者/食莲人此前既无锚点也无台词——
+     走到他们身边永远只有沉默，玩家不知道该开口说什么（AMBIENT 表缺这四人）。 */
+  seer: [
+    {id:"offer",   w:1.0, cond:()=>!state.prophecy,
+     line:()=>"（杖尖在门槛上点了三下）河还在涨。摆上你的东西——面包、淡水、蜜酒——我再告诉你两条路里，哪条活得下来。"},
+    {id:"after",   w:0.8, cond:()=>!!state.prophecy,
+     line:()=>"（他没有回头）路我已经给你了。走哪一条，都别回头看这条河。"},
+  ],
+  aeolus: [
+    {id:"winds",   w:1.0, cond:()=>!(state.windFreed||[]).every(Boolean),
+     line:()=>"（风在袍子里打了个旋）四个风仆还在石牢里。放它们出来，袋口才归你——风不白给。"},
+    {id:"given",   w:0.9, cond:()=>!!state.aeoliaDone,
+     line:()=>"（风绕过你的肩，像在数袋里还剩几阵）一次放一阵。贪心的人，第二趟是空手来的。"},
+  ],
+  rebuilder: [
+    {id:"camp",    w:1.0, cond:()=>!state.campHeld,
+     line:()=>"（重建者把一根梁扛上肩）营火还得有人守。夜里火把围上来的时候，你站哪儿？"},
+    {id:"after",   w:0.8, cond:()=>!!state.campHeld,
+     line:()=>"（他把最后一块梁码好）那一夜你守住了。城里的墙记不住人，火堆记得。"},
+  ],
+  lotusman: [
+    {id:"sweet",   w:1.0, cond:()=>true,
+     line:()=>"（他嚼着莲子，目光落在你身上）甜的。你要坐一会儿吗？坐久了，就不太想走了。"},
+    {id:"after",   w:0.7, cond:()=>!!state.lotusAte,
+     line:()=>"（他笑了笑，笑容像水面）你尝过了呀。那就坐吧——这儿的甜，不催人。"},
   ],
   nausicaa: [
     {id:"care_hungry", w:0.9, cond:()=>state.hunger<=30, give:{item:"面包"},

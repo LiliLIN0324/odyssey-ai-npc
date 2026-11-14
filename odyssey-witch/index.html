@@ -16,7 +16,7 @@
   *{box-sizing:border-box; margin:0; padding:0;}
   body{background:var(--bg); color:var(--ink); overflow:hidden;
     font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif; font-size:14px;
-    height:100vh; display:flex; align-items:center; justify-content:center;}
+    height:100vh; display:flex; align-items:center; justify-content:center; position:relative;}
   #stage{position:relative; width:min(96vw, calc(94vh * 5 / 3)); aspect-ratio:5/3; max-width:1200px;}
   canvas{width:100%; height:100%; display:block; border-radius:14px; box-shadow:0 12px 44px rgba(0,0,0,.5);}
   /* 2D 画布定位化：确保压在 3D 世界图（cv3d，DOM 更早）之上合成昼夜/浮字 */
@@ -549,25 +549,37 @@
     #arrival.play{animation:none; opacity:0;}
     *{transition-duration:.01ms !important;}
   }
-  /* 竖屏触屏：明确引导横屏，不把裁切后的画面直接丢给玩家 */
-  #rotateHint{position:fixed; inset:0; z-index:99999; display:none; flex-direction:column;
-    align-items:center; justify-content:center; text-align:center; padding:32px;
-    color:#efe3ca; font-family:var(--serif); background:
-      radial-gradient(120% 90% at 50% 40%, rgba(20,42,60,.9), rgba(4,10,16,.98) 70%), #050c14;}
-  #rotateHint .rhPhone{width:44px; height:76px; border:2px solid rgba(216,165,74,.65);
-    border-radius:9px; margin-bottom:20px; animation:rhTurn 2.4s ease-in-out infinite;}
-  #rotateHint b{font-size:18px; letter-spacing:.34em; color:#e8c98a; margin-bottom:10px;}
-  #rotateHint p{font-size:12.5px; line-height:1.8; color:rgba(239,227,202,.6);}
+  /* 竖屏触屏：建议横屏，但绝不锁死游戏。
+     旧版是 inset:0 + z-index:99999 + pointer-events:auto 的全屏黑幕——
+     实测竖屏下「启航」按钮与全部 HUD/触屏按钮命中测试全灭（点不动，等于游戏开不了机）。
+     现在改为顶部一张不拦指针的小卡片 + 一个「仍要竖屏」出口。 */
+  #rotateHint{position:fixed; top:0; left:0; right:0; z-index:9999; display:none; pointer-events:none;
+    flex-direction:row; align-items:center; gap:10px; text-align:left; padding:8px 12px;
+    color:#efe3ca; font-family:var(--serif);
+    background:linear-gradient(180deg, rgba(4,10,16,.94), rgba(4,10,16,.6) 76%, rgba(4,10,16,0));}
+  #rotateHint .rhPhone{width:20px; height:34px; flex:none; border:2px solid rgba(216,165,74,.65);
+    border-radius:5px; animation:rhTurn 2.4s ease-in-out infinite;}
+  #rotateHint .rhText{flex:1; min-width:0;}
+  #rotateHint b{display:block; font-size:13px; letter-spacing:.22em; color:#e8c98a; margin-bottom:2px;}
+  #rotateHint p{font-size:11px; line-height:1.55; color:rgba(239,227,202,.66);}
+  #rotateHint .rhGo{pointer-events:auto; cursor:pointer; flex:none; border:1px solid rgba(216,165,74,.55);
+    background:rgba(12,25,42,.86); color:#e8c98a; border-radius:999px; padding:6px 12px;
+    font-family:inherit; font-size:11px; letter-spacing:.06em; white-space:nowrap;}
+  #rotateHint .rhGo:active{background:rgba(28,48,72,.92);}
   @keyframes rhTurn{0%,38%{transform:rotate(0)}62%,100%{transform:rotate(-90deg)}}
   @media (orientation:portrait) and (pointer:coarse){ #rotateHint{display:flex;} }
+  body.rhDismissed #rotateHint{display:none !important;}
 </style>
 <link rel="stylesheet" href="src/ui/theme.css">
 </head>
 <body>
-<div id="rotateHint" aria-hidden="true">
-  <span class="rhPhone"></span>
-  <b>请横屏</b>
-  <p>海图要横着看。<br>转动设备，继续航行。</p>
+<div id="rotateHint" role="status" aria-live="polite">
+  <span class="rhPhone" aria-hidden="true"></span>
+  <div class="rhText">
+    <b>请横屏</b>
+    <p>海图横着看更清楚。转一下设备，或继续竖屏。</p>
+  </div>
+  <button class="rhGo" type="button" id="rhGo">仍要竖屏</button>
 </div>
 <div id="stage">
   <canvas id="cv" width="1000" height="600"></canvas>
@@ -1550,7 +1562,7 @@ setInterval(()=>{
   const ldt = dt*timeScale;
   /* Steam 化：海图是全屏界面——打开时暂停需求与时钟（原实现只暂停移动，看图也会饿晕）。
      批次 H4：任务/背包面板同样纳入暂停——读清单/翻背包不该被饿渴惩罚 */
-  const panelUp = document.getElementById("bagPanel").style.display==="block";
+  const panelUp = panelOpen();
   if (!dlgOpen && !titleOn && !chapterOn && !mapOpen && !panelUp){
     tickMove(ldt);
     if (scene==="aia"){ tickBoar(ldt); witchUtilityTick(ldt); }

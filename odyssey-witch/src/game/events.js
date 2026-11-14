@@ -359,6 +359,10 @@ function ambientAnchor(npc){
   if (npc==="siren"){ const s=SSPOTS.find(p=>p.type==="siren"); return s?{x:s.x,y:s.y}:null; }
   if (npc==="calypso") return calypso;
   if (npc==="nausicaa") return nausicaa;
+  /* 先知与风神本来就有锚点，却没有环境台词 → 一直沉默（AMBIENT 表缺这两人）。
+     重建者与食莲人连锚点都没有——补上，否则这两个场景的 NPC 永远不会开口。 */
+  if (npc==="rebuilder"){ const s=(PROLOGUE_SITES[scene]?PROLOGUE_SPOTS():[]).find(p=>p.type==="rebuild"); return s?{x:s.x,y:s.y}:null; }
+  if (npc==="lotusman"){ const s=(PROLOGUE_SITES[scene]?PROLOGUE_SPOTS():[]).find(p=>p.type==="lotusman"); return s?{x:s.x,y:s.y}:null; }
   if (npc==="epeius" && scene==="troy"){ const s=PROLOGUE_SPOTS().find(p=>p.type==="epeius"); return s?{x:s.x,y:s.y}:null; }
   if (npc==="cattle"){ const s=SUNSPOTS.find(p=>p.type==="cattle"); return s?{x:s.x,y:s.y}:null; }   /* P1.3 圣牛锚点 */
   if (npc==="polyphemus"){ const s=PROLOGUE_SPOTS().find(p=>p.type==="poly"); return s?{x:s.x,y:s.y}:null; } /* P2.8 独眼锚点 */

@@ -1,6 +1,6 @@
 # HANDOFF — odyssey-ai-npc 跨会话交接
 
-> **更新**: 2026-11-07 · 五次修订（**v0.2.0 发版门实测**：第二章冥界词表 14 条并入评测集（227 条/12 组）→ 首跑 50% 判据深红 → schema v2.2 补丁复测 85.7% 仍差判据线 2.2pp → **不打 tag**；通用岛基线对照首跑，结论入 README；五次微补：体检复核发现游戏正式地名「俄刻阿诺斯之岸」无评测用例，列入 v2.3 候选，见 §三.3）；**六次微补（内容级对账）**：§一.3 两处计数漂移修正（index.html 1127→1656 行、场景图 6→7），「献祭之沟」变体与世界地图地名导航零覆盖并入 v2.3 顺手项，见 §三.3/§六）；**七次微补（内容级对账·第二轮）**：§2.5 补丁口径修正（「8 处描述」实为 7 类描述+1 类 args）、multi 组「三轮不动」修正为 53.8%↔61.5% 五轮交替（7/13↔8/13，上限未破）；其余硬计数/地名/快照数字/PRODUCT/README 交叉复核全部一致；**八次微补（内容级对账·第三轮，11-07）**：30+ 项声明复核全绿（cases 227/12 组、index.html 1656 行、六快照 summary+延迟逐值、multi 五轮交替 53.8↔61.5、弱组四组、concept-art 7+6+3+3、地名计数、story 八章+勘误在案、PLAN/PRODUCT/README 交叉一致），仅两处口径修正——存档「version 字段」实为 key 名版本化（`odyssey-med-v2`，对象内无字段）、§一.2 v2.2 指路笔误（§一.6→§一.2.5）；**九次微补（内容级对账·第四轮，11-07）**：机械体检 8 项全绿 + 30+ 项硬声明逐值复核全绿（六快照 summary/延迟/multi 五轮/弱组/cases 227·12 组·hades 14 条/index.html 1656 行/地名计数/story 八章+勘误/schema 30+29 类/文件在场性/results 对照表六行），唯一缺口是 §五 文件地图漏记 `concept-art/characters/`（角色图 6 张在子目录、场景图在根目录），已补记；发版门判据复核仍 **RED（85.7% < 87.9%）**，维持不打 tag；**十次微补（内容级对账·第五轮，11-07）**：零缺口轮——机械体检 8 项全绿 + 第五轮自动断言全绿（六快照 summary/延迟逐值、multi 五轮 53.8↔61.5、弱组四组、cases 227·12 组·hades 14 条、index.html 1656 行·地名计数·存档 key、schema 30+29 类、资产 7+6+3+3、story 八章+勘误、README/PRODUCT/results-README 交叉），另抽查死亡复活逻辑（index.html:455-459 扣 5 币送女巫屋外）与 odyssey-witch 目录逐文件比对 §五 无漏记；发版门第三次复核仍 RED（85.7% < 87.9%，差 1 条）维持不打 tag；**十一次微补（内容级对账·第六轮，11-07）**：零缺口轮——机械体检 8 项全绿 + 五轮断言复跑 0 不一致，另用 v3/v21/v22 原始快照把前五轮未逐条核过的声明坐实（hades 失败身份 = hades_07"怎么渡过冥河"期望请求帮助答导航 + hades_14"献祭沟在哪"期望查询附近目标答查询地点信息，与 §2.5 定性一致；boundary_18"喝"v21 对→v22 错，§四.11 扰动坐实；v22 唯一误触发 = oov_12；完全正确 181/227 = 79.74% 差 0.26pp）；results/ 六快照+README 与账面一致、远端 v0.1.0 tag 在场；发版门第四次复核仍 RED（85.7% < 87.9%，差 1 条）维持不打 tag；**十二次微补（11-07 傍晚，本会话）**：接手时发现并行会话 16:01 在 index.html 落了一批**未记录**的新工作（§一.7：风神岛场景+WebAudio 音效系统+多任务账本+M 海图+favicon，1656→2819 行）——按 §二.4 教训先查清再入库：JS 语法体检（node --check）✅、实机冒烟 ✅（启航/世界图渲染/E 登陆风神岛/风神岛渲染/M 海图全绿；两处非阻塞小瑕疵见 §二.9）；对账第七轮：机械体检 8 项除"工作区未提交"外全绿，第五轮断言复跑 123 项仅 3 红且恰好全是该批次（行数 2819、献祭之沟 ×2、brand+favicon）、第六轮断言复跑全绿=评测侧零漂移；该批次已回填 §一.7/§二.9/§三.3/§五；发版门第五次复核仍 RED（85.7% < 87.9%，差 1 条）维持不打 tag；**十三次微补（11-07 16:42 终局，本会话）**：并行会话批次于 16:37 静默、最终规模远超十二次微补时点——index.html 2819→**3343 行**（新增：风袋玩法全量实装「放风=航速倍增/贪念用光写记忆流」、**第三章声之海峡场景部分实装**（scene `strait`、siren NPC、塞壬立绘已接）、标题屏改全幅概念图双按钮（继续航程/从头开始））；cases 227→**257 条 14 组**（wind_oov 14 已随 v4 首跑 **100%**；hades_15/16（正是 §三.3 两个顺手项：俄刻阿诺斯之岸/献祭之沟变体）+ ch3_oov 14 共 **16 条 16:36 增补、尚未评测**，v4 快照为 241 条时点）；schema v2.3（使用消耗品 args 补"风袋"）；**剧情圣经已补「插章·风神岛·风的账」**（十二次微补"圣经缺岛"一项已被其自行修复）；新资产：characters/07-塞壬、08-斯库拉、09-埃俄罗斯 + maps/04-风神岛图（**后三张尚未被 index.html 接线**，NPCS.aeolus portrait 仍 SVG 兜底）；3D 线 world.js/3d index.html 有改动+polish 截图（细节待 3d/HANDOFF 下轮记账）；本会话终局复跑冒烟全绿（语法/启航/海图/E 登陆风神岛/风袋按钮/4 NPC）；评测侧复跑第六轮断言全绿、v4 数字与 results/README 声明逐项一致（wind_oov 100%、误触发 3.7%、无 429）；README 计数由 241/13 修正为 257/14 并补 ch3_oov 行；**发版门第六次复核仍 RED（v4 全量再证 hades_oov 85.7% < 87.9%）维持不打 tag** ｜ **用法**: 新会话第一句说"先读HANDOFF.md" ｜ 总计划看 `PLAN.md`，**产品定位/路线图/成本账看 `PRODUCT.md`**，评测细节看 `README.md`，剧情看 `odyssey-witch/odyssey-story.md`
+> **更新**: 2026-11-07 · 五次修订（**v0.2.0 发版门实测**：第二章冥界词表 14 条并入评测集（227 条/12 组）→ 首跑 50% 判据深红 → schema v2.2 补丁复测 85.7% 仍差判据线 2.2pp → **不打 tag**；通用岛基线对照首跑，结论入 README；五次微补：体检复核发现游戏正式地名「俄刻阿诺斯之岸」无评测用例，列入 v2.3 候选，见 §三.3）；**六次微补（内容级对账）**：§一.3 两处计数漂移修正（index.html 1127→1656 行、场景图 6→7），「献祭之沟」变体与世界地图地名导航零覆盖并入 v2.3 顺手项，见 §三.3/§六）；**七次微补（内容级对账·第二轮）**：§2.5 补丁口径修正（「8 处描述」实为 7 类描述+1 类 args）、multi 组「三轮不动」修正为 53.8%↔61.5% 五轮交替（7/13↔8/13，上限未破）；其余硬计数/地名/快照数字/PRODUCT/README 交叉复核全部一致；**八次微补（内容级对账·第三轮，11-07）**：30+ 项声明复核全绿（cases 227/12 组、index.html 1656 行、六快照 summary+延迟逐值、multi 五轮交替 53.8↔61.5、弱组四组、concept-art 7+6+3+3、地名计数、story 八章+勘误在案、PLAN/PRODUCT/README 交叉一致），仅两处口径修正——存档「version 字段」实为 key 名版本化（`odyssey-med-v2`，对象内无字段）、§一.2 v2.2 指路笔误（§一.6→§一.2.5）；**九次微补（内容级对账·第四轮，11-07）**：机械体检 8 项全绿 + 30+ 项硬声明逐值复核全绿（六快照 summary/延迟/multi 五轮/弱组/cases 227·12 组·hades 14 条/index.html 1656 行/地名计数/story 八章+勘误/schema 30+29 类/文件在场性/results 对照表六行），唯一缺口是 §五 文件地图漏记 `concept-art/characters/`（角色图 6 张在子目录、场景图在根目录），已补记；发版门判据复核仍 **RED（85.7% < 87.9%）**，维持不打 tag；**十次微补（内容级对账·第五轮，11-07）**：零缺口轮——机械体检 8 项全绿 + 第五轮自动断言全绿（六快照 summary/延迟逐值、multi 五轮 53.8↔61.5、弱组四组、cases 227·12 组·hades 14 条、index.html 1656 行·地名计数·存档 key、schema 30+29 类、资产 7+6+3+3、story 八章+勘误、README/PRODUCT/results-README 交叉），另抽查死亡复活逻辑（index.html:455-459 扣 5 币送女巫屋外）与 odyssey-witch 目录逐文件比对 §五 无漏记；发版门第三次复核仍 RED（85.7% < 87.9%，差 1 条）维持不打 tag；**十一次微补（内容级对账·第六轮，11-07）**：零缺口轮——机械体检 8 项全绿 + 五轮断言复跑 0 不一致，另用 v3/v21/v22 原始快照把前五轮未逐条核过的声明坐实（hades 失败身份 = hades_07"怎么渡过冥河"期望请求帮助答导航 + hades_14"献祭沟在哪"期望查询附近目标答查询地点信息，与 §2.5 定性一致；boundary_18"喝"v21 对→v22 错，§四.11 扰动坐实；v22 唯一误触发 = oov_12；完全正确 181/227 = 79.74% 差 0.26pp）；results/ 六快照+README 与账面一致、远端 v0.1.0 tag 在场；发版门第四次复核仍 RED（85.7% < 87.9%，差 1 条）维持不打 tag；**十二次微补（11-07 傍晚，本会话）**：接手时发现并行会话 16:01 在 index.html 落了一批**未记录**的新工作（§一.7：风神岛场景+WebAudio 音效系统+多任务账本+M 海图+favicon，1656→2819 行）——按 §二.4 教训先查清再入库：JS 语法体检（node --check）✅、实机冒烟 ✅（启航/世界图渲染/E 登陆风神岛/风神岛渲染/M 海图全绿；两处非阻塞小瑕疵见 §二.9）；对账第七轮：机械体检 8 项除"工作区未提交"外全绿，第五轮断言复跑 123 项仅 3 红且恰好全是该批次（行数 2819、献祭之沟 ×2、brand+favicon）、第六轮断言复跑全绿=评测侧零漂移；该批次已回填 §一.7/§二.9/§三.3/§五；发版门第五次复核仍 RED（85.7% < 87.9%，差 1 条）维持不打 tag；**十三次微补（11-07 16:42 终局，本会话）**：并行会话批次于 16:37 静默、最终规模远超十二次微补时点——index.html 2819→**3343 行**（新增：风袋玩法全量实装「放风=航速倍增/贪念用光写记忆流」、**第三章声之海峡场景部分实装**（scene `strait`、siren NPC、塞壬立绘已接）、标题屏改全幅概念图双按钮（继续航程/从头开始））；cases 227→**257 条 14 组**（wind_oov 14 已随 v4 首跑 **100%**；hades_15/16（正是 §三.3 两个顺手项：俄刻阿诺斯之岸/献祭之沟变体）+ ch3_oov 14 共 **16 条 16:36 增补、尚未评测**，v4 快照为 241 条时点）；schema v2.3（使用消耗品 args 补"风袋"）；**剧情圣经已补「插章·风神岛·风的账」**（十二次微补"圣经缺岛"一项已被其自行修复）；新资产：characters/07-塞壬、08-斯库拉、09-埃俄罗斯 + maps/04-风神岛图（**后三张尚未被 index.html 接线**，NPCS.aeolus portrait 仍 SVG 兜底）；3D 线 world.js/3d index.html 有改动+polish 截图（细节待 3d/HANDOFF 下轮记账）；本会话终局复跑冒烟全绿（语法/启航/海图/E 登陆风神岛/风袋按钮/4 NPC）；评测侧复跑第六轮断言全绿、v4 数字与 results/README 声明逐项一致（wind_oov 100%、误触发 3.7%、无 429）；README 计数由 241/13 修正为 257/14 并补 ch3_oov 行；**发版门第六次复核仍 RED（v4 全量再证 hades_oov 85.7% < 87.9%）维持不打 tag**；**十四次微补（11-15 批次 J · 实玩审计，本会话）**：接续 §39 之后落地但**未入账的三笔提交**（`36697f1` index.html 拆 src/ + H5 构建与回归门禁 / `2440916` 海图天气 + 洋流 + 移动端 + 对话兜底重写 / `3408fb0` 概念图去水印）已补记于 **§40**；实玩审计出 **3 条 P0**（竖屏全屏遮罩锁死游戏 / 埃俄罗斯 E 键无响应 / NPC 环境台词前 90 秒全哑）+ **7 条 P1**（窄屏 HUD 叠字 / 出生点简报指向第三章岛 / 2D 降级色块感 / 任务面板不停世界 / 面板不拦 E / 委托计数错位 / 战斗进度不入存档），**全部修复**并加 **8 条回归锁**（§41）；硬计数随现实校正——index.html 4109→**1600 行 + `src/` 11809 行**、concept-art 7+6→**50 张**、cases 227/12→**323 条 18 组**；门禁 `verify_h5.py` **PASS H5 全链路**、`node --test` **50/50**、eval mock **18 组 323 条全 1.0000**；收尾体检 4 项 `[!!]` 清零（含 3 处悬挂 `result-*.json` 引用改指 `results/` 快照、体检脚本里一条永不可能满足的陈旧断言 `result-teleai.json` 改指 `results/` 目录）｜ **用法**: 新会话第一句说"先读HANDOFF.md" ｜ 总计划看 `PLAN.md`，**产品定位/路线图/成本账看 `PRODUCT.md`**，评测细节看 `README.md`，剧情看 `odyssey-witch/odyssey-story.md`
 > **仓库**: https://github.com/LiliLIN0324/odyssey-ai-npc （public）｜ 3D 线总控账本：`odyssey-witch/3d/HANDOFF.md`
 
 **项目一句话**：为《奥德赛》主题开放世界 AI NPC 游戏打地基——先用 227 条用例量化 Xing4.0-29B-Intent 的意图/填参/误触发能力，再用它 + 通用大模型搭出双层大脑的灰盒原型（女巫喀耳刻）。架构 = 大模型负责"想"，XingIntent 把"想"变成引擎能执行的 `{category, args}` JSON。
@@ -12,7 +12,7 @@
 ### 1. 意图评测套件（11-05）
 - `schema.json`：奥德赛版 30 个意图类别（神话实体自带易混对：塞壬/斯库拉、雅典娜/赫尔墨斯）
 - `schema-island-generic.json`：通用岛对照（29 类、无查询神谕、通用词表；**11-07 已实跑**，见 §一.6）
-- `cases.jsonl`：227 条用例、12 分组（clear/confuse/boundary/slot_missing/chitchat/oov/hades_oov/multi/negative/multiturn/hostile/state_set）
+- `cases.jsonl`：**323 条用例、18 分组**（clear/confuse/boundary/slot_missing/chitchat/oov/hades_oov/wind_oov/ch3_oov/ch5_oov/ch6_oov/ithaca_oov/prologue_oov/multi/negative/multiturn/hostile/state_set）——227→271→313→323 随章节词表逐轮增补，见 §41
 - `eval.py`：双后端（teleai / local-vLLM-LMStudio-Ollama）+ mock 冒烟；指标含类别准确率、参数级 F1（值级 exact match）、完全正确率、**负例误触发率**、延迟分位
 - `fake_server.py`：免 key 链路自检端点；README.md 全套文档已写完
 
@@ -63,11 +63,11 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 **教训**：新章节词表首轮大面积翻车是流程预期（50%），"先跑→归因→补 schema→复测"一轮就能回收大半。
 
 ### 3. 游戏原型 `odyssey-witch/`（11-06 深夜，第一个"活 NPC"灰盒）
-- 纯 Web 技术栈：`index.html`（Canvas 2.5D，**3343 行**，风神岛插章+声之海峡场景后，见 §一.7；第二章实装后 1656 行；11-06 首版 1127 行）+ `server.py`（零依赖 Python 本地服务，key 只留服务端）
+- 纯 Web 技术栈：`index.html`（Canvas 2.5D，**现 1600 行**——11-14 起主体拆进 `src/`：data 5 个 + engine + game + interact + render + ui 3 个 + agent + rumors 共 13 个 JS + 1 CSS，合计 **11809 行**；历史：首版 1127 → 第二章 1656 → 风神岛+声之海峡 3343 → 4109 → 拆分后 1600，见 §40/§41）+ `server.py`（零依赖 Python 本地服务，key 只留服务端）
 - 双层大脑已跑通：玩家输入 → `/api/parse`（XingIntent，T2）→ 30 类 handler 本地结算（金钱/背包/任务/状态真实变更）→ 低置信落 `/api/chat`（TeleChat3-438B，T3 女巫人格台词 ≤55 字）
 - 已实装内容：世界地图（地中海驾船）+ 埃亚岛（2.5D 挤出瓦片、y 排序遮挡）；采玛草任务链（接/查进度/交/弃，含野猪 3 币彩蛋）、野猪战斗（E 键本地结算数值，死亡→屋外复活扣 5 币）、买卖/装备/消耗品/状态查询、祭坛彩蛋
 - 包装层（11-07 凌晨最后一批工作）：标题屏（继续/新开）、章节过场卡（概念图 + 3s 自动跳过）、对话立绘（dlgPortrait）
-- 叙事资产：`odyssey-story.md`（八章剧情圣经，第一章已实装，后续章剧本全写好）、`odyssey-lore.md`（知识库红线）、`odyssey-visual.md` + `concept-art/`（7 场景图在根目录 01~07 + 6 角色图在 `characters/` 子目录；07-冥界之岸为第二章新增）
+- 叙事资产：`odyssey-story.md`（八章剧情圣经，第一章已实装，后续章剧本全写好）、`odyssey-lore.md`（知识库红线）、`odyssey-visual.md` + `concept-art/`（**50 张**：根目录场景图 11 张 01~11 + `characters/` 15 角色立绘 + `maps/` 14 十岛羊皮纸详图 + `prologue/` 5 序章组 + `brand/` 5；07-冥界之岸为第二章新增）
 - 存档：localStorage，key `odyssey-med-v2`（版本化落在 key 名上、存档对象内**无 version 字段**，v1 旧 key 由 migrate() 一次性迁入；PLAN「version 字段从第一天就有」一项如实记未做，save-systems 原则按此轻量遵守）
 
 ### 4. 3D 线 `odyssey-witch/3d/`（11-07 定向，P0/PD/P1 已完成）
@@ -132,7 +132,7 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
   ch3_chat01 期望透明修正：与 clear_bio_01/confuse_16 同族，均应归查询生物情报，快照 meta 留痕）→
   单并发探测发现 3 条稳定回退（2/2 复现才动刀，hades_04 探测 2/2 通过判为方差不动）→ **v2.4.1**（4 类收口：
   捎话≠求助 / 夸口要求归其他意图 / 放进设施=献祭）→ **终局全绿**
-- **终局指标（257 条，result-ch3-v241.json，0 error）**：类别 **94.2%** 历史新高 / F1 92.8% /
+- **终局指标（257 条，summary 快照 `results/teleai-v5-ch3-20261107.json`，0 error）**：类别 **94.2%** 历史新高 / F1 92.8% /
   **完全正确 82.1% 首次跨过 80% 线** / 误触发 **3.3%** 历史最低 / P50 809ms（加长 +150 字符代价可忽略）；
   **ch3_oov 100%（14/14）、hades_oov 100%（16/16，含 hades_07/hades_14 两块历史硬骨头）**、wind_oov 100%、
   multi 61.5% 首次摸到上限；剩余 15 条失败均为既有已知难点（boundary_07/18、confuse_10/19、multiturn 应答词、
@@ -598,7 +598,7 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
   - S8 AMBIENT 注册+渲染（suitors weaving/polyphemus father_wrath 含模板数字插值）✓；
   - S9 旧档兜底（抹 7 新字段+polNameGiven/raftStormDone → 推导 wrath=2+marks 回补+包裹结构完好）✓；
   - S10 auditHandlers **30 类×11 NPC 0 缺口** + 全文档 0 U+FFFD ✓。node --check 绿（tools/check_inline_js.py）。
-- **评测回归（313 条全量，本批零新意图词表，判据：类别红线 90% 不降）**：`result-p2-regress-20261109.json`（workers=2，0 error 无 429，148s）——**类别 92.97%（较 v7 基线 92.33% +0.64pp，红线通过）/ F1 89.2%（-0.06pp）/ 完全正确 74.4%（-0.32pp 采样方差）/ 误触发 3.3% 持平**；组级升 boundary +4.5pp、prologue_oov +7.1pp、wind_oov +7.1pp，降 confuse -4.2pp（1 条方差）；**八个 OOV 组全 ≥92.9%**（hades/wind/ch3/ch5/ithaca 五组 100%）。summary 快照入库 `results/teleai-v9-p2-20261109.json` + README 对照表补 v7/v8/v9 三行（v7/v8 此前漏记表格，本轮顺手补齐）。**判据达成：P2 批零词表扰动、评测线不降。**
+- **评测回归（313 条全量，本批零新意图词表，判据：类别红线 90% 不降）**：summary 快照 `results/teleai-v9-p2-20261109.json`（workers=2，0 error 无 429，148s）——**类别 92.97%（较 v7 基线 92.33% +0.64pp，红线通过）/ F1 89.2%（-0.06pp）/ 完全正确 74.4%（-0.32pp 采样方差）/ 误触发 3.3% 持平**；组级升 boundary +4.5pp、prologue_oov +7.1pp、wind_oov +7.1pp，降 confuse -4.2pp（1 条方差）；**八个 OOV 组全 ≥92.9%**（hades/wind/ch3/ch5/ithaca 五组 100%）。summary 快照入库 `results/teleai-v9-p2-20261109.json` + README 对照表补 v7/v8/v9 三行（v7/v8 此前漏记表格，本轮顺手补齐）。**判据达成：P2 批零词表扰动、评测线不降。**
 - **坑（新）**：①`__game` 对象字面量里的 `scene` 是值快照——运行中 scene 变化不反映到 `g.scene`，断言必须走 `getScene()/setScene()`（既有接口，非缺陷）；②3D 世界图模式下 2D 画布透明且 cam 不更新——像素检测要先切 2D（W3D.ready 为 getter 不可写，改为直接调 drawStonePillar 于 identity 变换下验证绘制函数本体）+ 3D 可见性走 cv3d 截图视觉复核；③polyNameExam 需「我叫/我是 XX」格式正则提取——直传裸名返回 null 是既有行为非 bug。
 - **未做**：P1.9 忒勒玛科斯（§17g 唯一剩余 P1 项，★☆☆）；v0.2.0 打 tag（判据 GREEN，仍留专门会话）；island3d 实验保留未决（隔离不动）。§17g 八步至此全部走完（第 0 步船队+特洛伊/第 1-7 步/第 8 步 P2 批+合流+判词均落地；P1.9 为后置项）。
 
@@ -884,6 +884,7 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 5. **v0.2.0 发版门（tag 纪律）——11-07 实测：判据 RED，不打 tag**。交互判据（三条冥界交互走通）✅；OOV 判据 hades_oov 85.7% < 87.9%（差 1 条）。走 §三.3 v2.3 专项，复测全绿才打 `v0.2.0` 并回填 PRODUCT.md §7。**判据不绿不打 tag**（v0.1.0 已在远端，别动）
 6. （已完成 11-07）`schema-island-generic.json` 基线对照已实跑：68.7% vs 奥德赛 92.1%，README 已改写，快照在 `results/generic-baseline-20261107.json`。
 7. **传闻系统 v2（活的社会·续，§一.24）——✅ 已于 §26 落地**：多跳 gossipTick（hop/失真 vers/传播半径）+ VOICE 口吻模板 + RUMOR_DERIVE 20→27 全部入库，单测 23 绿。剩候选（v3）：① 模型按口吻二次润色（需天翼 key）；② 传闻多跳后的"以讹传讹"变异事件（纯规则可做，暂缓）；③ 新剧情 flag 落 `RUMOR_DERIVE` 表补条目即可，规则层不用动。
+8. **批次 J 遗留（11-15 实玩审计**未修**项，详见 §41 的 P2 档）**：①3D 海面白噪点质感（低画质档水面噪点过强，像雪花屏）；②序章特洛伊「对话只走 toast」——该站对话应走原生对话框而非顶栏提示；③2D 海图右下角自带标题字样（羊皮纸底图角落标题压住 UI）。另建议补两条体检：④**真机手指操作**（多点触控/滑动惯性/虚拟摇杆跟手度）；⑤**长时挂机数值曲线**（饿/渴/时间跨昼夜的表现）。
 
 ### 30. 苛刻游戏大师实玩审计 + 修复批 G（11-13，分支 `feat/rumor-mongering`；接续 §29/合并 origin/main `9ddeeb2`）
 
@@ -976,6 +977,61 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 - **修复**：①状态 pill 图标化——🪙钱袋/❤血+条/🍖饱食条+💧饮水条（条宽 34→26），完整名称移 title 悬停；②`nextObjective` 增加 `short` 短文案（9 个主线目标逐条配短句），`compassHTML` 渲染短文案，完整文案移 `cp.title` 悬停；旧路未访清单从顶栏移除（任务面板 可选旧路 区是唯一视图）；③登陆提示判定半径 90→180px 同步（I1b 前置已做）；④CSS：`.hud` flex-wrap:nowrap、pill 白 nowrap、`#hudCompass` max-width 300 + 省略号 + min-width 150（窄屏下被挤到 60 导致罗盘不可读——截图复核查到当场修）、按钮 padding 收紧；⑤鸥群加大加白（翼 0.34→0.55、色 f6f8fa→fff）。
 - **验证**：835×469 窄视口整页截图——顶栏单行排开：🪙30 | ❤100+条 | 🍖💧条 | Lv | 夜晚21:11 | ⛵←埃阿亚岛·接委托 | ➤东风·逆风×0.78 | 🗺📋🎒📸⚙——无溢出无折行；罗盘短文案+方向可读；闸门全绿：inline JS OK（458569）、mock 323 全 1.0000。**真机复核**：图标按钮（🗺📋🎒）的可辨识度（emoji 渲染因平台而异——不行就换 SVG）、罗盘 300px 上限下长文案的省略位置。
 
+### 40. 补账 · 三笔未入账提交（11-14：`36697f1` / `2440916` / `3408fb0`）
+
+> 本节补记 §39 之后落地但未入账的三笔提交。内容取自各提交的实际 diff，不凭记忆复述。
+
+- **`36697f1` refactor: index.html 拆分为 src/ 模块，新增 H5 构建与回归门禁**
+  - **动机**：单文件 4109 行已到「改一行要翻半屏」的程度，且**没有自动化回归**——每次改动只能靠人肉实玩验证。
+  - **拆分结果**：`index.html` 4109 → **1600 行**（HUD/标题屏/序章/主循环/调试接口 `window.__game`），主体进 `src/` **13 个 JS + 1 CSS，合计 11809 行**：`data/`（constants/quests/npcs/state/personas）· `engine/core.js` · `game/events.js` · `interact/handlers.js` · `render/scenes.js` · `ui/`（panels/theme.css/worldmap）· `agent/handler.js` · `rumors.js`。
+  - **新增工具链**：`scripts/build_h5.py`（静态打包——把 `fetch("/api/schema")` 改写为 `fetch("src/data/schema.json")`，**全文出现次数必须恰好 1 次**否则报错）· `scripts/serve_h5.py`（离线静态服务，零外部请求）· `scripts/verify_h5.py`（**全量门禁**：构建 + 6 套 node:test + 真实 Chrome 回归 + 离线包回归）· `scripts/capture_taptap.py`（TapTap 发布物料）。
+  - **新增回归基建**：`tests/browser_regression.py`（真实 Chrome 断言锁）· `tests/h5_offline_browser.py`（离线包回归）· 6 套 `node --test` 单测（first-upgrade/second-upgrade/phase1-visual/phase2-loop/phase3-systems/phase4-release，**50 例**）。
+  - **意义**：从「靠人肉实玩发现问题」变成「改动立刻有断言可跑」——批次 J 的 8 条回归锁就是这套基建的第一批实战产出。
+
+- **`2440916` feat: 海图天气 + 缩放 POI / 美术统一 / 移动端适配 / 对话兜底重写**
+  - **海图**：`src/ui/worldmap.js`（807 行）——叠加层真实绘制洋流/航迹/回声（canvas 有像素）、POI 缩放、沿岸/外海/迷雾三档航路姿态（写入存档）；`scripts/build_seamap.py`（323 行）由**同一份 WORLD 网格**生成十岛羊皮纸详图——**批次 J 的 2D 降级底图直接复用它的产物**（CELL 72px/格 → WTS 40px/格，缩放到 1840×720 正好对齐）。
+  - **天气与洋流**：动态天气暴露合法昼夜相位（23 时为夜）、真实风暴海遇在海图上生成风暴单体（会转、会下雨）、风纹方向与风名读**同一份 windDir**、船入洋流带后顺流加速/逆流减速（真实航速结算）、航迹回看沿真实到访顺序推进。
+  - **对话兜底重写**：接口失败/离线时的本地兜底路径重做，保证任何场景下 NPC 都有话可说（批次 J 的「NPC 环境台词前 90 秒全哑」是这条线上的**新**回归，不是历史遗留）。
+  - **移动端适配**：首次系统性处理触屏与窄屏（批次 J 在此基础上又修了 HUD 叠字与遮罩锁死）。
+
+- **`3408fb0` chore(art): 清除 49 张概念图 AI 水印**——**推翻了本文件更早处记录的口径「水印按要求保留、不做二次去除」（见 §一.11 坑②一带），现素材已去水印，以本条为准。**
+
+- **验证**：本批引入的构建与门禁脚本在批次 J 全量复跑通过（`scripts/verify_h5.py` → **PASS H5 全链路**，含离线包回归 10 项零外部请求）。
+
+### 41. 批次 J · 实玩审计与修复（11-15，用户「继续优化 你先自己跑跑这个游戏 你严厉锐评有哪些问题并修复」）
+
+- **方法**：不读代码猜，用 Playwright + **真实 Chrome**（`channel="chrome"`，非 Chromium）以玩家视角把游戏从头玩到尾——标题屏 → 序章 → 航行 → 靠岸 → 对话 → 各面板；四种视口：桌面 1440×900 / 笔记本 844×390 / 手机竖屏 390×844 / 手机横屏 844×390。实玩脚本（`playsession.py`/`probe2.py`/`layoutaudit.py`/`play3.py`/`spawn_test.py`/`mobile2.py`/`verify_fixes.py`/`final_shots.py`）与截图全在 `.temp/`，**不入库**。
+
+- **问题清单（分档）**：
+  - **P0-1 竖屏全屏遮罩锁死游戏**：`#rotateHint` 被做成全屏黑幕 + `pointer-events:auto` + `z-index:99999` → 手机竖屏下「启航」点不到（Playwright 点 `#tsGo` **超时 30s**）。**在手机上根本进不了游戏**，这是本批最严重的一条。
+  - **P0-2 风神岛埃俄罗斯 E 键无响应**：`interact()` 缺 `aeolus` 分支 → 风神岛 NPC 不可交互，**风袋主线断链**。
+  - **P0-3 NPC 环境台词前 90 秒全哑**：冷却判据写成 `now-cd>90000`，而「从未说过话」的 `cd` 是 `undefined` → 短路判真，**全员前 90 秒没一句台词**，NPC 看起来全是哑巴。
+  - **P1-1 窄屏 HUD 叠字**：横屏 844×390 下 HUD 第二行压住 `#zone`（交互区），引导卡压住虚拟摇杆。
+  - **P1-2 出生点靠岸简报指向第三章岛**：出生点 boat(900,460) 距「声之海峡」仅 **89px**（判定半径 180px），简报按几何最近岛广播 → 与罗盘的主线指引**直接矛盾**，开局就把玩家指去第三章。
+  - **P1-3 2D 降级世界是色块**：降级模式用蓝色方块当海、礁石方块化 → 观感崩。
+  - **P1-4 任务面板不暂停世界**：读任务清单时世界照跑（饿/渴/时钟照走）。
+  - **P1-5 面板打开时 E 键仍响应** → 对话直接叠在面板上。
+  - **P1-6 委托计数错位**：`collect:` 类委托接取时 `have` 不按背包已有数量预填 → 交任务数量对不上。
+  - **P1-7 战斗进度不入存档**：`boar`/`guards` 没进 `savePayload()` → 读档后野猪战斗重来一遍。
+  - **P2（本批未修，留待下一批）**：①3D 海面白噪点质感；②序章特洛伊「对话只走 toast」；③2D 海图右下角自带标题字样。
+
+- **修复清单（逐条对应文件）**：
+  - `index.html`：`#rotateHint` 由全屏黑幕改为**顶部非阻塞横条提示卡**（`pointer-events:none` + `z-index:9999`），新增「仍要竖屏」按钮 `#rhGo`（`sessionStorage` 记忆 + `body.rhDismissed`）；`aria-hidden="true"` → `role="status" aria-live="polite"`；`body` 加 `position:relative`。
+  - `src/ui/theme.css`：触屏下 `#zone` 移到底部、`#onboardingCard` 从左下（压摇杆）移到左上、`#choiceReceipt` 抬高；竖屏把 `#stage` 整体 `rotate(90deg)` 并居中（`width:calc(min(96vw,94vh)*5/3)`）、HUD 瘦身、隐藏 `#hudWind/#hudQuest`；`body.rhDismissed` 下简报/引导卡改 `position:fixed` 到屏幕空白区。
+  - `src/ui/panels.js`：新增 `landfallTarget()`（能登的岛 > 主线目标岛 > 最近的锁岛）与 `renderLandfallBrief()` 三模式（靠岸简报 / 下一站·NEXT STOP / 远处·OFF ROUTE）；`updateHintDOM()` 锁岛提示改「了望 X（航路未开）」；`touchInit()` 内接 `#rhGo`。
+  - `src/render/scenes.js`：新增 `chartBg()`（把 `concept-art/maps/01-世界海图.jpg` **预缩到 1840×720 离屏 canvas**，避免每帧缩放大图），`drawWorld()` 改用羊皮纸海图作 2D 降级底图（礁石改小标记，不再铺蓝色方块）；`renderHUD()` 风旗窄屏只显示「风向+档位」；新增 `sceneNpcPos()` 让关怀徽章覆盖更多场景。
+  - `src/interact/handlers.js`：新增 `panelOpen()`；`pressE()` 面板打开时不响应；`interact()` 增 `aeolus` 分支 + 末尾兜底 toast「（这里暂时没有可做的事。）」。
+  - `src/engine/core.js`：`npcAmbientTick()` 冷却判据修正为 `(ambientCooldown[...]===undefined || now-cd>90000)`。
+  - `src/data/quests.js`：`acceptQuest()` 对 `collect:` 类用背包已有数量预填 `have`；`savePayload()`/`load()` 增 `boar`/`guards`（用 `typeof` 守卫以适配只加载存档片段的 Node 单测）；`AMBIENT` 表补 `seer`/`aeolus`/`rebuilder`/`lotusman` 四人台词。
+  - `src/game/events.js`：`ambientAnchor()` 补 `rebuilder`/`lotusman` 锚点。
+  - `index.html` 主循环：`panelUp` → `panelOpen()`（任务/设置面板现在也暂停世界）。
+
+- **新增回归锁 8 条**（`tests/browser_regression.py`）：出生点简报指向主线目标 / 未靠近不谎称「E·登陆」 / 任务面板打开时世界暂停 / 面板打开时 E 键不触发世界交互 / 风神岛 E 键能打开埃俄罗斯对话 / NPC 靠近即有环境台词 / 竖屏提示不再全屏遮挡 / 手机竖屏能真的点下「启航」且所有触屏按钮可点。
+
+- **验证（全部实跑，非纸面推断）**：①`node --test` 6 套 **50/50 通过**；②`scripts/verify_h5.py` → **PASS H5 全链路**（真实 Chrome 回归全绿 + 离线包回归 10 项、启动零外部请求）；③`eval.py --backend mock` → **18 组 323 条全 1.0000**（schema 未动）；④自验脚本 `.temp/verify_fixes.py` 五项全过（简报指向特洛伊 / 面板暂停 / 面板拦 E / 埃俄罗斯可对话 / 先知环境台词）；⑤手机复验 `.temp/mobile2.py`：竖屏 `go-click ok=true`、全部按钮 `ok=true`、无截断无溢出；横屏 `overlap: []`；⑥最终截图 5 张在 `.temp/final/`（桌面 2D 海图 / 桌面海图 / 桌面 3D / 手机竖屏 / 手机横屏）。
+
+- **教训**：P0-1 那种「一屏黑幕把游戏锁死」的问题，**代码审查看不出来**——CSS 里 `pointer-events:auto` + `z-index:99999` 组合完全合法，只有真机点一下才会暴露。**旋转提示这类「遮蔽型引导」一律不得吃掉整屏点击权**；要引导就做成非阻塞横条 + 明确出口按钮。
+
 
 
 
@@ -1004,6 +1060,11 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 12. **result-*.json 被 gitignore，"勿覆盖"管不住换机器**：仓库内证据只有 `results/` 的 summary 快照。复测新文件名跑完后，把 summary 块提一条新快照进 `results/` 并更新其 README 对照表。
 13. **新章节词表首轮评测翻车是流程预期，别慌也别硬调**：hades_oov 首跑 50%，一轮"归因→补 schema 描述→复测"回收大半（85.7%）。但期望值要对着 schema 既有边界设计（hades_14"献祭沟在哪"首版期望设成导航，与 schema"码头在哪→查询附近目标"既有规则打架，跑后修正留痕）；跑完发现期望错了要**透明修正**，不许为了让判据变绿而改期望。
 14. **429 补跑后才准提快照**（见 §二.8）：全量 summary 里只要还有 `error` 字段，数字就是被污染的。
+15. **「遮蔽型引导」不得吃掉整屏点击权**：竖屏旋转提示做成全屏黑幕（`pointer-events:auto` + `z-index:99999`）时，手机竖屏下「启航」按钮**点不到**（Playwright `click` 一直等到 actionability 超时）——**代码审查看不出来，CSS 组合完全合法，只有真机点一下才暴露**。修法：提示条改 `pointer-events:none` + 只留一个出口按钮，且给出口一个 `sessionStorage` 记忆位。
+16. **`click` 超时 ≠ 断言失败**：元素被别的层盖住时，Playwright 的症状与「资源没加载」一模一样（都是等满 timeout）。判断顺序：先看是**超时**还是**断言不符**——超时先查遮罩与层级，再查路径。
+17. **冷却判据里的 `undefined` 陷阱**：`now-cd>90000` 在 `cd` 从未赋值时短路成真 →「**从未说过话**」被当成「**刚说过**」，NPC 全员前 90 秒失声。正确写法：`(cd===undefined || now-cd>90000)`。
+18. **「最近的东西」≠「该去的地方」**：出生点靠岸简报若按几何最近岛广播，会把玩家从序章开局直接指去第三章（实测最近岛距船 89px < 判定半径 180px）。目标选择必须是**能登的岛 > 主线目标岛 > 最近的锁岛**三级优先。
+19. **面板必须既拦输入又停世界**：只拦输入 → 对话叠在面板上；只停世界 → 读清单期间照样饿渴扣血。两条都要有，且「面板是否打开」要查**所有**面板（任务/设置/背包），不是只查对话框。
 
 ---
 
@@ -1017,18 +1078,28 @@ schema.json / cases.jsonl / eval.py / fake_server.py
                          （schema.json 已是 v2.4.1：hades_oov/ch3_oov 双 100%、完全正确 82.1%；v2.3/v2.4 备份 .temp/schema-v23-backup.json / schema-v24-backup.json，更早 v2.1/v1 备份同目录）
 schema-island-generic.json   通用岛对照（已实跑：68.7% vs 奥德赛 92.1%，见 results/）
 result-*.json            各轮全量结果（v3/v22/generic 为本轮三份），体积大被 gitignore、只在本机（勿覆盖，复测用新文件名）
-results/                 ★评测证据入库处：六份 summary 快照 + 对照表 README（仓库内查数字以它为准）
+results/                 ★评测证据入库处：13 份 summary 快照 + 对照表 README（仓库内查数字以它为准）
 key.txt                  天翼 API key（gitignored）
 shots/                   2D/评测线截图归档（实机验证用；3D 线截图在 3d/tools/shots/，不入库）
 odyssey-witch/
-  index.html             游戏全部前端（地图/渲染/对话/30类handler/存档；传闻系统 v1 已接线，9385 行）
-  src/rumors.js          传闻系统纯规则（零 DOM/零存储，UMD 双模式，可单测；浏览器挂 window.RUMOR）
+  index.html             游戏前端壳：HUD/标题屏/序章/主循环/调试接口 window.__game（1600 行）；游戏主体已拆进 src/
+  src/                   游戏主体模块（13 个 JS + 1 CSS，合计 11809 行）
+    data/                constants 1384 / quests 939 / npcs 495 / state 357 / personas 59
+    engine/core.js       主循环·移动·时间·风（527 行）
+    game/events.js       场景事件与事件派发（1019 行）
+    interact/handlers.js 30 类 handler + 交互/对话（1689 行）
+    render/scenes.js     2.5D/3D 渲染（2441 行）
+    ui/panels.js 714 行 · ui/theme.css 485 行 · ui/worldmap.js 807 行（海图）
+    agent/handler.js     AI 接入与离线兜底（673 行）
+    rumors.js            传闻系统纯规则（零 DOM/零存储，UMD 双模式，可单测；浏览器挂 window.RUMOR）
+  scripts/               build_h5.py（静态打包）/ serve_h5.py（离线静态服务）/ build_seamap.py（羊皮纸海图）/ verify_h5.py（全量门禁）
+  tests/                 browser_regression.py（真实 Chrome 回归锁）/ 6 套 node:test 单测 / h5_offline_browser.py（离线包回归）
   server.py              本地服务 :8765（静态托管 + /api/schema|parse|chat 代理）
   启动游戏.bat + start-service.vbs   一键启动（vbs 静默拉起 server.py）
   odyssey-story.md       剧情圣经（八章全写完：第一章+第二章已实装）
   odyssey-lore.md        知识库（神话事实红线）
   odyssey-visual.md      视觉稿（3D 线的色板来源）
-  concept-art/           7 场景（根目录 01~07，07-冥界之岸为第二章新增）+ characters/（9 角色：原 6 + 07-塞壬/08-斯库拉/09-埃俄罗斯，后两张未接线）+ brand/（IP 立绘×2+徽章+favicon×2）+ maps/（世界/埃亚岛/冥界之岸/风神岛图 4 张）
+  concept-art/           50 张：根目录场景图 11（01~11）+ characters/ 15 角色立绘 + maps/ 14（十岛羊皮纸详图等）+ prologue/ 5（序章组）+ brand/ 5（IP 立绘/徽章/favicon）
   3d/
     HANDOFF.md           ★3D 线总控账本：P0–P7+PD 阶段/验收命令/目录契约（进度以它为准；P0/PD/P1 ✅）
     PIPELINE.md          方法论：Sac 工作流转译 + A1/A2 prompt + 资产分诊表

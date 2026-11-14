@@ -163,10 +163,21 @@ function careBadgeFor(){
 }
 
 
+// --- sceneNpcPos (was main+…, 10 lines) ---
+/* 当前场景里「该显示关怀徽章的 NPC」站在哪：SCENE_NPC 只列了 5 个场景，
+   海峡/太阳岛/伊萨卡与五个序章场景的 NPC 头顶从来看不到饥饿口渴图标。 */
+function sceneNpcPos(sc){
+  const direct = SCENE_NPC[sc]; if (direct) return direct;
+  const spotNpc = {strait:"siren", sun:"cattle", ismaros:"rebuilder", lotus:"lotusman", cyclops:"polyphemus", ithaca:"telemachus"};
+  const key = spotNpc[sc]; if (!key) return null;
+  return ambientAnchor(key);
+}
+
+
 // --- drawCareBadge (was main+454-468, 15 lines) ---
 function drawCareBadge(et){
   if (dlgOpen || titleOn || chapterOn || mapOpen) return;
-  const npc = SCENE_NPC[scene]; if (!npc) return;
+  const npc = sceneNpcPos(scene); if (!npc) return;
   const badges = careBadgeFor(); if (!badges.length) return;
   const dx = npc.x - aiaPlayer.x, dy = npc.y - aiaPlayer.y;
   if (Math.hypot(dx, dy) > 210) return;
@@ -285,13 +296,47 @@ function cg(x0,y0,x1,y1,stops){
 
 
 // --- drawWorld (was main+2383-2436, 54 lines) ---
+// --- chartBg (was main+…, 21 lines) ---
+/* 2D 世界底图：直接铺羊皮纸海图。
+   旧版 2D 降级是逐格色块（青一块绿一块的方格阵），跟「地中海」毫无关系，
+   也和玩家按 M 看到的海图完全不是一张图——照着图找岸会找不到岸。
+   现在铺 scripts/build_seamap.py 用同一份 WORLD 网格生成的底图：
+   底图 CELL=72px/格，游戏 WTS=40px/格 → 缩放到 WCOLS*WTS × WROWS*WTS 正好对齐。
+   先预缩到一张离屏 canvas（1840×720），每帧只做 1:1 drawImage，避免每帧缩放大图。 */
+let _chartCanvas = null, _chartTried = false;
+function chartBg(){
+  if (_chartTried) return _chartCanvas;
+  _chartTried = true;
+  try{
+    const img = new Image();
+    img.onload = ()=>{
+      try{
+        const c = document.createElement("canvas");
+        c.width = WCOLS*WTS; c.height = WROWS*WTS;
+        const g = c.getContext("2d");
+        g.imageSmoothingQuality = "high";
+        g.drawImage(img, 0, 0, c.width, c.height);
+        _chartCanvas = c;
+      }catch(e){ _chartCanvas = null; }
+    };
+    img.onerror = ()=>{ _chartCanvas = null; };
+    img.src = "concept-art/maps/01-世界海图.jpg";
+  }catch(e){ _chartCanvas = null; }
+  return _chartCanvas;
+}
+
+
 function drawWorld(et){
-  ctx.fillStyle="#1b4e72"; ctx.fillRect(0,0,1000,600);
+  const chart = chartBg();
+  if (chart) ctx.drawImage(chart, 0, 0);
+  else { ctx.fillStyle="#1b4e72"; ctx.fillRect(0,0,1000,600); }
   for (let cy=0; cy<WROWS; cy++) for (let cx=0; cx<WCOLS; cx++){
     const ch = worldTile(cx,cy), x=cx*WTS, y=cy*WTS;
     if (ch==="#"){
-      ctx.fillStyle = ((cx+cy)%2)?GRASS_C:GRASS_D; ctx.fillRect(x,y,WTS,WTS);
-      const g2=cg(0,y+WTS-3,0,y+WTS+9,[0,"#d4b078",.5,"#c9a06a",1,"#8f6b40"]); ctx.fillStyle=g2; ctx.fillRect(x,y+WTS-3,WTS,12);
+      if (!chart){
+        ctx.fillStyle = ((cx+cy)%2)?GRASS_C:GRASS_D; ctx.fillRect(x,y,WTS,WTS);
+        const g2=cg(0,y+WTS-3,0,y+WTS+9,[0,"#d4b078",.5,"#c9a06a",1,"#8f6b40"]); ctx.fillStyle=g2; ctx.fillRect(x,y+WTS-3,WTS,12);
+      }
       continue;
     }
     if (ch==="G"){
@@ -300,13 +345,23 @@ function drawWorld(et){
       continue;
     }
     if (ch==="X"){
-      ctx.fillStyle="#2c6285"; ctx.fillRect(x,y,WTS,WTS);
-      ctx.fillStyle="#5b7f96";
-      ctx.beginPath(); ctx.moveTo(x+WTS/2-7,y+WTS/2+4); ctx.lineTo(x+WTS/2,y+WTS/2-7); ctx.lineTo(x+WTS/2+7,y+WTS/2+4); ctx.closePath(); ctx.fill();
+      if (!chart){
+        ctx.fillStyle="#2c6285"; ctx.fillRect(x,y,WTS,WTS);
+        ctx.fillStyle="#5b7f96";
+        ctx.beginPath(); ctx.moveTo(x+WTS/2-7,y+WTS/2+4); ctx.lineTo(x+WTS/2,y+WTS/2-7); ctx.lineTo(x+WTS/2+7,y+WTS/2+4); ctx.closePath(); ctx.fill();
+      }else{
+        /* 羊皮纸底图上不铺生硬的蓝色方块，只补一枚礁石标记 */
+        ctx.fillStyle="rgba(104,132,152,.6)";
+        ctx.beginPath(); ctx.ellipse(x+WTS/2, y+WTS/2+1, 7, 4, .4, 0, 7); ctx.fill();
+        ctx.strokeStyle="rgba(255,255,255,.34)"; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.ellipse(x+WTS/2, y+WTS/2+4, 9, 4.5, .4, 0, 7); ctx.stroke();
+      }
       continue;
     }
-    const near = worldTile(cx,cy-1)!=="~"&&worldTile(cx,cy-1)!=="."||worldTile(cx,cy+1)!=="~"&&worldTile(cx,cy+1)!=="."||worldTile(cx-1,cy)!=="~"&&worldTile(cx-1,cy)!=="."||worldTile(cx+1,cy)!=="~"&&worldTile(cx+1,cy)!==".";
-    ctx.fillStyle = near ? "#3f7fa8" : "#255a7f"; ctx.fillRect(x,y,WTS,WTS);
+    if (!chart){
+      const near = worldTile(cx,cy-1)!=="~"&&worldTile(cx,cy-1)!=="."||worldTile(cx,cy+1)!=="~"&&worldTile(cx,cy+1)!=="."||worldTile(cx-1,cy)!=="~"&&worldTile(cx-1,cy)!=="."||worldTile(cx+1,cy)!=="~"&&worldTile(cx+1,cy)!==".";
+      ctx.fillStyle = near ? "#3f7fa8" : "#255a7f"; ctx.fillRect(x,y,WTS,WTS);
+    }
     if ((cx*13+cy*7)%4===0){
       ctx.strokeStyle="rgba(255,255,255,.22)"; ctx.lineWidth=1.2;
       const ph=Math.sin(et*1.8+cx*1.7+cy*2.3)*2;
@@ -2232,8 +2287,11 @@ function renderHUD(){
       const tag = f>1.15 ? ["顺风 ×1.3","#2e7d52"] : f<0.95 ? ["逆风 ×0.78","#a04a4a"] : ["侧风","#4a6b8a"];
       const route = (typeof seaRoute==="function") ? seaRoute() : null;
       const cur = (typeof currentAt==="function") ? currentAt() : null;
-      const routeTxt = route ? ` · ${route.label}` : "";
-      const curTxt = cur ? ` <span style="color:#1f6f7a">· ${cur.name}</span>` : "";
+      /* 窄屏截断实测：风旗整句 232px 塞进 131px 的 pill → 后半截（航路/洋流）被裁掉。
+         窄屏只留「风向 + 档位」，完整信息进 title（悬停/长按可看）。 */
+      const tight = (typeof window!=="undefined") ? window.innerWidth < 760 : false;
+      const routeTxt = (route && !tight) ? ` · ${route.label}` : "";
+      const curTxt = (cur && !tight) ? ` <span style="color:#1f6f7a">· ${cur.name}</span>` : "";
       hw.innerHTML = `<span style="display:inline-block;transform:rotate(${deg}deg)">➤</span> ${windFromLabel(windDir)} · ${tag[0]}${routeTxt}${curTxt}`;
       hw.title = `风：${windFromLabel(windDir)}（${tag[0]}）` + (route?` ｜ 航路：${route.name}`:"") + (cur?` ｜ 洋流：${cur.name}`:"");
       hw.style.color = tag[1];
