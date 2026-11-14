@@ -462,11 +462,17 @@ function buildWater() {
       #include <fog_pars_vertex>
       varying vec3 vWorld;
       uniform float uTime;
+      uniform vec2 uViewer;
       void main() {
         vec3 pos = position;
-        pos.y += sin(pos.x * 0.14 + uTime * 0.9) * 0.085
+        /* 锐评（用户报：远处水面白色糊带）：顶点波浪全图等幅——低相机掠射角下远处浪头
+           互相剪影，读成噪点。成熟做法（Minecraft 式海面 LOD）：波浪随离船距离衰减，
+           远处海面放平，交给雾。 */
+        float wdist = length(pos.xz - uViewer);
+        float wfade = 1.0 - smoothstep(45.0, 130.0, wdist);
+        pos.y += (sin(pos.x * 0.14 + uTime * 0.9) * 0.085
                + cos(pos.z * 0.11 + uTime * 0.7) * 0.085
-               + sin((pos.x + pos.z) * 0.23 + uTime * 1.3) * 0.04;
+               + sin((pos.x + pos.z) * 0.23 + uTime * 1.3) * 0.04) * wfade;
         vec4 worldPos = modelMatrix * vec4(pos, 1.0);
         vWorld = worldPos.xyz;
         vec4 mvPosition = viewMatrix * worldPos;
@@ -505,18 +511,27 @@ function buildWater() {
         /* 大尺度海色起伏 + 近岸透亮浅色层（地中海的“看得到沙底”感）——夜里随夜色压暗 */
         col = mix(col, uMid, 0.09 * vnoise(vWorld.xz * 0.045 + vec2(3.1, 7.7)));
         col = mix(col, vec3(0.55, 0.85, 0.88), (1.0 - smoothstep(0.0, 2.6, dmin)) * 0.22 * (1.0 - uNight * 0.75));
-        /* 朝太阳方向的金色光路（P1 同款）——夜里没有太阳，光路压掉。
-           锐评修正：光路方位从「世界原点相对」改为「观察者相对」（three.js Water 的镜面
-           高光以 camera 为基准）——光路永远从船脚下伸向光源方位，跟着船走。 */
+        /* 朝太阳方向的金色光路——夜里没有太阳，光路压掉。
+           锐评（用户报：水面一块棕色烟渍）：原实现是「无结构渐变楔」——uGold 平铺在
+           蓝水上读成粉灰污渍。改为与月光路同款的碎波 glitter：金色只在碎波亮片上出现，
+           有形、有生命，且随距离衰减。 */
         vec2 rel = vWorld.xz - uViewer;
+        float relLen = length(rel);
         float toSun = max(dot(normalize(rel), normalize(vec2(uSunH.x, uSunH.y))), 0.0);
-        col += uGold * (pow(toSun, 6.0) * 0.24 + pow(toSun, 16.0) * 0.10) * smoothstep(2.0, 14.0, dmin) * (1.0 - uNight * 0.85);
+        float glitterS = vnoise(vWorld.xz * 1.3 + vec2(uTime * 0.30, -uTime * 0.22));
+        float sunGlint = pow(toSun, 14.0) * (0.06 + 0.22 * smoothstep(0.55, 0.95, glitterS));
+        col += uGold * sunGlint * smoothstep(2.0, 14.0, dmin) * (1.0 - uNight * 0.85);
         /* 锐评（用户报：月亮像贴图）：月光路——月亮方位的银色 shimmer 带，碎波调制。
          three.js Water 示例的 sunColor 镜面同源思路：天上有月，水上就有它那条路，
          光源才「真」。观察者相对 + 碎波 shimmer + 近岸渐隐。 */
         float toMoon = max(dot(normalize(rel), normalize(vec2(uMoonH.x, uMoonH.z))), 0.0);
         float glitter = vnoise(vWorld.xz * 1.15 + vec2(uTime * 0.26, uTime * 0.19));
         col += vec3(0.80, 0.86, 1.0) * (pow(toMoon, 9.0) * (0.085 + 0.24 * smoothstep(0.55, 0.95, glitter))) * uNight * smoothstep(2.0, 14.0, dmin);
+        /* 锐评：远水雾化统一——远岸碎沫/浅水亮层/光路在掠射角下全部读成噪点，
+           统一混向雾色（fogColor 由 THREE 注入，颜色=天际色），海天交界干净。
+           three.js Water 系示例的 distance fade 同思路。 */
+        float haze = smoothstep(60.0, 170.0, relLen) * 0.9;
+        col = mix(col, fogColor, haze);
         /* 贴岸碎沫（加宽加清） + 细碎波光（提频去白块感）——夜里改月光灰蓝，不再发荧光 */
         float band = smoothstep(-0.12, 0.06, dmin) * (1.0 - smoothstep(0.10, 0.75, dmin));
         float foam = band * (0.3 + 0.7 * vnoise(vWorld.xz * 1.4 + vec2(uTime * 0.22, -uTime * 0.16)));
@@ -687,7 +702,7 @@ function buildBoat() {
    vendor 无 BufferGeometryUtils 无法合 geometry，且 hull(受光)/sail(恒亮) 材质不同不能并一体，实例化是唯一不换观感的路 */
 function buildEscortFleet() {
   const g = new THREE.Group();
-  const hullMat = new THREE.MeshStandardMaterial({ color: 0x6d4a2b, roughness: 1, flatShading: true });
+  const hullMat = new THREE.MeshStandardMaterial({ color: 0x7f5a38, roughness: 1, flatShading: true });   /* 锐评：原 0x6d4a2b 偏黑，白天读成「黑薯片」——向主船色靠一档 */
   const sailMat = new THREE.MeshBasicMaterial({ color: 0xe8e0cc, side: THREE.DoubleSide });
   /* 锐评（用户报：船队像方块上飘白纸）：护航船体原来是纯 BoxGeometry——夜里压成黑方块，
      帆(0.68宽)却比船体(0.46宽)还宽，读成「黑块上挂白三角」。改用与主船同款的挤压船形
@@ -704,7 +719,7 @@ function buildEscortFleet() {
   hullGeo.translate(0, 0.12, 0);       /* 原子节点 hull.position.y=0.12 烘进几何，实例矩阵即可直接用船位 */
   const sailGeo = new THREE.BufferGeometry();
   sailGeo.setAttribute('position', new THREE.Float32BufferAttribute([
-    -0.26, 0.24, 0.04,  0.26, 0.24, 0.04,  0.0, 0.72, 0.04,
+    -0.30, 0.24, 0.04,  0.30, 0.24, 0.04,  0.0, 0.88, 0.04,
   ], 3));
   sailGeo.computeVertexNormals();
   escortHull = new THREE.InstancedMesh(hullGeo, hullMat, ESCORT_MAX);
@@ -742,6 +757,7 @@ function buildSeaLife() {
   return g;
 }
 function seaLifeTick(et) {
+  const G = window.__game;   /* 海鸥距离裁剪用（船位） */
   for (const f of dolphinFins) {
     const a = et * 0.55 + f.i * 2.1 + f.pod.r * 0.01;
     const px = f.pod.x + Math.cos(a) * f.pod.r, py = f.pod.y + Math.sin(a) * f.pod.r * 0.6;
@@ -751,12 +767,24 @@ function seaLifeTick(et) {
   }
   for (const g of gullWings) {
     const a = et * 0.8 * (g.i ? 1 : -1) + g.i * 2.4 + g.is.gx * 0.1;
-    const px = g.is.gx * 20 + 20 / 2 + Math.cos(a) * (12 + (g.i ? 6 : 0));
-    const py = g.is.gy * 20 + 20 / 2 - 6 + Math.sin(a) * 7;
-    g.body.position.set(px2x(px), 5.2 + Math.sin(et * 1.7 + g.i * 2) * 0.5, px2z(py));
+    /* 锐评（用户报：天际线一排白色垃圾）：海鸥绕岛坐标还停留在翻倍前的 20px 瓦距——
+       13 座岛的海鸥全部挤在半坐标上，恰好堆进地平线视野。改用 G.worldTileSize()。 */
+    const WTSg = (G && G.worldTileSize) ? G.worldTileSize() : 40;
+    const px = g.is.gx * WTSg + WTSg / 2 + Math.cos(a) * (12 + (g.i ? 6 : 0));
+    const py = g.is.gy * WTSg + WTSg / 2 - 6 + Math.sin(a) * 7;
+    g.body.position.set(px2x(px), 2.4 + Math.sin(et * 1.7 + g.i * 2) * 0.4, px2z(py));   /* 锐评：低飞——贴着岛顶盘旋，不再飘在天际线上 */
     g.body.rotation.y = Math.atan2(-(Math.cos(a) * 7 * (g.i ? 1 : -1)), -Math.sin(a) * (12 + (g.i ? 6 : 0)));
     const flap = Math.sin(et * 9 + g.i * 3) * 0.45;
     g.wl.rotation.z = flap; g.wr.rotation.z = -flap;
+    /* 锐评：远处海鸥缩成小点直至隐藏——白色小体在天际线上读成杂讯。
+       距离缩放 + 70 单位外隐藏（成熟做法：环境生物只在交互半径内有意义）。 */
+    if (G && G.boat){
+      const dxg = px2x(px) - px2x(G.boat.x), dzg = px2z(py) - px2z(G.boat.y);
+      const dg = Math.hypot(dxg, dzg);
+      const s = Math.max(0.35, 1.15 - dg / 60);
+      g.body.scale.setScalar(dg < 70 ? s : 0.001);
+      g.body.visible = dg < 70;
+    }
   }
 }
 
@@ -869,10 +897,9 @@ function buildStonePillar() {
   const cap = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.5, 1.8),
     new THREE.MeshStandardMaterial({ color: 0xdde2e5, roughness: .9, flatShading: true }));
   cap.position.y = 6.6; cap.rotation.y = 0.3; g.add(cap);
-  /* 锐评：漂流物标记环 1.2 半径 × 0.5 透明白圈，开阔海一眼读成「发光水坑」。
-     收小一圈、降透明度，读作轻微的浪花痕即可——漂流瓶本体（瓶/箱）才是主体。 */
+  /* 锐评：漂流物标记环在远景里仍读作「白圈贴纸」→ 再降透明度到 0.16。 */
   const foam = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.12, 6, 18),
-    new THREE.MeshBasicMaterial({ color: 0xeef4f8, transparent: true, opacity: 0.28 }));
+    new THREE.MeshBasicMaterial({ color: 0xeef4f8, transparent: true, opacity: 0.16 }));
   foam.rotation.x = Math.PI / 2; foam.position.y = 0.1; g.add(foam);
   g.visible = false;
   return g;
