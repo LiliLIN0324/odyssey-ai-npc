@@ -480,6 +480,23 @@ canvas{border-radius:var(--od-radius-lg); box-shadow:var(--od-shadow), 0 0 0 1px
   body.rhDismissed #onboardingCard{position:fixed; top:auto; bottom:14px; left:8px; width:min(250px,66%);}
   body.rhDismissed #choiceReceipt{position:fixed; top:auto; bottom:150px; left:8px; right:auto; width:min(250px,66%);}
 }
+/* 锐评 C（实玩批）：窄屏（窄桌面窗口 / 坚持竖屏的手机）下画布只有 ~225px 高一条，
+   序章卡（#openingCard）与新手引导卡（#onboardingCard）锚在 stage 内 bottom:34/38px，
+   卡高 ~150px → 必然压住画布上半部的 HUD 与交互点（实测盖住「航海日记」按钮行）。
+   改为 fixed 定位挪到画布上/下方的黑色空白带：序章卡在上、引导卡在下，互不重叠。
+   只对「舞台未被旋转」的情形生效：桌面窄窗口（非触屏）+ 坚持竖屏（rhDismissed）；
+   真手机默认走 rotate(90deg) 旋转布局，卡仍在 stage 内不受影响。 */
+@media (max-width:520px){
+  body:not(.touch) #openingCard, body.touch.rhDismissed #openingCard{
+    position:fixed; top:40px; left:8px; right:8px; bottom:auto;
+    width:min(430px, 94vw); margin:0 auto; max-height:38vh; overflow:auto; padding:10px 14px;
+  }
+  body:not(.touch) #onboardingCard, body.touch.rhDismissed #onboardingCard{
+    position:fixed; left:8px; right:8px; bottom:10px; top:auto;
+    width:min(430px, 94vw); margin:0 auto; max-height:30vh; overflow:auto; padding:9px 12px;
+  }
+  body.touch.rhDismissed #onboardingCard{ width:min(250px,66%); bottom:150px; }   /* 坚持竖屏：摇杆在左下，引导卡让位 */
+}
 @media (max-height:430px){
   #landfallBrief{width:min(300px,44%); padding:8px 10px;}
   #landfallBrief .lfRow p,#landfallBrief .lfAction{font-size:9px; line-height:1.5;}

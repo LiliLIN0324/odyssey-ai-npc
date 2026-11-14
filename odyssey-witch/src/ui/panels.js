@@ -688,6 +688,7 @@ let qualityDegrade = 0;         /* 0 未降 / 1 已降 DPR / 2 已切 2D */
 
 // --- perfOn (migrated from main script) ---
 let perfOn = false, perfAcc = 0, perfT = 0, perfFps = 0, lastLoopT = 0;
+let perfLowStreak = 0;   /* 锐评 D：连续低帧窗口计数——切 2D 前要求连续 2 次，避免开局几秒视觉突变 */
 
 // --- noiseBuf (migrated from main script) ---
 let noiseBuf = null;

@@ -1702,7 +1702,11 @@ function openDlg(npc){
   for (const h of history[currentNPC]) addMsg(h.role==="user"?"user":"witch", h.content, null, true);
   if (!history[currentNPC].length){
     const intro = currentNPC==="witch" ? witchIntro() : N.intro;
-    const withHint = intro + "\n（小声说：一次讲一件事，我听得分明；要去哪儿，直接说「带我去×」。）";   /* 意图解析引导：首开教玩家"分句+导航句式"（multi 组/薄边界是模型短板，UI 侧零成本补救） */
+    /* 锐评 E（实玩批）：导航句式提示只给真的能导航的 NPC——重建者/食莲人等本地 handler
+       没有「导航到地点」，玩家照提示说「带我去×」却被兜底拒绝，等于开场白在骗人。
+       能力判定与 handle() 同源：HANDLED 表里注册了导航意图的 NPC 才带这句提示。 */
+    const canNav = ((typeof HANDLED !== "undefined" && HANDLED[currentNPC]) || []).includes("导航到地点");
+    const withHint = intro + (canNav ? "\n（小声说：一次讲一件事，我听得分明；要去哪儿，直接说「带我去×」。）" : "\n（小声说：一次讲一件事，我听得分明。）");   /* 意图解析引导：首开教玩家"分句"（multi 组/薄边界是模型短板，UI 侧零成本补救）；导航句式只教给有导航能力的 NPC */
     addMsg("witch", withHint);
     history[currentNPC].push({role:"assistant",content:withHint});
     /* 记忆流开场钩子：NPC 主动提「上次的事」（Generative Agents 状态可见化，每条记忆只提一次） */

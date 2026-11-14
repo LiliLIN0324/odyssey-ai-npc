@@ -719,17 +719,21 @@ function atmosphereTick(){
   skyU.uNight.value = Math.max(0, Math.min(1, night*1.15 - dusk*0.45));
   if (scene3.fog) scene3.fog.color.copy(_atmoH);          /* 雾色跟天际——任何时刻水面都融入天际线 */
   if (scene3.background) scene3.background.copy(_atmoH);
-  /* 光照：白昼金白 → 深夜月色微光 */
+  /* 光照：白昼金白 → 深夜月色微光。
+     锐评 B（实玩批）：旧值 sun 1.35×(1-n×0.55)、hemi 0.65×(1-n×0.45)、水色 ×0.75 —— 深夜叠加后
+     近乎全黑（开局夜袭第一屏玩家看不清自己的船）。整体抬高一档夜底：sun 保底 ×0.45、
+     hemi 保底 ×0.7、水色压暗收窄到 ×0.6；配合新增的船桅灯（暖色点光），夜里不再糊成一团。 */
   if (sunLight){
     sunLight.color.copy(_atmoS).lerp(new THREE.Color(0xffffff), 0.3);
-    sunLight.intensity = 1.35 * (1 - night*0.55) + dusk * 0.15;
+    sunLight.intensity = 1.35 * (1 - night*0.45) + dusk * 0.15;
   }
-  if (hemiLight) hemiLight.intensity = 0.65 * (1 - night*0.45);
+  if (hemiLight) hemiLight.intensity = 0.65 * (1 - night*0.3);
+  if (boatLantern) boatLantern.intensity = night * 1.5 + dusk * 0.25;   /* 桅灯：夜里亮起，白昼熄灭 */
   /* 水色三档随夜色压暗 */
   if (waterU){
-    waterU.uShore.value.copy(new THREE.Color(PAL.oceanShore)).lerp(NIGHT_WATER_SHORE, night*0.75);
-    waterU.uMid.value.copy(new THREE.Color(PAL.oceanMid)).lerp(NIGHT_WATER_MID, night*0.75);
-    waterU.uDeep.value.copy(new THREE.Color(PAL.oceanDeep)).lerp(NIGHT_WATER_DEEP, night*0.75);
+    waterU.uShore.value.copy(new THREE.Color(PAL.oceanShore)).lerp(NIGHT_WATER_SHORE, night*0.6);
+    waterU.uMid.value.copy(new THREE.Color(PAL.oceanMid)).lerp(NIGHT_WATER_MID, night*0.6);
+    waterU.uDeep.value.copy(new THREE.Color(PAL.oceanDeep)).lerp(NIGHT_WATER_DEEP, night*0.6);
   }
   /* 云染夜色 */
   if (cloudGroup && cloudGroup.material)
@@ -774,6 +778,7 @@ function buildDrifts() {
 /* ---------- P2.3 石化送客船：白石柱（17g 原著第 13 卷末；主脚本置 state.stonePillarDone 后显现） ---------- */
 let pillarG = null;
 let troyLight = null;   /* 特洛伊营火 PointLight 引用（flick 闪烁乘进 intensity） */
+let boatLantern = null; /* 锐评 B：船桅灯（夜间点亮，随 atmosphereTick 强度驱动） */
 function buildStonePillar() {
   const g = new THREE.Group();
   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.62, 7.5, 7),
@@ -910,6 +915,11 @@ function init() {
      逻辑坐标/碰撞/交互半径不动。 */
   boatG.scale.setScalar(1.12);
   scene3.add(boatG);
+  /* 锐评 B（实玩批）：夜里 sun/hemi 全压暗后船几乎看不见（开局夜袭第一屏近黑）。
+     给船挂一盏暖色桅灯——夜间自动点亮，玩家永远找得到自己的船；白昼强度为 0。 */
+  boatLantern = new THREE.PointLight(0xffc46a, 0, 10, 2);
+  boatLantern.position.set(0, 1.6, 0);
+  boatG.add(boatLantern);
   escortG = buildEscortFleet();   /* 批次 H8：护航船裸网格 1.3 单位 vs 主船 1.12×1.7≈1.9——旗舰带小艇的自然比例，不再另加缩放 */
   scene3.add(escortG);
   driftG = buildDrifts();

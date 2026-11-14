@@ -481,7 +481,10 @@ function loop(t){
     const near = scene==="world" ? islandNear() : aiaNear();
     if (near){ eBufAt = 0; interact(); }
   }
-  ctx.clearRect(0,0,1000,600);
+  /* 锐评 A：backing 跟随舞台（DPR 适配），逻辑坐标仍 1000×600 —— setTransform 后所有绘制零改动 */
+  fitCanvasBacking();
+  ctx.setTransform(cv.width/VIEW_W, 0, 0, cv.height/VIEW_H, 0, 0);
+  ctx.clearRect(0,0,VIEW_W,VIEW_H);
   /* 世界图 3D 大陆视觉：W3D 就绪时 2D 画布只留透明合成层（日光/夜色/浮字），岛内场景不受影响 */
   if (qualityMode==="2d" && scene==="world"){
     const cv3 = document.getElementById("cv3d");
@@ -521,17 +524,22 @@ function loop(t){
   updateCompassArrow();   /* Steam 化：航向罗盘箭头每帧轻量刷新（DOM 仅文案变化时写入） */
   pollGamepad();   /* Steam 化：手柄轮询（左摇杆/十字键移动，A 互动） */
   renderAmbient();
-  /* 自适应画质：连续 2s 窗口平均帧率过低 → 先降 DPR、再切 2D 海图（仅 auto 模式，尊重手动选择） */
+  /* 自适应画质：连续窗口平均帧率过低 → 先降 DPR、再切 2D 海图（仅 auto 模式，尊重手动选择）。
+     锐评 D（实玩批）：2s 窗口 + 单次低帧即切 2D，开局几秒就可能视觉突变（后台标签/慢盘加载也算）。
+     改为：3.5s 窗口 + 切 2D 前要求连续 2 个低帧窗口，给「先降 DPR」留出生效时间。 */
   if (lastLoopT && t > lastLoopT){
     perfT += Math.min((t - lastLoopT) / 1000, 0.5); perfAcc += 1;
-    if (perfT >= 2){
+    if (perfT >= 3.5){
       perfFps = perfAcc / perfT; perfAcc = 0; perfT = 0;
       if (w3dOn && qualityMode === "auto"){
         if (qualityDegrade < 1 && perfFps < 40){ qualityDegrade = 1; if (window.W3D && W3D.setDPR) W3D.setDPR(1.0); }
         else if (qualityDegrade === 1 && perfFps < 26){
-          qualityDegrade = 2; qualityMode = "2d"; applyQuality(true);   /* 会话内降级，不写偏好——避免一次卡顿把用户永久锁在 2D */
-          toast("帧率偏低——已自动切到 2D 海图（右上「画质」可切回）。");
-        }
+          perfLowStreak = (perfLowStreak||0) + 1;
+          if (perfLowStreak >= 2){
+            qualityDegrade = 2; qualityMode = "2d"; applyQuality(true);   /* 会话内降级，不写偏好——避免一次卡顿把用户永久锁在 2D */
+            toast("帧率偏低——已自动切到 2D 海图（右上「画质」可切回）。");
+          }
+        } else perfLowStreak = 0;
       }
     }
   }

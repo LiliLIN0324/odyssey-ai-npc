@@ -2453,10 +2453,18 @@ function renderQuests(){
     <div class="q choice"><b>${entry.title} · ${entry.choice}</b><br>
       <span class="sub">${entry.changes.length?entry.changes.join(" · "):"命运已记下这次选择；没有即时数值变化"}</span>
     </div>`).join("");
-  /* —— 抉择回声：跨场景持久化的选择（这些会在后续岛的对话与选项里产生回响） —— */
+  /* —— 抉择回声：跨场景持久化的选择（这些会在后续岛的对话与选项里产生回响） ——
+     锐评 F（实玩批）：原样打印 state.decisions 的键名，玩家看到的是 `troy_fire → 放下火把`，
+     内部 ID 直接漏到 UI。补一张中文标签表，未知键回退原样（新抉择上线忘加标签也不炸）。 */
+  const DEC_LABELS = {
+    troy_fire:"特洛伊之夜", ismaros_plunder:"伊斯玛洛斯 · 劫掠", lotus_fruit:"食莲",
+    cyclops_name:"巨人的名字", mead:"蜜酒之约", telepylos_ship:"忒勒皮洛斯 · 守船",
+    aeolia_winds:"风袋的代价", crew_noise:"太阳岛 · 声响", calypso:"奥吉吉亚 · 去留",
+    scheria_guest:"斯克里 · 做客", tel_reveal:"忒勒皮洛斯 · 相认", troy_song:"特洛伊 · 挽歌",
+  };
   const decEntries = Object.entries(state.decisions||{});
   const decRows = decEntries.length ? decEntries.map(([k,v])=>`
-    <div class="q decision"><b>${k} → ${v}</b></div>`).join("") : "";
+    <div class="q decision"><b>${DEC_LABELS[k]||k} → ${v}</b></div>`).join("") : "";
   /* —— 可选旧路 —— */
   const optRows = OPT_STEPS.map(s=>{
     const ok = s.done();
@@ -2520,6 +2528,21 @@ let gullT = 8, crackleT = 0;
 
 // --- cv (migrated from main script) ---
 const cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+
+/* 锐评 A（实玩批）：主画布 backing 固定 1000×600 被 CSS 拉伸到舞台尺寸 → 桌面大窗口/高 DPI 屏全糊
+   （海图浮层早就做了 DPR，主画面反而没有，对比之下更明显）。
+   改为 backing 跟随舞台实际尺寸 × devicePixelRatio（上限 2，4K 下不炸填充率），
+   逻辑坐标仍是 1000×600：主循环每帧开头 setTransform(kx,0,0,ky,0,0)，全部绘制代码零改动。 */
+function fitCanvasBacking(){
+  const stage = document.getElementById("stage");
+  if (!stage) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = Math.max(320, Math.round(stage.clientWidth * dpr));
+  const h = Math.max(200, Math.round(stage.clientHeight * dpr));
+  if (cv.width !== w || cv.height !== h){ cv.width = w; cv.height = h; }
+}
+fitCanvasBacking();
+window.addEventListener("resize", fitCanvasBacking);
 
 // --- dolphinLeapUntil (migrated from main script) ---
 let dolphinLeapUntil = 0;                        /* J4：互动后 3s 大跃出 */
