@@ -347,21 +347,8 @@ function drawDaylight(et){
   const vx = cam.x-60, vy = cam.y-60, vw = VIEW_W/cam.zoom+120, vh = VIEW_H/cam.zoom+120;
   const k = scene==="world" ? 0.55 : 1;
   if (du > 0){ ctx.fillStyle = `rgba(232,168,74,${0.10*du*k})`; ctx.fillRect(vx,vy,vw,vh); }
-  /* 锐评画质批（用户问「画质能不能再提升」）：夜里有月光照明、有星空，天上却没有月亮——
-     「有光无源」。在 2D 合成层画一轮月（屏幕空间定左上海面上方，与 drawStars 同一套夜幕
-     逻辑；3D 模式下 2D 画布就是顶层合成层，月亮照常叠上去）：
-     光晕 + 盘面 + 一弯暗边，随夜色深浅淡入。 */
-  if (n > 0.25 && scene === "world"){
-    const mx = 140, my = 118, mr = 18;
-    const halo = ctx.createRadialGradient(mx, my, mr*0.4, mx, my, mr*3.0);
-    halo.addColorStop(0, `rgba(214,226,244,${0.15*n})`);
-    halo.addColorStop(1, "rgba(214,226,244,0)");
-    ctx.fillStyle = halo; ctx.fillRect(mx-mr*3.0, my-mr*3.0, mr*6.0, mr*6.0);
-    ctx.fillStyle = `rgba(222,230,242,${0.52*n})`;
-    ctx.beginPath(); ctx.arc(mx, my, mr, 0, 7); ctx.fill();
-    ctx.fillStyle = `rgba(10,16,44,${0.22*n})`;   /* 一弯暗边：满月不至于太「贴图」 */
-    ctx.beginPath(); ctx.arc(mx+mr*0.38, my-mr*0.22, mr*0.92, 0, 7); ctx.fill();
-  }
+  /* 锐评：月亮已迁入 3D 天空 shader（真月盘+月海+月光路，与水面共用 MOON_DIR）——
+     2D 贴图月亮下线（用户报「全是贴图没有真的效果」）。 */
   if (n > 0){
     ctx.fillStyle = `rgba(10,16,44,${0.38*n*k})`; ctx.fillRect(vx,vy,vw,vh);
     if (scene==="world") drawStars(et,n);

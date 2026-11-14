@@ -17,6 +17,10 @@ const PAL = {
 };
 const SUN_DIRECTION = new THREE.Vector3(-0.55, 0.7, 0.45).normalize();
 const LIGHT2D = new THREE.Vector2(SUN_DIRECTION.x, SUN_DIRECTION.z).normalize();
+/* 锐评：月亮方位（北天偏西 20°，穹顶仰角 ~5°）——低月悬海。相机降俯角后天空带
+   恰好覆盖地平线上 0~3°，月亮盘面（半径 ~1.7°）正落在带内：月出即所见。
+   天空与水面两套 shader 共用此向量（月光路 = 月亮方位的镜面 shimmer）。 */
+const MOON_DIR = new THREE.Vector3(-0.30, 0.060, -0.94).normalize();
 const sstep = (x, a, b) => THREE.MathUtils.smoothstep(x, a, b);
 
 /* ---------- 种子噪声（与 3d/app/src/noise.js 同源，保证可复现） ---------- */
@@ -447,6 +451,8 @@ function buildWater() {
     uDeep: { value: new THREE.Color(PAL.oceanDeep) },
     uGold: { value: new THREE.Color(PAL.duskGold) },
     uSunH: { value: LIGHT2D.clone().multiplyScalar(-1) },  /* 光路指向航向前方（否则金光在镜头背后看不见） */
+    uMoonH: { value: MOON_DIR.clone() },   /* 锐评：月光路方向（与天空月亮同源同一方位） */
+    uViewer: { value: new THREE.Vector2() },   /* 锐评：观察者船位（xz）——光路以船为原点，跟随船走 */
     uNight: { value: 0 },   /* 锐评：夜色系数——岸线碎沫/浅水亮层夜里不再往纯白混（月亮海面发荧光） */
   };
   const mat = new THREE.ShaderMaterial({
@@ -479,6 +485,8 @@ function buildWater() {
       uniform vec3 uMid;
       uniform vec3 uDeep;
       uniform vec3 uGold;
+      uniform vec3 uMoonH;
+      uniform vec2 uViewer;
       uniform vec2 uSunH;
       float hash21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
       float vnoise(vec2 p) {
@@ -497,9 +505,18 @@ function buildWater() {
         /* 大尺度海色起伏 + 近岸透亮浅色层（地中海的“看得到沙底”感）——夜里随夜色压暗 */
         col = mix(col, uMid, 0.09 * vnoise(vWorld.xz * 0.045 + vec2(3.1, 7.7)));
         col = mix(col, vec3(0.55, 0.85, 0.88), (1.0 - smoothstep(0.0, 2.6, dmin)) * 0.22 * (1.0 - uNight * 0.75));
-        /* 朝太阳方向的金色光路（P1 同款）——夜里没有太阳，光路压掉 */
-        float toSun = max(dot(normalize(vWorld.xz), normalize(uSunH)), 0.0);
+        /* 朝太阳方向的金色光路（P1 同款）——夜里没有太阳，光路压掉。
+           锐评修正：光路方位从「世界原点相对」改为「观察者相对」（three.js Water 的镜面
+           高光以 camera 为基准）——光路永远从船脚下伸向光源方位，跟着船走。 */
+        vec2 rel = vWorld.xz - uViewer;
+        float toSun = max(dot(normalize(rel), normalize(vec2(uSunH.x, uSunH.y))), 0.0);
         col += uGold * (pow(toSun, 6.0) * 0.24 + pow(toSun, 16.0) * 0.10) * smoothstep(2.0, 14.0, dmin) * (1.0 - uNight * 0.85);
+        /* 锐评（用户报：月亮像贴图）：月光路——月亮方位的银色 shimmer 带，碎波调制。
+         three.js Water 示例的 sunColor 镜面同源思路：天上有月，水上就有它那条路，
+         光源才「真」。观察者相对 + 碎波 shimmer + 近岸渐隐。 */
+        float toMoon = max(dot(normalize(rel), normalize(vec2(uMoonH.x, uMoonH.z))), 0.0);
+        float glitter = vnoise(vWorld.xz * 1.15 + vec2(uTime * 0.26, uTime * 0.19));
+        col += vec3(0.80, 0.86, 1.0) * (pow(toMoon, 9.0) * (0.085 + 0.24 * smoothstep(0.55, 0.95, glitter))) * uNight * smoothstep(2.0, 14.0, dmin);
         /* 贴岸碎沫（加宽加清） + 细碎波光（提频去白块感）——夜里改月光灰蓝，不再发荧光 */
         float band = smoothstep(-0.12, 0.06, dmin) * (1.0 - smoothstep(0.10, 0.75, dmin));
         float foam = band * (0.3 + 0.7 * vnoise(vWorld.xz * 1.4 + vec2(uTime * 0.22, -uTime * 0.16)));
@@ -527,6 +544,7 @@ function buildSky() {
     uSunColor: { value: new THREE.Color(PAL.duskGold) },
     uSunDir: { value: SUN_DIRECTION.clone().normalize() },
     uNight: { value: 0 },   /* 批次 J1：夜色系数（0 白昼→1 深夜），驱动星空 */
+    uMoonDir: { value: MOON_DIR.clone() },   /* 锐评：月亮方向（天空/水面两套 shader 共用同一光源方位） */
   };
   const mat = new THREE.ShaderMaterial({
     uniforms, side: THREE.BackSide, depthWrite: false, fog: false,
@@ -540,7 +558,16 @@ function buildSky() {
       uniform vec3 uZenith;
       uniform vec3 uSunColor;
       uniform vec3 uSunDir;
+      uniform vec3 uMoonDir;
       uniform float uNight;
+      /* 月海噪声（value noise，与水面 shader 同款 hash）——盘面内的灰斑是「真月面」的关键 */
+      float hash21m(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      float vn2(vec2 p){
+        vec2 i = floor(p), f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+        return mix(mix(hash21m(i), hash21m(i + vec2(1.0, 0.0)), f.x),
+                   mix(hash21m(i + vec2(0.0, 1.0)), hash21m(i + vec2(1.0, 1.0)), f.x), f.y);
+      }
       void main() {
         vec3 d = normalize(vDir);
         vec3 col = mix(uHorizon, uZenith, smoothstep(0.0, 0.4, d.y));
@@ -557,6 +584,23 @@ function buildSky() {
           float dist2 = length(f.xy - off * 0.7) + abs(f.z) * 0.9;
           float star = smoothstep(0.16, 0.02, dist2) * step(0.992, h1);
           col += vec3(0.92, 0.95, 1.0) * star * uNight * 0.85;
+        }
+        /* 锐评（用户报：月亮像贴图）：真正的 shader 月亮——
+           软边缘圆盘 + 角度坐标 value-noise 月海 + 临边昏暗 + 月晕，全部随 uNight 淡入。
+           月盘直接画在天空穹顶上（成熟开源天空系统的标准做法，参照 three.js Sky 一系：
+           天体 = 视线方向与光源方向的角距离，不是贴图）。
+           放在星空之后：月盘覆盖住落在它身上的星点（天体前后关系）。 */
+        vec3 mN = normalize(uMoonDir);
+        float mDot = dot(d, mN);
+        if (uNight > 0.01 && mDot > 0.999) {
+          float disc = smoothstep(0.99942, 0.99980, mDot);          /* 软边缘：半径 ~1.9° */
+          vec2 mp = vec2(atan(d.z, d.x), asin(clamp(d.y, -1.0, 1.0))) * 260.0;   /* 角度坐标 */
+          float mar = vn2(mp) * 0.6 + vn2(mp * 2.3 + 17.0) * 0.4;   /* 月海：两阶噪声灰斑 */
+          vec3 moonCol = mix(vec3(0.98, 0.98, 1.0), vec3(0.62, 0.67, 0.78), mar * 0.85);
+          float limb = smoothstep(0.0, 1.0, (mDot - 0.99942) / (0.99980 - 0.99942));
+          moonCol *= 0.70 + 0.30 * limb;                            /* 临边昏暗：边缘略暗于中心 */
+          col = mix(col, moonCol, disc * uNight);                   /* 覆盖式：月盘不是加法叠亮 */
+          col += vec3(0.72, 0.80, 1.0) * pow(max(mDot, 0.0), 1400.0) * 0.5 * uNight;   /* 月晕 */
         }
         gl_FragColor = vec4(col, 1.0);
         #include <colorspace_fragment>
@@ -1116,6 +1160,7 @@ function frame(et) {
   boatG.rotation.z = Math.sin(et * 1.7) * 0.03;
   if (sailMesh) sailMesh.rotation.x = Math.sin(et * 2.3) * 0.055;   /* 锐评画质批：帆微飘——恒亮白帆不再死板 */
   waterU.uTime.value = et;
+  waterU.uViewer.value.set(bx, bz);   /* 锐评：光路以船为原点（uSunH 方向是固定的，路径随船平移） */
   /* 相机跟随：帧率无关指数缓动（低帧下也不拖泥带水） */
   const dt = lastEt < 0 ? 0.016 : Math.min(Math.max(et - lastEt, 0.001), 0.12); lastEt = et;
   /* 锐评画质批：接触阴影 + 尾流航迹随帧驱动（dt 之后——尾流淡入用帧率无关缓动）。
@@ -1202,10 +1247,13 @@ function frame(et) {
       s.g.rotation.z = Math.sin(et * 1.6 + d.y) * 0.12;
     }
   }
-  _camTarget.set(bx, 13.2, bz + 15.6);   /* 批次 J2：相机抬高拉远（11.6/13.8→13.2/15.6）——更开阔的海平视野；
-                                            远岛半隐在雾里，岛名标签与 M 海图承担导航 */
+  /* 锐评（用户报：月亮像贴图）：原相机 13.2 高 / 前视 2.5 → 俯角 34°，视锥上缘在地平线
+     下方 7°——真正的天空穹顶几乎不进画，任何天体都出不了场。降俯角：高度 11.5、
+     前视 8 → 俯角 ~24°，地平线上方露出 ~3° 天空带，月亮/星群有了立足之地；
+     相机→船距离 20.4→20.2 不变（船的屏幕大小不变），视野更向前（航海的「航向视野」）。 */
+  _camTarget.set(bx, 11.5, bz + 17);
   camera3.position.lerp(_camTarget, 1 - Math.exp(-4 * dt));
-  camera3.lookAt(bx, 0.8, bz - 2.5);
+  camera3.lookAt(bx, 0.5, bz - 8);
   /* 岛名标签随相机距离淡出：20 内全显，>60 隐没（淡透后顺带 visible=false 省掉无谓 sprite call） */
   for (let i = 0; i < labelSprites.length; i++) {
     const L = labelSprites[i];
