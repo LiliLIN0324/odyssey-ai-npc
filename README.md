@@ -30,7 +30,7 @@
 |---|---|---|
 | **本机 · 真模型**（推荐） | `http://localhost:8899` | 双击 `odyssey-witch\启动游戏.bat` 自动起服务并开浏览器。走 `server.py` 代理天翼 API，女巫真的会解析意图、写台词。需 `key.txt`（仓库根目录有）。 |
 | **本机 · 离线包** | `http://127.0.0.1:8841` | `scripts/serve_h5.py` 托管 `dist/odyssey-h5` 的纯静态包。零外部请求，Agent 走本地意图引擎兜底。 |
-| **线上版**（可直接分享链接） | <https://odyssey-1c9.pages.dev> | 不装 Python、不用 key 就能玩；key 在 Cloudflare secret 里。额度全站 500 次/天、单 IP 40 次/天，超额自动降级离线兜底。**注意：线上是 K2/K3 之前的旧包**（没有摊开后的世界层与海域状态），新内容要看本地入口。 |
+| **线上版**（可直接分享链接） | <https://odyssey-1c9.pages.dev> | 不装 Python、不用 key 就能玩；key 在 Cloudflare secret 里。额度全站 500 次/天、单 IP 40 次/天，超额自动降级离线兜底。**2026-11-15 已更新到 K2/K3 新包**（摊开后的世界 + 海域状态层 + 势力船队）。 |
 
 **手机/平板上玩**（同一个 Wi-Fi）：默认服务只监听本机，要开放到局域网：
 
@@ -48,6 +48,18 @@ py -3 odyssey-witch\server.py 8899 --host 0.0.0.0
 ```
 
 会自动起本地服务（默认 http://localhost:8899，需 `odyssey-witch` 或上级目录有 `key.txt`，即天翼 API key）。
+**重新发布线上版**（改了游戏代码之后）：
+
+```powershell
+cd odyssey-witch\dist\odyssey-h5
+node ..\..\tools\sync_schema.mjs --check     # 部署件与根 schema.json 对齐
+$env:CLOUDFLARE_ACCOUNT_ID='f0273e54d22c215389dd6065a802ddae'
+npx --yes wrangler@4 pages deploy . --project-name odyssey
+```
+
+发布根是 **`dist/odyssey-h5`**（不是 `odyssey-witch/` 源码树——那里面带开发文件）。
+本机已有 wrangler 的 OAuth 凭据（scope 含 `pages:write`），不需要重新登录。
+
 **端口为什么不是 8765**：8765 落在 Windows 的 TCP 保留端口段（Hyper-V/WSL 的 NAT 预留 8632–8831），绑它会直接
 `EADDRINUSE`，而 netstat 上一个进程都看不到——很容易误判成「服务没起来」。服务端分工：
 

@@ -1214,6 +1214,39 @@ P50 896ms / P90 1093ms / P99 1454ms / max 1745ms，wall 148.9s。mock 后端 18 
 对不上。修法：把刷新逻辑抽成 `updateRegionPill()`（`src/game/events.js`，照 `updateCompassArrow` 的写法——
 每帧算、文案没变就不碰 DOM），挂进主循环；`renderHUD()` 里改成调它。改完世界层回归转绿。**顺带修掉回归脚本自身的一个坑**：`SHOT_DIR = Path(os.environ.get("ODYSSEY_WORLD_SHOTS", ""))` —— `Path("")` 就是 `Path(".")`，`if SHOT_DIR:` **恒为真** → 每次跑世界层回归都往仓库工作目录丢两张 1MB 的 `world-map.png` / `world-sea.png`（仓库被污染，`git status` 里冒出来两坨）。改成留字符串、真有值才建目录。
 
+### 48. 线上发布 · Cloudflare Pages 换成 K2/K3 新包（11-15 傍晚，用户「要把这个老包推送远端 更新啊 https://odyssey-1c9.pages.dev/」）
+
+**发布前的体检**：线上 `https://odyssey-1c9.pages.dev/` 当时还是 11-10 部署的老包——`index.html` 474KB 的**单文件内联**结构，
+实测搜不到 `worldState.js` / `fleets.js` / `hudRegion` / `updateRegionPill`，即**K2/K3 一样都没有**（线上 ≠ 本地最新）。
+
+**发布根目录换成了 `dist/odyssey-h5`**（81 文件多文件结构：index.html + src/ + vendor/ + concept-art/ + functions/ +
+world3d.js + island3d.js + wrangler.toml）。**不再用老文档里的 `odyssey-witch/` 源码树**——源码树里带
+server.py / tests / scripts / release / dist 等开发文件，不该整棵公开。
+
+**凭据：不用重新 OAuth**。本机早就有 wrangler 的 OAuth token（`%APPDATA%\xdg.config\.wrangler\config\default.toml`，
+账号 endtree@proton.me，scope 含 **`pages:write`**），且 `wrangler whoami` 能看到两个账号——`odyssey` 项目在
+Lily 账号 `f0273e54d22c215389dd6065a802ddae` 下。命令（**在 `dist/odyssey-h5` 目录里执行**）：
+
+```powershell
+$env:CLOUDFLARE_ACCOUNT_ID='f0273e54d22c215389dd6065a802ddae'
+npx --yes wrangler@4 pages deploy . --project-name odyssey
+```
+
+**发布前置**：`node tools/sync_schema.mjs --check`（根 schema.json 是唯一源，Pages Functions 不能跨目录 import，
+部署件必须带同步副本）→ OK；`python scripts/build_h5.py` 重建产物。
+
+**结果**：上传 72 文件（3 个内容去重），本次部署 URL `https://cc425bc0.odyssey-1c9.pages.dev`，
+**生产域名 https://odyssey-1c9.pages.dev 已生效**（实测 index.html 里 worldState.js + fleets.js 都在）。
+
+**线上实机验收（真实 Chrome 打生产域名）**：`/api/parse` **200**（走 Cloudflare secret 里的真 key）→
+女巫买药**真结算**（金币 20→5、治疗草药 1→2）、气泡**无兜底标记**、chips 落成「购买物品」、
+**零 pageerror**；海域 pill 随船实时更新（`🌊 黎凡特海 · 疫` → 航行后 `🌊 地中海 · 商路兴衰`）；
+海图态势层完整（5 片海的状态晕圈 + 4 支船队插旗）。
+
+**新发现：线上 API 会按 UA 拦 `Python-urllib`（403）**——浏览器 UA / curl / PowerShell 都是 200，
+只有 Python 默认 UA 拿到 403。**这不是上游天翼 403**（后者响应体是 `{"error":"HTTP 403｜Forbidden"}`），
+是 Cloudflare 侧的 UA 拦截。后果：**用 urllib 打线上 API 会假报失败**，验收脚本要么用浏览器、要么带浏览器 UA。
+
 **未做 / 待立项**：① **B3 主线去纯线性**（分支/回环）本批不做；② **完全正确率 75.23% < 设计稿 85% 目标**——
 短板在 multi 组（类别准确率 46.15%，6/13）与 schema 边界（查询附近目标 vs 查询地点信息）；③ 2D/3D 割裂
 （玩法岛在 3D 无实体岛体）沿用现状未修；④ 海域状态目前只影响叙事卡与贸易，**尚未接到航路代价**（B3 的「代价」部分）。
