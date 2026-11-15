@@ -31,6 +31,8 @@ def run(command, **kwargs):
 
 def main():
     run([sys.executable, "scripts/build_h5.py"])
+    # 图标接线表必须与 concept-art/icons/ 同步（补图后忘了跑生成脚本 → 门禁红）
+    run([sys.executable, "scripts/gen_item_icons.py", "--check"])
     run(["node", "--test", *NODE_TESTS])
 
     with socket.socket() as sock:

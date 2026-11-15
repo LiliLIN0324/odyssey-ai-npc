@@ -2492,8 +2492,8 @@ function renderHUD(){
   const ks=Object.keys(state.backpack);
   if (document.getElementById("bagPanel").style.display==="block"){   /* 面板开着才重建 DOM（原来 renderHUD 每秒全量重建背包，白耗且开着时 hover 态闪烁；关闭→打开由 bagBtn onclick 里的 renderHUD 补刷） */
     document.getElementById("bagList").innerHTML = ks.length
-      ? ks.map(k=>`<div class="it"><span>${k}</span><b>×${state.backpack[k]}</b></div>`).join("")
-        + (state.equipped?`<div class="it"><span>手持</span><b>${state.equipped}</b></div>`:"")
+      ? ks.map(k=>`<div class="it"><span class="itL">${itemIconHTML(k)}<span>${k}</span></span><b>×${state.backpack[k]}</b></div>`).join("")
+        + (state.equipped?`<div class="it"><span class="itL"><span>手持</span></span><b>${state.equipped}</b></div>`:"")
       : '<div style="color:#b6c2d2;font-size:12px">（空空如也）</div>';
   }
 }

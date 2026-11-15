@@ -1,9 +1,10 @@
-// check-assets.mjs —— Tripo 产出物体检（PIPELINE.md §3 面数预算 + §6 体积/贴图预算）
+// check-assets.mjs —— Tripo 产出物体检（PIPELINE.md §3 面数预算 + §6 体积/贴图预算 + 参考表就绪度）
 //
 // 用法：node tools/check-assets.mjs          （在 3d/app 下）
 // 退出码：0 = 全部就绪且合规；1 = 有资产超预算或解析失败（缺失只记为"待产出"，不算失败）
 //
 // 读 public/assets/props.json，逐个检查：
+//   · 建模参考表是否在 3d/refs/ 下就位（Tripo 的输入；缺参考表 = 还没法建模）
 //   · 文件是否存在（缺失 = Tripo 还没产出，记为待产出）
 //   · 解析 GLB 头 → 三角面数、贴图张数、文件体积
 //   · 面数对比 manifest.budgetTris；总量对比 §6 性能预算（150k tris / 30MB / 12 tex）
@@ -13,6 +14,7 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const assetsDir = join(here, '..', 'public', 'assets');
+const refsDir = join(here, '..', '..', 'refs');
 const manifest = JSON.parse(readFileSync(join(assetsDir, 'props.json'), 'utf8'));
 
 function parseGlbJson(buf) {
@@ -56,8 +58,14 @@ const rows = [];
 
 for (const spec of manifest.props) {
   const file = join(assetsDir, spec.file);
+  const refPath = spec.ref ? join(refsDir, spec.ref) : null;
+  const refState = !spec.ref ? '—' : (existsSync(refPath) ? '参考表✓' : '参考表缺');
+  if (spec.ref && !existsSync(refPath)) {
+    rows.push({ id: spec.id, state: '待建模', detail: (spec.ref || '') + ' · 缺参考表' });
+    continue;
+  }
   if (!existsSync(file)) {
-    rows.push({ id: spec.id, state: '待产出', detail: spec.file });
+    rows.push({ id: spec.id, state: '待产出', detail: spec.file + ' · ' + refState });
     continue;
   }
   try {
@@ -69,7 +77,7 @@ for (const spec of manifest.props) {
     totalTris += tris * copies;
     totalBytes += bytes;
     totalTex += tex;
-    let detail = `${tris} tris ×${copies} · ${tex} tex · ${(bytes / 1048576).toFixed(2)} MB`;
+    let detail = `${tris} tris ×${copies} · ${tex} tex · ${(bytes / 1048576).toFixed(2)} MB · ${refState}`;
     if (spec.budgetTris && tris > spec.budgetTris) {
       detail += ` · 超预算(${spec.budgetTris})`;
       ok = false;
@@ -87,7 +95,8 @@ console.log('  ' + '-'.repeat(84));
 for (const r of rows) console.log(`  ${pad(r.id, 16)}${pad(r.state, 10)}${r.detail}`);
 console.log('  ' + '-'.repeat(84));
 const ready = rows.filter((r) => r.state === '已产出').length;
-console.log(`  合计：${ready}/${rows.length} 就绪 · ${totalTris} tris · ${(totalBytes / 1048576).toFixed(2)} MB · ${totalTex} tex`);
+const refsOk = rows.filter((r) => r.detail.includes('参考表✓')).length;
+console.log(`  合计：${ready}/${rows.length} 就绪 · 参考表 ${refsOk}/${rows.length} 就位 · ${totalTris} tris · ${(totalBytes / 1048576).toFixed(2)} MB · ${totalTex} tex`);
 console.log(`  预算：tris ≤ ${MAX_TOTAL_TRIS} · GLB ≤ 30 MB · 贴图 ≤ ${MAX_TEX_TOTAL} 张`);
 if (totalTris > MAX_TOTAL_TRIS || totalBytes > MAX_TOTAL_BYTES || totalTex > MAX_TEX_TOTAL) {
   console.log('  ✗ 超出管线总预算');

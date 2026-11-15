@@ -5,6 +5,8 @@ import argparse
 import hashlib
 import json
 import shutil
+import subprocess
+import sys
 import zipfile
 from pathlib import Path
 
@@ -24,6 +26,10 @@ def build(out, zip_path):
     if out.exists():
         shutil.rmtree(out)
     out.mkdir(parents=True)
+
+    # 图标接线表跟着 concept-art/icons/ 走：构建前先重新生成，
+    # 保证「丢 PNG 进目录 → 构建 → 自动生效」，且缺图的物品不会进表（不发 404）。
+    subprocess.run([sys.executable, "scripts/gen_item_icons.py"], cwd=ROOT, check=True)
 
     html = (ROOT / "index.html").read_bytes()
     old = b'fetch("/api/schema")'

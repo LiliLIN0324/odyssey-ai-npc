@@ -1426,7 +1426,7 @@ const SITE_MAPS = {
   cyclops:  { img:"concept-art/maps/07-独眼巨人岛图.jpg",  name:"独眼巨人之岛" },
   telepylos:{ img:"concept-art/maps/08-忒勒皮洛斯图.jpg",  name:"忒勒皮洛斯" },
   troy:     { img:"concept-art/maps/09-特洛伊图.jpg",      name:"特洛伊" },
-  aia:      { img:"concept-art/maps/02-埃阿亚岛图.jpg",      name:"埃阿亚岛" },
+  aia:      { img:"concept-art/maps/02-埃亚岛图.jpg",        name:"埃阿亚岛" },   /* 修正：文件名是「埃亚岛图」，原写「埃阿亚岛图」→ M 键海图一直 404 */
   hades:    { img:"concept-art/maps/03-冥界之岸图.jpg",    name:"冥界之岸" },
   aeolia:   { img:"concept-art/maps/04-风神岛图.jpg",      name:"风神岛" },
   sun:      { img:"concept-art/maps/10-太阳岛图.jpg",      name:"太阳岛" },
@@ -1435,6 +1435,17 @@ const SITE_MAPS = {
   ithaca:   { img:"concept-art/maps/13-伊萨卡图.jpg",      name:"伊萨卡" },
   strait:   { img:"concept-art/maps/14-斯库拉海峡图.jpg",  name:"斯库拉海峡" },
 };
+
+
+// --- 背包物品图标（接线表在 itemIcons.js，**自动生成**） --------------------
+// ITEM_ICONS 由 scripts/gen_item_icons.py 扫描 concept-art/icons/ 生成，
+// 只收录**文件真实存在**的图标 —— 缺图的物品压根不进表 → 不会发 404 请求。
+// 补图流程：把 PNG 丢进 concept-art/icons/ → 跑一次 scripts/gen_item_icons.py → 自动生效。
+function itemIconHTML(name){
+  const f = ITEM_ICONS[name];
+  if(!f) return "";
+  return '<i class="itIcoBox"><img class="itIco" src="concept-art/icons/'+f+'" alt="" loading="lazy" onerror="this.parentNode.remove()"></i>';
+}
 
 // --- FOOD (migrated from main script) ---
 const FOOD = {"面包":{h:45},"烤野猪肉":{h:65},"蜂蜜":{h:30},"蜂蜜酒":{h:35,t:15},"橄榄油":{h:18},"玛草":{h:8},"金苹果":{h:60,t:10},

@@ -67,8 +67,12 @@
     border:1px solid var(--line); border-radius:12px; padding:12px 14px; display:none;
     box-shadow:0 10px 30px rgba(0,0,0,.3); z-index:5;}
   #bagPanel h3{font-size:12px; color:var(--sub); margin-bottom:8px; letter-spacing:1px;}
-  #bagPanel .it{display:flex; justify-content:space-between; font-size:13px; padding:4px 0; border-bottom:1px dashed #eef2f7;}
+  #bagPanel .it{display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:13px; padding:4px 0; border-bottom:1px dashed #eef2f7;}
   #bagPanel .it:last-child{border-bottom:none;}
+  /* 物品图标槽位：图缺失时 onerror 移除整个槽位，不留空位（排版不跳） */
+  #bagPanel .itL{display:flex; align-items:center; gap:8px; min-width:0;}
+  #bagPanel .itIcoBox{flex:0 0 auto; width:24px; height:24px; display:inline-block; position:relative;}
+  #bagPanel .itIcoBox img{width:100%; height:100%; object-fit:contain; display:block; filter:drop-shadow(0 1px 2px rgba(0,0,0,.35));}
   /* Steam 化：音频设置弹层（🎚 按钮） */
   #audioPanel{position:absolute; top:52px; right:12px; width:250px; background:var(--panel);
     border:1px solid var(--line); border-radius:12px; padding:12px 14px; display:none;
@@ -827,6 +831,7 @@
 
 <script src="./src/rumors.js?v=2"></script>
 <!-- 抽取的数据模块（按依赖顺序加载） -->
+  <script src="src/data/itemIcons.js"></script>
   <script src="src/data/constants.js"></script>
   <script src="src/data/state.js"></script>
   <script src="src/data/quests.js"></script>

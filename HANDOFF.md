@@ -861,7 +861,8 @@ hades_07"怎么渡过冥河"→导航到地点——前者就是全仓库头号�
 7. （已处理 11-07）**评测证据只在本机**：`result-*.json` 被 gitignore，仓库里查无此数——已把三轮 summary 快照入库 `results/`（含对照表 README），复测请提新快照，别覆盖。
 8. （新增 11-07）**天翼 429 在 workers=3/4 下仍会撞**（v3 撞 14 条、v22 撞 3 条、generic 撞 2 条）：全量跑完先查 `error` 字段，用 `.temp/rerun_*_failed.py` 模式单并发补跑合并，别直接采信带 error 的 summary——三个快照都是补跑后才提的。
 9. （11-07 傍晚风神岛批次对账，十三次微补终局更新）**遗留对齐项**：① ~~圣经没有风神岛~~ **已闭**——并行会话已补「插章·风神岛·风的账」；② 风神名字在圣经内两写（原版骨引荷马作"埃俄斯"、自由肉/游戏用"埃俄罗斯"），插章内混用，建议下轮圣经通稿统一；③ **三张新图未接线 → 已全部收口**——`NPCS.aeolus.portrait` 已接（§一.10）；塞壬 `07-塞壬.jpg` 此前已接；`08-斯库拉.jpg` 已接进"六头·付价"章节卡、`maps/04-风神岛图.jpg` 已接进风神岛章节卡（§一.11，实机验证通过）；④ **16 条用例待评测 + ch3 schema 词表未补**（见 §一.8，下一步评测工作面）；⑤ 两处小瑕疵（十二次微补冒烟目检遗留，终局冒烟未复核）：风神岛场景画面左侧 void 黑区（疑似相机边界）、顶部"点击任意处跳过"提示与 HUD 重叠；⑥ 自动化冒烟怪癖（不影响真人游玩）：新标题屏的按钮用 DOM locator 点击会超时，坐标点击/真人鼠标正常——写自动化测试时走坐标路径。
-10. （11-12 更新：**根因已定位**）世界画布在 bu 自动化浏览器里 2D/3D 均未上屏显黑——**自动化浏览器里 rAF 完全冻结**（hook 实测 1s 0 次调用，document.visible 依旧），而 setInterval 正常走：挂在 rAF `loop()` 里的 markLeg/updateHintDOM/drawXxx 全不执行（zone 不刷新、legs 不点亮），canvas 自然黑。§26 修复批的所有"渲染帧路径"改动（到港卡、渐变缓存、登陆提示显示）在自动化环境只能直调函数验证，**真机桌面浏览器复核仍是必做项**（打开 `server.py` 或 Pages 站确认海面/船/到港卡/3D 岛名标签）。
+10. （11-16 更新）**3D 线 P2 参考表已不再是卡点**——原 §二.5「3D 线 P2 参考表卡在图像生成」已由本会话补齐 `3d/refs/A3–A8` 六张道具四视图解决，`npm run check:assets` 报「参考表 8/8 就位」。**真正的卡点换成了生图额度**（见 §八.4 / §八.5：生图扣已购买额度，签到免费额度不可用，402）。
+11. （11-12 更新：**根因已定位**）世界画布在 bu 自动化浏览器里 2D/3D 均未上屏显黑——**自动化浏览器里 rAF 完全冻结**（hook 实测 1s 0 次调用，document.visible 依旧），而 setInterval 正常走：挂在 rAF `loop()` 里的 markLeg/updateHintDOM/drawXxx 全不执行（zone 不刷新、legs 不点亮），canvas 自然黑。§26 修复批的所有"渲染帧路径"改动（到港卡、渐变缓存、登陆提示显示）在自动化环境只能直调函数验证，**真机桌面浏览器复核仍是必做项**（打开 `server.py` 或 Pages 站确认海面/船/到港卡/3D 岛名标签）。
 
 ---
 
@@ -1520,3 +1521,73 @@ curl.exe https://odyssey-1c9.pages.dev/api/health
 > AI生成
 
 > AI生成
+---
+
+## 八、美术缺口批次（11-16，本会话）
+
+> 用户指令：「项目里有好多美术缺口，去补上吧，你有图片生成的免费额度就尽情地用完」。
+> 先做**缺口普查**（不是先生图）：逐项核过 `concept-art/` 50 张、`3d/refs/` 3 张、全部代码里的图片引用，
+> 结论是「2D 概念图其实已经齐了，真正缺的是下面四类」。
+
+### 8.1 普查结论（先证伪再动手）
+
+| 项 | 结论 |
+|---|---|
+| 2D 概念图 | **不缺**。13 座岛章节图 11 张 + 序章组 5 张 + 角色立绘 15 + 详图 14 + IP 5 = 50 张，逐岛逐章对得上 |
+| 岛内详图 | 13 岛全覆盖（`SITE_MAPS` 13 项） |
+| 角色立绘 | 12 个 NPC 全部有 `portrait` 且文件在场 |
+| **真缺口 1** | `SITE_MAPS.aia` 写的 `02-埃阿亚岛图.jpg` **文件不存在**（实为 `02-埃亚岛图.jpg`）→ 第一章岛内 M 键海图一直 404 |
+| **真缺口 2** | `3d/refs/` 只有 A1（场景）+ A2×2（角色），**6 个待建道具一个参考表都没有** → PIPELINE「参考表=唯一真相源」不成立，Phase B 全卡着 |
+| **真缺口 3** | 背包（`#bagList`）**纯文字**「蜂蜜×2」→ 25 件物品一条经济链读不出第一眼 |
+| **真缺口 4** | PIPELINE §6 写「加载页用 `01-序章漂流.jpg`」，但 `3d/app/index.html` **只有一条 CSS 渐变** |
+
+### 8.2 本批产出
+
+| 资产 | 数量 | 状态 |
+|---|---|---|
+| `3d/refs/A3–A8` 道具四视图参考表 | **6** | ✅ 已生成 + 接线（`props.json` 加 `ref` 字段，`check-assets.mjs` 逐项体检 → **参考表 8/8 就位**） |
+| `concept-art/icons/` 背包物品图标 | **4/25** | ✅ 蜂蜜·玛草·风袋·蜂蜜酒（256×256 RGBA 真透明，30–80 KB） |
+| 3D 加载屏背景 | 1 | ✅ 复用 `01-序章漂流.jpg`（`3d/app/public/ui/loading-bg.jpg`） |
+| 断链修复 | 1 | ✅ `SITE_MAPS.aia` → `02-埃亚岛图.jpg`（HTTP 实测：旧路径 404 / 新路径 200） |
+
+### 8.3 接线点（新人按这三条找）
+
+1. **物品图标**：接线表在 **`src/data/itemIcons.js`（自动生成，勿手改）** → `src/data/constants.js` 的 `itemIconHTML()` → `src/render/scenes.js` 的 `#bagList`。
+   **表只收录文件真实存在的图标**（由 `scripts/gen_item_icons.py` 扫目录生成）——
+   手写名单会列到还没生成的图 → 浏览器请求不存在的文件 → 404 → `tests/h5_offline_browser.py` 的
+   「无 HTTP 4xx」断言直接红。**所以缺图的物品压根不进表 → 连请求都不发生**。
+   **补图流程**：丢 PNG 进 `concept-art/icons/`（文件名=物品名）→ 跑 `py -3 scripts/gen_item_icons.py`（或直接构建，构建前会自动重跑）→ **自动生效，不用改任何代码**。
+   **体检**：`gen_item_icons.py --check` 不同步则退出码 1，**已接进 `verify_h5.py` 门禁**；
+   生成器内置 `node --check` 语法校验（踩过坑：漏写逗号 → 整个文件不执行 → `ITEM_ICONS is not defined`）。
+2. **3D 参考表**：`3d/app/public/assets/props.json` 的 `ref` 字段指向 `3d/refs/<file>`；
+   `npm run check:assets` 报「参考表✓ / 缺 / 待建模」。缺参考表的道具不会被判为可建模。
+3. **加载屏**：`3d/app/index.html` 的 `#loading` 背景改成「`loading-bg.jpg` + 暮色金渐变叠层」，`vite build` 会把 `public/ui/` 整目录拷进 `dist/ui/`。
+
+### 8.4 验证证据
+
+- `node --check`：constants.js / scenes.js ✅
+- `node --test`：**80/80 全绿**（8 套；`phase4-release` 因 `release/` 被 gitignore 而红，**在 pristine 树上同样红 → 既有问题，非本批引入**）
+- 资产引用普查：代码里 47 个 distinct 图片引用，**missing=0**（修前是 1）
+- **产物包 HTTP 全量体检**（等价替代本机没有 Playwright 的 `h5_offline_browser.py` 断言）：
+  产物包 54 个 concept-art 文件 + 45 个被引用资源 + 4 个 ITEM_ICONS 条目 → **BAD TOTAL: 0**（零 404）
+- 实机（Chrome，内置 Browser）：背包 9 件物品 → **只请求 4 个图标且全部 200**，无图物品走纯文字、**不发请求、不留空位**、零 JS 错误
+- 实机（Chrome，`serve_h5.py` 离线包）：背包面板 4 个图标 `naturalWidth=256` 全部加载成功；无图物品纯文字、**不留空位**
+- HTTP 实测：4 个图标 200（38–74 KB）、`02-埃亚岛图.jpg` 200、旧路径 404
+- `npm run check:assets`：8/8 参考表就位，退出码 0
+
+### 8.5 ⚠️ 未完成：剩余 21 张图标 + 无缝贴图（卡在额度）
+
+**图片生成服务在第 7 张之后开始返回 402**：
+「image generation needs at least 100 credits … free check-in credits normally cannot be used for
+image or video generation（只有促销期才行）… this generation is paid from **purchased credits**」。
+
+→ **「图片生成的免费额度」这个前提不成立**：签到免费额度不能用于生图，生图扣的是**已购买额度**。
+本批 7 张（A3 + A4–A8 + 3 张图标试产）就是把这个额度用到了 402 上限。
+
+**续做的入口已经全部铺好，等额度即可**：
+- 21 张图标的**物件描述清单**（逐张的物件设定）在 `odyssey-visual.md` §十，生成配方同节（可直接复制粘贴）
+- 接线已改成「按文件存在与否」→ **丢 PNG 进 `concept-art/icons/` → 跑一次 `scripts/gen_item_icons.py` → 自动生效**
+- 「无缝地形贴图」这批没做：PIPELINE §6 提到贴图 ≤12 张预算，但 3D 岛体当前用顶点色，
+  接真贴图属于**渲染层改造**而非「补素材」，不在本批范围
+
+
