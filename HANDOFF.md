@@ -1244,6 +1244,7 @@ P50 896ms / P90 1093ms / P99 1454ms / max 1745ms，wall 148.9s。mock 后端 18 
 20. **`args` 必须是数组，不是对象**：`send()` 走 `Array.isArray(p.args) ? p.args : [{}]`——本地解析若返回对象，**参数会被整个丢掉**（handle 收到 `{}`）。引擎自测必须把这一条断言进去。
 21. **关键词字面匹配会被「中间插一字」顶掉**：`/这里(是|有|怎)/` 匹配「这里有谁」✓，却匹配不上「这里**些**都有些谁」✗——正则不是子串搜索，字符对不上就不命中。模式里留容错位（`这里.{0,3}(有|是|谁|些)`）比堆同义词管用。
 22. **切分用的连接词会误伤**：把「还有」当多意图分隔符 → 「我身上**还有**多少药」被切成两半，两半都够不上阈值，整句掉进「其他意图」。连接词要挑**不会出现在句中普通位置**的（另外/顺便/然后/再问…）。
+24. **到 github.com 的 HTTPS 会被掐，但 api.github.com 还能通**：本机 `git push` 报 `schannel: server closed abruptly (missing close_notify)`；实测 `curl https://github.com` 超时、`curl https://api.github.com` 返回 200 → **只有 github.com 这台主机的 TLS 被阻断**（隧道能建、握手超时）。绕行：走 GitHub REST 的 Git Data API 推（`tools/push_via_api.py`）——blob/tree 是内容寻址的，GitHub 算出的 sha 与本地必然一致；commit 要显式带 author/committer 的日期，且**注意 GitHub 保留原时区**（API 展示成 UTC 只是展示口径），并且逐字节存你发的 message（`%B` 会多带一个换行，得先算准）。推完把本地 main 指到同一个 commit，两端 sha 一致，不留「本地领先 1」的假象。另一条路是 SSH（`ssh git@github.com` 握手是通的），但要本机公钥已在账号登记；`gh api user/keys` 需要 `admin:public_key` scope，`gh auth refresh` 要用户手动 OAuth，代办不了。
 23. **key 失效会伪装成「模型很差」**：协议入口返回 401 时，评测全量失败、游戏内每次对话都静默落到兜底路径。排查精度问题**先验凭证**（打一次最小请求看状态码），再谈模型。key 一旦不成立，离线兜底的水平就是玩家体验的水平。
 
 ---
