@@ -56,6 +56,12 @@ def main():
             raise RuntimeError("H5 静态服务启动超时")
         env = {**os.environ, "ODYSSEY_BASE_URL": base, "ODYSSEY_H5_PACKAGE": "1"}
         run([sys.executable, "tests/browser_regression.py"], env=env)
+        # 批次 R：3D 专项回归。主回归锁 2d（localStorage 强制 2d），
+        # 于是 3D 的自定义 ShaderMaterial 从来没被编译过——shader 编译失败
+        # 在 WebGL 里几乎无声（只打一条 console.error），坏掉的 3D 照样 PASS 全链路。
+        # 这一套强制 3d 模式并断言：shader 无编译错误、白天海面是蓝的、
+        # 夜里天穹有星、夜海不过饱和、岛体在水线之上。
+        run([sys.executable, "tests/h5_3d_browser.py"], env=env)
         run([sys.executable, "tests/h5_offline_browser.py"], env=env)
     finally:
         server.terminate()

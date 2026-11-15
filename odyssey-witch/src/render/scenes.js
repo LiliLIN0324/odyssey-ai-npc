@@ -209,6 +209,11 @@ function drawGrain(){
 // --- drawStars (was main+485-495, 11 lines) ---
 function drawStars(et, n){
   if (scene !== "world" || n <= 0) return;
+  /* 批次 R1（画质）：3D 海图激活时不再画这层 2D 星空。
+     实测（.temp/q-base2/q2-3d-world-night.png）：3D 天空 shader 已有真星空（只在天穹上半球），
+     但这层 2D 星星是屏幕空间的——它撒在海面和陆地上，满屏白圆点像雪花屏。
+     3D 下交给 shader，2D 下才用这层。 */
+  if (w3dActive()) return;
   const vx=cam.x-60, vy=cam.y-60, vw=VIEW_W/cam.zoom+120, vh=VIEW_H/cam.zoom+120;
   ctx.save();
   for (const s of STARS){
@@ -701,12 +706,17 @@ function drawBoat(et){
 
 // --- drawAia (was main+2844-3185, 342 lines) ---
 function drawAia(et){
-  /* Pass1 水格：先画，后续崖面会盖在其上部 → 形成落差 */
+  /* Pass1 水面：低分辨率场双线性放大 → 连续水深渐变（逐格平涂会留色阶格边） */
+  const wf = terrWaterField(aiaTile, ACOLS, AROWS, ATS, "aia",
+    (dep)=> terrMix("#2f6f96", "#4f8fb5", Math.max(0, Math.min(1, 1 - (dep - 1) / 3.5))));
+  ctx.save();
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(wf.canvas, 0, 0, wf.w, wf.h);
+  ctx.restore();
+  /* Pass1b 水面波纹（逐格短浪线，画在平滑水面之上） */
   for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
     if (aiaTile(cx,cy)!=="~") continue;
     const x=cx*ATS, y=cy*ATS;
-    const near = aiaTile(cx,cy-1)!=="~"||aiaTile(cx,cy+1)!=="~"||aiaTile(cx-1,cy)!=="~"||aiaTile(cx+1,cy)!=="~";
-    ctx.fillStyle = near ? "#4f8fb5" : "#2f6f96"; ctx.fillRect(x,y,ATS,ATS);
     if ((cx*11+cy*5)%3===0){
       ctx.strokeStyle="rgba(255,255,255,.25)"; ctx.lineWidth=1.5;
       const ph=Math.sin(et*1.7+cx*1.3+cy*2.1)*3;
@@ -742,9 +752,12 @@ function drawAia(et){
     if (aiaTile(cx-1,cy)==="~"){ ctx.fillStyle=cg(x-8,0,x,0,[0,"rgba(255,255,255,0)",1,"rgba(255,255,255,.5)"]); ctx.fillRect(x-8,y,8,ATS); }
     if (aiaTile(cx+1,cy)==="~"){ ctx.fillStyle=cg(x+ATS,0,x+ATS+8,0,[0,"rgba(255,255,255,.5)",1,"rgba(255,255,255,0)"]); ctx.fillRect(x+ATS,y,8,ATS); }
   }
-  /* Pass3 崖面：盖在下方水格上部 → 陆地“浮”在海上 */
+  /* Pass3 崖面：盖在下方水格上部 → 陆地“浮”在海上
+     批次 R2：只给「下邻是水」的边界格建崖面——旧版每格都建，
+     内陆格只剩顶部 2px 露在顶面之外 → 整片草地被切出一条条横线（方格纸）。 */
   for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
     const ch=aiaTile(cx,cy); if (ch==="~") continue;
+    if (aiaTile(cx,cy+1)!=="~") continue;
     const x=cx*ATS, y=cy*ATS;
     const grd=cg(0,y+ATS-2,0,y+ATS+TH,[0,"#e0bd84",.35,"#c9a06a",.75,"#a37d4e",1,"#7c5c38"]);
     ctx.fillStyle=grd; ctx.fillRect(x,y+ATS-2,ATS,TH+2);
@@ -761,8 +774,8 @@ function drawAia(et){
     const ch=aiaTile(cx,cy); if (ch==="~") continue;
     const x=cx*ATS, y=cy*ATS;
     if (ch===","){
-      ctx.fillStyle=SAND; ctx.fillRect(x,y,ATS,ATS);
-      ctx.fillStyle="#cbb98d"; ctx.fillRect(x,y+ATS-4,ATS,4);
+      /* 批次 R2：沙地多铺 1px 消接缝；删掉逐格「底 4px 暗边」（它在沙路上切出一条条横线） */
+      ctx.fillStyle=SAND; ctx.fillRect(x-1,y-1,ATS+2,ATS+2);
       ctx.fillStyle="rgba(126,106,66,.22)";
       ctx.fillRect(x+8+((cx*13)%9), y+9+((cy*7)%11), 3, 2);
       ctx.fillRect(x+29-((cx*5)%7), y+27-((cy*3)%9), 2, 2);
@@ -771,7 +784,11 @@ function drawAia(et){
       ctx.fillRect(x+4+ph, y+ATS+TH+4, 6, 2); ctx.fillRect(x+24-ph, y+ATS+TH+4, 5, 2);
       continue;
     }
-    ctx.fillStyle = ((cx*7+cy*13)%5===0)?GRASS_D:GRASS_C; ctx.fillRect(x,y,ATS,ATS);
+    /* 批次 R2：底色改低频色变——旧版 ((cx*7+cy*13)%5) 两色伪随机，
+       大面积读成色块拼图；低频 fbm 让相邻格几乎同色（格边不可见）而大范围有起伏 */
+    ctx.fillStyle = terrTint(GRASS_C, GRASS_D, cx, cy, 20261107, 0.17);
+    /* 批次 R2：向四周多铺 1px——相邻 fillRect 的抗锯齿边会露出底色，缝合成蓝色网格线 */
+    ctx.fillRect(x-1,y-1,ATS+2,ATS+2);
     /* 羊皮纸底纹：每格几笔干草与墨点，破掉纯色方格；同一格位置固定，不会闪 */
     ctx.fillStyle="rgba(60,68,44,.16)";
     const g1=(cx*17+cy*29)%7, g2=(cx*31+cy*11)%7;
@@ -784,14 +801,13 @@ function drawAia(et){
       ctx.beginPath(); ctx.moveTo(x+30+((cy*7)%7), y+ATS-6); ctx.lineTo(x+27+((cy*7)%7), y+ATS-13); ctx.stroke();
     }
     if ((cx*3+cy*5)%7===0){ ctx.fillStyle="rgba(176,164,110,.26)"; ctx.fillRect(x+12,y+16,15,6); }
-    ctx.fillStyle="rgba(255,255,255,.10)"; ctx.fillRect(x,y,ATS,2);
-    ctx.fillStyle="rgba(30,36,26,.12)"; ctx.fillRect(x,y+ATS-2,ATS,2);
+    /* 批次 R2：删掉逐格「顶 2px 白高光 + 底 2px 暗边」——这两条是「方格纸」观感的元凶 */
     if (ch==="F"){
       ctx.fillStyle="#463828"; ctx.fillRect(x+5,y+5,ATS-10,ATS-10);
       ctx.fillStyle="#5a4a35"; ctx.fillRect(x+9,y+9,ATS-18,ATS-18);
     }
     if (ch==="_"){
-      ctx.fillStyle="#b98c5a"; ctx.fillRect(x,y,ATS,ATS);
+      ctx.fillStyle="#b98c5a"; ctx.fillRect(x-1,y-1,ATS+2,ATS+2);
       ctx.strokeStyle="rgba(0,0,0,.15)"; ctx.beginPath();
       ctx.moveTo(x,y+13); ctx.lineTo(x+ATS,y+13); ctx.moveTo(x,y+27); ctx.lineTo(x+ATS,y+27); ctx.stroke();
       ctx.fillStyle="#8a6134"; ctx.fillRect(x+4,y+ATS-4,4,TH+6); ctx.fillRect(x+ATS-8,y+ATS-4,4,TH+6);
@@ -1056,6 +1072,9 @@ function drawAia(et){
     const g=cg(0,0,0,497,[0,"rgba(255,214,140,.20)",.55,"rgba(255,196,110,.10)",1,"rgba(255,190,90,.16)"]);
     ctx.fillStyle=g; ctx.fillRect(0,0,800,497);
   }
+  /* 批次 R2：公共材质后处理——陆地材质噪点 + 统一方向光（画在实体层之后，
+     连树与建筑一起受光，整岛不再像一堆各自为政的贴纸） */
+  terrPaint({ tileAt: aiaTile, cols: ACOLS, rows: AROWS, ts: ATS, key: "aia" });
   /* 边缘暗角（与冥界/风神岛/海峡统一：四景一致的电影感） */
   const vg=ctx.createRadialGradient(400,240,200, 400,240,560);
   vg.addColorStop(0,"rgba(0,0,0,0)"); vg.addColorStop(1,"rgba(6,18,32,.34)");
@@ -1088,8 +1107,18 @@ function drawHades(et){
   for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
     if (hTile(cx,cy)!=="~") continue;
     const x=cx*ATS, y=cy*ATS;
-    const near = hTile(cx,cy-1)!=="~"||hTile(cx,cy+1)!=="~"||hTile(cx-1,cy)!=="~"||hTile(cx+1,cy)!=="~";
-    ctx.fillStyle = near ? "#14202e" : "#0c1622"; ctx.fillRect(x,y,ATS,ATS);
+  }
+  /* 批次 R2：外海低分辨率场双线性放大 → 连续水深渐变（逐格平涂会留色阶格边，
+     岸线一格一格跳变） */
+  const wf = terrWaterField(hTile, ACOLS, AROWS, ATS, "hades",
+    (dep)=> terrMix("#0c1622", "#14202e", Math.max(0, Math.min(1, 1 - (dep - 1) / 3.5))));
+  ctx.save();
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(wf.canvas, 0, 0, wf.w, wf.h);
+  ctx.restore();
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    if (hTile(cx,cy)!=="~") continue;
+    const x=cx*ATS, y=cy*ATS;
     if ((cx*11+cy*5)%3===0){
       ctx.strokeStyle="rgba(127,209,200,.20)"; ctx.lineWidth=1.4;
       const ph=Math.sin(et*1.1+cx*1.3+cy*2.1)*3;
@@ -1116,6 +1145,8 @@ function drawHades(et){
   /* Pass3 冷崖面 */
   for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
     const ch=hTile(cx,cy); if (ch==="~") continue;
+    if (hTile(cx,cy+1)!=="~") continue;   /* 批次 R2：崖面只给下邻是水的边界格建——
+       旧版每格都建，内陆格只露出顶部 2px 暗带，把地面切出一条条横线（方格纸观感） */
     const x=cx*ATS, y=cy*ATS;
     const grd=cg(0,y+ATS-2,0,y+ATS+TH,[0,"#322e40",.35,"#282437",.75,"#1c1928",1,"#14111e"]);
     ctx.fillStyle=grd; ctx.fillRect(x,y+ATS-2,ATS,TH+2);
@@ -1137,7 +1168,9 @@ function drawHades(et){
       ctx.fillRect(x+4+ph, y+ATS+TH+4, 6, 2); ctx.fillRect(x+24-ph, y+ATS+TH+4, 5, 2);
       continue;
     }
-    ctx.fillStyle="#141a24"; ctx.fillRect(x,y,ATS,ATS);
+    /* 批次 R2：底色改低频色变（terrTint）——旧版单色平涂，无起伏 */
+    ctx.fillStyle = terrTint("#141a24", "#1d2532", cx, cy, 20261108, 0.17);
+    ctx.fillRect(x-1,y-1,ATS+2,ATS+2);   /* 批次 R2：多铺 1px 消格间接缝 */
     if ((cx*5+cy*3)%4===0){ ctx.fillStyle="rgba(127,209,200,.08)"; ctx.fillRect(x+6,y+8,8,3); }
     if ((cx*3+cy*7)%5===0){ ctx.fillStyle="rgba(127,209,200,.05)"; ctx.fillRect(x+20,y+22,10,4); }
     if (ch==="_"){
@@ -1293,6 +1326,9 @@ function drawHades(et){
     ctx.fillStyle="#9fd8cf"; ctx.fillRect(px, py, 2, 2);
   }
   ctx.globalAlpha=1;
+  /* 批次 R2：公共材质后处理——陆地材质噪点 + 统一方向光（画在实体层之后，
+     连树与建筑一起受光，整岛不再像一堆各自为政的贴纸） */
+  terrPaint({ tileAt: hTile, cols: ACOLS, rows: AROWS, ts: ATS, key: "hades" });
   const vg=ctx.createRadialGradient(400,240,180, 400,240,560);
   vg.addColorStop(0,"rgba(0,0,0,0)"); vg.addColorStop(1,"rgba(2,4,8,.55)");
   ctx.fillStyle=vg; ctx.fillRect(0,0,1000,600);
@@ -1305,8 +1341,18 @@ function drawAeolia(et){
   for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
     if (aeTile(cx,cy)!=="~") continue;
     const x=cx*ATS, y=cy*ATS;
-    const near = aeTile(cx,cy-1)!=="~"||aeTile(cx,cy+1)!=="~"||aeTile(cx-1,cy)!=="~"||aeTile(cx+1,cy)!=="~";
-    ctx.fillStyle = near ? "#dce7f2" : "#c3d2e2"; ctx.fillRect(x,y,ATS,ATS);
+  }
+  /* 批次 R2：外海低分辨率场双线性放大 → 连续水深渐变（逐格平涂会留色阶格边，
+     岸线一格一格跳变） */
+  const wf = terrWaterField(aeTile, ACOLS, AROWS, ATS, "aeolia",
+    (dep)=> terrMix("#c3d2e2", "#dce7f2", Math.max(0, Math.min(1, 1 - (dep - 1) / 3.5))));
+  ctx.save();
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(wf.canvas, 0, 0, wf.w, wf.h);
+  ctx.restore();
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    if (aeTile(cx,cy)!=="~") continue;
+    const x=cx*ATS, y=cy*ATS;
     if ((cx*11+cy*5)%3===0){
       ctx.strokeStyle="rgba(255,255,255,.5)"; ctx.lineWidth=2;
       const ph=Math.sin(et*0.9+cx*1.3+cy*2.1)*4;
@@ -1340,6 +1386,8 @@ function drawAeolia(et){
   /* Pass3 崖面（浮岛岩：暖白岩 → 蜜色） */
   for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
     const ch=aeTile(cx,cy); if (ch==="~") continue;
+    if (aeTile(cx,cy+1)!=="~") continue;   /* 批次 R2：崖面只给下邻是水的边界格建——
+       旧版每格都建，内陆格只露出顶部 2px 暗带，把地面切出一条条横线（方格纸观感） */
     const x=cx*ATS, y=cy*ATS;
     const grd=cg(0,y+ATS-2,0,y+ATS+TH,[0,"#f2e3c4",.35,"#dcc39a",.75,"#b3926a",1,"#8a6c48"]);
     ctx.fillStyle=grd; ctx.fillRect(x,y+ATS-2,ATS,TH+2);
@@ -1361,10 +1409,11 @@ function drawAeolia(et){
       ctx.fillRect(x+4+ph, y+ATS+TH+4, 7, 2); ctx.fillRect(x+24-ph, y+ATS+TH+4, 5, 2);
       continue;
     }
-    ctx.fillStyle = ((cx*7+cy*13)%5===0)?"#b9d69c":"#cfe3b0"; ctx.fillRect(x,y,ATS,ATS);
+    /* 批次 R2：底色改低频色变（terrTint）——旧版两色伪随机拼成色块图 */
+    ctx.fillStyle = terrTint("#cfe3b0", "#b9d69c", cx, cy, 20261109, 0.17);
+    ctx.fillRect(x-1,y-1,ATS+2,ATS+2);   /* 批次 R2：多铺 1px 消格间接缝 */
     ctx.fillStyle="#a3c788"; ctx.fillRect(x+9,y+24,7,4);
-    ctx.fillStyle="rgba(255,255,255,.24)"; ctx.fillRect(x,y,ATS,3);
-    ctx.fillStyle="rgba(0,0,0,.05)"; ctx.fillRect(x,y+ATS-3,ATS,3);
+    /* 批次 R2：删掉逐格「顶 3px 白高光 + 底 3px 暗边」——方格纸观感的元凶 */
     if (ch==="_"){
       ctx.fillStyle="#eef3f8"; ctx.fillRect(x,y,ATS,ATS);
       ctx.strokeStyle="rgba(140,160,185,.4)"; ctx.beginPath();
@@ -1522,6 +1571,9 @@ function drawAeolia(et){
     ctx.beginPath(); ctx.ellipse(px,py,26,8,0,0,7); ctx.fill();
   }
   ctx.globalAlpha=1;
+  /* 批次 R2：公共材质后处理——陆地材质噪点 + 统一方向光（画在实体层之后，
+     连树与建筑一起受光，整岛不再像一堆各自为政的贴纸） */
+  terrPaint({ tileAt: aeTile, cols: ACOLS, rows: AROWS, ts: ATS, key: "aeolia" });
   const vg=ctx.createRadialGradient(400,240,200, 400,240,560);
   vg.addColorStop(0,"rgba(255,250,235,0)"); vg.addColorStop(1,"rgba(90,110,140,.18)");
   ctx.fillStyle=vg; ctx.fillRect(0,0,1000,600);
@@ -1534,8 +1586,18 @@ function drawStrait(et){
   for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
     if (sTile(cx,cy)!=="~") continue;
     const x=cx*ATS, y=cy*ATS;
-    const near = sTile(cx,cy-1)!=="~"||sTile(cx,cy+1)!=="~"||sTile(cx-1,cy)!=="~"||sTile(cx+1,cy)!=="~";
-    ctx.fillStyle = near ? "#4a6076" : "#3c5165"; ctx.fillRect(x,y,ATS,ATS);
+  }
+  /* 批次 R2：外海低分辨率场双线性放大 → 连续水深渐变（逐格平涂会留色阶格边，
+     岸线一格一格跳变） */
+  const wf = terrWaterField(sTile, ACOLS, AROWS, ATS, "strait",
+    (dep)=> terrMix("#3c5165", "#4a6076", Math.max(0, Math.min(1, 1 - (dep - 1) / 3.5))));
+  ctx.save();
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(wf.canvas, 0, 0, wf.w, wf.h);
+  ctx.restore();
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    if (sTile(cx,cy)!=="~") continue;
+    const x=cx*ATS, y=cy*ATS;
     if ((cx*11+cy*5)%3===0){
       ctx.strokeStyle="rgba(214,228,240,.14)"; ctx.lineWidth=1.4;
       const ph=Math.sin(et*0.8+cx*1.3+cy*2.1)*3;
@@ -1564,6 +1626,8 @@ function drawStrait(et){
   /* Pass3 礁崖（冷灰蓝） */
   for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
     const ch=sTile(cx,cy); if (ch==="~") continue;
+    if (sTile(cx,cy+1)!=="~") continue;   /* 批次 R2：崖面只给下邻是水的边界格建——
+       旧版每格都建，内陆格只露出顶部 2px 暗带，把地面切出一条条横线（方格纸观感） */
     const x=cx*ATS, y=cy*ATS;
     const grd=cg(0,y+ATS-2,0,y+ATS+TH,[0,"#5d6b7c",.35,"#4a5666",.75,"#333c4a",1,"#232a35"]);
     ctx.fillStyle=grd; ctx.fillRect(x,y+ATS-2,ATS,TH+2);
@@ -1585,7 +1649,8 @@ function drawStrait(et){
       ctx.fillStyle="rgba(0,0,0,.10)"; ctx.fillRect(x,y+ATS-3,ATS,3);
       continue;
     }
-    ctx.fillStyle="#39434f"; ctx.fillRect(x,y,ATS,ATS);
+    ctx.fillStyle = terrTint("#39434f", "#46525f", cx, cy, 20261110, 0.17);
+    ctx.fillRect(x-1,y-1,ATS+2,ATS+2);   /* 批次 R2：多铺 1px 消格间接缝 */
     ctx.fillStyle="#424e5c";
     ctx.beginPath(); ctx.ellipse(x+20,y+20,14,10,0.4,0,7); ctx.fill();
     ctx.fillStyle="rgba(220,232,244,.10)"; ctx.fillRect(x+6,y+8,9,3);
@@ -1718,6 +1783,9 @@ function drawStrait(et){
     ctx.beginPath(); ctx.ellipse(p*1000, py, 130, 12, 0, 0, 7); ctx.fill();
   }
   ctx.globalAlpha=1;
+  /* 批次 R2：公共材质后处理——陆地材质噪点 + 统一方向光（画在实体层之后，
+     连树与建筑一起受光，整岛不再像一堆各自为政的贴纸） */
+  terrPaint({ tileAt: sTile, cols: ACOLS, rows: AROWS, ts: ATS, key: "strait" });
   const vg=ctx.createRadialGradient(400,240,170, 400,240,560);
   vg.addColorStop(0,"rgba(8,14,26,0)"); vg.addColorStop(1,"rgba(8,14,26,.6)");
   ctx.fillStyle=vg; ctx.fillRect(0,0,1000,600);
@@ -1731,9 +1799,18 @@ function drawSun(et){
   for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
     if (sunTile(cx,cy)!=="~") continue;
     const x=cx*ATS, y=cy*ATS;
-    const near = sunTile(cx,cy-1)!=="~"||sunTile(cx,cy+1)!=="~"||sunTile(cx-1,cy)!=="~"||sunTile(cx+1,cy)!=="~";
-    ctx.fillStyle = wrath ? (near?"#5d6d76":"#51606a") : (near?"#2f7a94":"#276a84");
-    ctx.fillRect(x,y,ATS,ATS);
+  }
+  /* 批次 R2：外海低分辨率场双线性放大 → 连续水深渐变（记恨后天色转铅灰，场键随之切换） */
+  const wf = terrWaterField(sunTile, ACOLS, AROWS, ATS, wrath ? "sun-w" : "sun",
+    (dep)=>{ const k = Math.max(0, Math.min(1, 1 - (dep - 1) / 3.5));
+      return wrath ? terrMix("#51606a", "#5d6d76", k) : terrMix("#276a84", "#2f7a94", k); });
+  ctx.save();
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(wf.canvas, 0, 0, wf.w, wf.h);
+  ctx.restore();
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    if (sunTile(cx,cy)!=="~") continue;
+    const x=cx*ATS, y=cy*ATS;
     if ((cx*13+cy*7)%4===0 && !wrath){
       ctx.strokeStyle="rgba(255,222,140,.28)"; ctx.lineWidth=1.3;
       const ph=Math.sin(et*1.4+cx*1.9+cy*1.3)*2.5;
@@ -1756,6 +1833,8 @@ function drawSun(et){
   /* Pass3 崖体挤出（蜜色岩层） */
   for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
     const ch=sunTile(cx,cy); if (ch==="~") continue;
+    if (sunTile(cx,cy+1)!=="~") continue;   /* 批次 R2：崖面只给下邻是水的边界格建——
+       旧版每格都建，内陆格只露出顶部 2px 暗带，把地面切出一条条横线（方格纸观感） */
     const x=cx*ATS, y=cy*ATS;
     const grd=cg(0,y+ATS-2,0,y+ATS+TH,[0,"#c49a5c",.35,"#a97f45",.75,"#7d5a2e",1,"#5c401f"]);
     ctx.fillStyle=grd; ctx.fillRect(x,y+ATS-2,ATS,TH+2);
@@ -1788,7 +1867,10 @@ function drawSun(et){
       if (ch==="A"){ ctx.fillStyle="#e8b84b"; ctx.beginPath(); ctx.arc(x+20,y+20,7,0,7); ctx.fill();
         ctx.strokeStyle="#b98d2e"; ctx.lineWidth=1.4; ctx.beginPath(); ctx.arc(x+20,y+20,10,0,7); ctx.stroke(); }
       continue; }
-    ctx.fillStyle = wrath ? "#b3ab77" : "#dcc274"; ctx.fillRect(x,y,ATS,ATS);
+    /* 批次 R2：底色改低频色变（terrTint）——记恨前金草、记恨后枯灰 */
+    ctx.fillStyle = wrath ? terrTint("#b3ab77", "#a09a68", cx, cy, 20261111, 0.17)
+                          : terrTint("#dcc274", "#c6ab63", cx, cy, 20261111, 0.17);
+    ctx.fillRect(x-1,y-1,ATS+2,ATS+2);   /* 批次 R2：多铺 1px 消格间接缝 */
     ctx.fillStyle="rgba(255,244,200,.16)";
     if ((cx*7+cy*5)%3===0) ctx.fillRect(x+8,y+12,7,2);
     if (ch==="T"){}
@@ -1908,6 +1990,9 @@ function drawSun(et){
     }
     ctx.globalAlpha=1;
   }
+  /* 批次 R2：公共材质后处理——陆地材质噪点 + 统一方向光（画在实体层之后，
+     连树与建筑一起受光，整岛不再像一堆各自为政的贴纸） */
+  terrPaint({ tileAt: sunTile, cols: ACOLS, rows: AROWS, ts: ATS, key: "sun" });
   const vg=ctx.createRadialGradient(400,240,180, 400,240,560);
   vg.addColorStop(0, wrath?"rgba(40,42,52,0)":"rgba(255,240,200,0)");
   vg.addColorStop(1, wrath?"rgba(30,32,40,.5)":"rgba(160,110,30,.16)");
@@ -1921,9 +2006,18 @@ function drawOggia(et){
   for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
     if (ogTile(cx,cy)!=="~") continue;
     const x=cx*ATS, y=cy*ATS;
-    const near = ogTile(cx,cy-1)!=="~"||ogTile(cx,cy+1)!=="~"||ogTile(cx-1,cy)!=="~"||ogTile(cx+1,cy)!=="~";
-    ctx.fillStyle = near ? "#7a5a70" : "#6a4d63";
-    ctx.fillRect(x,y,ATS,ATS);
+  }
+  /* 批次 R2：外海低分辨率场双线性放大 → 连续水深渐变（逐格平涂会留色阶格边，
+     岸线一格一格跳变） */
+  const wf = terrWaterField(ogTile, ACOLS, AROWS, ATS, "oggia",
+    (dep)=> terrMix("#6a4d63", "#7a5a70", Math.max(0, Math.min(1, 1 - (dep - 1) / 3.5))));
+  ctx.save();
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(wf.canvas, 0, 0, wf.w, wf.h);
+  ctx.restore();
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    if (ogTile(cx,cy)!=="~") continue;
+    const x=cx*ATS, y=cy*ATS;
     if ((cx*13+cy*7)%4===0){
       ctx.strokeStyle="rgba(255,206,140,.30)"; ctx.lineWidth=1.3;
       const ph=Math.sin(et*1.1+cx*1.7+cy*1.1)*2.5;
@@ -1945,6 +2039,8 @@ function drawOggia(et){
   /* Pass3 崖体挤出（暖紫岩层） */
   for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
     const ch=ogTile(cx,cy); if (ch==="~") continue;
+    if (ogTile(cx,cy+1)!=="~") continue;   /* 批次 R2：崖面只给下邻是水的边界格建——
+       旧版每格都建，内陆格只露出顶部 2px 暗带，把地面切出一条条横线（方格纸观感） */
     const x=cx*ATS, y=cy*ATS;
     const grd=cg(0,y+ATS-2,0,y+ATS+TH,[0,"#9a7668",.4,"#7c5a52",1,"#4e3a3a"]);
     ctx.fillStyle=grd; ctx.fillRect(x,y+ATS-2,ATS,TH+2);
@@ -1968,7 +2064,8 @@ function drawOggia(et){
     if (ch==="W"){ ctx.fillStyle="#8a6a48"; ctx.fillRect(x,y,ATS,ATS);
       ctx.fillStyle="rgba(0,0,0,.2)"; for(let i=0;i<3;i++)ctx.fillRect(x+2,y+4+i*10,36,3); continue; }
     if (ch==="B"){ ctx.fillStyle="#6a5346"; ctx.fillRect(x,y,ATS,ATS); continue; }
-    ctx.fillStyle="#75835c"; ctx.fillRect(x,y,ATS,ATS);
+    ctx.fillStyle = terrTint("#75835c", "#68764f", cx, cy, 20261112, 0.17);
+    ctx.fillRect(x-1,y-1,ATS+2,ATS+2);   /* 批次 R2：多铺 1px 消格间接缝 */
     ctx.fillStyle="rgba(255,236,200,.10)";
     if ((cx*7+cy*5)%3===0) ctx.fillRect(x+8,y+12,7,2);
   }
@@ -2020,6 +2117,9 @@ function drawOggia(et){
   /* 恒定暮光层（日历冻结的视觉锚：右上金光 + 紫晕） */
   const lg=cg(1000,0,300,600,[0,"rgba(255,190,110,.30)",.55,"rgba(210,140,120,.16)",1,"rgba(120,70,110,.26)"]);
   ctx.fillStyle=lg; ctx.fillRect(0,0,1000,600);
+  /* 批次 R2：公共材质后处理——陆地材质噪点 + 统一方向光（画在实体层之后，
+     连树与建筑一起受光，整岛不再像一堆各自为政的贴纸） */
+  terrPaint({ tileAt: ogTile, cols: ACOLS, rows: AROWS, ts: ATS, key: "oggia" });
   const vg=ctx.createRadialGradient(400,240,200, 400,240,560);
   vg.addColorStop(0,"rgba(120,70,110,0)"); vg.addColorStop(1,"rgba(70,40,80,.45)");
   ctx.fillStyle=vg; ctx.fillRect(0,0,1000,600);
@@ -2031,9 +2131,18 @@ function drawScheria(et){
   for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
     if (scTile(cx,cy)!=="~") continue;
     const x=cx*ATS, y=cy*ATS;
-    const near = scTile(cx,cy-1)!=="~"||scTile(cx,cy+1)!=="~"||scTile(cx-1,cy)!=="~"||scTile(cx+1,cy)!=="~";
-    ctx.fillStyle = near ? "#2f8ba4" : "#27798f";
-    ctx.fillRect(x,y,ATS,ATS);
+  }
+  /* 批次 R2：外海低分辨率场双线性放大 → 连续水深渐变（逐格平涂会留色阶格边，
+     岸线一格一格跳变） */
+  const wf = terrWaterField(scTile, ACOLS, AROWS, ATS, "scheria",
+    (dep)=> terrMix("#27798f", "#2f8ba4", Math.max(0, Math.min(1, 1 - (dep - 1) / 3.5))));
+  ctx.save();
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(wf.canvas, 0, 0, wf.w, wf.h);
+  ctx.restore();
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    if (scTile(cx,cy)!=="~") continue;
+    const x=cx*ATS, y=cy*ATS;
     if ((cx*13+cy*7)%4===0){
       ctx.strokeStyle="rgba(255,255,255,.20)"; ctx.lineWidth=1.2;
       const ph=Math.sin(et*1.6+cx*1.9+cy*1.3)*2.5;
@@ -2053,6 +2162,8 @@ function drawScheria(et){
   }
   for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
     const ch=scTile(cx,cy); if (ch==="~") continue;
+    if (scTile(cx,cy+1)!=="~") continue;   /* 批次 R2：崖面只给下邻是水的边界格建——
+       旧版每格都建，内陆格只露出顶部 2px 暗带，把地面切出一条条横线（方格纸观感） */
     const x=cx*ATS, y=cy*ATS;
     const grd=cg(0,y+ATS-2,0,y+ATS+TH,[0,"#d8bc8c",.5,"#b89568",1,"#7c5f42"]);
     ctx.fillStyle=grd; ctx.fillRect(x,y+ATS-2,ATS,TH+2);
@@ -2067,7 +2178,8 @@ function drawScheria(et){
       ctx.strokeStyle="#c8bfa8"; ctx.lineWidth=1; ctx.strokeRect(x+2.5,y+2.5,ATS-5,ATS-5); continue; }
     if (ch==="S"){ ctx.fillStyle="#5a8a9c"; ctx.fillRect(x,y,ATS,ATS); continue; }
     if (ch==="B"){ ctx.fillStyle="#8aa06e"; ctx.fillRect(x,y,ATS,ATS); continue; }
-    ctx.fillStyle="#a8c078"; ctx.fillRect(x,y,ATS,ATS);
+    ctx.fillStyle = terrTint("#a8c078", "#98b068", cx, cy, 20261113, 0.17);
+    ctx.fillRect(x-1,y-1,ATS+2,ATS+2);   /* 批次 R2：多铺 1px 消格间接缝 */
     ctx.fillStyle="rgba(255,255,255,.14)";
     if ((cx*7+cy*5)%3===0) ctx.fillRect(x+8,y+12,7,2);
   }
@@ -2120,6 +2232,9 @@ function drawScheria(et){
   ents.sort((a,b)=>a.y-b.y);
   for (const e of ents) e.draw();
   /* 正午白亮层 */
+  /* 批次 R2：公共材质后处理——陆地材质噪点 + 统一方向光（画在实体层之后，
+     连树与建筑一起受光，整岛不再像一堆各自为政的贴纸） */
+  terrPaint({ tileAt: scTile, cols: ACOLS, rows: AROWS, ts: ATS, key: "scheria" });
   const vg=ctx.createRadialGradient(400,240,220, 400,240,560);
   vg.addColorStop(0,"rgba(255,252,240,0)"); vg.addColorStop(1,"rgba(255,244,214,.14)");
   ctx.fillStyle=vg; ctx.fillRect(0,0,1000,600);
@@ -2132,9 +2247,18 @@ function drawIthaca(et){
   for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
     if (itTile(cx,cy)!=="~") continue;
     const x=cx*ATS, y=cy*ATS;
-    const near = itTile(cx,cy-1)!=="~"||itTile(cx,cy+1)!=="~"||itTile(cx-1,cy)!=="~"||itTile(cx+1,cy)!=="~";
-    ctx.fillStyle = near ? "#3d627c" : "#33566d";
-    ctx.fillRect(x,y,ATS,ATS);
+  }
+  /* 批次 R2：外海低分辨率场双线性放大 → 连续水深渐变（逐格平涂会留色阶格边，
+     岸线一格一格跳变） */
+  const wf = terrWaterField(itTile, ACOLS, AROWS, ATS, "ithaca",
+    (dep)=> terrMix("#33566d", "#3d627c", Math.max(0, Math.min(1, 1 - (dep - 1) / 3.5))));
+  ctx.save();
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(wf.canvas, 0, 0, wf.w, wf.h);
+  ctx.restore();
+  for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
+    if (itTile(cx,cy)!=="~") continue;
+    const x=cx*ATS, y=cy*ATS;
     if ((cx*13+cy*7)%4===0){
       ctx.strokeStyle="rgba(255,226,170,.22)"; ctx.lineWidth=1.2;
       const ph=Math.sin(et*1.2+cx*1.7+cy*1.1)*2;
@@ -2154,6 +2278,8 @@ function drawIthaca(et){
   }
   for (let cy=0; cy<AROWS; cy++) for (let cx=0; cx<ACOLS; cx++){
     const ch=itTile(cx,cy); if (ch==="~") continue;
+    if (itTile(cx,cy+1)!=="~") continue;   /* 批次 R2：崖面只给下邻是水的边界格建——
+       旧版每格都建，内陆格只露出顶部 2px 暗带，把地面切出一条条横线（方格纸观感） */
     const x=cx*ATS, y=cy*ATS;
     const grd=cg(0,y+ATS-2,0,y+ATS+TH,[0,"#9a8a74",.5,"#7a6a56",1,"#4e4438"]);
     ctx.fillStyle=grd; ctx.fillRect(x,y+ATS-2,ATS,TH+2);
@@ -2171,7 +2297,8 @@ function drawIthaca(et){
       ctx.beginPath(); ctx.moveTo(x+20,y+21); ctx.lineTo(x+20,y+38); ctx.stroke(); continue; }
     if (ch==="C"){ ctx.fillStyle="#8a7c68"; ctx.fillRect(x,y,ATS,ATS); continue; }
     if (ch==="H"){ ctx.fillStyle="#7d8a6e"; ctx.fillRect(x,y,ATS,ATS); continue; }
-    ctx.fillStyle="#9aa486"; ctx.fillRect(x,y,ATS,ATS);
+    ctx.fillStyle = terrTint("#9aa486", "#8c9678", cx, cy, 20261114, 0.17);
+    ctx.fillRect(x-1,y-1,ATS+2,ATS+2);   /* 批次 R2：多铺 1px 消格间接缝 */
     ctx.fillStyle="rgba(255,255,255,.10)";
     if ((cx*7+cy*5)%3===0) ctx.fillRect(x+8,y+12,7,2);
   }
@@ -2266,6 +2393,9 @@ function drawIthaca(et){
   /* 黎明层：雾在散（青灰→暖金的渐变，终章的调色） */
   const lg=cg(0,0,0,600,[0,"rgba(120,140,165,.22)",1,"rgba(255,214,150,.10)"]);
   ctx.fillStyle=lg; ctx.fillRect(0,0,1000,600);
+  /* 批次 R2：公共材质后处理——陆地材质噪点 + 统一方向光（画在实体层之后，
+     连树与建筑一起受光，整岛不再像一堆各自为政的贴纸） */
+  terrPaint({ tileAt: itTile, cols: ACOLS, rows: AROWS, ts: ATS, key: "ithaca" });
   const vg=ctx.createRadialGradient(400,240,200, 400,240,560);
   vg.addColorStop(0,"rgba(60,80,100,0)"); vg.addColorStop(1,"rgba(30,40,60,.32)");
   ctx.fillStyle=vg; ctx.fillRect(0,0,1000,600);

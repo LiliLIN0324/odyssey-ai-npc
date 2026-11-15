@@ -247,14 +247,27 @@ function buildIslands() {
         if (!set.has(k)) return null;
         const d = depth.get(k) || 1;
         if (d <= 1) return shoreLip;   /* 岸唇高于浪峰（±0.21），避免海面波浪穿入陆地 */
+        /* 批次 R4 修正（实拍回归）：曾在这里加低频 fbm 山丘，想把「非洲/欧洲大陆
+           读成等高平板」改成起伏地形。**实测是重大回归**——大陆组件半径 105 格、
+           hMax 已达 6~7，额外抬 0.66×hMax 后大陆顶面逼近相机高度（11.5），
+           一堵土黄高墙直接填满画面下半屏（.temp/q-r5-3d-fix1/q1 实拍）。
+           结论：**大陆不能靠抬高做起伏**（相机高度是硬约束）。
+           「等高平板」要靠贴图/着色解决，不是靠改高度——本批不做，留作后续贴图立项。
+           高度函数恢复原样（只随离岸距离指数饱和）。 */
         return shoreLip + hMax * (1 - Math.exp(-(d - 1) / 2.4));
       };
       /* 角点高度（4 格平均；全水则按到陆块的距离下沉）。
          对齐批修复：水格原先被整格剔除（只均陆格）→ 边界角点直接拿满岸唇高 0.35，
          沙唇漫过碰撞边界半格到一格——贴岸的船（合法水瓦片，吃水 y≈0）骑在沙台上，看着像搁浅。
-         现在水格以海底高 SEA_BED 计入均值：直岸边界角点 = (0.35*2 + (-0.18)*2)/4 ≈ 0.09，
+         现在水格以海底高 SEA_BED 计入均值：直岸边界角点 = (0.35*2 + SEA_BED*2)/4，
          水线基本落回碰撞边界（余量被浪峰 ±0.21 盖住）；凸出角点微沉、单格岛退成贴水岩洲，
-         不再有悬空沙台。 */
+         不再有悬空沙台。
+         批次 R4 修正（实拍回归）：首版把 SEA_BED 提到 0.02 想根治「蓝色方洞」，
+         结果**海底被抬到水面之上** → 整片海被一层土黄地形盖住，只剩浪峰戳出的
+         蓝色缝隙（实测 .temp/q-r5-3d/q1 海面被土黄台地盖住）。
+         正确做法：海底继续沉在水下（SEA_BED 保持 -0.18，全水角点更深），
+         但**凡沾到陆地的角点一律抬到水面之上**（0.06）——方洞消失，
+         而海床不会被抬成盖住海面的平板。 */
       const SEA_BED = -0.18;
       const vh = (cx, cy) => {
         let sum = 0, land = 0;
@@ -271,17 +284,29 @@ function buildIslands() {
           }
           return -0.32 - Math.min(dmin, 3) * 0.5;
         }
-        /* 部分水角点：水格以海底高计入（见上注释），水线落回碰撞边界 */
-        return (sum + (4 - land) * SEA_BED) / 4;
+        /* 部分水角点：水格以海底高计入（见上注释），水线落回碰撞边界。
+           批次 R4：结果一律不低于水面（0.06）——只含 1 个陆格的角点原式算出
+           (0.35 + 3*(-0.18))/4 = -0.0475，沉到水面以下 → 不透明海面把沿岸顶面
+           切成一块块蓝色方洞。全水角点走上面那条分支（深水海床），不受此下限影响。 */
+        return Math.max(0.06, (sum + (4 - land) * SEA_BED) / 4);
       };
       /* 三角化：包围盒外扩 2 格（水下裙边） */
       const P1 = new THREE.Color(look.grass), P2 = new THREE.Color(look.grassDeep);
       const SAND = new THREE.Color(PAL.cliffLight), DEEP = new THREE.Color(PAL.oceanDeep);
       const ROCK = new THREE.Color(PAL.cliffDark);
+      const ROCKC = new THREE.Color(PAL.cliffDark);   /* 批次 R6：顶面裸岩色（ROCK 已占用，用另一个名字） */
       const pushV = (px, py, h, tint) => {
         positions.push(px2x(px), h + (look.floatY ? look.floatY : 0), px2z(py));
         colors.push(tint.r, tint.g, tint.b);
       };
+      /* 批次 R6：三色地貌 + 颗粒感。
+         旧版只有「沙 → 草 → 深草」两层 lerp，顶面读成一块平涂卡其色板
+         （实测 .temp/q-r5-3d-fix5/q1：大黄褐陆地占画面近 1/4，顶面 y≈0.8 完全水平）。
+         改法三件：
+           ① 加第三色「岩」：低频噪声峰顶露头，破掉整片草绿/卡其；
+           ② 顶点级颗粒噪点（±8% 明暗），让平涂面有材质感而不是塑料；
+           ③ 贴水线一圈「湿沙」压暗，水陆交界不再是硬切。
+         噪声全部取自本文件已有的 fbm（世界坐标频率），不引新依赖。 */
       const colFor = (h, cx, cy) => {
         /* 贴岸一圈（depth=1）为沙；向内有草丛/丘陵色，小岛不再整块染沙 */
         let shore = false;
@@ -290,11 +315,51 @@ function buildIslands() {
           if (set.has(k) && (depth.get(k) || 9) <= 1) shore = true;
         }
         if (h <= -0.05) return DEEP;
-        if (shore) return SAND;
-        const noise = fbm(cx * 0.4 + 11.3, cy * 0.4 - 7.9, look.seed || 1, 3);
+        /* 颗粒与地块的频率上限受「顶点色采样步长 0.5 格」约束：
+           频率必须 ≤1/格，否则就是逐顶点随机（闪成椒盐噪点）。
+           1.9/格 是第一版写的，实拍出来是碎面片——已降到 0.9/格。 */
+        const grain = fbm(cx * 0.9 + 3.7, cy * 0.9 - 5.1, (look.seed || 1) + 7, 2);   /* 颗粒：格级 */
+        const patch = fbm(cx * 0.42 + 11.3, cy * 0.42 - 7.9, look.seed || 1, 3);      /* 地块：低频 */
+        if (shore) {
+          /* 湿沙：越靠近水线越暗（拍岸浪把沙压出深色带），叠一层颗粒 */
+          const wet = THREE.MathUtils.clamp(1.0 - h / 0.5, 0, 1) * 0.55;
+          return SAND.clone().lerp(ROCKC, wet * 0.6 + grain * 0.16);
+        }
         const t = THREE.MathUtils.clamp((h - 0.3) / 1.2, 0, 1);
-        const c = SAND.clone().lerp(P1, t).lerp(P2, THREE.MathUtils.clamp(noise * 1.2, 0, 1) * 0.5);
+        const c = SAND.clone().lerp(P1, t);
+        c.lerp(P2, THREE.MathUtils.clamp(patch * 1.2, 0, 1) * 0.5);
+        /* 高处裸岩：噪声峰顶露头 */
+        const rockK = THREE.MathUtils.clamp((patch - 0.56) * 2.6, 0, 1)
+                   * THREE.MathUtils.clamp((h - 0.8) / 1.2, 0, 1);
+        c.lerp(ROCKC, rockK * 0.5);
+        /* 颗粒：明暗微调 ±8%，破掉平涂的塑料感 */
+        c.multiplyScalar(1.0 + (grain - 0.5) * 0.16);
         return c;
+      };
+      /* 批次 R6：顶面低幅起伏（±0.21 世界单位）。
+         为什么幅度这么小：批次 R4 实测过——大陆顶面额外抬升会逼近相机高度(11.5)，
+         直接变成一堵土黄高墙填满画面（.temp/q-r5-3d-fix1/q1）。
+         这里只要「平面上有明暗起伏」的效果，配 flatShading + 平行光就够读出地面，
+         高度离相机还差着两个数量级。
+         另：离岸 1~3.5 格内按 inland 权重淡出 → 海岸线不动，裙边不跟着抖。 */
+      const bumpAt = (bx, by, h) => {
+        /* 批次 R6 第一版失败复盘：频率 1.15/格、采样步长 0.5 格 → 波长比采样还短，
+           噪声被混叠成随机的三角斑块（实测 .temp/q-r5-3d-fix6/q1：地面读成碎面片，
+           不是起伏）。规则：**频率必须显著低于采样步长的倒数**（此处 ≤0.4/格）。
+           现在：主起伏 0.30/格（波长 ≈3.3 格 ≈133 世界单位，采样 20 单位 → 6 点/波长，够），
+           再叠一层 0.75/格的小起伏做质感。 */
+        const n1 = fbm(bx * 0.30 + 21.7, by * 0.30 - 13.3, (look.seed || 1) + 31, 3);
+        const n2 = fbm(bx * 0.75 + 5.1, by * 0.75 + 2.9, (look.seed || 1) + 57, 2);
+        /* 起伏幅度再乘一个「高度权重」：低地不起伏、高地才起伏。
+           顺带保证 h + b ≥ 0.5h（低处不会被压到水面以下变成蓝色破洞）。 */
+        const hw = Math.min(1, Math.max(0, h) / 0.6);
+        return ((n1 - 0.5) * 1.05 + (n2 - 0.5) * 0.30) * hw;
+      };
+      const inlandW = (bx, by) => {
+        const k = Math.floor(bx) + "," + Math.floor(by);
+        if (!set.has(k)) return 0;
+        const d = depth.get(k) || 1;
+        return Math.min(1, (d - 1) / 2.5);
       };
       /* 岛顶：半格细分（1 单位步长）的高度场——平滑的海岸过渡，避免大块直角 */
       const vhHalf = (hx, hy) => {
@@ -305,9 +370,16 @@ function buildIslands() {
       for (let y = minY - 1; y < maxY + 1.5; y += STEP) for (let x = minX - 1; x < maxX + 1.5; x += STEP) {
         const h1 = vhHalf(x, y), h2 = vhHalf(x + STEP, y), h3 = vhHalf(x, y + STEP), h4 = vhHalf(x + STEP, y + STEP);
         if (Math.max(h1, h2, h3, h4) < -0.05) continue;   /* 纯水格不建面 */
-        const c1 = colFor(h1, x, y), c2 = colFor(h2, x + STEP, y), c3 = colFor(h3, x, y + STEP), c4 = colFor(h4, x + STEP, y + STEP);
-        pushV(x * WTS, y * WTS, h1, c1); pushV(x * WTS, (y + STEP) * WTS, h3, c3); pushV((x + STEP) * WTS, y * WTS, h2, c2);
-        pushV((x + STEP) * WTS, y * WTS, h2, c2); pushV(x * WTS, (y + STEP) * WTS, h3, c3); pushV((x + STEP) * WTS, (y + STEP) * WTS, h4, c4);
+        /* 批次 R6：顶面叠低幅起伏（岸线裙边不叠）。颜色也跟着起伏走，
+           这样「沙→草→岩」的过渡线会随地形起伏，不会读成等高线。 */
+        const b1 = bumpAt(x, y, h1) * inlandW(x, y);
+        const b2 = bumpAt(x + STEP, y, h2) * inlandW(x + STEP, y);
+        const b3 = bumpAt(x, y + STEP, h3) * inlandW(x, y + STEP);
+        const b4 = bumpAt(x + STEP, y + STEP, h4) * inlandW(x + STEP, y + STEP);
+        const g1 = h1 + b1, g2 = h2 + b2, g3 = h3 + b3, g4 = h4 + b4;
+        const c1 = colFor(g1, x, y), c2 = colFor(g2, x + STEP, y), c3 = colFor(g3, x, y + STEP), c4 = colFor(g4, x + STEP, y + STEP);
+        pushV(x * WTS, y * WTS, g1, c1); pushV(x * WTS, (y + STEP) * WTS, g3, c3); pushV((x + STEP) * WTS, y * WTS, g2, c2);
+        pushV((x + STEP) * WTS, y * WTS, g2, c2); pushV(x * WTS, (y + STEP) * WTS, g3, c3); pushV((x + STEP) * WTS, (y + STEP) * WTS, g4, c4);
       }
       /* 岸线裙边：每条 land→water 边建「沙滩坡 + 岩壁」两层——
          坡顶严格在格边界（等碰撞线），向外 0.5 格落入水面、再 0.9 格沉入岩壁，消除悬浮感。 */
@@ -451,9 +523,18 @@ function buildWater() {
     uDeep: { value: new THREE.Color(PAL.oceanDeep) },
     uGold: { value: new THREE.Color(PAL.duskGold) },
     uSunH: { value: LIGHT2D.clone().multiplyScalar(-1) },  /* 光路指向航向前方（否则金光在镜头背后看不见） */
+    uSunAz: { value: new THREE.Vector2(SUN_DIRECTION.x, SUN_DIRECTION.z).normalize() },  /* 批次 R3：真太阳方位（XZ）——岛影方向用它，不能用 uSunH（那是给光路作弊用的） */
+    uCamPos: { value: new THREE.Vector3(0, 20, 26) },   /* 批次 R3：相机世界位置——掠射角天光反射用 */
     uMoonH: { value: MOON_DIR.clone() },   /* 锐评：月光路方向（与天空月亮同源同一方位） */
     uViewer: { value: new THREE.Vector2() },   /* 锐评：观察者船位（xz）——光路以船为原点，跟随船走 */
     uNight: { value: 0 },   /* 锐评：夜色系数——岸线碎沫/浅水亮层夜里不再往纯白混（月亮海面发荧光） */
+    /* 批次 R1：远水雾化的目标色（天际色，线性空间）。
+       之前这里直接用 three 的 fogColor —— 但渲染器是按「输出色空间」下发雾色的（sRGB 值），
+       而 shader 里的 col 还在线性空间：sRGB 雾色被当线性值混进线性海色 = 二次提亮，
+       远海读成一条比天空还亮的硬边亮带（实测 .temp/q-base2/q3-3d-coast.png，
+       y=220 处海面 (108,145,167) 而天空 (45,76,98)，同一片天水差 2.4 倍）。
+       改用自己这份线性色，远海与天际真正同色。 */
+    uHaze: { value: new THREE.Color(PAL.oceanMid) },
   };
   const mat = new THREE.ShaderMaterial({
     uniforms: Object.assign(THREE.UniformsUtils.clone(THREE.UniformsLib.fog), waterU),
@@ -492,6 +573,9 @@ function buildWater() {
       uniform vec3 uDeep;
       uniform vec3 uGold;
       uniform vec3 uMoonH;
+      uniform vec3 uHaze;      /* 批次 R1：远水雾化目标色（线性空间的天际色，不是 sRGB 的 fogColor） */
+      uniform vec2 uSunAz;     /* 批次 R3：真太阳方位（XZ）——岛影方向 */
+      uniform vec3 uCamPos;    /* 批次 R3：相机世界位置——掠射角反射 */
       uniform vec2 uViewer;
       uniform vec2 uSunH;
       float hash21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
@@ -511,27 +595,50 @@ function buildWater() {
         /* 大尺度海色起伏 + 近岸透亮浅色层（地中海的“看得到沙底”感）——夜里随夜色压暗 */
         col = mix(col, uMid, 0.09 * vnoise(vWorld.xz * 0.045 + vec2(3.1, 7.7)));
         col = mix(col, vec3(0.55, 0.85, 0.88), (1.0 - smoothstep(0.0, 2.6, dmin)) * 0.22 * (1.0 - uNight * 0.75));
+        /* 批次 R6：夜海去饱和 + 轻微压暗。
+           为什么：ACES 色调映射会把中低饱和的青蓝推成高饱和青——夜里的海读成
+           「热带白天的海」，比批次 R 之前的石板蓝还假（实测 .temp/q-r5-3d-fix4/q2：
+           中景海面 RGB 由 (41,61,84) 变成 (23,61,94)，蓝涨红跌 = 饱和度 0.51→0.76）。
+           放在这里（底色算完、光路加完之前）：只压海水的底色，不碰月光路的银白高光。
+           夜里海面只该剩「深靛底 + 一条月光银路」。 */
+        float baseLum = dot(col, vec3(0.2126, 0.7152, 0.0722));
+        col = mix(col, vec3(baseLum), uNight * 0.42);
+        col *= 1.0 - uNight * 0.12;
         /* 朝太阳方向的金色光路——夜里没有太阳，光路压掉。
            锐评（用户报：水面一块棕色烟渍）：原实现是「无结构渐变楔」——uGold 平铺在
            蓝水上读成粉灰污渍。改为与月光路同款的碎波 glitter：金色只在碎波亮片上出现，
-           有形、有生命，且随距离衰减。 */
+           有形、有生命，且随距离衰减。
+           批次 R6 再修：碎波噪声频率 1.3 太低，一格噪声在近景就是 30~60px 的大团，
+           整片海读成「发霉的粉灰斑块」（实测 .temp/q-r5-cmp/crop-water-blob.png）。
+           改法三件套：
+             ① 噪声频率随距离下降（近处细、远处粗）——远处不闪、不糊、不摩尔纹；
+             ② 只取噪声峰值当闪片（阈值 0.55→0.72），密度减半；
+             ③ 光路收窄（pow 14→26），恢复「一条路」而不是一片滩。 */
         vec2 rel = vWorld.xz - uViewer;
         float relLen = length(rel);
         float toSun = max(dot(normalize(rel), normalize(vec2(uSunH.x, uSunH.y))), 0.0);
-        float glitterS = vnoise(vWorld.xz * 1.3 + vec2(uTime * 0.30, -uTime * 0.22));
-        float sunGlint = pow(toSun, 14.0) * (0.06 + 0.22 * smoothstep(0.55, 0.95, glitterS));
+        float distCam = length(uCamPos - vWorld);
+        float lodF = clamp(26.0 / max(distCam, 7.0), 0.55, 5.0);
+        float glitterS = vnoise(vWorld.xz * (1.25 * lodF) + vec2(uTime * 0.30, -uTime * 0.22));
+        float glitterF = vnoise(vWorld.xz * (3.40 * lodF) + vec2(-uTime * 0.46, uTime * 0.33));
+        float spark = smoothstep(0.70, 0.95, glitterS) * (0.30 + 0.70 * smoothstep(0.45, 0.90, glitterF));
+        float sunGlint = pow(toSun, 26.0) * (0.05 + 0.85 * spark);
         col += uGold * sunGlint * smoothstep(2.0, 14.0, dmin) * (1.0 - uNight * 0.85);
         /* 锐评（用户报：月亮像贴图）：月光路——月亮方位的银色 shimmer 带，碎波调制。
          three.js Water 示例的 sunColor 镜面同源思路：天上有月，水上就有它那条路，
-         光源才「真」。观察者相对 + 碎波 shimmer + 近岸渐隐。 */
+         光源才「真」。观察者相对 + 碎波 shimmer + 近岸渐隐。
+         批次 R6：与日路同款处理——峰值取闪片、路径收窄（pow 9→15）、频率随距离降。 */
         float toMoon = max(dot(normalize(rel), normalize(vec2(uMoonH.x, uMoonH.z))), 0.0);
-        float glitter = vnoise(vWorld.xz * 1.15 + vec2(uTime * 0.26, uTime * 0.19));
-        col += vec3(0.80, 0.86, 1.0) * (pow(toMoon, 9.0) * (0.085 + 0.24 * smoothstep(0.55, 0.95, glitter))) * uNight * smoothstep(2.0, 14.0, dmin);
+        float glitter = vnoise(vWorld.xz * (1.10 * lodF) + vec2(uTime * 0.26, uTime * 0.19));
+        float moonSpark = smoothstep(0.70, 0.96, glitter);
+        col += vec3(0.80, 0.86, 1.0) * (pow(toMoon, 15.0) * (0.05 + 0.45 * moonSpark)) * uNight * smoothstep(2.0, 14.0, dmin);
         /* 锐评：远水雾化统一——远岸碎沫/浅水亮层/光路在掠射角下全部读成噪点，
-           统一混向雾色（fogColor 由 THREE 注入，颜色=天际色），海天交界干净。
-           three.js Water 系示例的 distance fade 同思路。 */
+           统一混向雾色（线性空间的天际色 uHaze），海天交界干净。
+           three.js Water 系示例的 distance fade 同思路。
+           批次 R1：这里原来混的是 three 的 fogColor（sRGB 下发），在线性空间里混 =
+           远海被提亮成一条硬边亮带；改用 uHaze 后远海与天际真正同色。 */
         float haze = smoothstep(60.0, 170.0, relLen) * 0.9;
-        col = mix(col, fogColor, haze);
+        col = mix(col, uHaze, haze);
         /* 贴岸碎沫（加宽加清） + 细碎波光（提频去白块感）——夜里改月光灰蓝，不再发荧光 */
         float band = smoothstep(-0.12, 0.06, dmin) * (1.0 - smoothstep(0.10, 0.75, dmin));
         float foam = band * (0.3 + 0.7 * vnoise(vWorld.xz * 1.4 + vec2(uTime * 0.22, -uTime * 0.16)));
@@ -539,10 +646,41 @@ function buildWater() {
         col = mix(col, foamCol, foam * 0.85);
         float sparkle = vnoise(vWorld.xz * 1.6 + vec2(uTime * 0.1, -uTime * 0.08));
         col += vec3(0.05, 0.05, 0.045) * smoothstep(0.78, 0.96, sparkle) * 0.7 * (1.0 - uNight * 0.8);
+        /* ---------- 批次 R3：岛体投影阴影 + 近岸细波 + 掠射角天光反射 ----------
+           （ZCode 那轮结尾点名的「再往上提 ①②」，本批补上） */
+        /* 岛影：沿真太阳方位再采一次「到岸距离」——若往太阳方向更靠近陆地，
+           说明这块水面被岛体罩住 → 压暗；离岸越远影越淡。
+           注意：这里必须叫 sunAzDir，不能叫 toSun——上面第 548 行已有
+           float toSun（金色光路用）。GLSL 不允许同作用域重定义，
+           重名会让整个水面 shader 编译失败 → 水面不渲染 → 直接露出海底地形
+           （实测 .temp/q-r5-3d-fix1/q1：海面变成土黄台地 + 蓝色缝隙）。
+           另外：本段在 GLSL 模板字符串内，注释里不能出现反引号（会截断模板串）。 */
+        vec2 sunAzDir = normalize(uSunAz);
+        float shLen = 12.0;
+        vec2 cuvSun = cuvRaw + sunAzDir * (shLen / uCoastRect.zw);
+        float insideSun = step(0.0, cuvSun.x) * step(cuvSun.x, 1.0) * step(0.0, cuvSun.y) * step(cuvSun.y, 1.0);
+        float dSun = mix(${FAR.toFixed(1)}, texture2D(uCoast, clamp(cuvSun, 0.0, 1.0)).r * ${FAR.toFixed(1)}, insideSun);
+        float shade = clamp((dmin - dSun) / shLen, 0.0, 1.0) * (1.0 - smoothstep(1.0, 20.0, dmin));
+        col *= 1.0 - shade * 0.30 * (1.0 - uNight * 0.7);
+        /* 贴岸接触暗部：紧贴岛岸的水更深更暗（水体厚度感） */
+        col *= 1.0 - 0.18 * (1.0 - smoothstep(0.0, 3.5, dmin));
+        /* 近岸细波：贴岸几格内加一层细密短浪，打破大色块 */
+        float shoreK = 1.0 - smoothstep(0.0, 7.0, dmin);
+        if (shoreK > 0.01){
+          float rip = vnoise(vWorld.xz * 2.6 + vec2(uTime * 0.5, -uTime * 0.34));
+          col += vec3(0.07, 0.08, 0.08) * shoreK * smoothstep(0.55, 0.95, rip);
+        }
+        /* 掠射角天光反射：远处水面更接近天空色（真实水面在掠射角反射率高） */
+        vec3 V = normalize(uCamPos - vWorld);
+        float fres = pow(1.0 - clamp(V.y, 0.0, 1.0), 5.0);
+        col = mix(col, uHaze, fres * 0.28);
         float alpha = 1.0;   /* 不透明海面：岛体方形裙边不再透出（根治黑方块伪影） */
         gl_FragColor = vec4(col, alpha);
-        #include <fog_fragment>
+        #include <tonemapping_fragment>   /* 批次 R1：与 StandardMaterial 同一条曝光曲线 */
         #include <colorspace_fragment>
+        #include <fog_fragment>   /* 批次 R1：雾必须在 colorspace 之后——three 的约定
+           （内建材质顺序 opaque→tonemapping→colorspace→fog，雾色按输出色空间下发）。
+           原来把 fog 放在最前 = sRGB 雾色混进线性海色 → 远海二次提亮成硬边亮带。 */
       }
     `,
   });
@@ -591,14 +729,22 @@ function buildSky() {
         /* 批次 J1：深夜星空——上半球程序化星点，密度随 uNight。
            锐评（用户报：天上白色方块）：原实现按 hash 网格 smoothstep，星点是方块亮斑。
            改为「格子内随机圆点」：在格心到随机偏移点的距离上开圆，星点是圆的。 */
-        if (uNight > 0.01 && d.y > 0.02) {
-          vec3 cell = floor(d * 160.0);
-          vec3 f = fract(d * 160.0) - 0.5;
-          float h1 = fract(sin(dot(cell, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+        if (uNight > 0.01 && d.y > 0.0) {
+          /* 批次 R5 修正：原按方向向量分格（floor(d*160)）——靠近地平线时，
+             方向分量的格子被拉成极细的长条（y 变化慢、x/z 变化快），
+             星星要么被拉成线要么整片消失。实测（.temp/q-r5-3d-fix3/q2 夜景）：
+             相机俯角 24° 时画面只有顶部约 5.8° 是天空 → 3D 天穹几乎一颗星都看不见，
+             而 2D 星空层在批次 R1 已被门控关掉 → 夜空直接秃了。
+             改用「方位角 × 仰角」均匀网格：地平线附近格子不被拉扁，
+             密度按可见天空带标定（约 30~40 颗，与原 2D 星空层的观感一致）。 */
+          float az = atan(d.z, d.x);
+          float el = asin(clamp(d.y, -1.0, 1.0));
+          vec2 g = vec2(az * 260.0, el * 400.0);
+          vec2 ci = floor(g), cf = fract(g) - 0.5;
+          float h1 = fract(sin(dot(ci, vec2(12.9898, 78.233))) * 43758.5453);
           vec2 off = vec2(fract(h1 * 57.13) - 0.5, fract(h1 * 131.7) - 0.5);
-          float dist2 = length(f.xy - off * 0.7) + abs(f.z) * 0.9;
-          float star = smoothstep(0.16, 0.02, dist2) * step(0.992, h1);
-          col += vec3(0.92, 0.95, 1.0) * star * uNight * 0.85;
+          float star = smoothstep(0.10, 0.015, length(cf - off * 0.7)) * step(0.977, h1);
+          col += vec3(0.92, 0.95, 1.0) * star * uNight * 0.9;
         }
         /* 锐评（用户报：月亮像贴图）：真正的 shader 月亮——
            软边缘圆盘 + 角度坐标 value-noise 月海 + 临边昏暗 + 月晕，全部随 uNight 淡入。
@@ -618,6 +764,7 @@ function buildSky() {
           col += vec3(0.72, 0.80, 1.0) * pow(max(mDot, 0.0), 1400.0) * 0.5 * uNight;   /* 月晕 */
         }
         gl_FragColor = vec4(col, 1.0);
+        #include <tonemapping_fragment>   /* 批次 R1：与 StandardMaterial 同一条曝光曲线 */
         #include <colorspace_fragment>
       }
     `,
@@ -832,6 +979,8 @@ function atmosphereTick(){
     waterU.uMid.value.copy(new THREE.Color(PAL.oceanMid)).lerp(NIGHT_WATER_MID, night*0.6);
     waterU.uDeep.value.copy(new THREE.Color(PAL.oceanDeep)).lerp(NIGHT_WATER_DEEP, night*0.6);
     waterU.uNight.value = night;
+    /* 批次 R1：远水雾化色跟天际色同步（线性空间）——海天交界不再出现亮度断层 */
+    waterU.uHaze.value.copy(_atmoH);
   }
   /* 锐评（用户报：船帆夜里白得刺眼）：帆是 MeshBasic 恒亮材质，深夜仍满亮 → 读成「黑块上飘白纸」。
      夜里把帆染成月光灰蓝（与天际夜色同源），黄昏微微染金；白昼恢复本色。 */
@@ -1007,27 +1156,39 @@ function buildHorizonContinents() {
     }
     return v / 1.75;
   };
-  /* 一条「海岸墙」：沿线 90 段，顶缘高度 = hMin..hMax 低频噪声（远山轮廓，忌尖齿），
-     平滑着色；顶缘前后再抖动读作岸线起伏 */
+  /* 一条「海岸山脉」：沿线 120 段，四个截面点连成一条起伏的山脊。
+     批次 R1 画质修正——旧版是「一面墙 + 一条几乎水平的岸台」：
+       顶缘高度接近、岸台只降 8%，于是剪影读成一堵锯齿砖墙
+       （实测 .temp/q-base2/q3-3d-coast.png 地平线那条菱形齿带）。
+     改为真正的海岸剖面：海底 → 岸线 → 山坡 → 山脊；
+     山脊用脊状噪声（ridged）出峰有谷，高度抬 1.5 倍，远处被雾压成蓝灰剪影。 */
   const strip = (ax, az, bx, bz, hMin, hMax, seed) => {
-    const segs = 90;
+    const segs = 120;
     const dx = bx - ax, dz = bz - az;
     const len = Math.hypot(dx, dz);
-    const nx = -dz / len, nz = dx / len;   /* 单位法向（朝海一侧再偏移做出岸台宽度） */
+    const nx = -dz / len, nz = dx / len;   /* 单位法向：+n 朝海，-n 朝内陆 */
     const pos = [], idx = [];
     for (let i = 0; i <= segs; i++) {
       const t = i / segs;
       const px = ax + dx * t, pz = az + dz * t;
-      const h = hMin + (hMax - hMin) * fbm1(t * 2.4, seed) * 0.85 + fbm1(t * 6.0, seed + 3) * (hMax - hMin) * 0.15;
-      const jit = (fbm1(t * 5.3, seed + 5) - 0.5) * 12;   /* 岸线前后抖动（低频） */
-      const w = 10 + fbm1(t * 3.1, seed + 9) * 10;         /* 岸台宽度 10~20 */
-      pos.push(px + jit, -2.5, pz + jit);                   /* 底：水下 */
-      pos.push(px + jit, h, pz + jit);                      /* 顶：岸线剪影 */
-      pos.push(px + jit + nx * w, h * 0.92, pz + jit + nz * w);   /* 岸台内缘（略低） */
+      const jit = (fbm1(t * 5.3, seed + 5) - 0.5) * 14;   /* 岸线前后抖动（低频） */
+      const sx = px + jit, sz = pz + jit;
+      const w = 14 + fbm1(t * 3.1, seed + 9) * 16;         /* 山体进深 14~30 */
+      /* 脊状噪声：1-|2n-1| 让山脊出峰，不是波浪线 */
+      const r1 = 1 - Math.abs(1 - 2 * fbm1(t * 2.2, seed));
+      const r2 = 1 - Math.abs(1 - 2 * fbm1(t * 5.7, seed + 3));
+      const h = (hMin + (hMax - hMin) * (r1 * 0.72 + r2 * 0.28)) * 1.5;
+      pos.push(sx + nx * 5, -3.0, sz + nz * 5);                      /* 0 海底（岸外，水下） */
+      pos.push(sx, -0.8, sz);                                        /* 1 岸线 */
+      pos.push(sx - nx * w * 0.45, h * 0.40, sz - nz * w * 0.45);    /* 2 山坡 */
+      pos.push(sx - nx * w, h, sz - nz * w);                          /* 3 山脊 */
     }
     for (let i = 0; i < segs; i++) {
-      const a = i * 3;
-      idx.push(a, a + 1, a + 3, a, a + 3, a + 2, a + 1, a + 4, a + 3, a + 1, a + 3, a + 2);
+      const a = i * 4, b = (i + 1) * 4;
+      for (let k = 0; k < 3; k++) {
+        idx.push(a + k, a + k + 1, b + k);
+        idx.push(a + k + 1, b + k + 1, b + k);
+      }
     }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
@@ -1086,6 +1247,13 @@ function init() {
     renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: false });
     renderer.setSize(1000, 600);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    /* 批次 R1（画质）：开 ACES 色调映射——之前完全没开，高光直接 clip，
+       海面日光路/月亮/泡沫一到亮处就糊成一片死白（实测 q3 近景一条过曝浅蓝带）。
+       exposure 1.12：ACES 会压中间调，补一点回来，保留爱琴海该有的通透。
+       注意：自定义 ShaderMaterial（水面/天空）必须自己 include <tonemapping_fragment>，
+       否则 StandardMaterial（岛/船/云）被映射、shader 不被映射，两套曝光打架。 */
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.12;
   } catch (e) { failed = true; return; }
 
   scene3 = new THREE.Scene();
@@ -1248,6 +1416,7 @@ function frame(et) {
   if (sailMesh) sailMesh.rotation.x = Math.sin(et * 2.3) * 0.055;   /* 锐评画质批：帆微飘——恒亮白帆不再死板 */
   waterU.uTime.value = et;
   waterU.uViewer.value.set(bx, bz);   /* 锐评：光路以船为原点（uSunH 方向是固定的，路径随船平移） */
+  if (camera3) waterU.uCamPos.value.copy(camera3.position);   /* 批次 R3：掠射角反射需要相机位置 */
   /* 相机跟随：帧率无关指数缓动（低帧下也不拖泥带水） */
   const dt = lastEt < 0 ? 0.016 : Math.min(Math.max(et - lastEt, 0.001), 0.12); lastEt = et;
   /* 锐评画质批：接触阴影 + 尾流航迹随帧驱动（dt 之后——尾流淡入用帧率无关缓动）。
@@ -1380,10 +1549,33 @@ window.W3D = { get ready() { return ready; }, get failed() { return failed; }, f
     renderer.setPixelRatio(Math.max(0.75, Math.min(2, +r || 1)));
     if (fitFn) fitFn();
   },
+  /** 屏幕坐标拾取：返回该点命中的对象（距离 / 材质色 / 是否顶点色 / 命中点高度）。
+      3D 回归测试用它断言「画面里看到的是海面还是穿帮出来的海床地形」，
+      也能区分「地平线大陆剪影」和「岛体」这两种平涂大色块。 */
+  pick: (px, py) => {
+    if (!ready || !renderer || !camera3) return null;
+    try {
+      const r = renderer.domElement.getBoundingClientRect();
+      const ndc = new THREE.Vector2(((px - r.left) / r.width) * 2 - 1, -((py - r.top) / r.height) * 2 + 1);
+      const rc = new THREE.Raycaster();
+      rc.setFromCamera(ndc, camera3);
+      const hits = rc.intersectObjects(scene3.children, true);
+      return hits.slice(0, 6).map(h => ({
+        d: Math.round(h.distance * 10) / 10,
+        type: h.object.type,
+        mat: (h.object.material && h.object.material.color) ? h.object.material.color.getHexString() : "",
+        vc: !!(h.object.geometry && h.object.geometry.attributes && h.object.geometry.attributes.color),
+        y: Math.round(h.point.y * 100) / 100,
+        order: h.object.renderOrder,
+      }));
+    } catch (e) { return null; }
+  },
   debug: () => renderer ? ({ boat: boatG ? boatG.position.toArray().map(v => Math.round(v * 10) / 10) : null,
                   cam: camera3 ? camera3.position.toArray().map(v => Math.round(v * 10) / 10) : null,
                   isles: isleList.length, calls: renderer.info.render.calls, tris: renderer.info.render.triangles,
+                  isleList: isleList.map(i => [Math.round(i.x * 10) / 10, Math.round(i.z * 10) / 10, Math.round(i.r * 10) / 10]),
                   night: (skyU && skyU.uNight) ? Math.round(skyU.uNight.value * 100) / 100 : null,
                   horizon: (skyU && skyU.uHorizon) ? skyU.uHorizon.value.getHexString() : null,
+                  fog: (scene3 && scene3.fog) ? scene3.fog.color.getHexString() : null,   /* 批次 R1：雾色 vs 天际色——地平线接缝的对照量 */
                   sail: (sailMesh && sailMesh.material.color) ? sailMesh.material.color.getHexString() : null })
                 : ({ boat: null, cam: null, isles: isleList.length, calls: 0, tris: 0 }) };   /* failed 态也安全可查 */

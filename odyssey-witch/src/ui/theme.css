@@ -55,14 +55,18 @@ body{
 }
 #stage{max-width:1240px;}
 canvas{border-radius:var(--od-radius-lg); box-shadow:var(--od-shadow), 0 0 0 1px rgba(216,165,74,.14);}
-/* 世界图轻微调色：把正午的高饱和青拉回爱琴海的深蓝，UI 与海面不再两套语言 */
-#cv3d{filter:saturate(.8) contrast(1.05) brightness(.92);}
-/* 暗角：把画面边缘收进夜色，中间留给海与船 */
+/* 世界图调色：批次 R1 画质修正——旧版 saturate(.8)+brightness(.92) 是「主动降质」，
+   把 3D 画布压暗掉饱和，用户看到的每一帧都比渲染结果更灰更闷。
+   现在只留极轻的饱和/对比校准（暗部由 ACES 色调映射接管，不再靠 CSS 压暗）。 */
+#cv3d{filter:saturate(.93) contrast(1.04);}
+/* 暗角：把画面边缘收进夜色，中间留给海与船。
+   批次 R1：峰值 .42 → .26、顶部 .26 → .14——旧值叠在 3D 画布上让四边发黑、
+   近岸细节被吃掉（实测 q3 近景整片压暗）。 */
 #stage::after{
   content:""; position:absolute; inset:0; z-index:2; pointer-events:none;
   border-radius:var(--od-radius-lg);
-  background:radial-gradient(125% 105% at 50% 44%, rgba(3,8,13,0) 56%, rgba(3,8,13,.42) 100%),
-             linear-gradient(180deg, rgba(3,8,13,.26), rgba(3,8,13,0) 16%);
+  background:radial-gradient(125% 105% at 50% 44%, rgba(3,8,13,0) 58%, rgba(3,8,13,.26) 100%),
+             linear-gradient(180deg, rgba(3,8,13,.14), rgba(3,8,13,0) 14%);
 }
 .hud{z-index:8;}
 
