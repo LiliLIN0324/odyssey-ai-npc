@@ -43,11 +43,20 @@ function questEvent(kind, data){
   renderHUD();
 }
 let scene = "world";
-const boat  = { x: 22*WTS+WTS/2, y: 11*WTS+WTS/2 };   /* 爱琴海南口开阔水域（特洛伊西南，朝埃阿亚岛去）：
-                                                         旧值 (9,7) 落在意大利半岛陆地格上，开局四方向全卡死、3D 下相机埋进岛体 */
+const boat  = { x: 34*WTS+WTS/2, y: 10*WTS+WTS/2 };   /* 批次 K2（A1 摊开岛距）：东爱琴海开阔水面（小亚细亚岸外）。
+                                                         历史：批次 H9 挪到 (22,11)（爱琴海南口）→ 批次 K2 初稿挪到 (35,12)，
+                                                         两次都被 3D 取景否掉了。
+                                                         原因（3D 相机固定在船南 4.25 格、俯角 24°，画面下缘落在船南 0.7~1.5 格）：
+                                                         出生点南面 1 格若是陆地，非洲岸就顶满画面下半屏，
+                                                         读成「土黄海滩」而不是海（实测 .temp/spawn-probe/cur-35-12.png）。
+                                                         现值 (34,10) 的三条硬约束（已写进 scripts/verify_world_grid.py 常驻闸门）：
+                                                           ① 南向至少 2 格连续水 → 岸退到镜头背后，画面下缘全是海；
+                                                           ② 离每座岛 ≥ 180px（登陆半径）→ 实测最近的是特洛伊与伊斯玛洛斯，各 200px；
+                                                           ③ 北向 5 格开阔水 → 镜头前方是小亚细亚海岸，中景不空。
+                                                         第一站仍是特洛伊（(30,7)，200px 外），保持「开船 → 看罗盘 → 靠第一站」的引导。 */
 const aiaPlayer = { x: 4*ATS+ATS/2, y: 8*ATS+ATS/2, w: 24, h: 14, face: "down", moving:false, step:0 };
 
-const SAVE_KEY = "odyssey-med-v2", SAVE_VERSION = 4;   /* 批次 H9：v4=世界尺寸翻倍（船位 px ×2） */
+const SAVE_KEY = "odyssey-med-v2", SAVE_VERSION = 5;   /* 批次 H9：v4=世界尺寸翻倍（船位 px ×2）；批次 K2：v5=岛坐标摊开（旧档船位搬回主线目标岛旁） */
 function savePayload(){
   /* 战斗单位的血量/存活也进存档：野猪与特洛伊卫兵原本是模块级常量，
      读档后满血复活（猪能再杀一次再掉一块肉、卫兵每只再给一次历练）——进度丢失兼刷分。
@@ -97,11 +106,42 @@ function load(){
   const d = parseSave(localStorage.getItem(SAVE_KEY)) || parseSave(localStorage.getItem(SAVE_KEY+".bak"));
   if (!d) return false;
   /* 版本迁移链：v<current 逐级跑纯函数迁移（v2→v3 无结构断裂，字段默认值由 ensureState 兑底）。
-     批次 H9：v<4 的船位建于 20px 网格——世界尺寸翻倍后船位 px ×2（落点偏差由既有最近水瓦回捞兜底） */
-  if ((d.v||2) < 4 && d.boat){ d.boat.x*=2; d.boat.y*=2; }
+     批次 H9：v<4 的船位建于 20px 网格——世界尺寸翻倍后船位 px ×2（落点偏差由既有最近水瓦回捞兜底）
+     批次 K2：v<5 岛坐标摊开——旧档船位搬回主线目标岛旁（见下方 v5 迁移块）。
+     注意：下面那个 while 会立刻把 d.v 抬到当前版本，所以**原始版本号必须先存下来**，
+     否则后置的迁移判断永远为假（v5 迁移曾因此静默失效过一次）。 */
+  const rawV = d.v||2;
+  if (rawV < 4 && d.boat){ d.boat.x*=2; d.boat.y*=2; }
   while ((d.v||2) < SAVE_VERSION) d.v = SAVE_VERSION;
   if (d.v > SAVE_VERSION) return false;   /* 未来版本存档：拒绝而不是静默清字段 */
   state = d.state;
+  /* 批次 K2（A1 摊开岛距）：v<5 的存档——13 个岛的网格坐标全部变了。
+     旧档的船位是绝对像素，可能仍停在「旧岛」的原址；那座岛已经搬到几十格航程之外，
+     玩家会发现自己停在一片陌生的空海上，离主线目标远得离谱。
+     修法（**刻意不写坐标映射表**）：把船挪到**当前主线目标岛**的外海落点。
+     为什么不用「旧坐标 → 新坐标」映射表：13 个岛就是 13 张必然腐烂的常数，
+     下次再挪坐标又得同步一次——那正是本批要消灭的那类 bug。
+     nextObjective() 定义在 scenes.js，load() 在 index.html:1592 调用（所有脚本加载完之后），
+     这里可以安全调用；ensureState() 提前跑一遍，让剧情旗标有默认值可读。 */
+  if (rawV < 5 && d.boat){
+    ensureState();
+    const obj = (typeof nextObjective === "function") ? nextObjective() : null;
+    const target = obj && obj.k ? ISLANDS.find(i=>i.scene===obj.k) : null;
+    if (target){
+      const p = isleOff(target.scene, 140, 140);
+      let mx = p.x, my = p.y;
+      if (isSolidTile(Math.floor(mx/WTS), Math.floor(my/WTS))){
+        let best = null, bd = Infinity;
+        for (let cy2=0; cy2<WROWS; cy2++) for (let cx2=0; cx2<WCOLS; cx2++){
+          if (isSolidTile(cx2,cy2)) continue;
+          const dx = cx2*WTS+WTS/2-mx, dy = cy2*WTS+WTS/2-my, dd = dx*dx+dy*dy;
+          if (dd < bd){ bd = dd; best = {x:cx2*WTS+WTS/2, y:cy2*WTS+WTS/2}; }
+        }
+        if (best){ mx = best.x; my = best.y; }
+      }
+      d.boat.x = mx; d.boat.y = my;
+    }
+  }
   if (d.boat){
     /* Steam 化：存档救援——旧档船位可能在世界界外（边界钳制实装前驶出的），
        钳回界内；若钳到陆地则搜最近水瓦片（46×18 全量扫描，一次性开销可忽） */
@@ -305,6 +345,9 @@ function clockTick(dt){
   windTick(dt);   /* 批次 I2：风向随游戏时间缓慢转向（与暂停门控一致——读对话时不转风） */
   const prev = state.clock;
   state.clock = (state.clock + dt/DAY_LEN*1440) % 1440;
+  /* 批次 K3：世界时刻（秒，单调）。海域状态层（B2）与势力船队（B1）都按它推进——
+     世界时刻与游戏时钟同源，所以「奥吉吉亚冻结不走钟」时海也跟着静下来。 */
+  state.wtime = (state.wtime||0) + dt;
   /* 传闻 v2：游戏日跨零点回卷瞬间，NPC 之间互相转述一次（多跳传播+失真分级在 rumors.js 纯规则层）。
      奥吉吉亚冻结不走钟（主循环跳过 clockTick）→ 冻结期传闻自然停跳，符合「日历冻结」设定 */
   if (state.clock < prev && typeof RUMOR !== "undefined" && RUMOR.gossipTick){

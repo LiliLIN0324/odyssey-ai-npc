@@ -97,6 +97,12 @@ let state = {
   trail: [],               /* 海图航迹回看：真实到访顺序 [{k,leg,t}] */
   seaRoute: "open",        /* 航路姿态 coast 沿岸 / open 外海 / mist 迷雾 */
   seaEchoes: [],           /* 海面事件回声 [{id,name,x,y,t}]（海图上的可回看标记） */
+  /* —— 批次 K3：海域世界状态层（B2）+ 海上势力船队（B1）—— */
+  wtime: 0,                 /* 世界时刻（秒，单调递增）——海域状态与船队位置都按它推导（clockTick 里累加） */
+  regionSeen: {},           /* 已撞见过的「海域·状态」{ "aegean:blockade":1 }（同一状态只触发一次） */
+  regionCardAt: -1,         /* 上一次海域后果卡的世界时刻（秒，-1=还没发过）——两次卡之间的最小间隔 */
+  regionForce: null,        /* 强行改写的海域状态 {id,st,until}（劫掠商队 → 该片海封锁） */
+  fleetMet: {},             /* 已撞见过的船队 {fleetId: 次数}（第一次出抉择卡，之后只轻提示） */
   maleaDone: false,        /* 马里阿角：听风试炼完成 */
   ismarosSpared: false,    /* 伊斯玛洛斯：给伤者上过药 */
   tookWine: false,         /* 拾了喀科恩酒 */
@@ -219,6 +225,12 @@ function ensureState(){
   if (!state.decisions) state.decisions={};   /* 抉择回声：旧档补空字典 */
   if (state.seaThreshold===undefined) state.seaThreshold=900;
   if (state.seaThreshold<900) state.seaThreshold=900;   /* 旧档归一化：老阈值(300~420)整体抬到新节奏基线，幂等 */
+  /* 批次 K3：海域状态层 + 船队字段（旧档补默认） */
+  if (state.wtime===undefined) state.wtime=0;
+  if (!state.regionSeen) state.regionSeen={};
+  if (state.regionCardAt===undefined) state.regionCardAt=-1;
+  if (state.regionForce===undefined) state.regionForce=null;
+  if (!state.fleetMet) state.fleetMet={};
   if (state.epilogueDone===undefined) state.epilogueDone=false;
   /* 第五/六章 + 终章字段：旧档补默认值 */
   if (state.calypsoStage===undefined) state.calypsoStage=0;

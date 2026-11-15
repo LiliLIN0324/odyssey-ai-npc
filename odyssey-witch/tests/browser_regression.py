@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import struct
 import tempfile
 from pathlib import Path
@@ -11,6 +12,14 @@ from playwright.sync_api import sync_playwright
 BASE_URL = os.environ.get("ODYSSEY_BASE_URL", "http://127.0.0.1:8840/")
 PACKAGE_MODE = os.environ.get("ODYSSEY_H5_PACKAGE") == "1"
 SAVE_KEY = "odyssey-med-v2"
+ROOT = Path(__file__).resolve().parents[1]
+# 存档版本号从源码里读，不写死——写死过一次（v4）就因为批次 K2 抬到 v5 而红。
+SAVE_VERSION = int(
+    re.search(
+        r"SAVE_VERSION\s*=\s*(\d+)",
+        (ROOT / "src" / "data" / "quests.js").read_text(encoding="utf-8"),
+    ).group(1)
+)
 
 
 def check(condition, message):
@@ -36,6 +45,10 @@ def new_page(browser, errors):
         context.route("**/*", guard)
     context.add_init_script(
         "localStorage.setItem('odyssey-quality-v1', '2d');"
+        # 批次 K3：主回归要密集传送船位测剧情——世界事件卡片会在传送落点弹出来
+        # 把按键吞掉（askOn 门控）。所以主回归里关掉世界卡片，
+        # 世界层（海域状态 + 势力船队）由专用的 tests/h5_world_browser.py 单独守。
+        "localStorage.setItem('odyssey-world-cards-v1', 'off');"
     )
     page = context.new_page()
     page.set_default_timeout(10000)
@@ -705,13 +718,13 @@ def main():
                 save_download = save_download_info.value
                 save_download.save_as(save_path)
                 check(
-                    save_download.suggested_filename.startswith("odyssey-med-v4-")
+                    save_download.suggested_filename.startswith(f"odyssey-med-v{SAVE_VERSION}-")
                     and save_download.suggested_filename.endswith(".json"),
-                    "设置面板导出真实 v4 JSON 存档下载",
+                    f"设置面板导出真实 v{SAVE_VERSION} JSON 存档下载",
                 )
                 payload = json.loads(save_path.read_text(encoding="utf-8"))
                 check(
-                    payload["v"] == 4
+                    payload["v"] == SAVE_VERSION
                     and payload["state"]["coins"] == 87
                     and payload["state"]["raft"] == {"wood": 2, "wind": True, "food": 1}
                     and payload["state"]["quests"]["browser_nested"]["have"] == 2

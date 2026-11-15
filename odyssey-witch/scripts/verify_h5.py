@@ -19,6 +19,7 @@ NODE_TESTS = [
     "tests/phase3-systems.test.cjs",
     "tests/phase4-release.test.cjs",
     "tests/local-intent.test.cjs",
+    "tests/phase5-world.test.cjs",
 ]
 
 
@@ -62,6 +63,9 @@ def main():
         # 这一套强制 3d 模式并断言：shader 无编译错误、白天海面是蓝的、
         # 夜里天穹有星、夜海不过饱和、岛体在水线之上。
         run([sys.executable, "tests/h5_3d_browser.py"], env=env)
+        # 批次 K3：世界层（海域状态 + 势力船队）真实浏览器回归。
+        # 主回归把世界卡片关掉了（它要密集传送船位测剧情），世界层自己守自己。
+        run([sys.executable, "tests/h5_world_browser.py"], env=env)
         run([sys.executable, "tests/h5_offline_browser.py"], env=env)
     finally:
         server.terminate()

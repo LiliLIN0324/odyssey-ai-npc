@@ -65,20 +65,34 @@ function buildMediterranean(){
 const WORLD = buildMediterranean();
 const ISLANDS = [
   {gx:34, gy:5,  name:"伊斯玛洛斯", note:"喀科恩人的城 · 第一次劫掠的遗址", stake:"守营火把与伤者：药品、伤势，以及是否再劫一次", reward:"战斗手感 · 喀科恩酒 · 守营历练", open:true, scene:"ismaros",   leg:1,  mp:[52,25]},
-  {gx:8,  gy:13, name:"食莲岛",    note:"食莲人的滩 · 忘忧的甜",           stake:"甜会换走一段记忆；强拖幸存者也可能只留下断桨", reward:"补给与士气 · 带幸存者归船的可能", open:true, scene:"lotus",     leg:3,  mp:[14,82]},
-  {gx:12, gy:14, name:"独眼巨人之岛", note:"无人之名 · 巨人的羊栏",       stake:"名字会招灾；羊腹潜行与六名船员的命都押在这里", reward:"羊毛披风 · 无人之名 · 原著或改写命运", open:true, scene:"cyclops",   leg:4,  mp:[28,57]},
-  {gx:6,  gy:11, name:"埃阿亚岛",    note:"喀耳刻的领地 · 第勒尼安海",       stake:"蜜酒、魔草与立誓：空手饮酒可能再变不回人", reward:"玛草委托 · 药品补给 · 冥界航向", open:true, scene:"aia",       leg:7,  mp:[24,62]},
-  {gx:2,  gy:8,  name:"冥界之岸",  note:"俄刻阿诺斯之岸 · 亡者之言",       stake:"蜂蜜酒、面包、淡水作献祭；珍贵记忆也能付给亡者", reward:"返乡预言 · 海峡路线", open:true, scene:"hades",     leg:8,  mp:[10,47]},
-  {gx:12, gy:8,  name:"风神岛",    note:"埃俄罗斯的浮岛 · 十二风在此听差", stake:"四阵顺风有限；用光后再来求助会被逐出浮岛", reward:"风袋 · 顺风快旅", open:true, scene:"aeolia",    leg:5,  mp:[30,47]},
-  {gx:15, gy:8,  name:"忒勒皮洛斯", note:"悬崖之城 · 十一艘船只剩一艘",     stake:"滚石与守船战：伤势和整支船队都暴露在崖下", reward:"幸存者的绳结 · 食莲岛的另一种解法", open:true, scene:"telepylos", leg:6,  mp:[34,50]},
-  {gx:29, gy:12, name:"奥吉吉亚",  note:"卡吕普索的岛 · 完美的一天",       stake:"留下就没有归乡；造筏要备齐木料、听风与储粮", reward:"自己的名字 · 亲手造的筏 · 斯克里航路", open:true, scene:"ogggia",    leg:12, mp:[57,68]},
-  {gx:17, gy:7,  name:"斯克里岛",  note:"费埃克斯人的岛 · 有人性的驿站",   stake:"故事若只吹牛，歌不唱；留下做客或说出家在哪里", reward:"被听见的歌 · 送行 · 伊萨卡解锁", open:true, scene:"scheria",   leg:13, mp:[38,38]},
+  {gx:2,  gy:9,  name:"食莲岛",    note:"食莲人的滩 · 忘忧的甜",           stake:"甜会换走一段记忆；强拖幸存者也可能只留下断桨", reward:"补给与士气 · 带幸存者归船的可能", open:true, scene:"lotus",     leg:3,  mp:[14,82]},
+  {gx:13, gy:13, name:"独眼巨人之岛", note:"无人之名 · 巨人的羊栏",       stake:"名字会招灾；羊腹潜行与六名船员的命都押在这里", reward:"羊毛披风 · 无人之名 · 原著或改写命运", open:true, scene:"cyclops",   leg:4,  mp:[28,57]},
+  {gx:5,  gy:11, name:"埃阿亚岛",    note:"喀耳刻的领地 · 第勒尼安海",       stake:"蜜酒、魔草与立誓：空手饮酒可能再变不回人", reward:"玛草委托 · 药品补给 · 冥界航向", open:true, scene:"aia",       leg:7,  mp:[24,62]},
+  {gx:0,  gy:6,  name:"冥界之岸",  note:"俄刻阿诺斯之岸 · 亡者之言",       stake:"蜂蜜酒、面包、淡水作献祭；珍贵记忆也能付给亡者", reward:"返乡预言 · 海峡路线", open:true, scene:"hades",     leg:8,  mp:[10,47]},
+  {gx:11, gy:6,  name:"风神岛",    note:"埃俄罗斯的浮岛 · 十二风在此听差", stake:"四阵顺风有限；用光后再来求助会被逐出浮岛", reward:"风袋 · 顺风快旅", open:true, scene:"aeolia",    leg:5,  mp:[30,47]},
+  {gx:26, gy:10, name:"忒勒皮洛斯", note:"悬崖之城 · 十一艘船只剩一艘",     stake:"滚石与守船战：伤势和整支船队都暴露在崖下", reward:"幸存者的绳结 · 食莲岛的另一种解法", open:true, scene:"telepylos", leg:6,  mp:[34,50]},
+  {gx:27, gy:15, name:"奥吉吉亚",  note:"卡吕普索的岛 · 完美的一天",       stake:"留下就没有归乡；造筏要备齐木料、听风与储粮", reward:"自己的名字 · 亲手造的筏 · 斯克里航路", open:true, scene:"ogggia",    leg:12, mp:[57,68]},
+  {gx:20, gy:8,  name:"斯克里岛",  note:"费埃克斯人的岛 · 有人性的驿站",   stake:"故事若只吹牛，歌不唱；留下做客或说出家在哪里", reward:"被听见的歌 · 送行 · 伊萨卡解锁", open:true, scene:"scheria",   leg:13, mp:[38,38]},
   {gx:16, gy:13, name:"伊萨卡",    note:"归乡 · 爱奥尼亚海 · 雾正在散",    stake:"化名、伤疤、婚床与求婚者：认名决定你如何回来", reward:"归乡或不归的结局 · 航程归档 · 自由的海", open:true, scene:"ithaca",    leg:14, mp:[40,63]},
-  {gx:31, gy:6,  name:"特洛伊海岸", note:"启航之地 · 木马之夜 · 十二艘船从这里出发", stake:"烧城或放下火把：这一夜决定你带着什么离开战争", reward:"十二艘船与完整船队 · 真正的启航", open:true, scene:"troy", leg:0, mp:[71,38]},
-  {gx:21, gy:9,  name:"声之海峡",  note:"塞壬的歌 · 斯库拉的六头 · 代价",  stake:"封耳失去记忆，听歌损士气；斯库拉还会索取行囊与船员", reward:"歌词残页 · 带话解债 · 出峡航路", open:true, scene:"strait",    leg:9,  mp:[30,64]},
-  {gx:26, gy:9,  name:"太阳岛",    note:"赫利俄斯的圣牛 · 饥饿与誓言",     stake:"饥饿与誓言只能守一个；宰牛会招来雷劈与船员清零", reward:"守住圣牛可得黑暗之光 · 返乡继续推进", open:true, scene:"sun",       leg:11, mp:[47,60]},
+  {gx:30, gy:7,  name:"特洛伊海岸", note:"启航之地 · 木马之夜 · 十二艘船从这里出发", stake:"烧城或放下火把：这一夜决定你带着什么离开战争", reward:"十二艘船与完整船队 · 真正的启航", open:true, scene:"troy", leg:0, mp:[71,38]},
+  {gx:24, gy:7,  name:"声之海峡",  note:"塞壬的歌 · 斯库拉的六头 · 代价",  stake:"封耳失去记忆，听歌损士气；斯库拉还会索取行囊与船员", reward:"歌词残页 · 带话解债 · 出峡航路", open:true, scene:"strait",    leg:9,  mp:[30,64]},
+  {gx:42, gy:9,  name:"太阳岛",    note:"赫利俄斯的圣牛 · 饥饿与誓言",     stake:"饥饿与誓言只能守一个；宰牛会招来雷劈与船员清零", reward:"守住圣牛可得黑暗之光 · 返乡继续推进", open:true, scene:"sun",       leg:11, mp:[47,60]},
 ];
 window.ISLANDS = ISLANDS;   /* 挂载给 world3d.js：ES 模块读不到经典脚本顶层 const（缺它 → 岛屿不装配 + 水体 shader uIsle[0] 编译失败） */
+
+/* ---------- 岛外海落点（离岛/登岛后船停在哪） ----------
+   批次 K2（A1 摊开岛距）新增。
+   原来这些落点全是手写魔数，散在 handlers.js / events.js / constants.js 共 12 处，
+   形如 `boat.x = 21*WTS+WTS/2+50`。改一次岛坐标就要人工同步 12 个点，
+   漏一个就出「下船卡在岛里 / 落在陆地上」的硬伤——这正是本批要消灭的那类 bug。
+   现在统一从 ISLANDS 派生： isleOff(scene, ox, oy) = 该岛格心 + 像素偏移。
+   偏移量沿用各处的原值（相对格心），所以视觉落位与旧版一致，只是跟随坐标。 */
+function isleOff(scene, ox, oy){
+  const is = ISLANDS.find(i=>i.scene===scene);
+  if(!is) return {x:0, y:0};
+  return {x: is.gx*WTS + WTS/2 + (ox||0), y: is.gy*WTS + WTS/2 + (oy||0)};
+}
+window.isleOff = isleOff;
 
 /* ==================== 海图玩法层：洋流 / 航路姿态 / 航迹与海面回声 ====================
    这一层是「海图不只是画」的唯一真源：世界海图 canvas 画它，航速与海遇也结算它。
@@ -187,10 +201,17 @@ function recordSeaEcho(e){
 }
 /* ==================== 海图玩法层结束 ==================== */
 
+/* 批次 K2（A1 摊开岛距）：海域名标签跟着新岛位重排。
+   旧值是按旧布局摆的，岛一挪就出现「地中海压在奥吉吉亚上」「黎凡特海压在太阳岛上」
+   「爱琴海跑到爱奥尼亚去了」这类错位。坐标仍用世界网格格心。
+   批次 K3：再挪一轮——上一版把「爱奥尼亚海(20,13)」与「地中海(22,13)」放到了隔 2 格的位置，
+   两个标签在屏幕上会压在一起；而且海域名必须和 B2 海域状态层（worldState.js 的
+   WORLD_REGIONS）用同一套坐标，否则海图上写着的名字和状态层正在发生事的那片海对不上。
+   现在 5 片海各自占一段，互不重叠，也各自是状态层里的一个 region 中心。 */
 const SEAS = [
-  {x:23,y:2,label:"欧洲"}, {x:4,y:16,label:"非洲"}, {x:40,y:8,label:"黎凡特海"},
-  {x:5,y:12,label:"第勒尼安海"}, {x:14,y:16,label:"爱奥尼亚海"},
-  {x:18,y:10,label:"爱琴海"}, {x:26,y:15,label:"地中海"},
+  {x:23,y:2,label:"欧洲"}, {x:4,y:16,label:"非洲"}, {x:8,y:9,label:"第勒尼安海"},
+  {x:18,y:12,label:"爱奥尼亚海"}, {x:25,y:14,label:"地中海"},
+  {x:28,y:8,label:"爱琴海"}, {x:40,y:11,label:"黎凡特海"},
 ];
 
 /* ==================== 埃阿亚岛地图（2.5D） ==================== */
@@ -912,7 +933,7 @@ function doSeaEncounter(){
    自己吹一口气」）。筏散是必然（原著）；分水岭在面纱：白手圣母伊诺两次赠纱，先疑（原著第一次拒绝）→
    灰眼睛促收（P2.1 灰袍引路人·掀筏念白落地）→ 收＝canon 游三天漂到斯克里近海；两次都拒＝沉海 dev，
    海把你推回奥吉吉亚重新造筏（卡吕普索：「我说过，海记你的账」）。风暴未渡过前每次出湾都会再遇。 ==================== */
-const OGGIA_EXIT = {x:29*WTS+WTS/2, y:12*WTS+WTS/2};   /* 奥吉吉亚岛心＝出湾推筏起点 */
+const OGGIA_EXIT = isleOff("ogggia", 0, 0);   /* 奥吉吉亚岛心＝出湾推筏起点（批次 K2：随岛坐标派生） */
 let _raftStormT = 0;
 function raftStormTick(dt){
   if (scene!=="world" || !state.ogygiaLeft || state.raftStormDone){ _raftStormT = 0; return; }
@@ -994,7 +1015,7 @@ function takeVeil(mode){
   addMemory(mode==="second"
     ? "灰眼睛看了你一眼，你收下了白手圣母的面纱——三天两夜，浪把你交还给费埃克斯人的滩"
     : "白手圣母的面纱兜住了你——你没有等第二次。三天两夜，浪把你交还给海岸", 5, "leukothea");
-  boat.x = 17*WTS+WTS/2+95; boat.y = 13*WTS+WTS/2-15;    /* 斯克里岛东侧近海（原著：浪把你交还给费埃克斯人的滩） */
+  { const p=isleOff("scheria", 95, -15); boat.x=p.x; boat.y=p.y; }   /* 斯克里岛东侧近海（原著：浪把你交还给费埃克斯人的滩）· 批次 K2 随岛坐标派生 */
   renderHUD(); save();
   showChapter("concept-art/08-斯克里岛.jpg","第 五 章","游　三　天","毁筏的人游了三天——面纱兜住了他",
     (mode==="second"
@@ -1008,7 +1029,7 @@ function raftLost(){
   state.hp = Math.max(10, state.hp-30);
   state.raft.wood = 0;                                   /* 重新造筏（原著：筏没了就得再造）；时辰/储粮保留——考过的不必重考 */
   scene = "world"; state.ogygiaLeft = false;             /* 回岛重来：须再次出筏台 */
-  boat.x = 29*WTS+WTS/2+40; boat.y = 12*WTS+WTS/2+30;    /* 出湾同款落点 */
+  { const p=isleOff("ogggia", 40, -60); boat.x=p.x; boat.y=p.y; }    /* 出湾同款落点 · 批次 K2 随岛坐标派生 */
   gainXp(10);
   addMemory("你把面纱推回去过一次——浪收走了你的筏，海把你推回奥吉吉亚的滩。卡吕普索说：我说过，海记你的账", 5, "poseidon");
   renderHUD(); save();
@@ -1018,7 +1039,7 @@ function raftLost(){
 /* ==================== P2.3 费埃克斯送客船石化（17g 原著第 13 卷末 · 彩蛋零成本） ====================
    送行船驶远后，波塞冬在回程海上把船变成石柱——惩罚护送奥德修斯的费埃克斯人。
    回望＝亲眼看见（石柱永久立于世界图）；不回头＝只听见闷响。海神账第三笔，两路都记。 ==================== */
-const SCHERIA_EXIT = {x:17*WTS+WTS/2+40, y:7*WTS+WTS/2+30};   /* 斯克里送行船出发海面（离岛落点） */
+const SCHERIA_EXIT = isleOff("scheria", 40, 30);   /* 斯克里送行船出发海面（离岛落点）· 批次 K2 随岛坐标派生 */
 let _pillarT = 0;
 function pillarTick(dt){
   if (scene!=="world" || !state.scheriaFarewell || state.stonePillarDone){ _pillarT=0; return; }

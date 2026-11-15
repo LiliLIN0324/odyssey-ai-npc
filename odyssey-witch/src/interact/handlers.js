@@ -531,7 +531,7 @@ function interact(){
   }
   if (s.type==="dock" && scene==="strait"){
     scene = "world";
-    boat.x = 21*WTS+WTS/2+50; boat.y = 9*WTS+WTS/2+40;
+    { const p=isleOff("strait", 50, 40); boat.x=p.x; boat.y=p.y; }
     toast("你把船退出海峡。雾在身后合拢，像一本合上的书。");
     save(); return;
   }
@@ -616,7 +616,7 @@ function interact(){
   }
   if (s.type==="sunDock"){
     scene = "world"; state.sunStage = 1;
-    boat.x = 26*WTS+WTS/2+46; boat.y = 9*WTS+WTS/2+30;
+    { const p=isleOff("sun", 46, 30); boat.x=p.x; boat.y=p.y; }
     toast(state.sunBlessed ? "离岛时，风向变了——这一次不是谁送你的风，是你自己的。（第四章 · 完）"
       : state.sunWrath ? "你离开时，天上滚过一声闷雷，浪头高了三分。"
       : "你解缆离岛——那群牛还在金色的草场上，看着你的船变小。");
@@ -710,7 +710,7 @@ function interact(){
     }
     const depart = ()=>{
       scene = "world"; state.ogygiaLeft = true;
-      boat.x = 29*WTS+WTS/2+40; boat.y = 12*WTS+WTS/2+30;
+      { const p=isleOff("ogggia", 40, -60); boat.x=p.x; boat.y=p.y; }   /* 批次 K2：出湾落点随奥吉吉亚坐标派生（原手写 29,12 → 随岛迁到克里特以南） */
       gainXp(40); sfx("bless"); feedback("large");
       addMemory("旅人自己造的筏出了湾——海面上第一次出现他自己划出来的尾迹", 5);
       renderHUD(); save();
@@ -906,7 +906,7 @@ function interact(){
       return;
     }
     scene = "world";
-    boat.x = 16*WTS+WTS/2+40; boat.y = 13*WTS+WTS/2+30;
+    { const p=isleOff("ithaca", 40, 10); boat.x=p.x; boat.y=p.y; }   /* 批次 K2：偏移由 +30 改 +10——旧值 y=570 落在利比亚陆地格 (17,14)，下船即卡在岸上 */
     toast(state.finaleDone ? "你再次踏上伊萨卡的滩涂——判词已经写下，海还在等你。"
       : "伊萨卡的浪拍着码头。城里的火光很远，雾还没散。");
     save(); return;
@@ -972,7 +972,7 @@ if (s.type==="mother"){
   }
   if (s.type==="dock" && scene==="hades"){
     scene = "world";
-    boat.x = 2*WTS+WTS/2+40; boat.y = 8*WTS+WTS/2;
+    { const p=isleOff("hades", 40, 0); boat.x=p.x; boat.y=p.y; }
     toast("你离开死者的国度，回到生者的海");
     save(); return;
   }
@@ -1006,7 +1006,7 @@ if (s.type==="mother"){
       return;
     }
     scene = "world";
-    boat.x = 17*WTS+10; boat.y = 8*WTS+10;
+    { const p=isleOff("aeolia", -10, -10); boat.x=p.x; boat.y=p.y; }
     toast("你顺着云梯回到海面，风神岛在头顶渐渐远了");
     save(); return;
   }
@@ -1117,7 +1117,7 @@ if (s.type==="mother"){
       return;
     }
     scene = "world";
-    boat.x = 17*WTS+WTS/2+34; boat.y = 5*WTS+WTS+34;
+    { const p=isleOff("aia", 34, 54); boat.x=p.x; boat.y=p.y; }
     toast("你扬帆离开埃阿亚岛，回到地中海");
     save(); return;
   }

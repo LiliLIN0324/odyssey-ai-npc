@@ -213,6 +213,73 @@
     ctx.restore();
   }
 
+  /* ---------- 批次 K3：海域态势 + 势力船队 ----------
+     海图不只是导航，是**态势图**：每一片海现在正在发生什么，一眼看得出来。 */
+  function drawWorldStatus(t){
+    if (typeof regionStatusList!=="function") return;
+    let list;
+    try{ list = regionStatusList(); }catch(e){ return; }
+    ctx.save();
+    for (const item of list){
+      const r = item.region, st = item.status;
+      const x = r.gx/WCOLS*W, y = r.gy/WROWS*H;
+      const pulse = (Math.sin(t*1.5 + r.gx) + 1) / 2;
+      const rad = 26/scale;
+      /* 海域底色晕：状态色淡铺，让玩家一眼看出「哪片海有事」 */
+      ctx.fillStyle = st.tone||"#8fd0c8";
+      ctx.globalAlpha = st.id==="calm" ? .05 : .10 + .07*pulse;
+      ctx.beginPath(); ctx.arc(x,y,rad,0,TAU); ctx.fill();
+      ctx.globalAlpha = 1;
+      /* 状态环 */
+      ctx.strokeStyle = st.tone||"#8fd0c8";
+      ctx.lineWidth = 1.1/scale;
+      ctx.globalAlpha = st.id==="calm" ? .28 : .75;
+      ctx.beginPath(); ctx.arc(x,y,rad*0.62,0,TAU); ctx.stroke();
+      ctx.globalAlpha = 1;
+      /* 文字：海域名 · 状态（描边压底，免得压在岛名/航线上读不出来） */
+      ctx.font = `${Math.max(10, 11/scale)}px 'Songti SC',serif`;
+      ctx.textAlign = "center";
+      const label = `${r.name}·${st.label}`;
+      ctx.lineJoin = "round";
+      ctx.lineWidth = 3.2/scale;
+      ctx.strokeStyle = "rgba(8,14,22,.86)";
+      ctx.strokeText(label, x, y+rad+12/scale);
+      ctx.fillStyle = st.tone||"#dfe8ee";
+      ctx.fillText(label, x, y+rad+12/scale);
+    }
+    ctx.restore();
+  }
+
+  function drawFleets(t){
+    if (typeof fleetList!=="function") return;
+    let list;
+    try{ list = fleetList(); }catch(e){ return; }
+    ctx.save();
+    for (const f of list){
+      const p = fleetPos(f);
+      const x = p.x/(WCOLS*WTS)*W, y = p.y/(WROWS*WTS)*H;
+      const bob = Math.sin(t*1.7 + p.x*0.01)*1.6/scale;
+      /* 旗：一枚小三角，颜色即势力色 */
+      ctx.fillStyle = f.flag;
+      ctx.beginPath();
+      ctx.moveTo(x, y-9/scale+bob);
+      ctx.lineTo(x+7/scale, y-5/scale+bob);
+      ctx.lineTo(x, y-1/scale+bob);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle="rgba(0,0,0,.45)";
+      ctx.beginPath(); ctx.ellipse(x, y+1.5/scale+bob, 5.4/scale, 2/scale, 0, 0, TAU); ctx.fill();
+      ctx.font = `${Math.max(9, 10/scale)}px 'Songti SC',serif`;
+      ctx.textAlign="center";
+      ctx.lineJoin="round";
+      ctx.lineWidth=3/scale;
+      ctx.strokeStyle="rgba(8,14,22,.86)";
+      ctx.strokeText(f.name, x, y+11/scale+bob);
+      ctx.fillStyle=f.flag;
+      ctx.fillText(f.name, x, y+11/scale+bob);
+    }
+    ctx.restore();
+  }
+
   /* ---------- 航迹回看 ---------- */
   let replay=null;
   function showTrailTip(text, on){
@@ -639,6 +706,8 @@
     drawTrailStops();
     drawDecisionEchoes(t);
     drawSeaEchoes(t);
+    drawWorldStatus(t);   /* 批次 K3 · B2：海域态势层 */
+    drawFleets(t);        /* 批次 K3 · B1：势力船队的位置 */
     drawStorms(wt);
     drawFog(wt);
     drawBeacon(t);

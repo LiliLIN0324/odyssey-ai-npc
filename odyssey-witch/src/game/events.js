@@ -322,7 +322,7 @@ function prologueSpot(s){
       /* P2.1 灰眼睛护送（17g 原著第 3 卷收束·不做实体 NPC）：离岸时刻的环境诗行+记忆 */
       addMemory("雾深处，一双灰眼睛看着船队转向家的方向——她没露面，只把风往船尾送了送（原著 · 雅典娜的护送）", 3, "any");
       scene = "world";
-      boat.x = 30*WTS+WTS/2; boat.y = 6*WTS+WTS+30;
+      { const p=isleOff("troy", 0, 50); boat.x=p.x; boat.y=p.y; }   /* 批次 K2：出海落点随特洛伊坐标派生 */
       showChapter("concept-art/01-序章漂流.jpg","出 海","十 二 艘 船","启航之地 · 船队整帆","十二艘船同时离岸。桅杆挤着桅杆，像一片移动的林子。\n雾深处，一双灰眼睛看着船队转向家的方向——她没露面，只把风往船尾送了送。\n这一程的尽头没有人知道——但今晚，船是满的，人是齐的。");
       renderHUD(); save(); return;
     }
@@ -446,6 +446,39 @@ function updateCompassArrow(){
   if (!obj){ if (_compassCache){ _compassCache=""; cp.style.display="none"; } return; }
   const html = compassHTML(obj);
   if (html !== _compassCache){ _compassCache = html; cp.style.display=""; cp.innerHTML = html; cp.title = obj.text; }   /* 批次 I1b：悬停看完整航向文案 */
+}
+
+
+// --- updateRegionPill (批次 K3 · B2，2026-11-15 修) ---
+/* 海域状态 pill 必须**每帧**刷新，不能挂在 renderHUD() 里：
+   loop() 根本不调 renderHUD()（它只在交互/任务/需求事件里被动触发），
+   于是航行中跨过海域边界时，顶栏的「🌊 第勒尼安海 · 平静」会一直停在旧标签上——
+   玩家看到的「当前海域」和实际所在的海对不上（世界层真实浏览器回归抓到过）。
+   照 updateCompassArrow 的写法：每帧算，文案没变就不碰 DOM。 */
+let _regionPillCache = "";
+function updateRegionPill(){
+  if (typeof worldStateBadge!=="function") return;
+  const badge = worldStateBadge();
+  const hudQuestEl = document.getElementById("hudQuest");
+  if (!hudQuestEl) return;
+  if (!document.getElementById("hudRegion") && badge){
+    const rPill = document.createElement("span"); rPill.className = "pill"; rPill.id = "hudRegion";
+    hudQuestEl.parentNode.insertBefore(rPill, hudQuestEl);
+    hudQuestEl.dataset.regionPill = "1";
+  }
+  const el = document.getElementById("hudRegion");
+  if (!el) return;
+  if (!badge){                                   /* 离海（岛内/标题）→ 收起 pill */
+    if (_regionPillCache){ _regionPillCache = ""; el.style.display = "none"; }
+    return;
+  }
+  const html = `🌊 ${badge.region.name} · <b>${badge.status.label}</b>`;
+  if (html === _regionPillCache) return;
+  _regionPillCache = html;
+  el.style.display = "";
+  el.innerHTML = html;
+  el.style.color = badge.status.tone || "";
+  el.title = badge.status.short || badge.status.label;
 }
 
 
@@ -605,7 +638,7 @@ function scheriaShipAsk(){
         renderHUD(); save(); return;
       }
       state.scheriaFarewell = true; scene = "world";
-      boat.x = 17*WTS+WTS/2+40; boat.y = 7*WTS+WTS/2+30;
+      { const p=isleOff("scheria", 40, 30); boat.x=p.x; boat.y=p.y; }   /* 批次 K2：随斯克里坐标派生 */
       gainXp(40); sfx("bless"); feedback("large");
       addMemory("费埃克斯人的船送旅人回家——全城安静，没有人回头念出这座岛的名字", 5);
       renderHUD(); save();
@@ -834,7 +867,7 @@ function crewSlept(){
     state.fleet = 0;   /* 雷劈最后一艘（17h 折损表第三站；护航船队随 fleet=0 自然消失） */
     loseCrew(state.crew||0, "宙斯的雷劈碎了最后一艘船——你睡着时他们宰了牛，雷把整船人收走了");
     scene = "world";
-    boat.x = 615; boat.y = 350;   /* 九天漂流：奥吉吉亚近海南侧（岛中心 590,250 外 103px，避登陆圈；太阳岛 188px 外） */
+    { const p=isleOff("ogggia", -100, -60); boat.x=p.x; boat.y=p.y; }   /* 批次 K2：九天漂流落点随奥吉吉亚坐标派生（原手写绝对像素 615,350） */
     showChapter("concept-art/11-雷火.jpg",
       "第 四 章 · 幕 间","雷　火","九天漂流 · 最后一人",
       "你睡着的那一会儿，他们宰了牛，烤了肉。\n雷从晴空里劈下来的时候，没有人来得及抬头。\n——九天。第九天的清晨，浪把你推到了一片完美得可怕的海岸边。（船员 ⚑0/12 · 船队 ⛵0/12 · 航向：雾外有岛）");

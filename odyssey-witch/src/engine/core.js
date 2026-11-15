@@ -527,9 +527,13 @@ function loop(t){
   drawFishingHud(); /* 钓鱼 HUD：绿区扫动 + 鱼影游动 + 中/脱钩计数（屏幕空间） */
   if (scene!=="world") markLeg(scene);
   seaEncounterTick();
+  worldMotionTick();     /* 批次 K3：船位跳变检测（传送/快航）与已航行距离锚点 */
+  worldStateTick();   /* 批次 K3 · B2：海域世界状态层——进入新海域撞见「这片海正在发生什么」 */
+  fleetTick();        /* 批次 K3 · B1：海上势力船队——靠近即可能撞见有名有旗的活船队 */
   maleaTick();
   updateHintDOM();
   updateCompassArrow();   /* Steam 化：航向罗盘箭头每帧轻量刷新（DOM 仅文案变化时写入） */
+  updateRegionPill();     /* 批次 K3 · B2：海域状态 pill 每帧刷新（跨海域立刻改标签，别等 renderHUD） */
   pollGamepad();   /* Steam 化：手柄轮询（左摇杆/十字键移动，A 互动） */
   renderAmbient();
   /* 自适应画质：连续窗口平均帧率过低 → 先降 DPR、再切 2D 海图（仅 auto 模式，尊重手动选择）。

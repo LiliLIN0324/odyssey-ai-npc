@@ -396,6 +396,7 @@ function drawWorld(et){
   drawDolphins2D(et);    /* 批次 H8：海豚伴航（奥德修斯被海豚所救的本命意象） */
   drawGulls2D(et);       /* 批次 H8：岛际鸥群 */
   drawWindStreaks(et);   /* 批次 I2：风纹——水面短痕随风漂移，读得出风往哪边走 */
+  drawFleets2D(et);      /* 批次 K3 · B1：海上势力船队——海上不只有你一条船 */
   drawStonePillar(et);   /* P2.3 石化石柱（world 图层内，W3D 关闭时由 2D 承担） */
   drawBoat(et);
 }
@@ -2464,6 +2465,13 @@ function renderHUD(){
     crewPill.onclick=()=>{ document.getElementById("questPanel").style.display="block"; setQuestTab("crew"); }; }
   const hh=Math.floor(hourNow()), mm=Math.floor(state.clock%60);
   document.getElementById("hudClock").textContent = `${clockName()} ${String(hh).padStart(2,"0")}:${String(mm).padStart(2,"0")}`;
+  /* 批次 K3 · B2：海域状态 pill——「这片海正在发生什么」常驻在顶栏（只有出海时出现）
+     注意插入点：必须挂在**顶栏**（#hudQuest 之前），不能挂在 hudClock 旁边——
+     hudClock 在「航海日记」折叠面板里（index.html 的 #hudLogClockRow），
+     挂那儿玩家根本看不见（第一版就是这么写的，截图里查无此 pill 才被发现）。
+     刷新逻辑搬到 events.js 的 updateRegionPill()：它挂在**主循环**里每帧跑，
+     因为 loop() 不调 renderHUD()——挂在 renderHUD 里的话，航行中跨海域 pill 不跟着变。 */
+  if (typeof updateRegionPill==="function") updateRegionPill();
   /* 多任务账本：进行中的全部展示，全完成则示「委托已完成」 */
   const q=document.getElementById("hudQuest");
   const qs=Object.values(state.quests||{});
