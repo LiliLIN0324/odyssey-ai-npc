@@ -170,6 +170,17 @@ async function postJSON(url, payload, timeoutMs){
       throw err;
     } finally { if (tid) clearTimeout(tid); }
     const d = await r.json().catch(()=>({error:"响应异常"}));
+    /* 服务端已经把上游重试耗尽了（upstreamExhausted）→ 客户端别再重试：
+       否则同一句话要连打三轮上游，纯烧额度还把玩家等烦。
+       额度用尽（429）同理——那是确定性的拒绝，重试多少次都是 429。 */
+    if (d && d.upstreamExhausted){
+      const err=new Error(d.error || "上游暂不可用");
+      err.status=r.status; err.noRetry=true; throw err;
+    }
+    if (r.status===429){
+      const err=new Error(d.error || "今日额度已用完");
+      err.status=429; err.noRetry=true; throw err;
+    }
     if (!r.ok || d.error || d.content===undefined){
       const err = new Error(d.error || ("HTTP "+r.status));
       err.status = r.status;

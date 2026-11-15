@@ -20,6 +20,7 @@ NODE_TESTS = [
     "tests/phase4-release.test.cjs",
     "tests/local-intent.test.cjs",
     "tests/phase5-world.test.cjs",
+    "tests/phase6-api.test.mjs",
 ]
 
 

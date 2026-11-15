@@ -89,6 +89,60 @@ def call_model(model: str, messages: list, max_tokens: int, temperature: float,
     return body["choices"][0]["message"]["content"], body.get("usage", {})
 
 
+def normalize_preds(text: str):
+    """把模型输出整成客户端要的形状（与线上 functions/api/parse.js 同一套规则）。
+
+    客户端约定：preds = [{"category":..., "args":[{"参数名":"参数值"}]}]，
+    args 数组的每个元素是**一组实例**。
+    模型偶尔返回名字/值对写法（[{"name":"物品","value":"治疗草药"}]）——
+    照抄过去，客户端会把「数量」当成第二组实例、丢掉物品参数（形状错 = 参数全丢），
+    所以这里统一折成 1 组实例。解析不了就返回 None（让客户端自己兜底）。
+    """
+    raw = (text or "").strip()
+    raw = re.sub(r"^```(?:json)?", "", raw, flags=re.I)
+    raw = re.sub(r"```$", "", raw).strip()
+    start, end = raw.find("["), raw.rfind("]")
+    if start < 0 or end <= start:
+        return None
+    try:
+        arr = json.loads(raw[start:end + 1])
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(arr, list):
+        return None
+    out = []
+    for p in arr:
+        if not isinstance(p, dict) or not p.get("category"):
+            continue
+        a = p.get("args")
+        insts = []
+        if isinstance(a, list) and a:
+            has_name = any(isinstance(x, dict) and "name" in x and "category" not in x for x in a)
+            if has_name:
+                obj = {}
+                for x in a:
+                    if not isinstance(x, dict):
+                        continue
+                    if "name" in x and "category" not in x:
+                        v = x.get("value", x.get("val"))
+                        if v is not None and str(v).strip() != "":
+                            obj[str(x["name"])] = v
+                    else:
+                        for k, v in x.items():
+                            if v is not None and str(v).strip() != "":
+                                obj[k] = v
+                insts.append(obj)
+            else:
+                for x in a:
+                    insts.append(x if isinstance(x, dict) else {})
+        elif isinstance(a, dict):
+            insts.append(a)
+        else:
+            insts.append({})
+        out.append({"category": str(p["category"]), "args": insts})
+    return out or None
+
+
 STATIC_TYPES = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}
 JS_TYPES = {".js": "text/javascript; charset=utf-8", ".mjs": "text/javascript; charset=utf-8",
             ".css": "text/css; charset=utf-8"}
@@ -191,6 +245,10 @@ class Handler(BaseHTTPRequestHandler):
 
         try:
             text, usage = call_model(model, messages, max_tokens, temperature)
+            if self.path == "/api/parse":
+                preds = normalize_preds(text)   # 归一化成客户端形状；解析不了就原样透传
+                if preds:
+                    text = json.dumps(preds, ensure_ascii=False)
             self._send(200, {"content": text, "usage": usage})
         except urllib.error.HTTPError as exc:
             detail = exc.reason or ""

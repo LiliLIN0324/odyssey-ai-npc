@@ -640,7 +640,10 @@ async function apiParse(userText){
   const prompt=TASK_INSTRUCTION.replace("{schema}",JSON.stringify(SCHEMA)).replace("{user_input}",lines.join("\n"));
   const job = (async()=>{
     try{
-      const d=await postJSON("/api/parse",{prompt}, 8000);   /* 意图解析超时 8s：超了直接落本地兜底，别让玩家干等 */
+      /* ck：给服务端的共享缓存/兜底键（NPC + 本句），让「同样的话」能命中缓存、
+         上游挂了也能拿同话题旧答案顶上。服务端拿它做宽松键，不含任何敏感信息。 */
+      const ck=hashStr("ck1|"+currentNPC+"|"+userText);
+      const d=await postJSON("/api/parse",{prompt, ck}, 15000);   /* 意图解析超时 15s：服务端总预算 12s + 3s 余量；超了直接落本地兜底，别让玩家干等 */
       const preds=extractJSON(d.content);
       if(!preds) throw new Error("模型输出无法解析");
       const ok=preds.filter(p=>p&&typeof p==="object"&&p.category);
@@ -660,7 +663,8 @@ async function apiChat(instruction){
     + "\n\n当前情境：" + instruction;
   const messages=[{role:"system",content:sys},
     ...history[currentNPC].slice(-6).filter(h=>!h.fb).map(h=>({role:h.role==="user"?"user":"assistant",content:h.content}))];
-  const d=await postJSON("/api/chat",{messages}, 15000);   /* 台词生成超时 15s：超了走 NPC_FALLBACK（P99 实测 2.8s，15s 已是极限兜底） */
+  const ck=hashStr("ck2|"+currentNPC+"|"+instruction);   /* 台词缓存键（NPC + 本轮情境） */
+  const d=await postJSON("/api/chat",{messages, ck}, 20000);   /* 台词生成超时 20s：服务端总预算 15s + 5s 余量；超了走 NPC_FALLBACK */
   return d.content.trim();
 }
 

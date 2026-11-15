@@ -158,17 +158,34 @@ def parse_model_json(content: str) -> list[dict]:
 
 
 def normalize_args(raw: Any) -> list[dict]:
-    """把 args 统一成 list[dict]。模型可能返回 [] / [{}] / [{...}] / 字典。"""
+    """把 args 统一成 list[dict]。模型可能返回 [] / [{}] / [{...}] / 字典。
+
+    名字/值对写法（[{"name":"物品","value":"玛草"}]）也在这里折成 1 组实例 ——
+    服务端 functions/api/parse.js 的 normalizePreds 是同一套规则，
+    不折的话评测会比线上更悲观（参数 F1 直接归零）。
+    """
     if raw is None:
         return []
     if isinstance(raw, dict):
         return [raw] if raw else []
     if isinstance(raw, list):
-        out = []
-        for item in raw:
-            if isinstance(item, dict):
-                out.append(item)
-        return out
+        items = [x for x in raw if isinstance(x, dict)]
+        if not items:
+            return []
+        has_name = any("name" in x and "category" not in x for x in items)
+        if has_name:
+            folded: dict = {}
+            for x in items:
+                if "name" in x and "category" not in x:
+                    v = x.get("value", x.get("val"))
+                    if v is not None and str(v).strip() != "":
+                        folded[str(x["name"])] = v
+                else:
+                    for k, v in x.items():
+                        if v is not None and str(v).strip() != "":
+                            folded[k] = v
+            return [folded]
+        return list(items)
     return []
 
 
