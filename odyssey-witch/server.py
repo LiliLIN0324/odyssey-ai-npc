@@ -11,7 +11,7 @@
 API Key 从本目录或上级目录 key.txt 读取，只留在服务端，绝不进入浏览器。
 零第三方依赖，Python 3.12 直接运行：
 
-    py -3 server.py [端口]     # 默认 8765
+    py -3 server.py [端口]     # 默认 8899（8765 在 Windows 保留端口段里，绑不上）
 """
 
 import json
@@ -25,7 +25,27 @@ from pathlib import Path
 from urllib.parse import unquote
 
 HERE = Path(__file__).resolve().parent
-PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8765
+# 默认端口 8899：**8765 落在 Windows 的 TCP 保留端口段（Hyper-V/WSL 的 NAT 预留 8632-8831）**，
+# 绑它会直接 EADDRINUSE——而且 netstat 上什么都看不到（没有进程在听），非常容易误判成「服务没起」。
+# 想在手机/平板上玩：py -3 server.py 8899 --host 0.0.0.0
+# （默认只监听 127.0.0.1：这个服务会拿 key 代理天翼 API，不该默认暴露给局域网）
+def _parse_args():
+    port = 8899
+    host = "127.0.0.1"
+    argv = sys.argv[1:]
+    i = 0
+    while i < len(argv):
+        a = argv[i]
+        if a == "--host" and i + 1 < len(argv):
+            host = argv[i + 1]; i += 2; continue
+        if a.startswith("--host="):
+            host = a.split("=", 1)[1]; i += 1; continue
+        if a.isdigit():
+            port = int(a); i += 1; continue
+        i += 1
+    return port, host
+
+PORT, HOST = _parse_args()
 API_URL = "https://api-maas.teleai.com.cn/v1/chat/completions"
 MODEL_PARSE = "Xing4.0-29B-Intent"
 MODEL_CHAT = "TeleChat3-438B-A24B"
@@ -185,8 +205,10 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     print("奥德赛 · 女巫的林间小屋")
-    print(f"  地址    : http://localhost:{PORT}")
+    print(f"  地址    : http://{HOST}:{PORT}")
+    if HOST not in ("127.0.0.1", "localhost"):
+        print(f"  局域网  : http://<本机IP>:{PORT}（已开放到局域网——注意这个服务会用 key 代理天翼 API）")
     print(f"  解析模型: {MODEL_PARSE}")
     print(f"  台词模型: {MODEL_CHAT}")
     print("  Ctrl+C 退出")
-    ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
+    ThreadingHTTPServer((HOST, PORT), Handler).serve_forever()
