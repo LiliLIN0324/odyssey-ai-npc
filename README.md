@@ -95,6 +95,21 @@ python eval.py --backend local --base-url http://localhost:8000/v1 --model Xing4
 
 没有真实 key 时想验证链路，可以跑 `py -3 fake_server.py 8731` 再指向它——它按"中等水平模型"规律造错，分数偏低是预期行为。
 
+### 游戏内验收（要真 key + 联网，不进默认门禁）
+
+```powershell
+# 单个 NPC：女巫买药真结算 + 一句人格台词
+py -3 odyssey-witch\tests\h5_agent_browser.py
+
+# 整局扫描：9 个 NPC × 12 类意图 + 真结算 + 名字考试
+py -3 odyssey-witch\tests\h5_api_sweep_browser.py
+# 打线上站点（省额度只跑 2~3 轮）
+py -3 odyssey-witch\tests\h5_api_sweep_browser.py --base https://odyssey-1c9.pages.dev/ --quick
+```
+
+两个脚本都断言「每轮都有成品气泡 + **没有兜底标记** + parse/chat 都 200 + 意图落成游戏行为 + 零未捕获异常」。
+**别和评测并发跑**——评测的并发会把上游打限流，验收侧就会假报「0 次 API 调用」。
+
 ---
 
 ## 考卷怎么设计的

@@ -192,11 +192,13 @@ async function postJSON(url, payload, timeoutMs){
   catch(e){
     if (e.noRetry) throw e;
     const s = e.status || 0;
-    /* 403 常成簇出现：两层退避（短+长）比单次重试更能逃出限流窗口（实测压测后升级） */
-    if (s===403 || s===429 || (s>=500 && s<600) || s===0){
+    /* 403 常成簇出现：两层退避（短+长）比单次重试更能逃出限流窗口（实测压测后升级）。
+       405 也重试：2026-11-15 线上偶发过一次「POST /api/parse → 405」且**无法复现**
+       （同一秒后续请求正常，疑似边缘节点瞬时行为）——重试一次成本极低，值得兜住。 */
+    if (s===403 || s===405 || s===429 || (s>=500 && s<600) || s===0){
       for (const delay of [600, 2500]){
         await new Promise(res=>setTimeout(res, delay + Math.random()*300));
-        try { return await tryOnce(); } catch(e2){ if (!(e2.status===403 || e2.status===429 || (e2.status>=500 && e2.status<600) || e2.status===0)) throw e2; }
+        try { return await tryOnce(); } catch(e2){ if (!(e2.status===403 || e2.status===405 || e2.status===429 || (e2.status>=500 && e2.status<600) || e2.status===0)) throw e2; }
       }
     }
     throw e;

@@ -18,6 +18,7 @@ import json
 import os
 import re
 import sys
+import time
 import urllib.error
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -49,6 +50,9 @@ PORT, HOST = _parse_args()
 API_URL = "https://api-maas.teleai.com.cn/v1/chat/completions"
 MODEL_PARSE = "Xing4.0-29B-Intent"
 MODEL_CHAT = "TeleChat3-438B-A24B"
+MODEL_FALLBACK = "xing4.0-29b-a4b"   # 通用 29B：主模型被限流/超时时的兜底（与线上一致）
+BUDGET_S = 12.0          # 服务端总预算（客户端超时 15s，必须 ≥ 这个数）
+ATTEMPT_TIMEOUT_S = 8.0  # 单次上游超时
 
 
 def read_key() -> str:
@@ -69,8 +73,8 @@ if not KEY:
     sys.exit(2)
 
 
-def call_model(model: str, messages: list, max_tokens: int, temperature: float,
-                timeout: float = 60.0) -> tuple[str, dict]:
+def _call_once(model: str, messages: list, max_tokens: int, temperature: float,
+               timeout: float) -> tuple[str, dict]:
     payload = {
         "model": model,
         "messages": messages,
@@ -87,6 +91,61 @@ def call_model(model: str, messages: list, max_tokens: int, temperature: float,
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         body = json.loads(resp.read().decode("utf-8"))
     return body["choices"][0]["message"]["content"], body.get("usage", {})
+
+
+def call_model(model: str, messages: list, max_tokens: int, temperature: float,
+               fallback_model: str = "") -> tuple[str, dict]:
+    """主模型优先 → 退避重试 → 还不行换兜底模型；**总预算封顶**。
+
+    与线上 `functions/api/*.js` 同一套逻辑（2026-11-15 线上 API 批次对齐）：
+      - 单次上游超时 8s、总预算 12s，客户端超时 15s（**客户端必须 ≥ 服务端预算**，
+        否则玩家的请求先被客户端掐掉、服务端这份白跑）；
+      - 403/429/5xx/超时 退避重试，4xx（除 403/429）不重试；
+      - 主模型彻底打穿时换兜底模型（xing4.0-29b-a4b）——上游对数据中心出口 IP 有间歇性
+        限制，TLS 握手超时 / 读超时都见过（2026-11-15 实测 60 条里有 4 条网络层失败）。
+
+    旧实现只有一个 60s 超时的直连：上游一抖，客户端 15s 就掐了、玩家落离线引擎，
+    而服务端还在那儿挂着等上游 —— 白烧一次调用，还可能把限流窗口拉长。
+    """
+    deadline = time.monotonic() + BUDGET_S
+    plan = [(model, (0.4, 1.0))]
+    if fallback_model:
+        plan.append((fallback_model, (0.6,)))
+    last = None
+    for m, delays in plan:
+        for i, delay in enumerate((None,) + tuple(delays)):
+            if delay is not None:
+                if time.monotonic() + delay > deadline:
+                    break
+                time.sleep(delay)
+            remain = deadline - time.monotonic()
+            if remain < 1.5:
+                break
+            try:
+                return _call_once(m, messages, max_tokens, temperature, min(ATTEMPT_TIMEOUT_S, remain))
+            except Exception as exc:
+                last = exc
+                code = getattr(exc, "code", None)
+                # 403/429/5xx 值得重试（上游对出口 IP 的间歇限制）；其余 4xx 重试也没用
+                if code and code < 500 and code not in (403, 429):
+                    break
+    raise last or RuntimeError("upstream failed")
+
+
+def acceptable_line(text: str) -> str:
+    """台词输出闸（与线上 api/chat.js 同款）：空 / 超长 / 像 JSON 一律丢弃。
+
+    兜底模型不是人格模型，偶尔会吐 JSON 或超长段落 —— 宁可失败让客户端兜底，
+    也不给玩家一段机器味台词。
+    """
+    t = (text or "").strip()
+    if not t or len(t) > 800:
+        return ""
+    if "```" in t or t[0] in "[{":
+        return ""
+    if re.match(r"^(system|assistant|user)\s*:", t, re.I):
+        return ""
+    return t
 
 
 def normalize_preds(text: str):
@@ -244,11 +303,17 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(404, {"error": "not found"})
 
         try:
-            text, usage = call_model(model, messages, max_tokens, temperature)
+            # 兜底模型：主模型被限流/超时打穿时顶上（与线上同一套逻辑）
+            text, usage = call_model(model, messages, max_tokens, temperature, MODEL_FALLBACK)
             if self.path == "/api/parse":
                 preds = normalize_preds(text)   # 归一化成客户端形状；解析不了就原样透传
                 if preds:
                     text = json.dumps(preds, ensure_ascii=False)
+            else:
+                line = acceptable_line(text)
+                if not line:
+                    raise RuntimeError("台词模型输出不可用")
+                text = line
             self._send(200, {"content": text, "usage": usage})
         except urllib.error.HTTPError as exc:
             detail = exc.reason or ""
