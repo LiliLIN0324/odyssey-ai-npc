@@ -1197,7 +1197,7 @@ def main():
             check(
                 probe["buy"]["cats"][0] == "购买物品"
                 and probe["buy"]["a0"].get("物品") == "治疗草药"
-                and probe["buy"]["a0"].get("数量") == 1,
+                and probe["buy"]["a0"].get("数量") == "1",
                 "离线引擎能听懂「我想买一瓶治疗草药」并抽出物品与数量",
             )
             check(
