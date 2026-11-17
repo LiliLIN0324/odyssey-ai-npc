@@ -15,6 +15,35 @@ const WAY_HOME = {
   telemachus:"（他站起来，脸上有被海风吹裂的痕）我也在找回去的路。西边问先知，东南过海峡。同行一段？",
 };
 
+/* schema 物品名是对话协议名；旧存档和章节奖励仍可能使用运行时库存 ID。
+   解析层保留玩家所说的标准名；这里只在背包确实持有对应旧物品时于结算读取侧转换，
+   不能用于商店定价，也不能把货架没有的东西提前改名上架。 */
+const OWNED_ITEM_ID_ALIASES = {
+  "干粮": ["面包"],
+  "船桨": ["断桨"],
+  "桨": ["断桨"],
+  "绳结": ["幸存者的绳结"],
+  "野猪肉": ["烤野猪肉"],
+  "鱼": ["烤鱼"],
+};
+
+function resolveOwnedItemName(requested){
+  const name = String(requested || "").trim();
+  if (!name || typeof state === "undefined" || !state || !state.backpack) return name;
+  const ownedQty = (id) => {
+    const qty = Number(state.backpack[id]);
+    return Number.isFinite(qty) && qty > 0 ? qty : 0;
+  };
+  if (ownedQty(name) > 0) return name;
+
+  // 只允许这里列出的、游戏数据中确有继承/烹饪/任务信物关系的读取侧别名。
+  // 不做任意子串包含，避免把“蜂蜜”误结算成“蜂蜜酒”这类不同物品。
+  for (const candidate of (OWNED_ITEM_ID_ALIASES[name] || [])){
+    if (ownedQty(candidate) > 0) return candidate;
+  }
+  return name;
+}
+
 // --- handle (was main+1729-1931, 203 lines) ---
 function handle(category, args){
   if (category==="请求帮助" && currentNPC!=="witch" && WAY_HOME[currentNPC]
@@ -44,10 +73,12 @@ function handle(category, args){
     return {text:`（她把 ${item}${q>1?`×${q}`:""} 推过来，收走 ${cost} 枚德拉克马${tier?`，摆摆手：「${tier}。」`:""}）拿好。还剩 ${state.coins} 枚。`};
   }
   case "卖出物品":{
-    const item=g("物品"); if(!item) return {text:PH[category]};
-    if(!state.backpack[item]) return {text:`你身上哪有「${item}」？`};
-    let q=Math.min(toNum(g("数量")), state.backpack[item]);
-    const price=SHOP[item]?Math.max(1,Math.floor(SHOP[item]/2)):2;
+    const requestedItem=g("物品")||g("物品名称"); if(!requestedItem) return {text:PH[category]};
+    const item=resolveOwnedItemName(requestedItem);
+    if(!state.backpack[item]) return {text:`你身上哪有「${requestedItem}」？`};
+    const q=Math.min(toNum(g("数量")), state.backpack[item]);
+    const priceKey=SHOP[item]?item:(SHOP[requestedItem]?requestedItem:item);
+    const price=SHOP[priceKey]?Math.max(1,Math.floor(SHOP[priceKey]/2)):2;
     delItem(item,q); state.coins+=price*q;
     return {text:`（她接过来翻看两下，丢给你 ${price*q} 枚德拉克马）勉强收了。`};
   }
@@ -64,21 +95,26 @@ function handle(category, args){
     return {text:"（她朝货架抬了抬下巴）"+Object.keys(SHOP).filter(k=>k!=="金露"||state.affinity>=85).map(k=>`${k} ${shopPrice(k)}枚`).join("、")+extra+"。"};
   }
   case "查询背包":{
-    const item=g("物品");
-    if(item) return state.backpack[item]?{text:`你背包里有 ${item}×${state.backpack[item]}。`}:{text:`你背包里没有「${item}」。`};
+    const requestedItem=g("物品")||g("物品名称");
+    if(requestedItem){
+      const item=resolveOwnedItemName(requestedItem);
+      return state.backpack[item]?{text:`你背包里有 ${requestedItem}×${state.backpack[item]}。`}:{text:`你背包里没有「${requestedItem}」。`};
+    }
     return {text:"（她扫了一眼你的行囊）"+bagText()+"。"};
   }
   case "丢弃物品":{
-    const item=g("物品"); if(!item) return {text:PH[category]};
-    if(isProtectedItem(item)) return {text:`「${item}」是路上带在身上的信物，扔不得。`};
-    if(!delItem(item)) return {text:`你背包里没有「${item}」可扔。`};
-    return {text:`（她看着你把 ${item} 扔进灌木丛，把坩埚搅得更响了些。）`};
+    const requestedItem=g("物品")||g("物品名称"); if(!requestedItem) return {text:PH[category]};
+    const item=resolveOwnedItemName(requestedItem);
+    if(isProtectedItem(requestedItem)||isProtectedItem(item)) return {text:`「${requestedItem}」是路上带在身上的信物，扔不得。`};
+    if(!delItem(item)) return {text:`你背包里没有「${requestedItem}」可扔。`};
+    return {text:`（她看着你把 ${requestedItem} 扔进灌木丛，把坩埚搅得更响了些。）`};
   }
   case "给予物品":{
-    const item=g("物品"); if(!item) return {text:PH[category]};
-    if(isProtectedItem(item)) return {text:`你把「${item}」往前递了递，又收了回来——这东西不能给人。`};
-    if(!delItem(item)) return {text:`你想给我「${item}」？先看看拿没拿得出来。`};
-    addAffinity(6); addMemory(`旅人送了她「${item}」`, 3); sfx("bless");
+    const requestedItem=g("物品")||g("物品名称"); if(!requestedItem) return {text:PH[category]};
+    const item=resolveOwnedItemName(requestedItem);
+    if(isProtectedItem(requestedItem)||isProtectedItem(item)) return {text:`你把「${requestedItem}」往前递了递，又收了回来——这东西不能给人。`};
+    if(!delItem(item)) return {text:`你想给我「${requestedItem}」？先看看拿没拿得出来。`};
+    addAffinity(6); addMemory(`旅人送了她「${requestedItem}」`, 3); sfx("bless");
     const t = state.affinity>=85
       ? "（她把东西收进袖子，指尖在你手背上轻轻敲了两下）……你这人，总让我为难。"
       : state.affinity>=60
@@ -87,9 +123,10 @@ function handle(category, args){
     return {text:t};
   }
   case "装备物品":{
-    const item=g("物品")||state.equipped; if(!item) return {text:PH[category]};
-    if(!state.backpack[item]) return {text:`你先得有「${item}」。`};
-    state.equipped=item; return {text:`（你把 ${item} 紧了紧。她瞥了一眼）小心别戳到脚。`};
+    const requestedItem=g("物品")||g("物品名称")||state.equipped; if(!requestedItem) return {text:PH[category]};
+    const item=resolveOwnedItemName(requestedItem);
+    if(!state.backpack[item]) return {text:`你先得有「${requestedItem}」。`};
+    state.equipped=item; return {text:`（你把 ${requestedItem} 紧了紧。她瞥了一眼）小心别戳到脚。`};
   }
   case "卸下装备":{
     if(!state.equipped) return {text:"你身上本来就没拿着什么家伙。"};
@@ -97,9 +134,10 @@ function handle(category, args){
     return {text:`（你把 ${it} 收好。屋里的空气松弛了一点。）`};
   }
   case "使用消耗品":{
-    const item=g("物品"); if(!item) return {text:PH[category]};
-    if(item==="风袋") return useWind();
-    if(!state.backpack[item]) return {text:`你背包里没有「${item}」。`};
+    const requestedItem=g("物品")||g("物品名称"); if(!requestedItem) return {text:PH[category]};
+    if(requestedItem==="风袋") return useWind();
+    const item=resolveOwnedItemName(requestedItem);
+    if(!state.backpack[item]) return {text:`你背包里没有「${requestedItem}」。`};
     let fx="（一股暖流淌过喉咙。）";
     const f=FOOD[item], dr=DRINK[item];
     if(item==="治疗草药"){state.status["伤势"]="无"; state.hp=Math.min(derived().maxHp,state.hp+20); fx="（药力渗进伤口，刺痛褪去——伤势痊愈，血量 +20。）";}
@@ -378,13 +416,20 @@ function extractJSON(text){
    （累加打分不短路 + 独立槽位抽取 + 低于阈值不硬猜）。
    下面那张旧表保留为 localFallbackLegacy——只在引擎异常时兜底，正常路径不再走它；
    tests/local-intent.test.cjs 里有一组差分断言，保证新引擎不弱于旧表。 */
-function localFallbackParse(text, npcKey){
+function localFallbackParse(text, npcKey, context){
   /* 批次 K1：名字考试（polyNameExam）读的是 window.lastPlayerText，
      而那东西原先只在 apiParse() 里赋值——离线兜底路径永远拿不到，
      巨人「报名字」考离线彻底失效。这里补上，离线与在线口径一致。 */
   try{ window.lastPlayerText = text; }catch(e){}
+  const history = Array.isArray(context) ? context.slice()
+    : (context && Array.isArray(context.history) ? context.history.slice() : []);
+  let runtimeNpcName = "";
   try{
-    const preds = localIntentParse(text);
+    if (typeof NPC_SHORT !== "undefined" && NPC_SHORT[npcKey]) runtimeNpcName = NPC_SHORT[npcKey];
+    else if (typeof NPCS !== "undefined" && NPCS[npcKey] && NPCS[npcKey].name) runtimeNpcName = NPCS[npcKey].name;
+  }catch(e){ /* 纯函数测试环境没有 NPC 数据表时，由引擎内置名称表回退 */ }
+  try{
+    const preds = localIntentParse(text, { npcKey, npcName: runtimeNpcName, history });
     if (preds && preds.length) return preds;
   }catch(e){ console.warn("[localIntent] 引擎异常，落旧表：", e); }
   return localFallbackLegacy(text);
@@ -680,7 +725,7 @@ async function send(preset){
   try{
     let preds;
     try{ preds = await apiParse(text); }
-    catch(offlineErr){ preds = localFallbackParse(text, currentNPC); }   /* 批次 K1：离线走打分制意图引擎（src/agent/localIntent.js） */
+    catch(offlineErr){ preds = localFallbackParse(text, currentNPC, { history: history[currentNPC] || [] }); }   /* 离线走打分制意图引擎，并带上与 apiParse 同源的当前 NPC 与对话历史 */
     const parts=[],chips=[],pq=[];
     const splitHint = splitClauseHint(text, preds);   /* multi 引导：拆不齐时提示分句说，拆齐了给正反馈 */
     if (splitHint) chips.push(`<span class="chip tip">${splitHint}</span>`);

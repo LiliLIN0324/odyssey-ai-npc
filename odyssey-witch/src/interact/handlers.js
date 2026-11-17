@@ -1444,6 +1444,9 @@ function handleSiren(category, args){
 // --- handleCattle (was main+3160-3200, 41 lines) ---
 function handleCattle(category, args){
   const t = lastUserText || "";
+  const cattleArgs = args || {};
+  const g = k => (cattleArgs[k] !== undefined && cattleArgs[k] !== null && String(cattleArgs[k]).trim() !== "")
+    ? String(cattleArgs[k]).trim() : null;
   const wantsBorrow = /借.{0,4}(一头|一匹|牛)|名字.{0,4}(作保|担保)|作保/.test(t) && !/不借|别借/.test(t);
   switch(category){
   case "请求帮助":
@@ -1464,9 +1467,11 @@ function handleCattle(category, args){
     return {text:"（她朝西边滩涂慢慢转头）礁石上有海藻，东滩有鱼。饿的人不用羞愧——羞愧留给动刀的人。"};
   case "使用消耗品": {
     /* 太阳岛没有女巫：吃喝在牛群面前就地结算（生存循环不断链） */
-    const item=g("物品");
-    if (item==="风袋") return useWind();
-    if(!state.backpack[item]) return {text:`（她嗅了嗅风）你身上没有「${item}」。`};
+    const requestedItem=g("物品")||g("物品名称");
+    if(!requestedItem) return {text:"（牛群嚼着草，等你说出要吃或用的东西。）"};
+    if (requestedItem==="风袋") return useWind();
+    const item=(typeof resolveOwnedItemName==="function" ? resolveOwnedItemName(requestedItem) : requestedItem);
+    if(!state.backpack[item]) return {text:`（她嗅了嗅风）你身上没有「${requestedItem}」。`};
     let fx="（你在牛群面前安静地吃完。它们不看，但你松了口气。）";
     const f=FOOD[item], dr=DRINK[item];
     if(item==="治疗草药"){state.status["伤势"]="无"; state.hp=Math.min(derived().maxHp,state.hp+20); fx="（药力渗进伤口。母牛低低地哼了一声，像在应和——血量 +20。）";}
@@ -1579,7 +1584,7 @@ function handleRebuilder(category, args){
   case "接取任务": case "请求帮助":
     return {text:"活儿就是砌墙，你的手干不了这个。（他想了想）……去木靶练几矛吧。下回再有人来抢，这城想有人还得了手。"};
   case "给予物品": {
-    const item=g("物品名称");
+    const item=g("物品")||g("物品名称");   /* 新离线引擎只输出 schema 键；旧缓存/旧预测的物品名称在读取侧兼容 */
     if (item && /草药|药/.test(item)){
       if (!state.backpack["治疗草药"]) return {text:"（他看着你空空的手）好意收到了。药去埃阿亚岛的女巫那儿换。"};
       return {text:"……你自己去给他敷上。东边，躺着呢。（他转回去砌墙）这城欠你的。"};
@@ -1608,7 +1613,7 @@ function handleLotusman(category, args){
     if (state.lotusAte) return {text:"（他看你咧嘴）甜吧。忘了什么也别怕——忘了就是到家的意思。"};
     return {text:"莲子要现摘的才灵。东边，滩上。（他望着花）别怪我没提醒你甜的代价。"};
   case "给予物品": {
-    const item=g("物品名称");
+    const item=g("物品")||g("物品名称");   /* 新离线引擎只输出 schema 键；旧缓存/旧预测的物品名称在读取侧兼容 */
     if (item && /面包|淡水|鱼|肉/.test(item)) return {text:"（他接过，掰了一半还给你）你自己也吃。饿的时候，莲子更好——不，莲子最坏。看你要哪种饱。"};
     return {text:"（他把东西还给你）我什么都不缺。这儿什么都长——愁不长。"};
   }
@@ -1642,7 +1647,7 @@ function handlePolyphemus(category, args){
   case "查询生物情报":
     return {text:"（他拍拍身边的巨羊）我的羊。不肥，但听话——听话，比聪明活得长。"};
   case "给予物品": {
-    const item=g("物品名称");
+    const item=g("物品")||g("物品名称");   /* 新离线引擎只输出 schema 键；旧缓存/旧预测的物品名称在读取侧兼容 */
     if (item && /酒/.test(item) && state.backpack["喀科恩酒"]){
       delItem("喀科恩酒",1); gainXp(10); save(); renderHUD();
       addMemory("旅人把喀科恩酒敬给了盲眼的巨人", 3, "polyphemus");
